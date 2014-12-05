@@ -4,7 +4,7 @@
  <title>WEMEE</title>
  <link href="http://wemee.github.io/" rel="self"/>
  <link href="http://wemee.github.io"/>
- <updated>2014-12-05T16:57:18+08:00</updated>
+ <updated>2014-12-05T17:02:46+08:00</updated>
  <id>http://wemee.github.io</id>
  <author>
    <name>Jr-Yung Tsai</name>
@@ -14,9 +14,9 @@
  
  <entry>
    <title>開站與紀念舊文章連結</title>
-   <link href="http://wemee.github.io/2014/12/05/old_pages"/>
+   <link href="http://wemee.github.io/whisper/2014/12/05/old_pages"/>
    <updated>2014-12-05T00:00:00+08:00</updated>
-   <id>http://wemee.github.io/2014/12/05/old_pages</id>
+   <id>http://wemee.github.io/whisper/2014/12/05/old_pages</id>
    <content type="html">&lt;p&gt;今天開啟了&lt;a href=&quot;https://pages.github.com/&quot;&gt;GitHub Pages&lt;/a&gt;當個人網站，之前在&lt;a href=&quot;http://wemee.blogspot.tw/&quot;&gt;Blogger&lt;/a&gt;的文章也繼續維護。&lt;/p&gt;
 
 &lt;p&gt;舊網站是這麼做的：&lt;/p&gt;
