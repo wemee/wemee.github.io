@@ -2,6 +2,7 @@
 http://wemee.github.io/archive.html
 http://wemee.github.io/atom.xml
 http://wemee.github.io/categories.html
+http://wemee.github.io/demo/jquery/index.html
 http://wemee.github.io/index.html
 http://wemee.github.io/pages.html
 http://wemee.github.io/rss.xml
