@@ -5,8 +5,8 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <title>Hello World!</title>
-    
+    <title>開站與紀念舊文章連結</title>
+    <meta name="description" content="">
     <meta name="author" content="Jr-Yung Tsai">
 
     <!-- Enable responsive viewport -->
@@ -130,51 +130,61 @@
       <div class="container">
         
 <div class="page-header">
-  <h1>Hello World!  <small>Supporting tagline</small></h1>
+  <h1>開站與紀念舊文章連結 </h1>
 </div>
 
-<div class="row">
+<div class="row post-full">
   <div class="col-xs-12">
+    <div class="date">
+      <span>05 December 2014</span>
+    </div>
+    <div class="content">
+      <p>今天開啟了<a href="https://pages.github.com/">GitHub Pages</a>當個人網站，之前在<a href="http://wemee.blogspot.tw/">Blogger</a>的文章也繼續維護。</p>
+
+<p>舊網站是這麼做的：</p>
+
+<ol>
+  <li>使用<a href="http://25.io/mou/">MOU</a>作為Markdown編輯器來編輯文章</li>
+  <li>使用Git做版本控制，並在<a href="https://bitbucket.org/">Bitbucket</a>開個Repository，來當遠端倉庫。</li>
+  <li>文章完成後，Git同步到遠端。並且再轉為HTML發到Blogger去。</li>
+</ol>
+
+<p>總共需要三個步驟，現在直接把網站開在Github提供的<a href="https://pages.github.com/">GitHub Pages</a>，本來只是想放一些網頁技巧的DEMO城市而已，深入研究之後，搭配<a href="http://jekyllrb.com/">Jekyll</a>，做起部落格也方便多了。</p>
+
+<p>之前要三個步驟，現在都統一在一起，版本控制跟網頁都在GitHub，Markdown編輯的文章使用Jekyll可以直接編譯成HTML，也跟著同步到GitHub去。</p>
+
+<p>舊的文章就讓它留在原處吧，<a href="http://wemee.blogspot.tw/">研發宅的腦漿</a></p>
+
+    </div>
+
     
-<p>Read <a href="http://jekyllbootstrap.com/usage/jekyll-quick-start.html">Jekyll Quick Start</a></p>
 
-<p>Complete usage and documentation available at: <a href="http://jekyllbootstrap.com">Jekyll Bootstrap</a></p>
-
-<h2 id="update-author-attributes">Update Author Attributes</h2>
-
-<p>In <code>_config.yml</code> remember to specify your own data:</p>
-
-<pre><code>title : My Blog =)
-
-author :
-  name : Name Lastname
-  email : blah@email.test
-  github : username
-  twitter : username
-</code></pre>
-
-<p>The theme should reference these variables whenever needed.</p>
-
-<h2 id="sample-posts">Sample Posts</h2>
-
-<p>This blog contains sample posts which help stage pages and blog data.
-When you don’t need the samples anymore just delete the <code>_posts/core-samples</code> folder.</p>
-
-<pre><code>$ rm -rf _posts/core-samples
-</code></pre>
-
-<p>Here’s a sample “posts list”.</p>
-
-<ul class="posts">
+    
   
-    <li><span>05 Dec 2014</span> &raquo; <a href="/2014/12/05/old_pages">開站與紀念舊文章連結</a></li>
-  
-</ul>
+    <hr>
+    <ul class="pagination">
+    
+      <li class="prev disabled"><a>&larr; Previous</a></li>
+    
+      <li><a href="/archive.html">Archive</a></li>
+    
+      <li class="next disabled"><a>Next &rarr;</a>
+    
+    </ul>
+    <hr>
+    
 
-<h2 id="to-do">To-Do</h2>
 
-<p>This theme is still unfinished. If you’d like to be added as a contributor, <a href="http://github.com/plusjade/jekyll-bootstrap">please fork</a>!
-We need to clean up the themes, make theme usage guides with theme-specific markup examples.</p>
+  <div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=315502608646534";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+<div class="fb-comments" data-href="http://wemee.github.io" data-num-posts="5" data-width="580" data-colorscheme="light"></div>
+
 
 
   </div>
