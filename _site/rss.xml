@@ -5,10 +5,135 @@
         <description>WEMEE - Jr-Yung Tsai</description>
         <link>http://wemee.github.io</link>
         <link>http://wemee.github.io</link>
-        <lastBuildDate>2014-12-08T17:27:34+08:00</lastBuildDate>
-        <pubDate>2014-12-08T17:27:34+08:00</pubDate>
+        <lastBuildDate>2014-12-09T17:35:07+08:00</lastBuildDate>
+        <pubDate>2014-12-09T17:35:07+08:00</pubDate>
         <ttl>1800</ttl>
 
+
+        <item>
+                <title>HTML, CSS, 相對視窗或螢幕的高度與寬度</title>
+                <description>&lt;p&gt;在&lt;a href=&quot;http://www.w3schools.com/&quot;&gt;w3school.com&lt;/a&gt;網站,&lt;a href=&quot;http://www.w3schools.com/cssref/css_units.asp&quot;&gt;CSS Units&lt;/a&gt;有各種與寬度的表示法&lt;/p&gt;
+
+&lt;p&gt;以我使用的頻率來排序：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;px: 使用螢幕幾個像素(但是還要考慮Retina螢幕像素是一般螢幕像素的兩倍)&lt;/li&gt;
+  &lt;li&gt;%: 相對父層的大小比例&lt;/li&gt;
+  &lt;li&gt;vh, vw: 相對於瀏覽器展示網頁區域的大小(不是整個瀏覽器的大小，沒包含瀏覽器的工具列，只有展示網頁的區域)&lt;/li&gt;
+  &lt;li&gt;vmin: vh, vw取最小值(另外還有vmax則是取最大值，但是目前IE跟safari不支援)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;code&gt;px&lt;/code&gt;與&lt;code&gt;%&lt;/code&gt;很常用，&lt;code&gt;vh&lt;/code&gt;，&lt;code&gt;vw&lt;/code&gt;與&lt;code&gt;vmin&lt;/code&gt;是CSS3的新產物，表示相對瀏覽器展示頁面的大小&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;section&quot;&gt;相對視窗大小&lt;/h2&gt;
+
+&lt;p&gt;這邊先說明，&lt;code&gt;vh&lt;/code&gt;，&lt;code&gt;vw&lt;/code&gt;與&lt;code&gt;vmin&lt;/code&gt;只包含網頁顯示區域的長寬，不包含瀏覽器的工具列&lt;/p&gt;
+
+&lt;p&gt;先從dom的最根本講起好了，一份HTML文件，根是&lt;code&gt;&amp;lt;html&amp;gt;&amp;lt;/html&amp;gt;&lt;/code&gt;(雖然沒有嚴格規定，不寫也能顯示)，然後這個根的父元件就是瀏覽器的網頁頁面顯示區&lt;/p&gt;
+
+&lt;p&gt;因此，如果對&lt;code&gt;&amp;lt;html&amp;gt;&amp;lt;/html&amp;gt;&lt;/code&gt;宣告大小是&lt;code&gt;100%&lt;/code&gt;就跟宣告&lt;code&gt;100vh&lt;/code&gt;一樣，因為都是指瀏覽器的網頁頁面顯示區大小&lt;/p&gt;
+
+&lt;p&gt;這個範例是將html設定為100vh&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&amp;lt;html style=&quot;height: 100vh&quot;&amp;gt;
+	&amp;lt;head&amp;gt;
+		&amp;lt;script src=&quot;https://code.jquery.com/jquery-1.11.1.min.js&quot;&amp;gt;&amp;lt;/script&amp;gt;
+	
+		&amp;lt;script type=&quot;text/javascript&quot;&amp;gt;
+			console.log($(&#39;html&#39;).height());
+    	&amp;lt;/script&amp;gt;
+    &amp;lt;/head&amp;gt;
+&amp;lt;/html&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;這個範例是將html設定為100%&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&amp;lt;html style=&quot;height: 100%&quot;&amp;gt;
+	&amp;lt;head&amp;gt;
+		&amp;lt;script src=&quot;https://code.jquery.com/jquery-1.11.1.min.js&quot;&amp;gt;&amp;lt;/script&amp;gt;
+	
+		&amp;lt;script type=&quot;text/javascript&quot;&amp;gt;
+			console.log($(&#39;html&#39;).height());
+    	&amp;lt;/script&amp;gt;
+    &amp;lt;/head&amp;gt;
+&amp;lt;/html&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;這兩者在瀏覽器的console應該輸出一樣的大小&lt;/p&gt;
+
+&lt;p&gt;如果從html, body到div , 這些tag都填入100%，則從頭到尾都填滿整個視窗(當然還注意body預設有padding, margin佔有一些寬度，要把他們都設為0，才會真的佔滿全畫面)&lt;/p&gt;
+
+&lt;p&gt;不過現在有vh, vw，就不用這麼麻煩了，可以只設定長度為100vh, 寬度為100vw，就可以填滿整個畫面(依然得注意body預設佔有padding跟margin)&lt;/p&gt;
+
+&lt;p&gt;像下面這樣就能把兩個div排在一起，並且以瀏覽器寬度3:7的比例，分割成兩個區塊&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&amp;lt;html&amp;gt;
+	&amp;lt;head&amp;gt;&amp;lt;/head&amp;gt;
+	&amp;lt;body style=&quot;margin: 0;padding: 0;&quot;&amp;gt;
+		&amp;lt;div style=&quot;width: 30vw;float:left;&quot;&amp;gt;Left...&amp;lt;/div&amp;gt;
+		&amp;lt;div style=&quot;width: 70vw;float:left;&quot;&amp;gt;Right...&amp;lt;/div&amp;gt;
+	&amp;lt;/body&amp;gt;
+&amp;lt;/html&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;還有一個問題，以往使用桌上型電腦的螢幕，我們可以預期大部分人的電腦，都是寬度大於長度，大部份的人也都是用全螢幕瀏覽網頁。所以我們很信任的將長寬都設定成&lt;code&gt;vh&lt;/code&gt;就可以變成正方形，並且不超過瀏覽器大小。&lt;/p&gt;
+
+&lt;p&gt;但是現在手機螢幕，可以拿直的，也可以拿橫的，那要怎麼辦呢？就使用&lt;code&gt;vmin&lt;/code&gt;吧&lt;/p&gt;
+
+&lt;p&gt;譬如我們要顯示一張正方形的圖片，希望以最大張的方式呈現&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&amp;lt;html&amp;gt;
+	&amp;lt;head&amp;gt;&amp;lt;/head&amp;gt;
+	&amp;lt;body style=&quot;margin: 0;padding: 0;&quot;&amp;gt;
+		&amp;lt;img src=&quot;圖片路徑&quot; style=&quot;width: 100vmin;height: 100vmin;&quot;&amp;gt;
+	&amp;lt;/body&amp;gt;
+&amp;lt;/html&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;這樣就不怕桌機或手機，螢幕擺直得或橫的，都以最大張，且不會超出瀏覽器範圍欄顯示圖片&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;section-1&quot;&gt;相對螢幕大小&lt;/h2&gt;
+
+&lt;p&gt;那可不可以相對於使用者整個螢幕的大小？&lt;/p&gt;
+
+&lt;p&gt;可以，但是要使用Javascript去設定，在Javascript裡面直接使用&lt;code&gt;screen.height&lt;/code&gt;與&lt;code&gt;screen.width&lt;/code&gt;，就可以取得螢幕大小(關於&lt;code&gt;screen&lt;/code&gt;是什麼？請參考w3school的&lt;a href=&quot;http://www.w3schools.com/js/js_window_screen.asp&quot;&gt;相關頁面&lt;/a&gt;)&lt;/p&gt;
+
+&lt;p&gt;之後再用dom語法，去改你要改的地方，假設你要將所有的div tag寬度都隨使用者螢幕寬度改變，這邊使用jQuery：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$(&#39;div&#39;).width(screen.width);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;這時候不管使用者怎麼拉動瀏覽器的寬度，所有的div tag寬度都等是螢幕寬度&lt;/p&gt;
+
+&lt;p&gt;如果想單純使用javascipt的話，語法比較冗長一點，可以參考w3chool的&lt;a href=&quot;http://www.w3schools.com/jsref/prop_style_height.asp&quot;&gt;頁面&lt;/a&gt;，注意他傳入的參數後面還要接單位，所以在&lt;code&gt;screen.width&lt;/code&gt;之後記得再加上&lt;code&gt;&quot;px&quot;&lt;/code&gt;，之後才當引數傳進去&lt;/p&gt;
+
+&lt;p&gt;回到原本的jQuery版本，如果想要75%的螢幕大小&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$(&#39;div&#39;).width(screen.width * 0.75);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;想要30%的螢幕大小&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$(&#39;div&#39;).width(screen.width * 0.3);
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;以此類推，我一開始會害怕對screen.width做數學運算，因為不確定內容是字串還是數字。但是多慮了，javascript可以對數字做數學運算，也可以對內容是數字的字串做數學運算&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&#39;10&#39; * &#39;10&#39; // 輸出100
+&#39;10&#39; * 10 // 也輸出100
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如果是在Ruby，則是輸出&lt;code&gt;&quot;10101010101010101010&quot;&lt;/code&gt;，所以在javascript裡面，不用怕，他內容是數字，就直接對他做數學運算，不用先檢查型別。(若字串內容不是數字，會輸出&lt;code&gt;NaN&lt;/code&gt;，Not a Number的意思)&lt;/p&gt;
+
+</description>
+                <link>http://wemee.github.io/2014/12/09/html-css-</link>
+                <guid>http://wemee.github.io/2014/12/09/html-css-</guid>
+                <pubDate>2014-12-09T00:00:00+08:00</pubDate>
+        </item>
 
         <item>
                 <title>開站紀念與舊文章連結</title>
@@ -22,7 +147,7 @@
   &lt;li&gt;文章完成後，Git同步到遠端。並且再轉為HTML發到Blogger去。&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;p&gt;總共需要三個步驟，現在直接把網站開在Github提供的&lt;a href=&quot;https://pages.github.com/&quot;&gt;GitHub Pages&lt;/a&gt;，本來只是想放一些網頁技巧的DEMO城市而已，深入研究之後，搭配&lt;a href=&quot;http://jekyllrb.com/&quot;&gt;Jekyll&lt;/a&gt;，做起部落格也方便多了。&lt;/p&gt;
+&lt;p&gt;總共需要三個步驟，現在直接把網站開在Github提供的&lt;a href=&quot;https://pages.github.com/&quot;&gt;GitHub Pages&lt;/a&gt;，本來只是想放一些網頁技巧的DEMO程式而已，深入研究之後，搭配&lt;a href=&quot;http://jekyllrb.com/&quot;&gt;Jekyll&lt;/a&gt;，做起部落格也方便多了。&lt;/p&gt;
 
 &lt;p&gt;之前要三個步驟，現在都統一在一起，版本控制跟網頁都在GitHub，Markdown編輯的文章使用Jekyll可以直接編譯成HTML，也跟著同步到GitHub去。&lt;/p&gt;
 

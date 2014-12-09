@@ -1,0 +1,321 @@
+
+<!DOCTYPE html>
+<html lang="zh-tw">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>HTML, CSS, 相對視窗或螢幕的高度與寬度</title>
+    <meta name="description" content="">
+    <meta name="author" content="Jr-Yung Tsai">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap styles -->
+    <link href="/assets/themes/bootstrap-3/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Optional theme -->
+    <link href="/assets/themes/bootstrap-3/bootstrap/css/bootstrap-theme.min.css" rel="stylesheet">
+    <!-- Sticky Footer -->
+    <link href="/assets/themes/bootstrap-3/bootstrap/css/bs-sticky-footer.css" rel="stylesheet">
+    
+    <!-- Custom styles -->
+    <link href="/assets/themes/bootstrap-3/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- Fav and touch icons -->
+    <!-- Update these with your own images
+      <link rel="shortcut icon" href="images/favicon.ico">
+      <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+      <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+      <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+    -->
+
+    <!-- atom & rss feed -->
+    <link href="/atom.xml" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed">
+    <link href="/rss.xml" type="application/rss+xml" rel="alternate" title="Sitewide RSS Feed">
+
+    <!-- Latest compiled and minified JavaScript, requires jQuery 1.x (2.x not supported in IE8) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+  </head>
+
+  <body>
+    <div id="wrap">
+      <nav class="navbar navbar-default" role="navigation">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#jb-navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">WEMEE</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="jb-navbar-collapse">
+          <ul class="nav navbar-nav">
+            
+            
+            
+
+
+  
+    
+      
+      	
+      	<li><a href="/archive.html">Archive</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/categories.html">Categories</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/pages.html">Pages</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/tags.html">Tags</a></li>
+      	
+      
+    
+  
+
+
+
+          </ul>
+          <form class="navbar-form navbar-right" role="search">
+            <div class="form-group">
+              <input type="text" class="form-control" placeholder="Search">
+            </div>
+            <button type="submit" class="btn btn-default">Submit</button>
+          </form>
+        </div><!-- /.navbar-collapse -->
+      </nav>
+
+      <div class="container">
+        
+<div class="page-header">
+  <h1>HTML, CSS, 相對視窗或螢幕的高度與寬度 </h1>
+</div>
+
+<div class="row post-full">
+  <div class="col-xs-12">
+    <div class="date">
+      <span>09 December 2014</span>
+    </div>
+    <div class="content">
+      <p>在<a href="http://www.w3schools.com/">w3school.com</a>網站,<a href="http://www.w3schools.com/cssref/css_units.asp">CSS Units</a>有各種與寬度的表示法</p>
+
+<p>以我使用的頻率來排序：</p>
+
+<ul>
+  <li>px: 使用螢幕幾個像素(但是還要考慮Retina螢幕像素是一般螢幕像素的兩倍)</li>
+  <li>%: 相對父層的大小比例</li>
+  <li>vh, vw: 相對於瀏覽器展示網頁區域的大小(不是整個瀏覽器的大小，沒包含瀏覽器的工具列，只有展示網頁的區域)</li>
+  <li>vmin: vh, vw取最小值(另外還有vmax則是取最大值，但是目前IE跟safari不支援)</li>
+</ul>
+
+<p><code>px</code>與<code>%</code>很常用，<code>vh</code>，<code>vw</code>與<code>vmin</code>是CSS3的新產物，表示相對瀏覽器展示頁面的大小</p>
+
+<hr />
+
+<h2 id="section">相對視窗大小</h2>
+
+<p>這邊先說明，<code>vh</code>，<code>vw</code>與<code>vmin</code>只包含網頁顯示區域的長寬，不包含瀏覽器的工具列</p>
+
+<p>先從dom的最根本講起好了，一份HTML文件，根是<code>&lt;html&gt;&lt;/html&gt;</code>(雖然沒有嚴格規定，不寫也能顯示)，然後這個根的父元件就是瀏覽器的網頁頁面顯示區</p>
+
+<p>因此，如果對<code>&lt;html&gt;&lt;/html&gt;</code>宣告大小是<code>100%</code>就跟宣告<code>100vh</code>一樣，因為都是指瀏覽器的網頁頁面顯示區大小</p>
+
+<p>這個範例是將html設定為100vh</p>
+
+<pre><code>&lt;html style="height: 100vh"&gt;
+	&lt;head&gt;
+		&lt;script src="https://code.jquery.com/jquery-1.11.1.min.js"&gt;&lt;/script&gt;
+	
+		&lt;script type="text/javascript"&gt;
+			console.log($('html').height());
+    	&lt;/script&gt;
+    &lt;/head&gt;
+&lt;/html&gt;
+</code></pre>
+
+<p>這個範例是將html設定為100%</p>
+
+<pre><code>&lt;html style="height: 100%"&gt;
+	&lt;head&gt;
+		&lt;script src="https://code.jquery.com/jquery-1.11.1.min.js"&gt;&lt;/script&gt;
+	
+		&lt;script type="text/javascript"&gt;
+			console.log($('html').height());
+    	&lt;/script&gt;
+    &lt;/head&gt;
+&lt;/html&gt;
+</code></pre>
+
+<p>這兩者在瀏覽器的console應該輸出一樣的大小</p>
+
+<p>如果從html, body到div , 這些tag都填入100%，則從頭到尾都填滿整個視窗(當然還注意body預設有padding, margin佔有一些寬度，要把他們都設為0，才會真的佔滿全畫面)</p>
+
+<p>不過現在有vh, vw，就不用這麼麻煩了，可以只設定長度為100vh, 寬度為100vw，就可以填滿整個畫面(依然得注意body預設佔有padding跟margin)</p>
+
+<p>像下面這樣就能把兩個div排在一起，並且以瀏覽器寬度3:7的比例，分割成兩個區塊</p>
+
+<pre><code>&lt;html&gt;
+	&lt;head&gt;&lt;/head&gt;
+	&lt;body style="margin: 0;padding: 0;"&gt;
+		&lt;div style="width: 30vw;float:left;"&gt;Left...&lt;/div&gt;
+		&lt;div style="width: 70vw;float:left;"&gt;Right...&lt;/div&gt;
+	&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+<p>還有一個問題，以往使用桌上型電腦的螢幕，我們可以預期大部分人的電腦，都是寬度大於長度，大部份的人也都是用全螢幕瀏覽網頁。所以我們很信任的將長寬都設定成<code>vh</code>就可以變成正方形，並且不超過瀏覽器大小。</p>
+
+<p>但是現在手機螢幕，可以拿直的，也可以拿橫的，那要怎麼辦呢？就使用<code>vmin</code>吧</p>
+
+<p>譬如我們要顯示一張正方形的圖片，希望以最大張的方式呈現</p>
+
+<pre><code>&lt;html&gt;
+	&lt;head&gt;&lt;/head&gt;
+	&lt;body style="margin: 0;padding: 0;"&gt;
+		&lt;img src="圖片路徑" style="width: 100vmin;height: 100vmin;"&gt;
+	&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+<p>這樣就不怕桌機或手機，螢幕擺直得或橫的，都以最大張，且不會超出瀏覽器範圍欄顯示圖片</p>
+
+<hr />
+
+<h2 id="section-1">相對螢幕大小</h2>
+
+<p>那可不可以相對於使用者整個螢幕的大小？</p>
+
+<p>可以，但是要使用Javascript去設定，在Javascript裡面直接使用<code>screen.height</code>與<code>screen.width</code>，就可以取得螢幕大小(關於<code>screen</code>是什麼？請參考w3school的<a href="http://www.w3schools.com/js/js_window_screen.asp">相關頁面</a>)</p>
+
+<p>之後再用dom語法，去改你要改的地方，假設你要將所有的div tag寬度都隨使用者螢幕寬度改變，這邊使用jQuery：</p>
+
+<pre><code>$('div').width(screen.width);
+</code></pre>
+
+<p>這時候不管使用者怎麼拉動瀏覽器的寬度，所有的div tag寬度都等是螢幕寬度</p>
+
+<p>如果想單純使用javascipt的話，語法比較冗長一點，可以參考w3chool的<a href="http://www.w3schools.com/jsref/prop_style_height.asp">頁面</a>，注意他傳入的參數後面還要接單位，所以在<code>screen.width</code>之後記得再加上<code>"px"</code>，之後才當引數傳進去</p>
+
+<p>回到原本的jQuery版本，如果想要75%的螢幕大小</p>
+
+<pre><code>$('div').width(screen.width * 0.75);
+</code></pre>
+
+<p>想要30%的螢幕大小</p>
+
+<pre><code>$('div').width(screen.width * 0.3);
+</code></pre>
+
+<p>以此類推，我一開始會害怕對screen.width做數學運算，因為不確定內容是字串還是數字。但是多慮了，javascript可以對數字做數學運算，也可以對內容是數字的字串做數學運算</p>
+
+<pre><code>'10' * '10' // 輸出100
+'10' * 10 // 也輸出100
+</code></pre>
+
+<p>如果是在Ruby，則是輸出<code>"10101010101010101010"</code>，所以在javascript裡面，不用怕，他內容是數字，就直接對他做數學運算，不用先檢查型別。(若字串內容不是數字，會輸出<code>NaN</code>，Not a Number的意思)</p>
+
+
+    </div>
+
+    
+
+    
+  
+    <hr>
+    <ul class="pagination">
+    
+      <li class="prev"><a href="/whisper/2014/12/05/old_pages" title="開站紀念與舊文章連結">&laquo; Previous</a></li>
+    
+      <li><a href="/archive.html">Archive</a></li>
+    
+      <li class="next disabled"><a>Next &rarr;</a>
+    
+    </ul>
+    <hr>
+    
+
+
+  <div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=315502608646534";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+<div class="fb-comments" data-href="http://wemee.github.io" data-num-posts="5" data-width="580" data-colorscheme="light"></div>
+
+
+
+  </div>
+</div>
+
+
+      </div>
+
+    </div>
+
+    <div id="footer">
+      <div class="container">
+        <p>&copy; 2014 Jr-Yung Tsai
+          with help from <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
+          and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+        </p>
+      </div>
+    </div>
+
+    
+
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="/assets/themes/bootstrap-3/bootstrap/js/bootstrap.min.js"></script>
+  </body>
+</html>
+

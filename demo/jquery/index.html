@@ -3,4 +3,35 @@ layout: page
 title: "jQuery Demos"
 description: ""
 ---
+<div id="father_box" style="height:100vh;width:100vw">
+	<h2 id="myTargetElement"></h2>
+	<div id="box" style="background-color:red;height:100%;">someone</div>
+</div>
+
+<script src="/assets/javascript/countUp.min.js"></script>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/waypoints/2.0.5/waypoints.min.js"></script>
+<script type="text/javascript">
+	var options = {
+	  useEasing : true, 
+	  useGrouping : true, 
+	  separator : ',', 
+	  decimal : '.',
+	  prefix : '',
+	  suffix : '' 
+	};
+	var demo = new countUp("myTargetElement", 0, 2066, 0, 2.5, options);
+
+	$('#myTargetElement').waypoint(function(direction) {
+		demo.start();
+	});
+
+	console.log("$(window).height():" + $(window).height());   // returns height of browser viewport
+	console.log("$(document).height():" + $(document).height()); // returns height of HTML document
+	console.log("$(window).width():" + $(window).width());   // returns width of browser viewport
+	console.log("$(document).width():" + $(document).width()); // returns width of HTML document
+	console.log("screen.height:" + screen.height);
+	console.log("screen.width:" + screen.width);
+	console.log("father_box height:" + $("#father_box").height());
+	console.log("box height:" + $("#box").height());
+</script>
 {% include JB/setup %}
