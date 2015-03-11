@@ -10,7 +10,7 @@ http://wemee.github.io/rss.xml
 http://wemee.github.io/sitemap.txt
 http://wemee.github.io/tags.html
 
-http://wemee.github.io/hello-world-2
+http://wemee.github.io/hello%20world/hello-world-2
 http://wemee.github.io/whisper/hello-world
 http://wemee.github.io/html-css-
 http://wemee.github.io/whisper/old_pages

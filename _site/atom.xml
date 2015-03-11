@@ -4,7 +4,7 @@
  <title>WEMEE</title>
  <link href="http://wemee.github.io/" rel="self"/>
  <link href="http://wemee.github.io"/>
- <updated>2015-03-11T14:24:50+08:00</updated>
+ <updated>2015-03-11T14:49:00+08:00</updated>
  <id>http://wemee.github.io</id>
  <author>
    <name>Jr-Yung Tsai</name>
@@ -14,9 +14,9 @@
  
  <entry>
    <title>Hello World 2</title>
-   <link href="http://wemee.github.io/hello-world-2"/>
+   <link href="http://wemee.github.io/hello%20world/hello-world-2"/>
    <updated>2015-03-11T00:00:00+08:00</updated>
-   <id>http://wemee.github.io/hello-world-2</id>
+   <id>http://wemee.github.io/hello%20world/hello-world-2</id>
    <content type="html">
 </content>
  </entry>
