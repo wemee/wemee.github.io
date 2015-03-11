@@ -5,10 +5,28 @@
         <description>WEMEE - Jr-Yung Tsai</description>
         <link>http://wemee.github.io</link>
         <link>http://wemee.github.io</link>
-        <lastBuildDate>2014-12-09T17:35:07+08:00</lastBuildDate>
-        <pubDate>2014-12-09T17:35:07+08:00</pubDate>
+        <lastBuildDate>2015-03-11T14:24:50+08:00</lastBuildDate>
+        <pubDate>2015-03-11T14:24:50+08:00</pubDate>
         <ttl>1800</ttl>
 
+
+        <item>
+                <title>Hello World 2</title>
+                <description>
+</description>
+                <link>http://wemee.github.io/hello-world-2</link>
+                <guid>http://wemee.github.io/hello-world-2</guid>
+                <pubDate>2015-03-11T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>Hello World</title>
+                <description>
+</description>
+                <link>http://wemee.github.io/whisper/hello-world</link>
+                <guid>http://wemee.github.io/whisper/hello-world</guid>
+                <pubDate>2015-03-11T00:00:00+08:00</pubDate>
+        </item>
 
         <item>
                 <title>HTML, CSS, 相對視窗或螢幕的高度與寬度</title>
@@ -130,8 +148,8 @@
 &lt;p&gt;如果是在Ruby，則是輸出&lt;code&gt;&quot;10101010101010101010&quot;&lt;/code&gt;，所以在javascript裡面，不用怕，他內容是數字，就直接對他做數學運算，不用先檢查型別。(若字串內容不是數字，會輸出&lt;code&gt;NaN&lt;/code&gt;，Not a Number的意思)&lt;/p&gt;
 
 </description>
-                <link>http://wemee.github.io/2014/12/09/html-css-</link>
-                <guid>http://wemee.github.io/2014/12/09/html-css-</guid>
+                <link>http://wemee.github.io/html-css-</link>
+                <guid>http://wemee.github.io/html-css-</guid>
                 <pubDate>2014-12-09T00:00:00+08:00</pubDate>
         </item>
 
@@ -155,8 +173,8 @@
 
 &lt;p&gt;舊的部落格&lt;a href=&quot;http://wemee.blogspot.tw/&quot;&gt;研發宅的腦漿&lt;/a&gt;&lt;/p&gt;
 </description>
-                <link>http://wemee.github.io/whisper/2014/12/05/old_pages</link>
-                <guid>http://wemee.github.io/whisper/2014/12/05/old_pages</guid>
+                <link>http://wemee.github.io/whisper/old_pages</link>
+                <guid>http://wemee.github.io/whisper/old_pages</guid>
                 <pubDate>2014-12-05T00:00:00+08:00</pubDate>
         </item>
 

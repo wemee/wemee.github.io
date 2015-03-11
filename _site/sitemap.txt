@@ -4,10 +4,13 @@ http://wemee.github.io/atom.xml
 http://wemee.github.io/categories.html
 http://wemee.github.io/demo/jquery/index.html
 http://wemee.github.io/index.html
+http://wemee.github.io/new-page.html
 http://wemee.github.io/pages.html
 http://wemee.github.io/rss.xml
 http://wemee.github.io/sitemap.txt
 http://wemee.github.io/tags.html
 
-http://wemee.github.io/2014/12/09/html-css-
-http://wemee.github.io/whisper/2014/12/05/old_pages
+http://wemee.github.io/hello-world-2
+http://wemee.github.io/whisper/hello-world
+http://wemee.github.io/html-css-
+http://wemee.github.io/whisper/old_pages

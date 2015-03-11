@@ -4,7 +4,7 @@
  <title>WEMEE</title>
  <link href="http://wemee.github.io/" rel="self"/>
  <link href="http://wemee.github.io"/>
- <updated>2014-12-09T17:35:07+08:00</updated>
+ <updated>2015-03-11T14:24:50+08:00</updated>
  <id>http://wemee.github.io</id>
  <author>
    <name>Jr-Yung Tsai</name>
@@ -13,10 +13,28 @@
 
  
  <entry>
+   <title>Hello World 2</title>
+   <link href="http://wemee.github.io/hello-world-2"/>
+   <updated>2015-03-11T00:00:00+08:00</updated>
+   <id>http://wemee.github.io/hello-world-2</id>
+   <content type="html">
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Hello World</title>
+   <link href="http://wemee.github.io/whisper/hello-world"/>
+   <updated>2015-03-11T00:00:00+08:00</updated>
+   <id>http://wemee.github.io/whisper/hello-world</id>
+   <content type="html">
+</content>
+ </entry>
+ 
+ <entry>
    <title>HTML, CSS, 相對視窗或螢幕的高度與寬度</title>
-   <link href="http://wemee.github.io/2014/12/09/html-css-"/>
+   <link href="http://wemee.github.io/html-css-"/>
    <updated>2014-12-09T00:00:00+08:00</updated>
-   <id>http://wemee.github.io/2014/12/09/html-css-</id>
+   <id>http://wemee.github.io/html-css-</id>
    <content type="html">&lt;p&gt;在&lt;a href=&quot;http://www.w3schools.com/&quot;&gt;w3school.com&lt;/a&gt;網站,&lt;a href=&quot;http://www.w3schools.com/cssref/css_units.asp&quot;&gt;CSS Units&lt;/a&gt;有各種與寬度的表示法&lt;/p&gt;
 
 &lt;p&gt;以我使用的頻率來排序：&lt;/p&gt;
@@ -139,9 +157,9 @@
  
  <entry>
    <title>開站紀念與舊文章連結</title>
-   <link href="http://wemee.github.io/whisper/2014/12/05/old_pages"/>
+   <link href="http://wemee.github.io/whisper/old_pages"/>
    <updated>2014-12-05T00:00:00+08:00</updated>
-   <id>http://wemee.github.io/whisper/2014/12/05/old_pages</id>
+   <id>http://wemee.github.io/whisper/old_pages</id>
    <content type="html">&lt;p&gt;今天開啟了&lt;a href=&quot;https://pages.github.com/&quot;&gt;GitHub Pages&lt;/a&gt;當個人網站，之前在&lt;a href=&quot;http://wemee.blogspot.tw/&quot;&gt;Blogger&lt;/a&gt;的文章也繼續維護。&lt;/p&gt;
 
 &lt;p&gt;舊網站是這麼做的：&lt;/p&gt;
