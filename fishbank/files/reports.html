@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/transitional.dtd">
+<html xmlns="http://www.w3.org/TR/xhtml1" xml:lang="en" lang="en"><!-- InstanceBegin template="/Templates/main.dwt" codeOutsideHTMLIsLocked="false" -->
+<!-- Fishbanks, Version 8.02    7/13/2008
+     Copyright 2004, 2008 Dennis L. Meadows. All rights reserved.
+	 Programmed by Michael Gildersleeve
+-->
+<head>
+<!-- InstanceBeginEditable name="doctitle" -->
+<title>漁人的榮耀 - Reports</title>
+<!-- InstanceEndEditable --><!-- InstanceBeginEditable name="head" -->
+<!-- 7/13/2008 8.02 - Changed path of JavaScript file to simple file name -->
+<script language="JavaScript" type="text/javascript" src="reportslib.js">
+</script>
+<!-- InstanceEndEditable --><!-- InstanceParam name="onloadattr" type="text" value="handleLoad();" -->
+<link rel="stylesheet" type="text/css" href="main.css" />
+<link rel="stylesheet" type="text/css" href="print.css" media="print" />
+</head>
+<body onload="handleLoad();">
+<table style="width:768px; margin: 0 auto;">
+<tr>
+<td width="560"><!-- InstanceBeginEditable name="Banner" --><img src="../images/5.jpg" width="560" height="120" /><!-- InstanceEndEditable --></td>
+</tr>
+<tr>
+<td>
+  <!-- InstanceBeginEditable name="MainContent" -->
+  <script language="JavaScript" type="text/javascript">
+  		var yr = parent.getGameYear();
+
+	  	switch (parent.reportType) {
+			case 0:		// Operator report only
+				document.write('<h1>操作報表 - 第 ' + yr + ' 年</h1>');
+				break;
+			case 1:		// Team 1 report only
+			case 2:		// Team 2 report only
+			case 3:		// Team 3 report only
+			case 4:		// Team 4 report only
+			case 5:		// Team 5 report only
+			case 6:		// Team 6 report only
+      case 7:		// Team 7 report only
+      case 8:		// Team 8 report only
+				document.write('<h1>組別報表 - 第 ' + yr + ' 年</h1>');
+				break;
+			case 9:		// All team reports
+				document.write('<h1>各組別報表 - 第 ' + yr + ' 年</h1>');
+				break;
+			default:		// All reports
+				document.write('<h1>全部報表 - 第 ' + yr + ' 年</h1>');
+				break;
+		}
+		// document.write('<h2>Session Name: ' + parent.getSession() + '</h2>');
+  </script>
+  <table name="ReportLayoutTbl" id="ReportLayoutTbl">
+  <tr>
+  <td name="ReportContentCell" id="ReportContentCell">
+	  <blockquote>
+	  <script language="JavaScript" type="text/javascript">
+	  	switch (parent.reportType) {
+			case 0:		// Operator report only
+				document.write(parent.generateOperatorReport());
+				break;
+			case 1:		// Team 1 report only
+				document.write(parent.generateTeamReport(1));
+				break;
+			case 2:		// Team 2 report only
+				document.write(parent.generateTeamReport(2));
+				break;
+			case 3:		// Team 3 report only
+				document.write(parent.generateTeamReport(3));
+				break;
+			case 4:		// Team 4 report only
+				document.write(parent.generateTeamReport(4));
+				break;
+			case 5:		// Team 5 report only
+				document.write(parent.generateTeamReport(5));
+				break;
+			case 6:		// Team 6 report only
+				document.write(parent.generateTeamReport(6));
+				break;
+      		case 7:		// Team 7 report only
+  				document.write(parent.generateTeamReport(7));
+  				break;
+      		case 8:		// Team 8 report only
+      			document.write(parent.generateTeamReport(8));
+      				break;
+			case 9:		// All team reports
+        var cloumnReport = parent.generateTeamColumnReport();
+        document.write(cloumnReport);
+
+				// var rowReport = '<table border="1" width="580px"><tr><td><big>組別</big></td>';
+				// rowReport += "<td><big>遠洋漁獲</big></td>";
+				// rowReport += "<td><big>近海漁獲</big></td>";
+				// rowReport += "<td><big>遠洋魚價</big></td>";
+				// rowReport += "<td><big>近海魚價</big></td>";
+				// rowReport += "<td><big>售魚總收入</big></td>";
+				// rowReport += "<td><big>利息</big></td>";
+				// rowReport += "<td><big>銀行結餘</big></td>";
+				// rowReport += "<td><big>船隊總船數</big></td>";
+				// rowReport += "</tr>";
+        //
+				// var teams = parent.getTeams();
+				// for (var t = 1; t <= teams; t++) {
+				// 	rowReport += parent.generateTeamRowReport(t);
+				// }
+        //
+				// rowReport += "</table>";
+				// document.write(rowReport);
+
+				// var teams = parent.getTeams();
+				// for (var t = 1; t <= teams; t++) {
+				// 	document.write(parent.generateTeamReport(t));
+				// 	// if (t != teams) {
+				// 	//	document.write('<hr />');
+				// 	// }
+				// }
+				break;
+			default:		// All reports
+				var teams = parent.getTeams();
+				for (var t = 1; t <= teams; t++) {
+					document.write(parent.generateTeamReport(t));
+					if (t != teams) {
+						document.write('<hr />');
+					}
+				}
+				document.write('<hr />');
+				document.write(parent.generateOperatorReport());
+				break;
+		}
+	  </script>
+	  </blockquote>
+  </td>
+  <td name="ReportNavCell" id="ReportNavCell">
+      <form name="ReportNavFrm" id="ReportNavFrm">
+	  		<br />
+			<div><input type="button" name="OperReportBtn" value="操作報表"
+				onclick="showReport(0)" /></div>
+			<div><input type="button" name="TeamReportsBtn" value="組別報表"
+				onclick="showReport(9)" /></div>
+	  		<!-- <script language="JavaScript" type="text/javascript">
+				var teams = parent.getTeams();
+				var code;
+				for (var t = 1; t <= teams; t++) {
+					code = '<div><input type="button" ';
+					code += 'name="Team' + t + 'ReportBtn" value="Team ' + t + ' Report" ';
+					code += 'onclick="showReport(' + t + ')" /></div>\n';
+					document.write(code);
+				}
+			</script> -->
+			<br /><div><input type="button" name="DecisionsBtn" value="小組決策"
+				onclick="gotoDecisions()" style="font-size: large;background-color:	#FF9797"/></div><br>
+      <script language="JavaScript" type="text/javascript">
+        var yr = parent.getGameYear();
+        if (yr>1) {
+          document.write('<div>');
+          document.write('  <input type="button" name="PreviousYearBtn"');
+          document.write('         value="回到上一年" onclick="gotoPreviousYear()" />');
+          document.write('</div>');
+
+          document.write('<div>');
+          document.write('  <input type="button" name="TeamGraphReportsBtn"');
+          document.write('         value="圖表分析" onclick="teamGraphReports()" />');
+          document.write('</div>');
+
+          document.write('<div>');
+          document.write('  <input type="button" name="CSVReportBtn"');
+          document.write('         value="CSV報表" onclick="generateCSVReport()" />');
+          document.write('</div>');
+        }
+      </script>
+      <!-- <br /><div><input type="button" name="ReviseTeamsBtn" value="Create New Game"
+				onclick="reviseTeams()" /></div> -->
+	  </form>
+  </td>
+  </tr>
+  </table>
+  <!-- InstanceEndEditable --></td>
+</tr>
+<tr>
+  <td id="csv">
+  </td>
+</tr>
+</table>
+</body>
+<!-- InstanceEnd --></html>

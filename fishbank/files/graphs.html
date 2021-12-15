@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/transitional.dtd">
+<html xmlns="http://www.w3.org/TR/xhtml1" xml:lang="en" lang="en"><!-- InstanceBegin template="/Templates/main.dwt" codeOutsideHTMLIsLocked="false" -->
+<!-- Fishbanks, Version 8.02    7/13/2008
+     Copyright 2004, 2008 Dennis L. Meadows. All rights reserved.
+	 Programmed by Michael Gildersleeve
+-->
+<head>
+<!-- InstanceBeginEditable name="doctitle" -->
+<title>漁人的榮耀 - Graphs</title>
+<!-- InstanceEndEditable --><!-- InstanceBeginEditable name="head" -->
+<!-- 7/13/2008 8.02 - Changed path of JavaScript file to simple file name -->
+<script language="JavaScript" type="text/javascript" src="Chart.js">
+</script>
+<script language="JavaScript" type="text/javascript" src="graphslib.js">
+</script>
+<!-- InstanceEndEditable --><!-- InstanceParam name="onloadattr" type="text" value="handleLoad();" -->
+<link rel="stylesheet" type="text/css" href="main.css" />
+<link rel="stylesheet" type="text/css" href="print.css" media="print" />
+<style media="screen">
+.chart-legend ul{
+    list-style-type: none;
+}
+.chart-legend li span{
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 5px;
+    list-style-type: none;
+}
+</style>
+</head>
+<body onload="handleLoad();">
+<table style="width:1080px; margin: 0 auto;">
+  <tr>
+    <td width="560"><!-- InstanceBeginEditable name="Banner" --><img src="../images/5.jpg" width="560" height="120" /><!-- InstanceEndEditable --></td>
+  </tr>
+  <tr>
+    <td>
+      <!-- InstanceBeginEditable name="MainContent" -->
+      <script language="JavaScript" type="text/javascript">
+      		var yr = parent.getGameYear();
+
+    	  	switch (parent.reportType) {
+    			case 0:		// Operator report only
+    				document.write('<h1>圖表分析 - 共 ' + yr + ' 年</h1>');
+    				break;
+    			case 1:		// Team 1 report only
+    			case 2:		// Team 2 report only
+    			case 3:		// Team 3 report only
+    			case 4:		// Team 4 report only
+    			case 5:		// Team 5 report only
+    			case 6:		// Team 6 report only
+          case 7:		// Team 7 report only
+          case 8:		// Team 8 report only
+    				document.write('<h1>Team Report - Year ' + yr + '</h1>');
+    				break;
+    			case 9:		// All team reports
+    				document.write('<h1>圖表分析 - 共 ' + yr + ' 年</h1>');
+    				break;
+    			default:		// All reports
+    				document.write('<h1>Reports - Year ' + yr + '</h1>');
+    				break;
+    		}
+    		// document.write('<h2>Session Name: ' + parent.getSession() + '</h2>');
+      </script>
+      <table name="ReportLayoutTbl" id="ReportLayoutTbl">
+      <tr>
+        <td name="ReportContentCell" id="ReportContentCell">
+          <br /><h2>總資產(萬)</h2>
+          <table>
+            <tr>
+              <td>
+                <canvas id="assetsChart" width="400" height="400"></canvas>
+                <div id="assetsChart-legend" class="chart-legend"></div>
+              </td>
+              <td valign="bottom">年</td>
+            </tr>
+            <tr>
+              <td id="assetsTable">
+              </td>
+            </tr>
+          </table>
+          <hr /><br />
+
+          <h2>漁船數(隻)</h2>
+          <table>
+            <tr>
+              <td>
+                <canvas id="shipsChart" width="400" height="400"></canvas>
+                <div id="shipsChart-legend" class="chart-legend"></div>
+              </td>
+              <td valign="bottom">年</td>
+            </tr>
+            <tr>
+              <td id="shipsTable">
+              </td>
+            </tr>
+          </table>
+          <hr /><br />
+
+          <h2>銀行結餘(萬)</h2>
+          <table>
+            <tr>
+              <td>
+                <canvas id="banBalsChart" width="400" height="400"></canvas>
+                <div id="banBalsChart-legend" class="chart-legend"></div>
+              </td>
+              <td valign="bottom">年</td>
+            </tr>
+            <tr>
+              <td id="banBalsTable">
+              </td>
+            </tr>
+          </table>
+          <hr /><br />
+
+          <h2>魚船折現價(萬)</h2>
+          <table>
+            <tr>
+              <td>
+                <canvas id="salvageValueChart" width="400" height="400"></canvas>
+                <div id="salvageValueChart-legend" class="chart-legend"></div>
+              </td>
+              <td valign="bottom">年</td>
+            </tr>
+            <tr>
+              <td id="salvageValueTable">
+              </td>
+            </tr>
+          </table>
+          <hr /><br />
+
+          <h2>魚群數量(隻)</h2>
+          <table>
+            <tr>
+              <td>
+                <canvas id="fishPopChart" width="400" height="400"></canvas>
+                <div id="fishPopChart-legend" class="chart-legend"></div>
+              </td>
+              <td valign="bottom">年</td>
+            </tr>
+            <tr>
+              <td id="fishPopTable">
+              </td>
+            </tr>
+          </table>
+          <hr /><br />
+
+          <h2>魚群密度</h2>
+          <table>
+            <tr>
+              <td>
+                <canvas id="fishDensityChart" width="400" height="400"></canvas>
+                <div id="fishDensityChart-legend" class="chart-legend"></div>
+              </td>
+              <td valign="bottom">年</td>
+            </tr>
+            <tr>
+              <td id="fishDensityTable">
+              </td>
+            </tr>
+          </table>
+          <hr /><br />
+
+          <h2>指數</h2>
+          <table>
+            <tr>
+              <td>
+                <canvas id="indicesChart" width="400" height="400"></canvas>
+                <div id="indicesChart-legend" class="chart-legend"></div>
+              </td>
+              <td valign="bottom">年</td>
+            </tr>
+            <tr>
+              <td id="indicesTable">
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td name="ReportNavCell" id="ReportNavCell">
+          <form name="ReportNavFrm" id="ReportNavFrm">
+            <br />
+            <div>
+              <input type="button" name="DecisionsBtn" value="繪圖" onclick="drawAllGraphs()" />
+            </div>
+  			    <div>
+              <input type="button" name="DecisionsBtn" value="返回" onclick="goback()" />
+            </div>
+  	      </form>
+          <!-- <span>
+            <p>CSV字串，請將滑鼠放在裡面點一下，按Ctrl+A全選，再按Ctrl+C複製。接著打開筆記本貼上，將副檔名由「.txt」改成「.csv」即可用Excel開啟</p>
+            <textarea id="csv" rows="16" cols="75"></textarea>
+          </span> -->
+
+        </td>
+      </tr>
+    </table>
+    <!-- InstanceEndEditable --></td>
+  </tr>
+</table>
+</body>
+<!-- InstanceEnd --></html>

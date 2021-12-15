@@ -1,0 +1,563 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/transitional.dtd">
+<html xmlns="http://www.w3.org/TR/xhtml1" xml:lang="en" lang="en"><!-- InstanceBegin template="/Templates/main.dwt" codeOutsideHTMLIsLocked="false" -->
+<!-- Fishbanks, Version 8.02    7/13/2008
+     Copyright 2004, 2008 Dennis L. Meadows. All rights reserved.
+	 Programmed by Michael Gildersleeve
+-->
+<head>
+<!-- InstanceBeginEditable name="doctitle" -->
+<title>FishBanks - Enter Decisions</title>
+<!-- InstanceEndEditable --><!-- InstanceBeginEditable name="head" -->
+<script src="./jquery-1.7.1.min.js"></script>
+<script language="JavaScript" type="text/javascript" src="decisionslib.js">
+</script>
+<!-- InstanceEndEditable --><!-- InstanceParam name="onloadattr" type="text" value="handleLoad();" -->
+<link rel="stylesheet" type="text/css" href="main.css" />
+<link rel="stylesheet" type="text/css" href="print.css" media="print" />
+</head>
+<body onload="handleLoad();">
+<table style="width:600px; margin: 0 auto;">
+<tr>
+<td width="560"><!-- InstanceBeginEditable name="Banner" --><img src="../images/5.jpg" width="560" height="120" /><!-- InstanceEndEditable --></td>
+</tr>
+<tr>
+<td>
+  <!-- InstanceBeginEditable name="MainContent" -->
+  <h1>小組決策 - 第
+  <script language="JavaScript" type="text/javascript">
+  	document.write(parent.getGameYear());
+  </script>
+    年
+  </h1>
+  <form name="DecisionsFrm" id="DecisionsFrm">
+<table width="100%" border="0" cellspacing="0" cellpadding="5">
+  <tr>
+    <td>組別</td>
+	<script language="JavaScript" type="text/javascript">
+		var teams = parent.getTeams();
+		for (var t = 1; t <= teams; t++) {
+			document.write('	<td>' + t + '</td>\n');
+		}
+		document.write('    <td>合計</td>\n');
+		for (var i=teams; i<6; i++) {
+			document.write('	<td>&nbsp;</td>\n');
+		}
+	</script>
+
+  </tr>
+  <tr>
+    <td>D1 拍賣-購船數</td>
+	<script language="JavaScript" type="text/javascript">
+		for (var t = 1; t <= teams; t++) {
+			document.write('    <td><input type="text" name="AuctionShips' + t + 'Fld" size="5" value="' + (parent.resumeFlag ? parent.auctionShips[t] : 0) + '" tabindex="' + (t*20+1) + '"');
+			document.write('    onblur="return validateDec(this,true);" onchange="changeShips(' + t + ')" /></td>\n');
+		}
+		document.write('    <td><input type="text" name="AuctionShipsTotalFld" size="5" value="0" tabindex="0" disabled="disabled" ');
+		document.write('               onfocus="skipToFld(document.DecisionsFrm.AuctionDols1Fld)" /></td>');
+		for (i=teams; i<6; i++) {
+			document.write('	<td>&nbsp;</td>\n');
+		}
+	</script>
+
+  </tr>
+  <tr>
+    <td>D2 拍賣-花費</td>
+	<script language="JavaScript" type="text/javascript">
+		for (var t = 1; t <= teams; t++) {
+			document.write('    <td><input type="text" name="AuctionDols' + t + 'Fld" size="5" value="' + (parent.resumeFlag ? parent.auctionDols[t] : 0 ) + '" tabindex="' + (t*20+2) + '"');
+			document.write('    onblur="return validateDec(this,true);" onchange="updateAuctionDolsTotal()" /></td>\n');
+		}
+		document.write('    <td><input type="text" name="AuctionDolsTotalFld" size="5" value="0" tabindex="0" disabled="disabled" ');
+		document.write('               onfocus="skipToFld(document.DecisionsFrm.ShipPurch1Fld)" /></td>');
+		for (i=teams; i<6; i++) {
+			document.write('	<td>&nbsp;</td>\n');
+		}
+	</script>
+  </tr>
+  <tr>
+    <td>D3 購入總船數	</td>
+	<script language="JavaScript" type="text/javascript">
+		for (var t = 1; t <= teams; t++) {
+			document.write('    <td><input type="text" name="ShipPurch' + t + 'Fld" size="5" value="' + (parent.resumeFlag ? parent.shipPurch[t] : 0 ) + '" tabindex="' + (t*20+3) + '"');
+			document.write('    onblur="return validateDec(this,false);" onchange="changeShips(' + t + ')" /></td>\n');
+		}
+		document.write('    <td><input type="text" name="ShipPurchTotalFld" size="5" value="0" tabindex="0" disabled="disabled" ');
+		document.write('               onfocus="skipToFld(document.DecisionsFrm.ShipPurchDols1Fld)" /></td>');
+		for (i=teams; i<6; i++) {
+			document.write('	<td>&nbsp;</td>\n');
+		}
+	</script>
+  </tr>
+  <tr>
+    <td>D4 購入總花費	</td>
+	<script language="JavaScript" type="text/javascript">
+		for (var t = 1; t <= teams; t++) {
+			document.write('    <td><input type="text" name="ShipPurchDols' + t + 'Fld" size="5" value="' + (parent.resumeFlag ? parent.shipPurchDols[t] : 0 ) + '" tabindex="' + (t*20+4) + '"');
+			document.write('    onblur="return validateDec(this,false);" onchange="updateShipPurchDolsTotal()" /></td>\n');
+		}
+		document.write('    <td><input type="text" name="ShipPurchDolsTotalFld" size="5" value="0" tabindex="0" disabled="disabled" ');
+		document.write('               onfocus="skipToFld(document.DecisionsFrm.ShipSales1Fld)" /></td>');
+		for (i=teams; i<6; i++) {
+			document.write('	<td>&nbsp;</td>\n');
+		}
+	</script>
+  </tr>
+  <tr>
+    <td>D5 售出總船數</td>
+	<script language="JavaScript" type="text/javascript">
+		for (var t = 1; t <= teams; t++) {
+			document.write('    <td><input type="text" name="ShipSales' + t + 'Fld" size="5" value="' + (parent.resumeFlag ? parent.shipSales[t] : 0 ) + '" tabindex="' + (t*20+5) + '"');
+			document.write('    onblur="return validateDec(this,false);" onchange="changeShips(' + t + ')" /></td>\n');
+		}
+		document.write('    <td><input type="text" name="ShipSalesTotalFld" size="5" value="0" tabindex="0" disabled="disabled" ');
+		document.write('               onfocus="skipToFld(document.DecisionsFrm.ShipSalesDols1Fld)" /></td>');
+		for (i=teams; i<6; i++) {
+			document.write('	<td>&nbsp;</td>\n');
+		}
+	</script>
+  </tr>
+  <tr>
+    <td>D6 售船總收入</td>
+	<script language="JavaScript" type="text/javascript">
+		for (var t = 1; t <= teams; t++) {
+			document.write('    <td><input type="text" name="ShipSalesDols' + t + 'Fld" size="5" value="' + (parent.resumeFlag ? parent.shipSalesDols[t] : 0 ) + '" tabindex="' + (t*20+6) + '"');
+			document.write('    onblur="return validateDec(this,false);" onchange="updateShipSalesDolsTotal()" /></td>\n');
+		}
+		document.write('    <td><input type="text" name="ShipSalesDolsTotalFld" size="5" value="0" tabindex="0" disabled="disabled" ');
+		document.write('               onfocus="skipToFld(document.DecisionsFrm.ShipOrders1Fld)" /></td>');
+		for (i=teams; i<6; i++) {
+			document.write('	<td>&nbsp;</td>\n');
+		}
+	</script>
+  </tr>
+  <tr>
+    <td>D7 訂購新船數</td>
+	<script language="JavaScript" type="text/javascript">
+		for (var t = 1; t <= teams; t++) {
+			document.write('    <td><input type="text" name="ShipOrders' + t + 'Fld" size="5" value="' + (parent.resumeFlag ? parent.shipOrders[t] : 0 ) + '" tabindex="' + (t*20+7) + '"');
+			document.write('    onblur="return validateDec(this,false);" onchange="updateShipOrdersTotal()" /></td>\n');
+		}
+		document.write('    <td><input type="text" name="ShipOrdersTotalFld" size="5" value="0" tabindex="0" disabled="disabled" ');
+		document.write('               onfocus="skipToFld(document.DecisionsFrm.ShipsToDeep1Fld)" /></td>');
+		for (i=teams; i<6; i++) {
+			document.write('	<td>&nbsp;</td>\n');
+		}
+	</script>
+  </tr>
+  <tr>
+    <!-- <td colspan="8">&nbsp;</td> -->
+    <td>&nbsp;</td>
+  	<script language="JavaScript" type="text/javascript">
+  		for (var t = 1; t <= teams; t++) {
+  			document.write('    <td><input type="text" size="5"');
+  			document.write('    tabindex="0" disabled="disabled"');
+  			document.write('    onfocus="skipToFld(document.DecisionsFrm.ShipsToDeep' + t + 'Fld)" style="visibility: hidden;"/></td>\n');
+  		}
+  		document.write('    <td><input type="text" size="5" tabindex="0" disabled="disabled" ');
+  		document.write('               onfocus="skipToFld(document.DecisionsFrm.ShipsToDeep' + t + 'Fld)" style="visibility: hidden;"/></td>');
+  		for (i=teams; i<6; i++) {
+  			document.write('	<td>&nbsp;</td>\n');
+  		}
+  	</script>
+  </tr>
+  <tr>
+    <td>D8 船隊總船數</td>
+	<script language="JavaScript" type="text/javascript">
+		for (var t = 1; t <= teams; t++) {
+			document.write('    <td><input type="text" name="ShipsAvail' + t + 'Fld" size="5"');
+			document.write('    value="' + (parent.getShipsAvail(t)) + '" tabindex="0" disabled="disabled"');
+			document.write('    onfocus="skipToFld(document.DecisionsFrm.ShipOrders' + t + 'Fld)" /></td>\n');
+		}
+		document.write('    <td><input type="text" name="ShipsAvailTotalFld" size="5" value="0" tabindex="0" disabled="disabled" ');
+		document.write('               onfocus="skipToFld(document.DecisionsFrm.ShipOrders' + t + 'Fld)" /></td>');
+		for (i=teams; i<6; i++) {
+			document.write('	<td>&nbsp;</td>\n');
+		}
+	</script>
+  </tr>
+  <tr>
+    <td>D9 遠洋派船數</td>
+	<script language="JavaScript" type="text/javascript">
+		for (var t = 1; t <= teams; t++) {
+			document.write('    <td><input type="text" name="ShipsToDeep' + t + 'Fld" size="5" value="' + (parent.resumeFlag ? parent.shipsToDeep[t] : 0 ) + '" tabindex="' + (t*20+8) + '"');
+			document.write('    onblur="return validateDec(this,false);" onchange="updateShipsToDeepTotal();updateShipsToHarbor(' + t + ');" /></td>\n');
+		}
+		document.write('    <td><input type="text" name="ShipsToDeepTotalFld" size="5" value="0" tabindex="0" disabled="disabled" ');
+		document.write('               onfocus="skipToFld(document.DecisionsFrm.ShipsToCoast1Fld)" /></td>');
+		for (i=teams; i<6; i++) {
+			document.write('	<td>&nbsp;</td>\n');
+		}
+	</script>
+  </tr>
+  <tr>
+    <td>D10 近海派船數</td>
+	<script language="JavaScript" type="text/javascript">
+		for (var t = 1; t <= teams; t++) {
+			document.write('    <td><input type="text" name="ShipsToCoast' + t + 'Fld" size="5" value="' + (parent.resumeFlag ? parent.shipsToCoast[t] : 0 ) + '" tabindex="' + (t*20+9) + '"');
+			document.write('    onblur="return validateDec(this,false);" onchange="updateShipsToCoastTotal();updateShipsToHarbor(' + t + ');" /></td>\n');
+		}
+		document.write('    <td><input type="text" name="ShipsToCoastTotalFld" size="5" value="0" tabindex="0" disabled="disabled" ');
+		document.write('               onfocus="skipToFld(document.DecisionsFrm.GivenDols1Fld)" /></td>');
+		for (i=teams; i<6; i++) {
+			document.write('	<td>&nbsp;</td>\n');
+		}
+	</script>
+  </tr>
+  <tr>
+    <td>D11 港口停船數</td>
+	<script language="JavaScript" type="text/javascript">
+		for (var t = 1; t <= teams; t++) {
+			document.write('    <td><input type="text" name="ShipsToHarbor' + t + 'Fld" size="5" value="0" tabindex="0" disabled="disabled"');
+			document.write('    onfocus="skipToFld(document.DecisionsFrm.GivenDols' + t + 'Fld)" /></td>\n');
+		}
+		document.write('    <td><input type="text" name="ShipsToHarborTotalFld" size="5" value="0" tabindex="0" disabled="disabled" ');
+		document.write('               onfocus="skipToFld(document.DecisionsFrm.GivenDols' + t + 'Fld)" /></td>');
+		for (i=teams; i<6; i++) {
+			document.write('	<td>&nbsp;</td>\n');
+		}
+	</script>
+  </tr>
+  <!-- <tr>
+    <td colspan="8">&nbsp;</td>
+  </tr> -->
+  <tr>
+    <!-- <td colspan="8">&nbsp;</td> -->
+    <td>&nbsp;</td>
+  	<script language="JavaScript" type="text/javascript">
+  		for (var t = 1; t <= teams; t++) {
+  			document.write('    <td><input type="text" size="5"');
+  			document.write('    tabindex="0" disabled="disabled"');
+  			document.write('    onfocus="skipToFld(document.DecisionsFrm.GivenDolsFld)" style="visibility: hidden;"/></td>\n');
+  		}
+  		document.write('    <td><input type="text" size="5" tabindex="0" disabled="disabled" ');
+  		document.write('               onfocus="skipToFld(document.DecisionsFrm.FishDeepSalesPriceFld)" style="visibility: hidden;"/></td>');
+  		for (i=teams; i<6; i++) {
+  			document.write('	<td>&nbsp;</td>\n');
+  		}
+  	</script>
+  </tr>
+  <tr>
+    <td colspan="8">
+      <input name="ProceedBtn" id="ProceedBtn" type="button" value="出海捕魚" tabindex="101"
+	   		onclick="processDecisions()" />
+      <!-- <input name="ClearAllBtn" id="ClearAllBtn" type="reset" value="Clear All" tabindex="100" /> -->
+      <input name="ReturnToReportsBtn" id="ReturnToReportsBtn" type="button" value="返回看報告" tabindex="100"
+        onclick="returnToReports()" />
+    </td>
+  </tr>
+  <tr>
+    <!-- <td colspan="8">&nbsp;</td> -->
+    <td>&nbsp;</td>
+    <script language="JavaScript" type="text/javascript">
+      for (var t = 1; t <= teams; t++) {
+        document.write('    <td><input type="text" size="5"');
+        document.write('    tabindex="0" disabled="disabled"');
+        document.write('    onfocus="skipToFld(document.DecisionsFrm.ShipsToHarborFld)" style="visibility: hidden;"/></td>\n');
+      }
+      document.write('    <td><input type="text" size="5" tabindex="0" disabled="disabled" ');
+      document.write('               onfocus="skipToFld(document.DecisionsFrm.FishDeepSalesPriceFld)" style="visibility: hidden;"/></td>');
+      for (i=teams; i<6; i++) {
+        document.write('	<td>&nbsp;</td>\n');
+      }
+    </script>
+  </tr>
+  <tr>
+    <!-- <td colspan="8">&nbsp;</td> -->
+    <td>&nbsp;</td>
+    <script language="JavaScript" type="text/javascript">
+      for (var t = 1; t <= teams; t++) {
+        document.write('    <td><input type="text" size="5"');
+        document.write('    tabindex="0" disabled="disabled"');
+        document.write('    onfocus="skipToFld(document.DecisionsFrm.ShipsToHarborFld)" style="visibility: hidden;"/></td>\n');
+      }
+      document.write('    <td><input type="text" size="5" tabindex="0" disabled="disabled" ');
+      document.write('               onfocus="skipToFld(document.DecisionsFrm.FishDeepSalesPriceFld)" style="visibility: hidden;"/></td>');
+      for (i=teams; i<6; i++) {
+        document.write('	<td>&nbsp;</td>\n');
+      }
+    </script>
+  </tr>
+  <tr>
+    <!-- <td colspan="8">&nbsp;</td> -->
+    <td>&nbsp;</td>
+  	<script language="JavaScript" type="text/javascript">
+  		for (var t = 1; t <= teams; t++) {
+  			document.write('    <td><input type="text" size="5"');
+  			document.write('    tabindex="0" disabled="disabled"');
+  			document.write('    onfocus="skipToFld(document.DecisionsFrm.ShipsToHarborFld)" style="visibility: hidden;"/></td>\n');
+  		}
+  		document.write('    <td><input type="text" size="5" tabindex="0" disabled="disabled" ');
+  		document.write('               onfocus="skipToFld(document.DecisionsFrm.FishDeepSalesPriceFld)" style="visibility: hidden;"/></td>');
+  		for (i=teams; i<6; i++) {
+  			document.write('	<td>&nbsp;</td>\n');
+  		}
+  	</script>
+  </tr>
+
+  <tr>
+    <!-- <td colspan="8">&nbsp;</td> -->
+    <td>&nbsp;</td>
+  	<script language="JavaScript" type="text/javascript">
+  		for (var t = 1; t <= teams; t++) {
+  			document.write('    <td><input type="text" size="5"');
+  			document.write('    tabindex="0" disabled="disabled"');
+  			document.write('    onfocus="skipToFld(document.DecisionsFrm.ShipsToCoast' + t + 'Fld)" style="visibility: hidden;"/></td>\n');
+  		}
+  		document.write('    <td><input type="text" size="5" tabindex="0" disabled="disabled" ');
+  		document.write('               onfocus="skipToFld(document.DecisionsFrm.ShipsToCoast' + t + 'Fld)" style="visibility: hidden;"/></td>');
+  		for (i=teams; i<6; i++) {
+  			document.write('	<td>&nbsp;</td>\n');
+  		}
+  	</script>
+  </tr>
+
+  <tr>
+    <td>D12 給錢</td>
+    <script language="JavaScript" type="text/javascript">
+  		for (var t = 1; t <= teams; t++) {
+  			document.write('    <td><input type="text" name="GivenDols' + t + 'Fld" size="5" value="' + (parent.resumeFlag ? parent.givenDols[t] : 0 ) + '" tabindex="' + (t*20+10) + '"');
+  			document.write('    onblur="return validateDec(this,true);" onchange="updateGivenDolsTotal()" /></td>\n');
+  		}
+  		document.write('    <td><input type="text" name="GivenDolsTotalFld" size="5" value="0" tabindex="0" disabled="disabled"');
+      document.write('               onfocus="skipToFld(document.DecisionsFrm.ReceiveDols1Fld)"/></td>');
+      for (i=teams; i<6; i++) {
+  			document.write('	<td>&nbsp;</td>\n');
+  		}
+  	</script>
+  </tr>
+  <tr>
+    <td>D13 收錢</td>
+    <script language="JavaScript" type="text/javascript">
+  		for (var t = 1; t <= teams; t++) {
+  			document.write('    <td><input type="text" name="ReceiveDols' + t + 'Fld" size="5" value="' + (parent.resumeFlag ? parent.receiveDols[t] : 0 ) + '" tabindex="' + (t*20+11) + '"');
+  			document.write('    onblur="return validateDec(this,true);" onchange="updateReceiveDolsTotal()" /></td>\n');
+  		}
+  		document.write('    <td><input type="text" name="ReceiveDolsTotalFld" size="5" value="0" tabindex="0" disabled="disabled"');
+      document.write('               onfocus="skipToFld(document.DecisionsFrm.ReceiveDolsFromFishery1Fld)" /></td>');
+  		for (i=teams; i<6; i++) {
+  			document.write('	<td>&nbsp;</td>\n');
+  		}
+  	</script>
+  </tr>
+  <tr>
+    <td>D14 漁會發錢</td>
+    <script language="JavaScript" type="text/javascript">
+  		for (var t = 1; t <= teams; t++) {
+  			document.write('    <td><input type="text" name="ReceiveDolsFromFishery' + t + 'Fld" size="5" value="' + (parent.resumeFlag ? parent.receiveDolsFromFishery[t] : 0 ) + '" tabindex="' + (t*20+12) + '"');
+  			document.write('    onblur="return validateDec(this,true);" onchange="updateReceiveDolsFromFisheryTotal()" /></td>\n');
+  		}
+  		document.write('    <td><input type="text" name="ReceiveDolsFromFisheryTotalFld" size="5" value="0" tabindex="0" disabled="disabled');
+      document.write('               onfocus="skipToFld(document.DecisionsFrm.RevokeShips1Fld)"/></td>');
+  		for (i=teams; i<6; i++) {
+  			document.write('	<td>&nbsp;</td>\n');
+  		}
+  	</script>
+  </tr>
+  <tr>
+    <td>D15 報廢船隻</td>
+    <script language="JavaScript" type="text/javascript">
+  		for (var t = 1; t <= teams; t++) {
+  			document.write('    <td><input type="text" name="RevokeShips' + t + 'Fld" size="5" value="0" tabindex="' + (t*20+13) + '"');
+  			document.write('    onblur="return validateRevokeShips(this,false);" onchange="changeShips('+t+')" /></td>\n');
+  		}
+  		document.write('    <td><input type="text" name="RevokeShipTotalFld" size="5" value="0" tabindex="0" disabled="disabled"');
+      document.write('               onfocus="skipToFld(document.DecisionsFrm.FishDeepSalesPriceFld)"/></td>');
+  		for (i=teams; i<6; i++) {
+  			document.write('	<td>&nbsp;</td>\n');
+  		}
+  	</script>
+  </tr>
+  <tr>
+    <!-- <td colspan="8">&nbsp;</td> -->
+    <td>&nbsp;</td>
+  	<script language="JavaScript" type="text/javascript">
+  		for (var t = 1; t <= teams; t++) {
+  			document.write('    <td><input type="text" size="5"');
+  			document.write('    tabindex="0" disabled="disabled"');
+  			document.write('    onfocus="skipToFld(document.DecisionsFrm.FishDeepSalesPriceFld)" style="visibility: hidden;"/></td>\n');
+  		}
+  		document.write('    <td><input type="text" size="5" tabindex="0" disabled="disabled" ');
+  		document.write('               onfocus="skipToFld(document.DecisionsFrm.FishDeepSalesPriceFld)" style="visibility: hidden;"/></td>');
+  		for (i=teams; i<6; i++) {
+  			document.write('	<td>&nbsp;</td>\n');
+  		}
+  	</script>
+  </tr>
+
+  <tr>
+    <!-- <td colspan="8">&nbsp;</td> -->
+    <td>&nbsp;</td>
+  	<script language="JavaScript" type="text/javascript">
+  		for (var t = 1; t <= teams; t++) {
+  			document.write('    <td><input type="text" size="5"');
+  			document.write('    tabindex="0" disabled="disabled"');
+  			document.write('    onfocus="skipToFld(document.DecisionsFrm.FishDeepSalesPriceFld)" style="visibility: hidden;"/></td>\n');
+  		}
+  		document.write('    <td><input type="text" size="5" tabindex="0" disabled="disabled" ');
+  		document.write('               onfocus="skipToFld(document.DecisionsFrm.FishDeepSalesPriceFld)" style="visibility: hidden;"/></td>');
+  		for (i=teams; i<6; i++) {
+  			document.write('	<td>&nbsp;</td>\n');
+  		}
+  	</script>
+  </tr>
+  <tr>
+    <td>強制修改漁價</td>
+  	<script language="JavaScript" type="text/javascript">
+  		for (var t = 1; t <= teams; t++) {
+  			document.write('    <td><input type="text" size="5" tabindex="0" disabled="disabled"');
+  			document.write('               onfocus="skipToFld(document.DecisionsFrm.RevokeShips1Fld)" style="visibility: hidden;"/></td>\n');
+  		}
+  		document.write('    <td><input type="text" size="5" tabindex="0" disabled="disabled" ');
+  		document.write('               onfocus="skipToFld(document.DecisionsFrm.RevokeShips1Fld)" style="visibility: hidden;"/></td>');
+      for (i=teams; i<6; i++) {
+  			document.write('	<td>&nbsp;</td>\n');
+  		}
+  	</script>
+  </tr>
+  <tr>
+    <td>D16 遠洋魚:</td>
+  	<script language="JavaScript" type="text/javascript">
+  		document.write('    <td><input type="text" name="FishDeepSalesPriceFld" size="7"');
+      document.write('           value="' + parent.getFishDeepSalesPrice() + '" tabindex="0" ');
+      document.write('           onchange="return validateFishDeepSalesPrice(this);" /></td>');
+  	</script>
+    <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+	<td colspan="5">
+	</td>
+  </tr>
+  <tr>
+    <td>D17 近海魚:</td>
+  	<script language="JavaScript" type="text/javascript">
+  		document.write('    <td><input type="text" name="FishCoastSalesPriceFld" size="7"');
+      document.write('           value="' + parent.getFishCoastSalesPrice() + '" tabindex="0" ');
+      document.write('           onchange="return validateFishCoastSalesPrice(this);" /></td>');
+  	</script>
+  	<td colspan="5">
+  	</td>
+  </tr>
+
+  <tr>
+    <!-- <td colspan="8">&nbsp;</td> -->
+    <td>&nbsp;</td>
+  	<script language="JavaScript" type="text/javascript">
+  		for (var t = 1; t <= 2; t++) {
+  			document.write('    <td><input type="text" size="5"');
+  			document.write('    tabindex="0" disabled="disabled"');
+  			document.write('    onfocus="skipToFld(document.DecisionsFrm.FishPopDeepFld)" style="visibility: hidden;"/></td>\n');
+  		}
+  	</script>
+  </tr>
+
+  <tr>
+    <td>強制修改魚量</td>
+    <script language="JavaScript" type="text/javascript">
+  		for (var t = 1; t <= teams; t++) {
+  			document.write('    <td><input type="text" size="5" tabindex="0" disabled="disabled"');
+  			document.write('               onfocus="skipToFld(document.DecisionsFrm.FishCoastSalesPriceFld)" style="visibility: hidden;"/></td>\n');
+  		}
+  		document.write('    <td><input type="text" size="5" tabindex="0" disabled="disabled" ');
+  		document.write('               onfocus="skipToFld(document.DecisionsFrm.FishCoastSalesPriceFld)" style="visibility: hidden;"/></td>');
+      for (i=teams; i<6; i++) {
+  			document.write('	<td>&nbsp;</td>\n');
+  		}
+  	</script>
+  </tr>
+  <tr>
+    <td>D18 遠洋魚:</td>
+  	<script language="JavaScript" type="text/javascript">
+  		document.write('    <td><input type="text" name="FishPopDeepFld" size="7"');
+  	  document.write('           value="' + parent.getFishPopDeep() + '" tabindex="0" ');
+  	  document.write('           onblur="return validateDec(this,true);" /></td>');
+  	</script>
+
+	<td colspan="5">
+	</td>
+  </tr>
+  <tr>
+    <td>D19 近海魚:</td>
+  	<script language="JavaScript" type="text/javascript">
+  		document.write('    <td><input type="text" name="FishPopCoastFld" size="7"');
+      document.write('           value="' + parent.getFishPopCoast() + '" tabindex="0" ');
+      document.write('           onblur="return validateDec(this,false);" /></td>');
+  	</script>
+	<td colspan="5">
+	</td>
+  </tr>
+
+  <tr>
+    <!-- <td colspan="8">&nbsp;</td> -->
+    <td>&nbsp;</td>
+  	<script language="JavaScript" type="text/javascript">
+  		for (var t = 1; t <= 2; t++) {
+  			document.write('    <td><input type="text" size="5"');
+  			document.write('    tabindex="0" disabled="disabled"');
+  			document.write('    onfocus="skipToFld(document.DecisionsFrm.RevokeShipDolsFld)" style="visibility: hidden;"/></td>\n');
+  		}
+  	</script>
+  </tr>
+
+  <tr>
+    <!-- <td colspan="8">&nbsp;</td> -->
+    <td>&nbsp;</td>
+  	<script language="JavaScript" type="text/javascript">
+  		for (var t = 1; t <= 2; t++) {
+  			document.write('    <td><input type="text" size="5"');
+  			document.write('    tabindex="0" disabled="disabled"');
+  			document.write('    onfocus="skipToFld(document.DecisionsFrm.FishPopCoastFld)" style="visibility: hidden;"/></td>\n');
+  		}
+  	</script>
+  </tr>
+
+  <tr>
+    <td>強制修改報廢漁船價格:</td>
+      <script language="JavaScript" type="text/javascript">
+        document.write('    <td><input type="text" name="RevokeShipDolsFld" size="7"');
+        document.write('           value="' + parent.getRevokeShipDols() + '" tabindex="0" ');
+        document.write('           onblur="return validateDecNoneZero(this);" /></td>');
+      </script>
+  </tr>
+
+
+  <tr>
+    <!-- <td colspan="8">&nbsp;</td> -->
+    <td>&nbsp;</td>
+  	<script language="JavaScript" type="text/javascript">
+  		for (var t = 1; t <= 2; t++) {
+  			document.write('    <td><input type="text" size="5"');
+  			document.write('    tabindex="0" disabled="disabled"');
+  			document.write('    onfocus="skipToFld(document.DecisionsFrm.ContinuousForYearFld)" style="visibility: hidden;"/></td>\n');
+  		}
+  	</script>
+  </tr>
+  <tr style="position: fixed">
+    <!-- <td colspan="8">&nbsp;</td> -->
+    <td>&nbsp;</td>
+  	<script language="JavaScript" type="text/javascript">
+  		for (var t = 1; t <= 2; t++) {
+  			document.write('    <td><input type="text" size="5"');
+  			document.write('    tabindex="0" disabled="disabled"');
+  			document.write('    onfocus="skipToFld(document.DecisionsFrm.RevokeShipDolsFld)" style="visibility: hidden;"/></td>\n');
+  		}
+  	</script>
+  </tr>
+
+  <tr>
+    <td>連續休魚幾年:</td>
+      <script language="JavaScript" type="text/javascript">
+        document.write('    <td><input type="text" name="ContinuousForYearFld" size="7"');
+        document.write('           value="' + (parent.resumeFlag ? parent.getContinuousForYear() : 1 ) + '" tabindex="0" ');
+        document.write('           onblur="return validateDecNoneZero(this);" /></td>');
+      </script>
+  </tr>
+  <tr>
+    <td colspan="8">&nbsp;</td>
+  </tr>
+</table>
+</form>
+  <!-- InstanceEndEditable --></td>
+</tr>
+</table>
+</body>
+<!-- InstanceEnd --></html>

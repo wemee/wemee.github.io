@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/transitional.dtd">
+<html xmlns="http://www.w3.org/TR/xhtml1" xml:lang="en" lang="en"><!-- InstanceBegin template="/Templates/main.dwt" codeOutsideHTMLIsLocked="false" -->
+<!-- Fishbanks, Version 8.02    7/13/2008
+     Copyright 2004, 2008 Dennis L. Meadows. All rights reserved.
+	 Programmed by Michael Gildersleeve
+-->
+<head>
+<!-- InstanceBeginEditable name="doctitle" -->
+   <title>漁人的榮耀 - Create New Game</title>
+<!-- InstanceEndEditable --><!-- InstanceBeginEditable name="head" -->
+<script language="JavaScript" type="text/javascript" src="teamslib.js"></script>
+<!-- InstanceEndEditable --><!-- InstanceParam name="onloadattr" type="text" value="handleLoad();" -->
+<link rel="stylesheet" type="text/css" href="main.css" />
+<link rel="stylesheet" type="text/css" href="print.css" media="print" />
+</head>
+<body onload="handleLoad();">
+<table style="width:600px; margin: 0 auto;">
+<tr>
+<td width="560"><!-- InstanceBeginEditable name="Banner" --><img src="../images/5.jpg" width="560" height="120" /><!-- InstanceEndEditable --></td>
+</tr>
+<tr>
+<td>
+  <!-- InstanceBeginEditable name="MainContent" -->
+  <h1>開新遊戲 </h1>
+  <form name="StartGameFrm" id="StartGameFrm">
+  	 <table width="100%" name="StartGameTbl" id="StartGameTbl">
+   <tr>
+     <td>參與單位:
+     <script language="JavaScript" type="text/javascript">
+       document.write('<input type="text" name="OrganizationFld" value="' + parent.getOrganization() + '" size="30" maxlength="20" tabindex="1" />');
+     </script>
+     </td>
+   </tr>
+   <tr>
+     <td>日期:
+     <script language="JavaScript" type="text/javascript">
+       document.write('<input type="date" name="DateFld" value="' +
+        parent.getTodayString() +
+        '" size="30" maxlength="20" tabindex="1" />');
+      // document.write('<span>' + parent.getDate() + '</span>');
+     </script>
+     </td>
+   </tr>
+   <tr>
+     <td>參與人數:
+     <script language="JavaScript" type="text/javascript">
+       document.write('<input type="number" name="AttendanceFld" value="' + parent.getAttendance() + '" size="30" maxlength="20" tabindex="1" />');
+     </script>
+     </td>
+   </tr>
+   <tr>
+		<td>備註:
+		<script language="JavaScript" type="text/javascript">
+			document.write('<input type="text" name="SessionFld" value="' + parent.getSession() + '" size="30" maxlength="20" tabindex="1" />');
+		</script>
+		</td>
+	 </tr>
+	 <tr>
+	 <td>
+	 	分成幾組:
+		  <select name="TeamsSel" onchange="parent.setTeams(this.selectedIndex + 1)">
+			<option>1</option>
+			<option>2</option>
+			<option>3</option>
+			<option selected="selected">4</option>
+			<option>5</option>
+			<option>6</option>
+      <option>7</option>
+      <option>8</option>
+		</select>
+	 </td>
+	 </tr>
+	 <tr>
+	 <td>
+		 <input type="button" name="AboutBtn" id="AboutBtn" value="關於漁人的榮耀"
+			onclick="aboutGame()" />&nbsp;
+		 <input type="button" name="BeginBtn" id="BeginBtn" value="進入起始設定"
+			onclick="beginGame()" />&nbsp;
+		 <!-- <input type="button" name="ResumeBtn" id="ResumeBtn" value="恢復遊戲"
+			onclick="parent.resumeGame(document.StartGameFrm)" /> -->
+	 </td>
+	 </tr>
+	 </table>
+  </form>
+  <!-- InstanceEndEditable --></td>
+</tr>
+</table>
+</body>
+<!-- InstanceEnd --></html>
