@@ -30,7 +30,9 @@ twitter_username: jekyllrb
 github_username:  jekyll
 
 # theme: minimal-mistakes-jekyll
-remote_theme: minimal-mistakes-jekyll
+# remote_theme: minimal-mistakes-jekyll
+theme: "minimal-mistakes-jekyll"
+remote_theme: "mmistakes/minimal-mistakes"
 plugins:
   - jekyll-feed
 
