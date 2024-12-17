@@ -35,6 +35,7 @@ github_username:  jekyll
 remote_theme: "mmistakes/minimal-mistakes"
 plugins:
   - jekyll-feed
+  - jekyll-include-cache
 
 collections:
   category:
