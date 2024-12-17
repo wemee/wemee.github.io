@@ -91,8 +91,6 @@ plt.show()
 
 ![](/assets/images/q_table_bj.png)
 
-[Blackjack]: https://gymnasium.farama.org/environments/toy_text/blackjack/
-
 ---
 # AI學出來的策略表
 
@@ -109,3 +107,8 @@ plt.show()
 |       19       | S  | S  | S  | S  | S  | S  | S  | S  | S  | S  |
 |       20       | S  | S  | S  | S  | S  | S  | S  | S  | S  | S  |
 |       21       | S  | S  | S  | S  | S  | S  | S  | S  | S  | S  |
+
+[完整程式碼][code]
+
+[Blackjack]: https://gymnasium.farama.org/environments/toy_text/blackjack/
+[code]: https://github.com/wemee/wemee.github.io/blob/main/codes/black_qlearning.ipynb
