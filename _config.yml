@@ -30,9 +30,27 @@ twitter_username: jekyllrb
 github_username:  jekyll
 
 # Build settings
-theme: minima
+# theme: minima
+theme: minimal-mistakes-jekyll
 plugins:
   - jekyll-feed
+
+collections:
+  category:
+    output: true
+  tag:
+    output: true
+# defaults:
+#   - scope:
+#       path: ""
+#       type: category
+#     values:
+#       layout: "category"
+#   - scope:
+#       path: ""
+#       type: tags
+#     values:
+#       layout: "tags"
 
 # Exclude from processing.
 # The following items will not be processed, by default.
