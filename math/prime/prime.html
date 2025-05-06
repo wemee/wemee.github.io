@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Prime</title>
+  <script src='prime-worker.js'></script>
+  <script src='main.js'></script>
+</head>
+<body>
+
+
+  <div class="prime-check-container mb-5">
+  <h2 class="text-center">質數檢查</h2>
+  <div class="mb-3">
+    <label for="numberInput" class="form-label">輸入數字</label>
+    <input type="text" class="form-control" id="numberInput" placeholder="輸入一個整數">
+  </div>
+  <button class="btn btn-primary" id="checkButton">檢查</button>
+  <!-- <button class="btn btn-primary" id="stopButton">停止</button> -->
+  <p class="mt-3" id="result"></p>
+  <div class="progress mt-3" style="display: none;">
+    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+  </div>
+</div>
+
+
+<script>
+// 使用示例
+document.getElementById('checkButton').addEventListener('click', async () => {
+  const input = document.getElementById('numberInput').value;
+  const resultElement = document.getElementById('result');
+
+  resultElement.textContent = '計算中...';
+
+  const primeGen = new AsyncPrimeGenerator();
+  try {
+    const isPrime = await primeGen.isPrime(input);
+    resultElement.textContent = isPrime ?
+      `${input} 是質數` :
+      `${input} 不是質數`;
+  } catch (error) {
+    resultElement.textContent = `錯誤: ${error.message}`;
+  } finally {
+    primeGen.terminate();
+  }
+});
+
+</script>
+</body>
+</html>
