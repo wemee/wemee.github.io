@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/transitional.dtd">
+<html xmlns="http://www.w3.org/TR/xhtml1" xml:lang="en" lang="en"><!-- InstanceBegin template="/Templates/main.dwt" codeOutsideHTMLIsLocked="false" -->
+<!-- Fishbanks, Version 8.02    7/13/2008
+Copyright 2004, 2008 Dennis L. Meadows. All rights reserved.
+Programmed by Michael Gildersleeve
+-->
+<head>
+  <!-- InstanceBeginEditable name="doctitle" -->
+  <title>漁人的榮耀 - Initial Conditions</title>
+  <!-- InstanceEndEditable --><!-- InstanceBeginEditable name="head" -->
+  <script src="./jquery-1.7.1.min.js"></script>
+  <script language="JavaScript" type="text/javascript" src="setuplib.js"></script>
+  <!-- InstanceEndEditable --><!-- InstanceParam name="onloadattr" type="text" value="handleLoad();" -->
+  <link rel="stylesheet" type="text/css" href="main.css" />
+  <link rel="stylesheet" type="text/css" href="print.css" media="print" />
+</head>
+<body onload="handleLoad();">
+  <table style="width:600px; margin: 0 auto;">
+    <tr>
+      <td width="560"><!-- InstanceBeginEditable name="Banner" --><img src="../images/5.jpg" width="560" height="120" /><!-- InstanceEndEditable --></td>
+    </tr>
+    <tr>
+      <td>
+        <!-- InstanceBeginEditable name="MainContent" -->
+        <h1>起始設定</h1>
+        <form name="SetupYearFrm" id="SetupYearFrm">
+          <table name="SetupLayoutTbl" id="SetupLayoutTbl" width="100%" border="0" cellspacing="0" cellpadding="3">
+            <tr>
+              <td>年:</td>
+              <td class="col2">
+                <script language="JavaScript" type="text/javascript">
+                document.write('<input type="text" name="YearFld" value="' + parent.getGameYear() + '" size="7" tabindex="0" disabled />');
+                </script>
+              </td>
+              <td colspan="5"></td>
+            </tr>
+            <tr>
+              <td colspan="7">&nbsp;</td>
+            </tr>
+            <tr>
+              <td>&nbsp;&nbsp;&nbsp;&nbsp;組別:</td>
+              <script language="JavaScript" type="text/javascript">
+              var teams = parent.getTeams();
+              for (var t = 1; t <= teams; t++) {
+                document.write('	<td class="team">' + t + '</td>\n');
+              }
+              for (var i=teams; i<6; i++) {
+                document.write('	<td>&nbsp;</td>\n');
+              }
+              </script>
+            </tr>
+            <tr>
+              <td>&nbsp;&nbsp;&nbsp;&nbsp;船數:</td>
+              <script language="JavaScript" type="text/javascript">
+              var teams = parent.getTeams();
+              // var initShipsPerTeam = parent.calcInitShipsPerTeam(teams);
+
+              for (var t = 1; t <= teams; t++) {
+                // document.write('	<td class="team"><input type="text" name="Ships' + t + 'Fld" value="' + initShipsPerTeam + '" size="7"\n');
+                document.write('	<td class="team"><input type="text" name="Ships' + t + 'Fld" value="' + parent.getShipsAvail(t) + '" size="7"\n');
+                document.write('	    tabindex="' + (5 + t) + '" /></td>\n');
+              }
+              for (var i=teams; i<6; i++) {
+                document.write('	<td>&nbsp;</td>\n');
+              }
+              </script>
+            </tr>
+            <tr>
+              <td>&nbsp;&nbsp;&nbsp;&nbsp;銀行結餘:</td>
+              <script language="JavaScript" type="text/javascript">
+              var teams = parent.getTeams();
+              // var initBankBalPerTeam = parent.calcInitBankBalPerTeam();
+
+              for (var t = 1; t <= teams; t++) {
+                document.write('	<td class="team"><input type="text" name="Balance' + t + 'Fld" value="' + parent.getBankBal(t) + '" size="7"\n');
+                document.write('	    tabindex="' + (15 + t) + '" /></td>\n');
+              }
+              for (var i=teams; i<6; i++) {
+                document.write('	<td>&nbsp;</td>\n');
+              }
+              </script>
+            </tr>
+            <tr>
+              <td colspan="7">&nbsp;</td>
+            </tr>
+            <tr>
+              <td>&nbsp;</td>
+              <td class="col2">遠洋</td>
+              <td class="col3">近海</td>
+              <td class="col4">港口</td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>魚群生態負荷量:</td>
+              <td class="col2">
+                <script language="JavaScript" type="text/javascript">
+                document.write('    <input type="text" name="MaxFishDeepFld" size="7" value="' + parent.getMaxFishDeep() + '" tabindex="0" ');
+                // document.write('               onfocus="skipToFld(document.SetupYearFrm.InitFishDeepFld)" />');
+                document.write('               onchange="return validateMaxFishDeepFld(this);" />');
+                </script>
+              </td>
+              <td class="col3">
+                <script language="JavaScript" type="text/javascript">
+                document.write('    <input type="text" name="MaxFishCoastFld" size="7" value="' + parent.getMaxFishCoast() + '" tabindex="0" ');
+                // document.write('               onfocus="skipToFld(document.SetupYearFrm.InitFishDeepFld)" />');
+                document.write('               onchange="return validateMaxFishCoastFld(this);" />');
+                </script>
+              </td>
+              <td class="col4">&nbsp;</td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>魚群起始族群量:</td>
+              <td class="col2">
+                <script language="JavaScript" type="text/javascript">
+                document.write('    <input type="text" name="InitFishDeepFld" size="7" value="' + parent.getInitFishDeep() + '" tabindex="25" ');
+                document.write('               onchange="return validateInitFishDeep(this);" />');
+                </script>
+              </td>
+              <td class="col3">
+                <script language="JavaScript" type="text/javascript">
+                document.write('    <input type="text" name="InitFishCoastFld" size="7" value="' + parent.getInitFishCoast() + '" tabindex="26" ');
+                document.write('               onchange="return validateInitFishCoast(this);" />');
+                </script>
+              </td>
+              <td class="col4">&nbsp;</td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>操作成本:</td>
+              <td class="col2">
+                <script language="JavaScript" type="text/javascript">
+                document.write('    <input type="text" name="OpCostDeepFld" size="7" value="' + parent.getOpCostDeep() + '" tabindex="0" ');
+                // document.write('               onfocus="document.SetupYearFrm.StartTurnBtn.focus()" />');
+                document.write('                />');
+                </script>
+              </td>
+              <td class="col3">
+                <script language="JavaScript" type="text/javascript">
+                document.write('    <input type="text" name="OpCostCoastFld" size="7" value="' + parent.getOpCostCoast() + '" tabindex="0" ');
+                // document.write('               onfocus="document.SetupYearFrm.StartTurnBtn.focus()" />');
+                document.write('                />');
+                </script>
+              </td>
+              <td class="col4">
+                <script language="JavaScript" type="text/javascript">
+                document.write('    <input type="text" name="OpCostHarborFld" size="7" value="' + parent.getOpCostHarbor() + '" tabindex="0" ');
+                // document.write('               onfocus="document.SetupYearFrm.StartTurnBtn.focus()" />');
+                document.write('                />');
+                </script>
+              </td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td colspan="7">&nbsp;</td>
+            </tr>
+            <tr>
+              <td>訂購新船費:</td>
+              <td class="col2">
+                <script language="JavaScript" type="text/javascript">
+                // document.write(parent.getNewShipPrice());
+                document.write('    <input type="text" name="NewShipPriceFld" size="7" value="' + parent.getNewShipPrice() + '" tabindex="0" ');
+                // document.write('               onfocus="document.SetupYearFrm.StartTurnBtn.focus()" />');
+                document.write('                />');
+                </script>
+              </td>
+              <td colspan="5">
+              </td>
+            </tr>
+            <tr>
+              <td>漁船淨殘值(折現價):</td>
+              <td class="col2">
+                <script language="JavaScript" type="text/javascript">
+                // document.write(parent.getSalValBase());
+                document.write('    <input type="text" name="SalValBaseFld" size="7" value="' + parent.getSalValBase() + '" tabindex="0" ');
+                // document.write('               onfocus="document.SetupYearFrm.StartTurnBtn.focus()" />');
+                document.write('                />');
+                </script>
+              </td>
+              <td colspan="5">
+              </td>
+            </tr>
+            <tr>
+              <td colspan="7">&nbsp;</td>
+            </tr>
+            <tr>
+              <td>報廢船隻處理費:</td>
+              <td class="col2">
+                <script language="JavaScript" type="text/javascript">
+                // document.write(parent.getNewShipPrice());
+                document.write('    <input type="text" name="RevokeShipDolsFld" size="7" value="' + parent.getRevokeShipDols() + '" tabindex="0" ');
+                document.write('               onblur="return validateRevokeShipDols(this,true);" />');
+                </script>
+              </td>
+              <td colspan="5">
+              </td>
+            </tr>
+            <tr>
+              <td>報廢船減少魚-遠洋:</td>
+              <td class="col2">
+                <script language="JavaScript" type="text/javascript">
+                // document.write(parent.getSalValBase());
+                document.write('    <input type="text" name="RevokeShipFishDeepFld" size="7" value="' + parent.getRevokeShipFishDeep() + '" tabindex="0" ');
+                document.write('               onblur="return validateRevokeShipFishDeep(this,true);" />');
+                </script>
+              </td>
+              <td colspan="5">
+              </td>
+            </tr>
+            <tr>
+              <td>報廢船減少魚-近海:</td>
+              <td class="col2">
+                <script language="JavaScript" type="text/javascript">
+                // document.write(parent.getSalValBase());
+                document.write('    <input type="text" name="RevokeShipFishCoastFld" size="7" value="' + parent.getRevokeShipFishCoast() + '" tabindex="0" ');
+                document.write('               onblur="return validateRevokeShipFishCoast(this,true);" />');
+                </script>
+              </td>
+              <td colspan="5">
+              </td>
+            </tr>
+            <tr>
+              <td colspan="7">&nbsp;</td>
+            </tr>
+            <tr>
+              <td>遠洋漁賣價:</td>
+              <td class="col2">
+                <script language="JavaScript" type="text/javascript">
+                document.write('    <input type="text" name="FishDeepSalesPriceFld" size="7"');
+                document.write('           value="' + parent.getFishDeepSalesPrice() + '" tabindex="0" ');
+                document.write('           onchange="return validateFishDeepSalesPrice(this);" />');
+                </script>
+              </td>
+              <td colspan="5">
+              </td>
+            </tr>
+            <tr>
+              <td>近海魚賣價:</td>
+              <td class="col2">
+                <script language="JavaScript" type="text/javascript">
+                document.write('    <input type="text" name="FishCoastSalesPriceFld" size="7"');
+                document.write('           value="' + parent.getFishCoastSalesPrice() + '" tabindex="0" ');
+                document.write('           onchange="return validateFishCoastSalesPrice(this);" />');
+                </script>
+              </td>
+              <td colspan="5">
+              </td>
+            </tr>
+            <tr>
+              <td colspan="7">&nbsp;</td>
+            </tr>
+              <tr>
+                <td>漁會資金:</td>
+                <td class="col2">
+                  <script language="JavaScript" type="text/javascript">
+                  document.write('    <input type="text" name="FisheryfundFld" size="7"');
+                  document.write('           value="' + parent.getFisheryfund() + '" tabindex="0" ');
+                  document.write('           onchange="return validateFisheryFund(this);" />');
+                  </script>
+                </td>
+                <td colspan="5">
+                </td>
+              </tr>
+            <tr>
+              <td colspan="7">&nbsp;</td>
+            </tr>
+            <tr>
+              <td>魚價變化公式:</td>
+              <td class="col2">
+                <select name="FishSalesPriceFunctionFld">
+                  <option value="0">不變</option>
+                  <option value="1">公式一(請告訴我公式)</option>
+                  <option value="2">公式二(請告訴我公式)</option>
+                  <option value="3">公式三(請告訴我公式)</option>
+                  <option value="3">公式四(and so on...)</option>
+                </select>
+              </td>
+              <td colspan="5">
+              </td>
+            </tr>
+            <tr>
+              <td colspan="7">&nbsp;</td>
+            </tr>
+            <tr>
+              <td colspan="7">
+                <script language="JavaScript" type="text/javascript">
+                document.write('    <input type="button" name="StartTurnBtn" id="StartTurnBtn" value="進入遊戲 第 ' + parent.getGameYear() + ' 年報表 "');
+                document.write('               tabindex="30" onclick="startTurn()" />&nbsp;');
+                </script>
+                <!-- <input type="button" name="ReviseTeamsBtn" id="ReviseTeamsBtn" value="開新遊戲"
+                tabindex="31" onclick="reviseTeams()" /> -->
+              </td>
+            </tr>
+          </table>
+        </form>
+        <!-- InstanceEndEditable -->
+      </td>
+    </tr>
+  </table>
+</body>
+<!-- InstanceEnd --></html>
