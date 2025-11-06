@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js Game Scene with Mouse Control</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+    </style>
+</head>
+<body>
+
+    <script type="module">
+        import * as THREE from 'https://cdn.skypack.dev/three@0.128.0';
+        import { PointerLockControls } from 'https://cdn.skypack.dev/three@0.128.0/examples/jsm/controls/PointerLockControls.js';
+
+        // 初始化場景、相機和渲染器
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.y = 1.6; // 設置攝影機初始高度
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const geometry = new THREE.BoxGeometry();
+        const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        const cube = new THREE.Mesh(geometry, material);
+        cube.position.y = 0.5; // 提升方塊以避免與地面重疊
+        scene.add(cube);
+
+        // 創建邊緣
+        const edges = new THREE.EdgesGeometry(geometry);
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff }));
+        line.position.copy(cube.position); // 確保邊緣與方塊對齊
+        scene.add(line);
+
+        // 設置滑鼠控制
+        const controls = new PointerLockControls(camera, document.body);
+
+        // 自定義的上下移動方法
+        controls.moveUp = function(distance) {
+            camera.position.y += distance;
+        };
+
+        controls.moveDown = function(distance) {
+            camera.position.y -= distance;
+        };
+
+        document.body.addEventListener('click', () => {
+            controls.lock();
+        });
+
+        controls.addEventListener('lock', () => {
+            console.log('Pointer locked');
+        });
+
+        controls.addEventListener('unlock', () => {
+            console.log('Pointer unlocked');
+        });
+
+        // 設定鍵盤控制
+        const keys = {};
+        window.addEventListener('keydown', (event) => {
+            keys[event.key] = true;
+        });
+        window.addEventListener('keyup', (event) => {
+            keys[event.key] = false;
+        });
+
+        function update() {
+            if (keys['w']) controls.moveForward(0.1); // 前進
+            if (keys['s']) controls.moveForward(-0.1); // 後退
+            if (keys['a']) controls.moveRight(-0.1); // 左移
+            if (keys['d']) controls.moveRight(0.1); // 右移
+            if (keys['Shift']) controls.moveDown(0.1); // 下降
+            if (keys[' ']) controls.moveUp(0.1); // 上升
+        }
+
+        // 渲染循環
+        function animate() {
+            requestAnimationFrame(animate);
+            update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
