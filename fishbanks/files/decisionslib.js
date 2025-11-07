@@ -14,13 +14,13 @@
 function setupNavInputWithArrowKeys(){
 	$('input').keyup(function (e) {
     if (e.which == 39) { // right arrow
-      $(this).closest('td').next().find('input').focus().select();
+      $(this).closest('td').next().find('input').focus();
     } else if (e.which == 37) { // left arrow
-      $(this).closest('td').prev().find('input').focus().select();
+      $(this).closest('td').prev().find('input').focus();
     } else if (e.which == 40) { // down arrow
-      $(this).closest('tr').next().find('td:eq(' + $(this).closest('td').index() + ')').prev().find('input').focus().select();
+      $(this).closest('tr').next().find('td:eq(' + $(this).closest('td').index() + ')').prev().find('input').focus();
     } else if (e.which == 38) { // up arrow
-      $(this).closest('tr').prev().find('td:eq(' + $(this).closest('td').index() + ')').prev().find('input').focus().select();
+      $(this).closest('tr').prev().find('td:eq(' + $(this).closest('td').index() + ')').prev().find('input').focus();
     }
   });
 
@@ -29,6 +29,10 @@ function setupNavInputWithArrowKeys(){
   //   alert(e.which);
   // });
 }
+
+$(document).on('focus', 'input[type="text"]', function() {
+  this.select();
+});
 
 // Handle the page load event for decisions.html
 function handleLoad() {
