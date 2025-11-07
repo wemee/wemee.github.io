@@ -14,18 +14,14 @@
 function setupNavInputWithArrowKeys(){
 	$('input').keyup(function (e) {
     if (e.which == 39) { // right arrow
-      $(this).closest('td').next().find('input').focus();
-
+      $(this).closest('td').next().find('input').focus().select();
     } else if (e.which == 37) { // left arrow
-      $(this).closest('td').prev().find('input').focus();
-
+      $(this).closest('td').prev().find('input').focus().select();
     } else if (e.which == 40) { // down arrow
-      $(this).closest('tr').next().find('td:eq(' + $(this).closest('td').index() + ')').prev().find('input').focus();
-
+      $(this).closest('tr').next().find('td:eq(' + $(this).closest('td').index() + ')').prev().find('input').focus().select();
     } else if (e.which == 38) { // up arrow
-      $(this).closest('tr').prev().find('td:eq(' + $(this).closest('td').index() + ')').prev().find('input').focus();
+      $(this).closest('tr').prev().find('td:eq(' + $(this).closest('td').index() + ')').prev().find('input').focus().select();
     }
-
   });
 
   // un-comment to display key code
