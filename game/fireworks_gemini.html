@@ -11,231 +11,204 @@
 <body>
     <canvas id="fireworksCanvas"></canvas>
     <script>
-        // 取得 Canvas 元素和繪圖上下文
-        const canvas = document.getElementById('fireworksCanvas');
-        const ctx = canvas.getContext('2d');
+      // 取得 Canvas 元素和繪圖上下文
+const canvas = document.getElementById('fireworksCanvas');
+const ctx = canvas.getContext('2d');
 
-        // 設定 Canvas 尺寸為視窗大小
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+// 設定 Canvas 尺寸為視窗大小
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// --- 煙火粒子 (Particle) 類別 ---
+class Particle {
+    constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = Math.random() * 2 - 1; 
+        this.vy = Math.random() * 2 - 1;
+        this.color = color;
+        this.alpha = 1; 
+        // 🚀 優化 1: 提高衰減率，讓粒子更快消失
+        this.decay = 0.025; 
+        this.friction = 0.99; 
+    }
+
+    update() {
+        this.vy += 0.03; 
+        this.vx *= this.friction;
+        this.vy *= this.friction;
+        
+        this.x += this.vx;
+        this.y += this.vy;
+
+        this.alpha -= this.decay;
+        
+        return this.alpha > this.decay;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 1.5, 0, Math.PI * 2, false); 
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+// --- 煙火 (Firework) 類別 ---
+class Firework {
+    constructor(startX, startY, targetX, targetY) {
+        this.x = startX;
+        this.y = startY;
+        this.targetX = targetX;
+        this.targetY = targetY;
+        this.distanceToTarget = this.calculateDistance(startX, startY, targetX, targetY);
+        this.distanceTraveled = 0;
+        this.coordinates = []; 
+        this.coordinateCount = 3; 
+        
+        this.color = 'hsl(' + Math.floor(Math.random() * 360) + ', 100%, 50%)';
+        
+        this.speed = 2;
+        
+        this.angle = Math.atan2(targetY - startY, targetX - startX);
+        this.vx = Math.cos(this.angle) * this.speed;
+        this.vy = Math.sin(this.angle) * this.speed;
+
+        this.particles = []; 
+        this.exploded = false;
+        
+        let i = this.coordinateCount;
+        while(i--) {
+            this.coordinates.push([startX, startY]);
         }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+    }
+    
+    calculateDistance(p1x, p1y, p2x, p2y) {
+        const xDistance = p1x - p2x;
+        const yDistance = p1y - p2y;
+        return Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2));
+    }
 
-        // --- 煙火粒子 (Particle) 類別 ---
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
-                // 產生隨機的水平和垂直速度
-                this.vx = Math.random() * 2 - 1; 
-                this.vy = Math.random() * 2 - 1;
-                this.color = color;
-                this.alpha = 1; // 透明度
-                this.decay = 0.01; // 衰減率
-                this.friction = 0.99; // 摩擦力
-            }
+    update() {
+        if (!this.exploded) {
+            this.coordinates.pop();
+            this.coordinates.unshift([this.x, this.y]);
 
-            update() {
-                // 施加重力 (向下加速)
-                this.vy += 0.03; 
-                // 施加摩擦力 (減慢速度)
-                this.vx *= this.friction;
-                this.vy *= this.friction;
-                
-                // 更新位置
-                this.x += this.vx;
-                this.y += this.vy;
-
-                // 逐漸減少透明度
-                this.alpha -= this.decay;
-                
-                // 判斷粒子是否還存在
-                return this.alpha > this.decay;
-            }
-
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = this.alpha;
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                // 畫圓形粒子
-                ctx.arc(this.x, this.y, 1.5, 0, Math.PI * 2, false); 
-                ctx.fill();
-                ctx.restore();
-            }
-        }
-
-        // --- 煙火 (Firework) 類別 ---
-        class Firework {
-            constructor(startX, startY, targetX, targetY) {
-                this.x = startX;
-                this.y = startY;
-                this.targetX = targetX;
-                this.targetY = targetY;
-                this.distanceToTarget = this.calculateDistance(startX, startY, targetX, targetY);
-                this.distanceTraveled = 0;
-                this.coordinates = []; // 用於畫尾巴的座標陣列
-                this.coordinateCount = 3; // 尾巴長度
-                
-                // 隨機顏色
-                this.color = 'hsl(' + Math.floor(Math.random() * 360) + ', 100%, 50%)';
-                
-                // 設定上升速度
-                this.speed = 2;
-                
-                // 計算速度向量
-                this.angle = Math.atan2(targetY - startY, targetX - startX);
-                this.vx = Math.cos(this.angle) * this.speed;
-                this.vy = Math.sin(this.angle) * this.speed;
-
-                this.particles = []; // 爆開後的粒子陣列
-                this.exploded = false;
-                
-                // 初始化尾巴座標
-                while(this.coordinateCount--) {
-                    this.coordinates.push([startX, startY]);
-                }
-            }
+            this.x += this.vx;
+            this.y += this.vy;
             
-            // 計算兩點間距離
-            calculateDistance(p1x, p1y, p2x, p2y) {
-                const xDistance = p1x - p2x;
-                const yDistance = p1y - p2y;
-                return Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2));
+            this.distanceTraveled = this.calculateDistance(this.x, this.y, this.targetX, this.targetY);
+
+            if (this.distanceTraveled <= 10) { 
+                this.explode();
+                this.exploded = true;
             }
-
-            update() {
-                // 如果還沒爆開，繼續上升
-                if (!this.exploded) {
-                    this.coordinates.pop();
-                    this.coordinates.unshift([this.x, this.y]);
-
-                    // 移動
-                    this.x += this.vx;
-                    this.y += this.vy;
-                    
-                    // 計算已移動距離
-                    this.distanceTraveled = this.calculateDistance(this.x, this.y, this.targetX, this.targetY);
-
-                    // 檢查是否到達目標或超過
-                    if (this.distanceTraveled <= 10) { 
-                        this.explode();
-                        this.exploded = true;
-                    }
-                } else {
-                    // 如果已爆開，更新粒子
-                    let i = this.particles.length;
-                    while (i--) {
-                        // 如果粒子存活，就更新；否則從陣列中移除
-                        if (!this.particles[i].update()) {
-                            this.particles.splice(i, 1);
-                        }
-                    }
-                    // 判斷煙火是否完全結束 (所有粒子都消失)
-                    return this.particles.length === 0;
-                }
-                // 煙火還在上升
-                return false;
-            }
-
-            // 爆開成粒子
-            explode() {
-                const particleCount = 40; // 粒子數量
-                while (particleCount--) {
-                    // 在煙火當前位置產生粒子
-                    this.particles.push(new Particle(this.x, this.y, this.color));
-                }
-            }
-
-            draw() {
-                if (!this.exploded) {
-                    // 繪製上升中的煙火 (尾巴)
-                    ctx.beginPath();
-                    // 設定尾巴顏色和透明度
-                    ctx.strokeStyle = this.color;
-                    ctx.lineWidth = 1;
-                    
-                    // 移動到尾巴的終點 (當前位置)
-                    ctx.moveTo(this.coordinates[this.coordinates.length - 1][0], this.coordinates[this.coordinates.length - 1][1]);
-                    // 畫線到尾巴的起點
-                    ctx.lineTo(this.x, this.y);
-                    ctx.stroke();
-
-                } else {
-                    // 繪製爆開的粒子
-                    let i = this.particles.length;
-                    while (i--) {
-                        this.particles[i].draw();
-                    }
-                }
-            }
-        }
-
-        // --- 主循環邏輯 ---
-        let fireworks = [];
-        let autoFireInterval;
-        
-        // 隨機產生一個自動煙火
-        function createAutoFirework() {
-            const startX = canvas.width / 2; // 從底部中央發射
-            const startY = canvas.height; 
-            // 目標點在畫布上半部隨機位置
-            const targetX = Math.random() * (canvas.width * 0.8) + (canvas.width * 0.1);
-            const targetY = Math.random() * (canvas.height * 0.5); 
-            
-            fireworks.push(new Firework(startX, startY, targetX, targetY));
-        }
-        
-        // 開始自動燃放
-        function startAutoFire() {
-             // 每 1.5 到 3 秒發射一個煙火
-             const delay = Math.random() * 1500 + 1500;
-             autoFireInterval = setTimeout(() => {
-                 createAutoFirework();
-                 startAutoFire(); // 遞迴呼叫以持續發射
-             }, delay);
-        }
-        
-        // 處理滑鼠點擊 (放煙火)
-        function handleMouseDown(e) {
-            const startX = canvas.width / 2; // 從底部中央發射
-            const startY = canvas.height; 
-            const targetX = e.clientX;
-            const targetY = e.clientY;
-
-            fireworks.push(new Firework(startX, startY, targetX, targetY));
-        }
-
-        // 監聽點擊事件
-        canvas.addEventListener('mousedown', handleMouseDown);
-        
-        // 動畫循環
-        function loop() {
-            // 設定背景 (黑色，帶有透明度，用於產生殘影效果)
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; 
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.globalCompositeOperation = 'lighter'; // 設定混合模式，讓煙火發光
-            
-            // 更新和繪製所有煙火
-            let i = fireworks.length;
+        } else {
+            let i = this.particles.length;
             while (i--) {
-                fireworks[i].draw();
-                // 如果煙火已結束，將其從陣列中移除
-                if (fireworks[i].update()) {
-                    fireworks.splice(i, 1);
+                if (!this.particles[i].update()) {
+                    this.particles.splice(i, 1);
                 }
             }
-
-            // 請求下一幀動畫
-            requestAnimationFrame(loop);
+            return this.particles.length === 0;
         }
+        return false;
+    }
 
-        // 啟動程式
-        startAutoFire(); // 啟動自動煙火
-        loop();          // 啟動動畫循環
+    explode() {
+        // 🚀 優化 2: 減少粒子數量
+        const particleCount = 25; 
+        while (particleCount--) {
+            this.particles.push(new Particle(this.x, this.y, this.color));
+        }
+    }
+
+    draw() {
+        if (!this.exploded) {
+            ctx.beginPath();
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = 1;
+            
+            ctx.moveTo(this.coordinates[this.coordinates.length - 1][0], this.coordinates[this.coordinates.length - 1][1]);
+            ctx.lineTo(this.x, this.y);
+            ctx.stroke();
+
+        } else {
+            let i = this.particles.length;
+            while (i--) {
+                this.particles[i].draw();
+            }
+        }
+    }
+}
+
+// --- 主循環邏輯 ---
+let fireworks = [];
+let autoFireInterval;
+
+function createAutoFirework() {
+    const startX = canvas.width / 2; 
+    const startY = canvas.height; 
+    const targetX = Math.random() * (canvas.width * 0.8) + (canvas.width * 0.1);
+    const targetY = Math.random() * (canvas.height * 0.5); 
+    
+    fireworks.push(new Firework(startX, startY, targetX, targetY));
+}
+
+function startAutoFire() {
+     const delay = Math.random() * 1500 + 1500;
+     autoFireInterval = setTimeout(() => {
+         createAutoFirework();
+         startAutoFire(); 
+     }, delay);
+}
+
+function handleMouseDown(e) {
+    const startX = canvas.width / 2; 
+    const startY = canvas.height; 
+    const targetX = e.clientX;
+    const targetY = e.clientY;
+
+    fireworks.push(new Firework(startX, startY, targetX, targetY));
+}
+
+// 注意：手機上可能需要同時監聽 'touchstart'
+canvas.addEventListener('mousedown', handleMouseDown);
+canvas.addEventListener('touchstart', (e) => {
+    // 處理多點觸控，只取第一個點
+    handleMouseDown(e.touches[0]); 
+});
+
+
+function loop() {
+    // 🚀 優化 3: 提高背景清除透明度，減少計算量
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)'; 
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.globalCompositeOperation = 'lighter'; 
+    
+    let i = fireworks.length;
+    while (i--) {
+        fireworks[i].draw();
+        if (fireworks[i].update()) {
+            fireworks.splice(i, 1);
+        }
+    }
+
+    requestAnimationFrame(loop);
+}
+
+// 啟動程式
+startAutoFire(); 
+loop();
+
 
     </script>
 </body>
