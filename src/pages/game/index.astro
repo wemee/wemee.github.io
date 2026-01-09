@@ -1,0 +1,42 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Navbar from '@/components/Navbar.astro';
+
+const games = [
+  {
+    title: '🏃 下樓梯',
+    description: '經典的下樓梯遊戲！小心不要掉出去，也別被頂到頂部！',
+    href: '/game/stairs',
+    color: 'success'
+  },
+  {
+    title: '🧱 打磚塊',
+    description: '用彈跳球打破所有磚塊！經典 Breakout 遊戲的現代演繹',
+    href: '/game/breakout',
+    color: 'primary'
+  }
+];
+---
+<BaseLayout title="遊戲">
+  <Navbar currentPage="game" />
+  <div class="container mt-5">
+    <h1 class="text-center mb-2">🎮 遊戲</h1>
+    <p class="text-center text-muted mb-5">用 Canvas 打造的小遊戲</p>
+    
+    <div class="row g-4 justify-content-center">
+      {games.map((game) => (
+        <div class="col-md-6 col-lg-4">
+          <div class={`card h-100 border-${game.color}`}>
+            <div class="card-body">
+              <h5 class="card-title">{game.title}</h5>
+              <p class="card-text text-muted">{game.description}</p>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+              <a href={game.href} class={`btn btn-${game.color} w-100`}>開始遊戲</a>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</BaseLayout>
