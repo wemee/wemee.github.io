@@ -13,8 +13,9 @@ import Navbar from '@/components/Navbar.astro';
             <h2>🧱 打磚塊</h2>
             <p>打破所有磚塊！</p>
             <button class="btn btn-lg btn-primary" id="startBtn">開始遊戲</button>
+            <button class="btn btn-lg btn-warning mt-2" id="aiStartBtn">🤖 AI 模式</button>
             <div class="controls-info mt-3">
-              <small>← → 或 滑鼠移動板子</small>
+              <small>← → 或 滑鼠移動板子<br>空白鍵或點擊發球</small>
             </div>
           </div>
           <div class="game-overlay hidden" id="winScreen">
@@ -29,7 +30,7 @@ import Navbar from '@/components/Navbar.astro';
           </div>
           <div class="game-hud">
             <span class="hud-item">分數: <span id="scoreDisplay">0</span></span>
-            <span class="hud-item">生命: <span id="livesDisplay">❤️❤️❤️</span></span>
+            <span class="hud-item"><span id="aiIndicator" class="hidden">🤖 AI</span> 生命: <span id="livesDisplay">❤️❤️❤️</span></span>
             <span class="hud-item">關卡: <span id="levelDisplay">1</span></span>
           </div>
         </div>
@@ -132,7 +133,14 @@ import Navbar from '@/components/Navbar.astro';
     private ctx: CanvasRenderingContext2D;
     
     // 遊戲物件
-    private ball = { x: 240, y: 450, radius: 8, dx: 4, dy: -4, speed: 5 };
+    private ball = { x: 240, y: 450, radius: 8, dx: 0, dy: 0, speed: 7 };
+    
+    // 速度設定
+    private readonly MIN_SPEED = 7;
+    private readonly MAX_SPEED = 14;
+    private readonly AI_MIN_SPEED = 10;  // AI 模式初始速度更快
+    private readonly AI_MAX_SPEED = 18;
+    private readonly SPEED_INCREMENT = 0.15;
     private paddle = { x: 190, y: 560, width: 100, height: 12 };
     private bricks: Brick[] = [];
     private particles: Particle[] = [];
@@ -142,7 +150,16 @@ import Navbar from '@/components/Navbar.astro';
     private score = 0;
     private lives = 3;
     private level = 1;
-    private gameState: 'start' | 'playing' | 'win' | 'gameover' = 'start';
+    private gameState: 'start' | 'ready' | 'playing' | 'win' | 'gameover' = 'start';
+    private ballLaunched = false;
+    
+    // 持續按鍵狀態
+    private keys = { left: false, right: false };
+    private readonly PADDLE_SPEED = 10;
+    
+    // AI 模式
+    private aiMode = false;
+    private readonly AI_PADDLE_SPEED = 12;
 
     // 顏色方案
     private readonly COLORS = [
@@ -185,80 +202,340 @@ import Navbar from '@/components/Navbar.astro';
     }
 
     private initGame() {
-      this.ball = { 
-        x: this.canvas.width / 2, 
-        y: this.canvas.height - 100, 
-        radius: 8, 
-        dx: (Math.random() > 0.5 ? 1 : -1) * 4, 
-        dy: -4, 
-        speed: 5 + this.level * 0.5
-      };
       this.paddle = { x: this.canvas.width / 2 - 50, y: 560, width: 100, height: 12 };
       this.particles = [];
       this.powerUps = [];
+      this.ballLaunched = false;
       this.createBricks();
+      this.resetBall();
     }
 
     private resetBall() {
-      this.ball.x = this.canvas.width / 2;
-      this.ball.y = this.canvas.height - 100;
-      this.ball.dx = (Math.random() > 0.5 ? 1 : -1) * 4;
-      this.ball.dy = -4;
+      this.ballLaunched = false;
+      this.ball.x = this.paddle.x + this.paddle.width / 2;
+      this.ball.y = this.paddle.y - this.ball.radius - 2;
+      this.ball.dx = 0;
+      this.ball.dy = 0;
+      
+      // AI 模式球速更快
+      const baseSpeed = this.aiMode ? this.AI_MIN_SPEED : this.MIN_SPEED;
+      this.ball.speed = baseSpeed + this.level * 0.5;
+    }
+
+    private launchBall() {
+      if (this.ballLaunched) return;
+      this.ballLaunched = true;
+      const angle = (Math.random() - 0.5) * Math.PI * 0.5; // -45 到 45 度
+      this.ball.dx = this.ball.speed * Math.sin(angle);
+      this.ball.dy = -this.ball.speed * Math.cos(angle);
     }
 
     private bindEvents() {
-      document.getElementById('startBtn')?.addEventListener('click', () => this.startGame());
+      document.getElementById('startBtn')?.addEventListener('click', () => this.startGame(false));
+      document.getElementById('aiStartBtn')?.addEventListener('click', () => this.startGame(true));
       document.getElementById('restartBtn')?.addEventListener('click', () => {
         this.level = 1;
         this.score = 0;
         this.lives = 3;
-        this.startGame();
+        this.startGame(this.aiMode);
       });
       document.getElementById('nextLevelBtn')?.addEventListener('click', () => {
         this.level++;
         this.lives = Math.min(this.lives + 1, 5);
-        this.startGame();
+        this.startGame(this.aiMode);
       });
 
-      // 鍵盤控制
+      // 鍵盤控制 - 持續移動
       document.addEventListener('keydown', (e) => {
-        if (this.gameState !== 'playing') return;
+        if (this.gameState !== 'ready' && this.gameState !== 'playing') return;
+        
         if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-          this.paddle.x -= 30;
+          this.keys.left = true;
         }
         if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-          this.paddle.x += 30;
+          this.keys.right = true;
         }
-        this.paddle.x = Math.max(0, Math.min(this.paddle.x, this.canvas.width - this.paddle.width));
+        if (e.key === ' ') {
+          e.preventDefault();
+          if (!this.ballLaunched) {
+            this.launchBall();
+            this.gameState = 'playing';
+          }
+        }
+      });
+
+      document.addEventListener('keyup', (e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+          this.keys.left = false;
+        }
+        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+          this.keys.right = false;
+        }
       });
 
       // 滑鼠控制
       this.canvas.addEventListener('mousemove', (e) => {
-        if (this.gameState !== 'playing') return;
+        if (this.gameState !== 'ready' && this.gameState !== 'playing') return;
         const rect = this.canvas.getBoundingClientRect();
         const scaleX = this.canvas.width / rect.width;
         this.paddle.x = (e.clientX - rect.left) * scaleX - this.paddle.width / 2;
         this.paddle.x = Math.max(0, Math.min(this.paddle.x, this.canvas.width - this.paddle.width));
       });
 
+      // 滑鼠點擊發球
+      this.canvas.addEventListener('click', () => {
+        if ((this.gameState === 'ready' || this.gameState === 'playing') && !this.ballLaunched) {
+          this.launchBall();
+          this.gameState = 'playing';
+        }
+      });
+
       // 觸控控制
       this.canvas.addEventListener('touchmove', (e) => {
         e.preventDefault();
-        if (this.gameState !== 'playing') return;
+        if (this.gameState !== 'ready' && this.gameState !== 'playing') return;
         const rect = this.canvas.getBoundingClientRect();
         const scaleX = this.canvas.width / rect.width;
         this.paddle.x = (e.touches[0].clientX - rect.left) * scaleX - this.paddle.width / 2;
         this.paddle.x = Math.max(0, Math.min(this.paddle.x, this.canvas.width - this.paddle.width));
       });
+
+      // 觸控點擊發球
+      this.canvas.addEventListener('touchstart', () => {
+        if ((this.gameState === 'ready' || this.gameState === 'playing') && !this.ballLaunched) {
+          this.launchBall();
+          this.gameState = 'playing';
+        }
+      });
     }
 
-    private startGame() {
+    private startGame(enableAI: boolean = false) {
+      this.aiMode = enableAI;
       this.initGame();
-      this.gameState = 'playing';
+      this.gameState = 'ready';
       this.hideOverlay('startScreen');
       this.hideOverlay('gameOverScreen');
       this.hideOverlay('winScreen');
       this.updateHUD();
+      
+      // 顯示/隱藏 AI 指示器
+      const aiIndicator = document.getElementById('aiIndicator');
+      if (aiIndicator) {
+        aiIndicator.classList.toggle('hidden', !this.aiMode);
+      }
+      
+      // AI 模式自動發球
+      if (this.aiMode) {
+        setTimeout(() => {
+          this.launchBall();
+          this.gameState = 'playing';
+        }, 500);
+      }
+    }
+
+    // === AI 邏輯 ===
+    private predictBallX(): number {
+      // 預測球落到板子高度時的 x 位置
+      if (this.ball.dy <= 0) {
+        // 球往上，暫時無法預測，回傳目前球的 x
+        return this.ball.x;
+      }
+      
+      let simX = this.ball.x;
+      let simY = this.ball.y;
+      let simDx = this.ball.dx;
+      const simDy = this.ball.dy;
+      
+      // 模擬球的軌跡直到到達板子高度
+      while (simY < this.paddle.y - this.ball.radius) {
+        simX += simDx;
+        simY += simDy;
+        
+        // 牆壁反彈
+        if (simX - this.ball.radius < 0) {
+          simX = this.ball.radius;
+          simDx = Math.abs(simDx);
+        }
+        if (simX + this.ball.radius > this.canvas.width) {
+          simX = this.canvas.width - this.ball.radius;
+          simDx = -Math.abs(simDx);
+        }
+        
+        // 防止無限迴圈
+        if (simY > this.canvas.height + 100) break;
+      }
+      
+      return simX;
+    }
+
+    private findBestPowerUp(): PowerUp | null {
+      // 找出最接近且可接到的道具
+      let bestPU: PowerUp | null = null;
+      let bestScore = -Infinity;
+      
+      for (const pu of this.powerUps) {
+        // 預測道具落下時的位置
+        const timeToReach = (this.paddle.y - pu.y) / 2; // 道具速度為 2
+        if (timeToReach <= 0) continue;
+        
+        const puX = pu.x;
+        const distFromPaddle = Math.abs(puX - (this.paddle.x + this.paddle.width / 2));
+        
+        // 只考慮有機會接到的道具
+        if (distFromPaddle < 150 && pu.y > 100) {
+          const score = pu.y - distFromPaddle * 0.5; // 越近、越快落下的越優先
+          if (score > bestScore) {
+            bestScore = score;
+            bestPU = pu;
+          }
+        }
+      }
+      
+      return bestPU;
+    }
+
+    private findBestHitPosition(): number | null {
+      // 找出能打到最多磚塊的位置
+      // 簡化版：找出磚塊最密集的 x 區域
+      if (this.bricks.length === 0) return null;
+      
+      const buckets: number[] = new Array(10).fill(0);
+      const bucketWidth = this.canvas.width / 10;
+      
+      for (const brick of this.bricks) {
+        const bucketIndex = Math.floor((brick.x + brick.width / 2) / bucketWidth);
+        if (bucketIndex >= 0 && bucketIndex < 10) {
+          buckets[bucketIndex]++;
+        }
+      }
+      
+      let maxBucket = 0;
+      let maxCount = 0;
+      for (let i = 0; i < buckets.length; i++) {
+        if (buckets[i] > maxCount) {
+          maxCount = buckets[i];
+          maxBucket = i;
+        }
+      }
+      
+      return (maxBucket + 0.5) * bucketWidth;
+    }
+
+    private updateAI() {
+      if (!this.aiMode) return;
+      if (this.gameState !== 'playing' && this.gameState !== 'ready') return;
+
+      const paddleCenter = this.paddle.x + this.paddle.width / 2;
+      let targetX: number;
+
+      const predictedX = this.predictBallX();
+      const urgency = this.ball.dy > 0 ? (this.paddle.y - this.ball.y) : 1000;
+      
+      if (urgency < 400 && this.ball.dy > 0) {
+        // 球快落下，計算最佳接球位置
+        targetX = this.findBestPaddlePosition(predictedX);
+      } else {
+        // 球往上飛，嘗試吃道具或預先移動
+        const powerUp = this.findBestPowerUp();
+        if (powerUp) {
+          targetX = powerUp.x;
+        } else {
+          targetX = this.ball.x;
+        }
+      }
+
+      // 移動板子
+      const diff = targetX - paddleCenter;
+      const speed = this.AI_PADDLE_SPEED;
+      
+      if (Math.abs(diff) > speed) {
+        this.paddle.x += diff > 0 ? speed : -speed;
+      } else {
+        this.paddle.x += diff;
+      }
+      
+      this.paddle.x = Math.max(0, Math.min(this.paddle.x, this.canvas.width - this.paddle.width));
+    }
+
+    private findBestPaddlePosition(ballLandX: number): number {
+      // 測試不同的接球位置，找出能打到磚塊的最佳位置
+      const testPositions = [-0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4]; // 相對於板子寬度的偏移
+      let bestPosition = ballLandX;
+      let bestScore = -Infinity;
+      
+      for (const offsetRatio of testPositions) {
+        const paddleCenterX = ballLandX; // 假設板子中心在這裡
+        const hitPos = 0.5 + offsetRatio; // 球打在板子的哪個位置 (0-1)
+        
+        // 計算反彈角度（複製自真實反彈邏輯）
+        const angle = (hitPos - 0.5) * Math.PI * 0.6;
+        const speed = this.ball.speed;
+        const dx = speed * Math.sin(angle);
+        const dy = -speed * Math.cos(angle);
+        
+        // 模擬球飛出去的軌跡
+        const score = this.simulateBallPath(ballLandX, this.paddle.y - this.ball.radius, dx, dy);
+        
+        if (score > bestScore) {
+          bestScore = score;
+          // 最佳接球位置 = 球落點 - 偏移量（讓球打在板子的特定位置）
+          bestPosition = ballLandX - offsetRatio * this.paddle.width;
+        }
+      }
+      
+      // 確保位置在有效範圍內
+      const halfPaddle = this.paddle.width / 2;
+      bestPosition = Math.max(halfPaddle, Math.min(bestPosition, this.canvas.width - halfPaddle));
+      
+      return bestPosition;
+    }
+
+    private simulateBallPath(startX: number, startY: number, dx: number, dy: number): number {
+      // 模擬球的軌跡，計算能打到多少磚塊的分數
+      let x = startX;
+      let y = startY;
+      let score = 0;
+      const hitBricks = new Set<number>();
+      
+      // 最多模擬 500 步
+      for (let step = 0; step < 500; step++) {
+        x += dx;
+        y += dy;
+        
+        // 牆壁反彈
+        if (x - this.ball.radius < 0) {
+          x = this.ball.radius;
+          dx = Math.abs(dx);
+        }
+        if (x + this.ball.radius > this.canvas.width) {
+          x = this.canvas.width - this.ball.radius;
+          dx = -Math.abs(dx);
+        }
+        if (y - this.ball.radius < 0) {
+          y = this.ball.radius;
+          dy = Math.abs(dy);
+        }
+        
+        // 檢查是否打到磚塊
+        for (let i = 0; i < this.bricks.length; i++) {
+          if (hitBricks.has(i)) continue;
+          const brick = this.bricks[i];
+          
+          if (x + this.ball.radius > brick.x &&
+              x - this.ball.radius < brick.x + brick.width &&
+              y + this.ball.radius > brick.y &&
+              y - this.ball.radius < brick.y + brick.height) {
+            hitBricks.add(i);
+            score += brick.points;
+            dy = -dy; // 簡化的反彈
+          }
+        }
+        
+        // 球回到板子高度就停止模擬
+        if (y > this.paddle.y) break;
+      }
+      
+      return score;
     }
 
     private showOverlay(id: string) {
@@ -299,18 +576,43 @@ import Navbar from '@/components/Navbar.astro';
     }
 
     private update() {
-      if (this.gameState !== 'playing') return;
+      if (this.gameState !== 'ready' && this.gameState !== 'playing') return;
+
+      // AI 控制
+      this.updateAI();
+
+      // 持續按鍵移動板子
+      if (this.keys.left) {
+        this.paddle.x -= this.PADDLE_SPEED;
+      }
+      if (this.keys.right) {
+        this.paddle.x += this.PADDLE_SPEED;
+      }
+      this.paddle.x = Math.max(0, Math.min(this.paddle.x, this.canvas.width - this.paddle.width));
+
+      // 如果球還沒發射，跟著板子移動
+      if (!this.ballLaunched) {
+        this.ball.x = this.paddle.x + this.paddle.width / 2;
+        this.ball.y = this.paddle.y - this.ball.radius - 2;
+        return; // 不更新其他物理
+      }
 
       // 移動球
       this.ball.x += this.ball.dx;
       this.ball.y += this.ball.dy;
 
-      // 牆壁碰撞
-      if (this.ball.x - this.ball.radius < 0 || this.ball.x + this.ball.radius > this.canvas.width) {
-        this.ball.dx *= -1;
+      // 牆壁碰撞（修正位置避免卡住）
+      if (this.ball.x - this.ball.radius < 0) {
+        this.ball.x = this.ball.radius;
+        this.ball.dx = Math.abs(this.ball.dx);
+      }
+      if (this.ball.x + this.ball.radius > this.canvas.width) {
+        this.ball.x = this.canvas.width - this.ball.radius;
+        this.ball.dx = -Math.abs(this.ball.dx);
       }
       if (this.ball.y - this.ball.radius < 0) {
-        this.ball.dy *= -1;
+        this.ball.y = this.ball.radius;
+        this.ball.dy = Math.abs(this.ball.dy);
       }
 
       // 掉落
@@ -321,6 +623,7 @@ import Navbar from '@/components/Navbar.astro';
           this.gameOver();
         } else {
           this.resetBall();
+          this.gameState = 'ready';
         }
       }
 
@@ -329,6 +632,9 @@ import Navbar from '@/components/Navbar.astro';
           this.ball.y - this.ball.radius < this.paddle.y + this.paddle.height &&
           this.ball.x > this.paddle.x &&
           this.ball.x < this.paddle.x + this.paddle.width) {
+        
+        // 每次碰到板子加速
+        this.ball.speed = Math.min(this.ball.speed + this.SPEED_INCREMENT, this.MAX_SPEED);
         
         // 根據擊中位置調整反彈角度
         const hitPos = (this.ball.x - this.paddle.x) / this.paddle.width;
@@ -408,7 +714,17 @@ import Navbar from '@/components/Navbar.astro';
     private win() {
       this.gameState = 'win';
       document.getElementById('winScore')!.textContent = this.score.toString();
-      this.showOverlay('winScreen');
+      
+      // AI 模式自動進入下一關
+      if (this.aiMode) {
+        this.level++;
+        this.lives = Math.min(this.lives + 1, 5);
+        setTimeout(() => {
+          this.startGame(true);
+        }, 1000);
+      } else {
+        this.showOverlay('winScreen');
+      }
     }
 
     private gameOver() {
@@ -495,7 +811,7 @@ import Navbar from '@/components/Navbar.astro';
       ctx.shadowBlur = 0;
 
       // 球
-      if (this.gameState === 'playing') {
+      if (this.gameState === 'ready' || this.gameState === 'playing') {
         ctx.fillStyle = '#fff';
         ctx.shadowColor = '#fff';
         ctx.shadowBlur = 20;
@@ -503,6 +819,14 @@ import Navbar from '@/components/Navbar.astro';
         ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
+
+        // 發球提示
+        if (!this.ballLaunched) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+          ctx.font = '16px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('按空白鍵或點擊發球', w / 2, h / 2);
+        }
       }
     }
 
