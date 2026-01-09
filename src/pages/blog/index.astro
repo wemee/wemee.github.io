@@ -1,0 +1,60 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Navbar from '@/components/Navbar.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog')).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString('zh-TW', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
+---
+<BaseLayout title="部落格">
+  <Navbar currentPage="blog" />
+  <div class="container mt-5">
+    <h1 class="mb-4">📝 部落格</h1>
+    <p class="text-muted mb-4">技術筆記、學習心得與隨筆</p>
+    
+    <div class="row">
+      {posts.map((post) => (
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <h5 class="card-title">
+                <a href={`/blog/${post.slug}`} class="text-decoration-none">
+                  {post.data.title}
+                </a>
+              </h5>
+              <p class="card-text text-muted small">
+                {formatDate(post.data.pubDate)} · {post.data.author}
+              </p>
+              <p class="card-text">{post.data.description}</p>
+              <div class="mt-2">
+                {post.data.tags.map((tag: string) => (
+                  <span class="badge bg-secondary me-1">{tag}</span>
+                ))}
+              </div>
+            </div>
+            <div class="card-footer bg-transparent">
+              <a href={`/blog/${post.slug}`} class="btn btn-outline-primary btn-sm">
+                閱讀更多 →
+              </a>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+    
+    {posts.length === 0 && (
+      <div class="alert alert-info">
+        目前還沒有文章，敬請期待！
+      </div>
+    )}
+  </div>
+</BaseLayout>

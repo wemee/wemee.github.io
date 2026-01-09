@@ -32,6 +32,9 @@ const { currentPage = '' } = Astro.props;
         <li class="nav-item">
           <a class={`nav-link ${currentPage === 'qrcode' ? 'active' : ''}`} href="/tools/qrcode/">QR Code 掃描</a>
         </li>
+        <li class="nav-item">
+          <a class={`nav-link ${currentPage === 'blog' ? 'active' : ''}`} href="/blog/">部落格</a>
+        </li>
       </ul>
     </div>
   </div>
