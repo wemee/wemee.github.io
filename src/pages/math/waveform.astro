@@ -1,0 +1,292 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Navbar from '@/components/Navbar.astro';
+---
+<BaseLayout title="波形合成器">
+  <Navbar currentPage="math" />
+  <div class="container-fluid mt-4">
+    <h1 class="text-center mb-3">🎛️ 波形合成器</h1>
+    <p class="text-center text-muted mb-4">疊加不同頻率的正弦波，親手把圓滑的波變成方波！</p>
+    
+    <div class="row g-3">
+      <!-- 控制面板 -->
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header">
+            <span>諧波控制</span>
+            <button class="btn btn-sm btn-outline-secondary float-end" id="resetBtn">重置</button>
+          </div>
+          <div class="card-body" id="harmonicControls" style="max-height: 400px; overflow-y: auto;">
+            <!-- 動態生成的滑桿 -->
+          </div>
+          <div class="card-footer">
+            <div class="d-flex justify-content-between align-items-center">
+              <span>諧波數量:</span>
+              <div class="btn-group" role="group">
+                <button class="btn btn-sm btn-outline-primary" id="removeHarmonic">-</button>
+                <span class="btn btn-sm btn-light" id="harmonicCount">5</span>
+                <button class="btn btn-sm btn-outline-primary" id="addHarmonic">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 預設波形 -->
+        <div class="card mt-3">
+          <div class="card-header">快速載入預設波形</div>
+          <div class="card-body">
+            <div class="d-grid gap-2">
+              <button class="btn btn-outline-success" id="presetSquare">方波 (Square)</button>
+              <button class="btn btn-outline-info" id="presetSawtooth">鋸齒波 (Sawtooth)</button>
+              <button class="btn btn-outline-warning" id="presetTriangle">三角波 (Triangle)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 波形顯示 -->
+      <div class="col-lg-8">
+        <div class="card mb-3">
+          <div class="card-header">時域波形 (Time Domain)</div>
+          <div class="card-body p-2">
+            <canvas id="waveCanvas" width="700" height="200" style="width: 100%; border: 1px solid #eee;"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">頻譜 (Frequency Domain)</div>
+          <div class="card-body p-2">
+            <canvas id="spectrumCanvas" width="700" height="150" style="width: 100%; border: 1px solid #eee;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="text-center mt-4">
+      <a href="/math/" class="btn btn-outline-secondary">← 返回數學工具</a>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  interface Harmonic {
+    frequency: number;  // 諧波次數 (1 = 基頻)
+    amplitude: number;  // 振幅 0-1
+  }
+
+  // === 全域變數 ===
+  const waveCanvas = document.getElementById('waveCanvas') as HTMLCanvasElement;
+  const spectrumCanvas = document.getElementById('spectrumCanvas') as HTMLCanvasElement;
+  const waveCtx = waveCanvas.getContext('2d')!;
+  const specCtx = spectrumCanvas.getContext('2d')!;
+  
+  let harmonics: Harmonic[] = [];
+  let harmonicCount = 5;
+
+  // === 初始化 ===
+  function init() {
+    harmonics = [];
+    for (let i = 1; i <= harmonicCount; i++) {
+      harmonics.push({ frequency: i, amplitude: i === 1 ? 1 : 0 });
+    }
+    renderControls();
+    draw();
+  }
+
+  // === 渲染控制面板 ===
+  function renderControls() {
+    const container = document.getElementById('harmonicControls')!;
+    container.innerHTML = '';
+    
+    harmonics.forEach((h, i) => {
+      const div = document.createElement('div');
+      div.className = 'mb-3';
+      div.innerHTML = `
+        <label class="form-label d-flex justify-content-between">
+          <span>第 ${h.frequency} 諧波</span>
+          <span class="text-muted" id="amp${i}">${(h.amplitude * 100).toFixed(0)}%</span>
+        </label>
+        <input type="range" class="form-range" id="slider${i}" 
+               min="0" max="100" value="${h.amplitude * 100}" data-index="${i}">
+      `;
+      container.appendChild(div);
+      
+      // 綁定事件
+      const slider = document.getElementById(`slider${i}`) as HTMLInputElement;
+      slider.addEventListener('input', (e) => {
+        const idx = parseInt((e.target as HTMLInputElement).dataset.index!);
+        harmonics[idx].amplitude = parseInt((e.target as HTMLInputElement).value) / 100;
+        document.getElementById(`amp${idx}`)!.textContent = 
+          (harmonics[idx].amplitude * 100).toFixed(0) + '%';
+        draw();
+      });
+    });
+    
+    document.getElementById('harmonicCount')!.textContent = harmonicCount.toString();
+  }
+
+  // === 繪製波形 ===
+  function draw() {
+    drawWave();
+    drawSpectrum();
+  }
+
+  function drawWave() {
+    const w = waveCanvas.width;
+    const h = waveCanvas.height;
+    const centerY = h / 2;
+    
+    waveCtx.clearRect(0, 0, w, h);
+    
+    // 畫中線
+    waveCtx.strokeStyle = '#ddd';
+    waveCtx.lineWidth = 1;
+    waveCtx.beginPath();
+    waveCtx.moveTo(0, centerY);
+    waveCtx.lineTo(w, centerY);
+    waveCtx.stroke();
+    
+    // 畫合成波
+    waveCtx.strokeStyle = '#78c2ad';
+    waveCtx.lineWidth = 2;
+    waveCtx.beginPath();
+    
+    for (let x = 0; x < w; x++) {
+      const t = (x / w) * 4 * Math.PI; // 顯示 2 個週期
+      let y = 0;
+      
+      for (const h of harmonics) {
+        y += h.amplitude * Math.sin(h.frequency * t);
+      }
+      
+      // 正規化
+      const maxAmp = harmonics.reduce((sum, h) => sum + h.amplitude, 0) || 1;
+      const normalizedY = centerY - (y / maxAmp) * (centerY - 20);
+      
+      if (x === 0) waveCtx.moveTo(x, normalizedY);
+      else waveCtx.lineTo(x, normalizedY);
+    }
+    
+    waveCtx.stroke();
+    
+    // 畫各個諧波分量（淡色）
+    harmonics.forEach((h, i) => {
+      if (h.amplitude === 0) return;
+      
+      const colors = ['#ff6b6b', '#4ecdc4', '#f7dc6f', '#bb8fce', '#85c1e9', '#82e0aa'];
+      waveCtx.strokeStyle = colors[i % colors.length] + '80';
+      waveCtx.lineWidth = 1;
+      waveCtx.beginPath();
+      
+      for (let x = 0; x < w; x++) {
+        const t = (x / w) * 4 * Math.PI;
+        const y = h.amplitude * Math.sin(h.frequency * t);
+        const maxAmp = harmonics.reduce((sum, h) => sum + h.amplitude, 0) || 1;
+        const normalizedY = centerY - (y / maxAmp) * (centerY - 20);
+        
+        if (x === 0) waveCtx.moveTo(x, normalizedY);
+        else waveCtx.lineTo(x, normalizedY);
+      }
+      
+      waveCtx.stroke();
+    });
+  }
+
+  function drawSpectrum() {
+    const w = spectrumCanvas.width;
+    const h = spectrumCanvas.height;
+    
+    specCtx.clearRect(0, 0, w, h);
+    
+    const barWidth = w / (harmonicCount + 1);
+    const maxAmp = Math.max(...harmonics.map(h => h.amplitude), 0.1);
+    
+    harmonics.forEach((harm, i) => {
+      const barHeight = (harm.amplitude / maxAmp) * (h - 30);
+      const x = (i + 0.5) * barWidth;
+      
+      // 漸層色
+      const gradient = specCtx.createLinearGradient(x, h - barHeight, x, h);
+      gradient.addColorStop(0, '#78c2ad');
+      gradient.addColorStop(1, '#56a98f');
+      
+      specCtx.fillStyle = gradient;
+      specCtx.fillRect(x - barWidth * 0.35, h - barHeight - 20, barWidth * 0.7, barHeight);
+      
+      // 標籤
+      specCtx.fillStyle = '#666';
+      specCtx.font = '12px Arial';
+      specCtx.textAlign = 'center';
+      specCtx.fillText(`${harm.frequency}f`, x, h - 5);
+    });
+  }
+
+  // === 預設波形 ===
+  function loadSquareWave() {
+    harmonics.forEach((h, i) => {
+      const n = i + 1;
+      // 方波只有奇次諧波，振幅為 1/n
+      h.amplitude = (n % 2 === 1) ? 1 / n : 0;
+    });
+    renderControls();
+    draw();
+  }
+
+  function loadSawtoothWave() {
+    harmonics.forEach((h, i) => {
+      const n = i + 1;
+      // 鋸齒波所有諧波，振幅為 1/n
+      h.amplitude = 1 / n;
+    });
+    renderControls();
+    draw();
+  }
+
+  function loadTriangleWave() {
+    harmonics.forEach((h, i) => {
+      const n = i + 1;
+      // 三角波只有奇次諧波，振幅為 1/n²，交替正負
+      if (n % 2 === 1) {
+        const sign = ((n - 1) / 2) % 2 === 0 ? 1 : -1;
+        h.amplitude = Math.abs(sign / (n * n));
+      } else {
+        h.amplitude = 0;
+      }
+    });
+    renderControls();
+    draw();
+  }
+
+  // === 事件綁定 ===
+  document.getElementById('resetBtn')!.addEventListener('click', init);
+  
+  document.getElementById('addHarmonic')!.addEventListener('click', () => {
+    if (harmonicCount < 20) {
+      harmonicCount++;
+      harmonics.push({ frequency: harmonicCount, amplitude: 0 });
+      renderControls();
+      draw();
+    }
+  });
+
+  document.getElementById('removeHarmonic')!.addEventListener('click', () => {
+    if (harmonicCount > 1) {
+      harmonicCount--;
+      harmonics.pop();
+      renderControls();
+      draw();
+    }
+  });
+
+  document.getElementById('presetSquare')!.addEventListener('click', loadSquareWave);
+  document.getElementById('presetSawtooth')!.addEventListener('click', loadSawtoothWave);
+  document.getElementById('presetTriangle')!.addEventListener('click', loadTriangleWave);
+
+  // 初始化
+  init();
+</script>
+
+<style>
+  canvas {
+    background: #fafafa;
+  }
+</style>

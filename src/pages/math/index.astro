@@ -1,0 +1,57 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Navbar from '@/components/Navbar.astro';
+
+const tools = [
+  {
+    title: '🧮 數學計算器',
+    description: '質數檢查、質因數分解、最大公因數 (GCD)、最小公倍數 (LCM)',
+    href: '/math/gcdlcm',
+    color: 'primary'
+  },
+  {
+    title: '🎨 傅立葉畫畫',
+    description: '畫一個圖形，看旋轉的圓圈如何利用傅立葉級數重繪它！',
+    href: '/math/fourier',
+    color: 'success'
+  },
+  {
+    title: '🎛️ 波形合成器',
+    description: '疊加不同頻率的正弦波，即時看到波形與頻譜的變化',
+    href: '/math/waveform',
+    color: 'info'
+  }
+];
+---
+<BaseLayout title="數學工具">
+  <Navbar currentPage="math" />
+  <div class="container mt-5">
+    <h1 class="text-center mb-2">📐 數學工具</h1>
+    <p class="text-center text-muted mb-5">各種有趣的數學視覺化與計算工具</p>
+    
+    <div class="row g-4">
+      {tools.map((tool) => (
+        <div class="col-md-6 col-lg-4">
+          <div class={`card h-100 border-${tool.color}`}>
+            <div class="card-body">
+              <h5 class="card-title">
+                {tool.title}
+                {tool.badge && (
+                  <span class="badge bg-warning text-dark ms-2">{tool.badge}</span>
+                )}
+              </h5>
+              <p class="card-text text-muted">{tool.description}</p>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+              {tool.badge ? (
+                <button class="btn btn-outline-secondary w-100" disabled>敬請期待</button>
+              ) : (
+                <a href={tool.href} class={`btn btn-${tool.color} w-100`}>開始使用</a>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</BaseLayout>
