@@ -15,16 +15,8 @@ const { currentPage = '' } = Astro.props;
         <li class="nav-item">
           <a class={`nav-link ${currentPage === 'home' ? 'active' : ''}`} href="/">首頁</a>
         </li>
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            數學工具
-          </a>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="/math/gcd">質因數分解</a></li>
-            <li><a class="dropdown-item" href="/math/lcm">最小公倍數</a></li>
-            <li><a class="dropdown-item" href="/math/gcdlcm">GCD & LCM</a></li>
-            <li><a class="dropdown-item" href="/math/prime/">質數計算</a></li>
-          </ul>
+        <li class="nav-item">
+          <a class={`nav-link ${currentPage === 'math' ? 'active' : ''}`} href="/math/gcdlcm">數學工具</a>
         </li>
         <li class="nav-item">
           <a class={`nav-link ${currentPage === 'game' ? 'active' : ''}`} href="/game/stairs">下樓梯遊戲</a>
