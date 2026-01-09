@@ -1,0 +1,235 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Navbar from '@/components/Navbar.astro';
+---
+<BaseLayout title="數學計算工具">
+  <Navbar currentPage="math" />
+  <div class="container mt-5">
+    <div class="prime-check-container mb-5">
+      <h2 class="text-center">質數檢查</h2>
+      <div class="mb-3">
+        <label for="primeInput" class="form-label">輸入數字</label>
+        <input type="text" class="form-control" id="primeInput" placeholder="輸入一個整數">
+      </div>
+      <button class="btn btn-primary" id="primeButton">檢查</button>
+      <p class="mt-3" id="primeResult"></p>
+    </div>
+    <hr>
+    <div class="factorization-container mb-5">
+      <h2 class="text-center">質因數分解</h2>
+      <div class="mb-3">
+        <label for="numberInput" class="form-label">輸入數字</label>
+        <input type="text" class="form-control" id="numberInput" placeholder="輸入一個整數">
+      </div>
+      <button class="btn btn-primary" id="factorButton">分解</button>
+      <p class="mt-3" id="factorResult"></p>
+    </div>
+    <hr>
+    <div class="gcd-container mt-5">
+      <h2 class="text-center">最大公因數計算</h2>
+      <div class="mb-3">
+        <label for="gcdInput1" class="form-label">輸入第一個數字</label>
+        <input type="text" class="form-control" id="gcdInput1" placeholder="輸入第一個整數">
+      </div>
+      <div class="mb-3">
+        <label for="gcdInput2" class="form-label">輸入第二個數字</label>
+        <input type="text" class="form-control" id="gcdInput2" placeholder="輸入第二個整數">
+      </div>
+      <button class="btn btn-primary" id="gcdButton">計算</button>
+      <p class="mt-3" id="gcdResult"></p>
+    </div>
+    <hr>
+    <div class="lcm-container mt-5">
+      <h2 class="text-center">最小公倍數計算</h2>
+      <div class="mb-3">
+        <label for="numberInput1" class="form-label">輸入第一個數字</label>
+        <input type="text" class="form-control" id="numberInput1" placeholder="輸入第一個整數">
+      </div>
+      <div class="mb-3">
+        <label for="numberInput2" class="form-label">輸入第二個數字</label>
+        <input type="text" class="form-control" id="numberInput2" placeholder="輸入第二個整數">
+      </div>
+      <button class="btn btn-primary" id="lcmButton">計算</button>
+      <p class="mt-3" id="lcmResult"></p>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  let stopCalculation = false;
+  let primes = [BigInt(2), BigInt(3), BigInt(5), BigInt(7), BigInt(11), BigInt(13)];
+
+  function addNewPrime(): bigint {
+    const last_prime = primes[primes.length - 1];
+    let to_check = last_prime + BigInt(2);
+    while (!isPrimeSync(to_check)) {
+      to_check += BigInt(2);
+    }
+    primes.push(to_check);
+    return to_check;
+  }
+
+  function isPrimeSync(num: bigint): boolean | null {
+    if (num <= BigInt(1)) return false;
+    if (primes.includes(num)) return true;
+
+    const sqrtNum = BigInt(Math.ceil(Math.sqrt(Number(num))));
+    for (let p of primes) {
+      if (stopCalculation) return null;
+      if (num % p === BigInt(0)) return false;
+      if (p > sqrtNum) return true;
+    }
+
+    let p = addNewPrime();
+    while (p <= sqrtNum) {
+      if (stopCalculation) return null;
+      if (num % p === BigInt(0)) return false;
+      p = addNewPrime();
+    }
+
+    return true;
+  }
+
+  async function togglePrimeCheck() {
+    const button = document.getElementById('primeButton')!;
+    const resultElement = document.getElementById('primeResult')!;
+
+    if (button.innerText === '檢查') {
+      stopCalculation = false;
+      button.innerText = '停止';
+      button.classList.remove('btn-primary');
+      button.classList.add('btn-danger');
+
+      const input = (document.getElementById('primeInput') as HTMLInputElement).value;
+      const num = BigInt(input);
+      resultElement.innerHTML += `<div>${num}：檢查中...</div>`;
+
+      const result = await isPrimeSync(num);
+
+      if (stopCalculation || result === null) {
+        resultElement.innerHTML += `<div>${num}：已停止檢查</div>`;
+      } else {
+        resultElement.innerHTML += `<div>${num}：${result ? '是質數' : '不是質數'}</div>`;
+      }
+
+      resetPrimeButton();
+    } else {
+      stopCalculation = true;
+      resetPrimeButton();
+    }
+  }
+
+  function resetPrimeButton() {
+    const button = document.getElementById('primeButton')!;
+    button.innerText = '檢查';
+    button.classList.remove('btn-danger');
+    button.classList.add('btn-primary');
+  }
+
+  function primeFactorization(num: bigint) {
+    const factors: bigint[] = [];
+    const resultElement = document.getElementById('factorResult')!;
+
+    function append(msg: string) {
+      resultElement.innerHTML += `<div>${msg}</div>`;
+    }
+
+    while (num % BigInt(2) === BigInt(0)) {
+      factors.push(BigInt(2));
+      num /= BigInt(2);
+      append(`目前質因數: ${factors.join(', ')}`);
+    }
+
+    let divisor = BigInt(3);
+    const sqrtNum = BigInt(Math.ceil(Math.sqrt(Number(num))));
+
+    function checkDivisor() {
+      if (divisor > sqrtNum || stopCalculation) {
+        if (num > BigInt(2)) {
+          factors.push(num);
+        }
+        append(`最終質因數: ${factors.join(', ')} ${stopCalculation ? '(未完成)' : ''}`);
+        resetButton();
+        return;
+      }
+
+      if (num % divisor === BigInt(0)) {
+        factors.push(divisor);
+        num /= divisor;
+        append(`目前質因數: ${factors.join(', ')}`);
+      } else {
+        divisor += BigInt(2);
+      }
+      setTimeout(checkDivisor, 0);
+    }
+
+    checkDivisor();
+  }
+
+  function toggleFactorization() {
+    const button = document.getElementById('factorButton')!;
+    if (button.innerText === '分解') {
+      stopCalculation = false;
+      button.innerText = '停止';
+      button.classList.remove('btn-primary');
+      button.classList.add('btn-danger');
+      const input = (document.getElementById('numberInput') as HTMLInputElement).value;
+      const num = BigInt(input);
+      if (num > BigInt(1)) {
+        primeFactorization(num);
+      } else {
+        document.getElementById('factorResult')!.innerText = '請輸入大於1的整數';
+        resetButton();
+      }
+    } else {
+      stopCalculation = true;
+      resetButton();
+    }
+  }
+
+  function resetButton() {
+    const button = document.getElementById('factorButton')!;
+    button.innerText = '分解';
+    button.classList.remove('btn-danger');
+    button.classList.add('btn-primary');
+  }
+
+  function gcd(a: bigint, b: bigint): bigint {
+    return b === BigInt(0) ? a : gcd(b, a % b);
+  }
+
+  function lcm(a: bigint, b: bigint): bigint {
+    return (a * b) / gcd(a, b);
+  }
+
+  function displayGCD() {
+    const num1 = BigInt((document.getElementById('gcdInput1') as HTMLInputElement).value);
+    const num2 = BigInt((document.getElementById('gcdInput2') as HTMLInputElement).value);
+    const resultElement = document.getElementById('gcdResult')!;
+
+    if (num1 > BigInt(0) && num2 > BigInt(0)) {
+      const result = gcd(num1, num2);
+      resultElement.innerHTML += `<div>${num1} 和 ${num2} 的最大公因數為 ${result}</div>`;
+    } else {
+      resultElement.innerHTML += `<div>請輸入兩個大於 0 的整數</div>`;
+    }
+  }
+
+  function displayLCM() {
+    const num1 = BigInt((document.getElementById('numberInput1') as HTMLInputElement).value);
+    const num2 = BigInt((document.getElementById('numberInput2') as HTMLInputElement).value);
+    const resultElement = document.getElementById('lcmResult')!;
+
+    if (num1 > BigInt(0) && num2 > BigInt(0)) {
+      const result = lcm(num1, num2);
+      resultElement.innerHTML += `<div>${num1} 和 ${num2} 的最小公倍數為 ${result}</div>`;
+    } else {
+      resultElement.innerHTML += `<div>請輸入兩個大於 0 的整數</div>`;
+    }
+  }
+
+  document.getElementById('primeButton')?.addEventListener('click', togglePrimeCheck);
+  document.getElementById('factorButton')?.addEventListener('click', toggleFactorization);
+  document.getElementById('gcdButton')?.addEventListener('click', displayGCD);
+  document.getElementById('lcmButton')?.addEventListener('click', displayLCM);
+</script>

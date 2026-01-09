@@ -1,0 +1,66 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Navbar from '@/components/Navbar.astro';
+---
+<BaseLayout title="QR Code 掃描器">
+  <Navbar currentPage="qrcode" />
+  <div class="container mt-5">
+    <h1 class="mb-3">挫屎勇ㄟ線上QR Code解析器</h1>
+    <p class="mb-4">上傳圖片，解析QR Code的內容</p>
+
+    <div class="mb-4">
+      <label for="fileInput" class="form-label">上傳圖片以解析 QR Code</label>
+      <input class="form-control" type="file" id="fileInput" accept="image/*">
+    </div>
+
+    <!-- 圖片預覽 -->
+    <div class="mb-4 text-center">
+      <img id="preview" class="img-fluid rounded shadow-sm d-none" alt="圖像預覽">
+    </div>
+
+    <!-- 隱藏用 Canvas -->
+    <canvas id="canvas" class="d-none"></canvas>
+
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">解析結果</h5>
+        <p id="result" class="card-text text-muted">尚未解析任何 QR Code。</p>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script is:inline src="/tools/qrcode/jsQR.min.js"></script>
+<script is:inline>
+  var fileInput = document.getElementById('fileInput');
+  var preview = document.getElementById('preview');
+  var canvas = document.getElementById('canvas');
+  var ctx = canvas.getContext('2d');
+  var resultDiv = document.getElementById('result');
+
+  fileInput.addEventListener('change', function(e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    var url = URL.createObjectURL(file);
+    preview.src = url;
+    preview.classList.remove('d-none');
+
+    var img = new Image();
+    img.onload = function() {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      var imgData = ctx.getImageData(0, 0, img.width, img.height);
+      var code = jsQR(imgData.data, imgData.width, imgData.height);
+
+      resultDiv.textContent = code
+        ? code.data
+        : "未偵測到 QR Code。";
+
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  });
+</script>

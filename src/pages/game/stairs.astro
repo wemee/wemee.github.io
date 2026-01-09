@@ -1,0 +1,128 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Navbar from '@/components/Navbar.astro';
+---
+<BaseLayout title="下樓梯遊戲">
+  <Navbar currentPage="game" />
+  <div class="container mt-4 text-center">
+    <h1 class="mb-3">下樓梯遊戲</h1>
+    <p class="text-muted">使用 ← → 方向鍵移動，空白鍵暫停</p>
+    <canvas id="gameCanvas" width="400" height="600" style="background: #eee; display: block; margin: 0 auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></canvas>
+  </div>
+</BaseLayout>
+
+<script>
+  function startGame() {
+    const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+    const ctx = canvas.getContext('2d')!;
+    ctx.font = "16px Arial";
+
+    const player = { x: 200, y: 100, width: 20, height: 20, dy: 2, speed: 5, onStair: false };
+    const stairs: Array<{x: number, y: number, width: number, height: number}> = [];
+    let gameOver = false;
+    let gamePause = false;
+    let keys = { left: false, right: false };
+
+    let score = 0;
+
+    function stairX() {
+      return Math.random() * (canvas.width - 50);
+    }
+
+    function stairWidth() {
+      return Math.random() * (canvas.width / 3) + 20;
+    }
+
+    function createStairs() {
+      stairs.length = 0;
+      let y = 150;
+      for (let i = 0; i < 10; i++) {
+        stairs.push({ x: stairX(), y: y, width: stairWidth(), height: 10 });
+        y += 60;
+      }
+    }
+
+    function drawPlayer() {
+      ctx.fillStyle = 'blue';
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+    }
+
+    function drawStairs() {
+      ctx.fillStyle = 'brown';
+      stairs.forEach(stair => {
+        ctx.fillRect(stair.x, stair.y, stair.width, stair.height);
+      });
+    }
+
+    function checkCollision() {
+      player.onStair = false;
+      stairs.forEach(stair => {
+        if (
+          player.x < stair.x + stair.width &&
+          player.x + player.width > stair.x &&
+          player.y + player.height <= stair.y &&
+          player.y + player.height + player.dy >= stair.y
+        ) {
+          player.onStair = true;
+          player.y = stair.y - player.height;
+        }
+      });
+    }
+
+    function update() {
+      if (gameOver) return;
+      if (gamePause) return requestAnimationFrame(update);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      checkCollision();
+
+      player.y += player.dy * (player.onStair ? -1 : 1);
+
+      if (keys.left) player.x -= player.speed;
+      if (keys.right) player.x += player.speed;
+
+      player.x = Math.max(0, Math.min(player.x, canvas.width - player.width));
+
+      stairs.forEach(stair => {
+        stair.y -= player.dy;
+        if (stair.y + stair.height < 0) {
+          stair.y = canvas.height;
+          stair.x = stairX();
+          stair.width = stairWidth();
+          score += 1;
+        }
+      });
+      ctx.fillText(score.toString(), 10, 16);
+
+      if (player.y > canvas.height) {
+        gameOver = true;
+        return startGame();
+      }
+
+      drawPlayer();
+      drawStairs();
+
+      requestAnimationFrame(update);
+    }
+
+    createStairs();
+    update();
+
+    document.addEventListener('keypress', (e) => {
+      if (e.key === ' ') gamePause = !gamePause;
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') keys.left = true;
+      if (e.key === 'ArrowRight') keys.right = true;
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (e.key === 'ArrowLeft') keys.left = false;
+      if (e.key === 'ArrowRight') keys.right = false;
+    });
+  }
+
+  startGame();
+</script>

@@ -1,0 +1,44 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Navbar from '@/components/Navbar.astro';
+---
+<BaseLayout title="質數檢查">
+  <Navbar currentPage="math" />
+  <div class="container mt-5">
+    <div class="prime-check-container mb-5">
+      <h2 class="text-center">質數檢查 (Web Worker)</h2>
+      <div class="mb-3">
+        <label for="numberInput" class="form-label">輸入數字</label>
+        <input type="text" class="form-control" id="numberInput" placeholder="輸入一個整數">
+      </div>
+      <button class="btn btn-primary" id="checkButton">檢查</button>
+      <p class="mt-3" id="result"></p>
+      <div class="progress mt-3" style="display: none;">
+        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script is:inline src="/math/prime/prime-worker.js"></script>
+<script is:inline src="/math/prime/main.js"></script>
+<script is:inline>
+  document.getElementById('checkButton').addEventListener('click', async function() {
+    var input = document.getElementById('numberInput').value;
+    var resultElement = document.getElementById('result');
+
+    resultElement.textContent = '計算中...';
+
+    var primeGen = new AsyncPrimeGenerator();
+    try {
+      var isPrime = await primeGen.isPrime(input);
+      resultElement.textContent = isPrime ?
+        input + ' 是質數' :
+        input + ' 不是質數';
+    } catch (error) {
+      resultElement.textContent = '錯誤: ' + error.message;
+    } finally {
+      primeGen.terminate();
+    }
+  });
+</script>

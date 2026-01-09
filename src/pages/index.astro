@@ -1,0 +1,41 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Navbar from '@/components/Navbar.astro';
+---
+<BaseLayout title="我的網站">
+  <Navbar currentPage="home" />
+  <div class="container mt-5">
+    <h1>歡迎來到我的網站</h1>
+    <p>這是我的個人網站。</p>
+    
+    <div class="row mt-4">
+      <div class="col-md-4 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">🧮 數學工具</h5>
+            <p class="card-text">質因數分解、最小公倍數、GCD/LCM 計算器</p>
+            <a href="/math/gcd" class="btn btn-primary">前往</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">🎮 遊戲</h5>
+            <p class="card-text">下樓梯遊戲、Fishbanks 模擬</p>
+            <a href="/game/stairs" class="btn btn-primary">前往</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">🛠️ 工具</h5>
+            <p class="card-text">QR Code 掃描器、3D 場景</p>
+            <a href="/tools/qrcode/" class="btn btn-primary">前往</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
