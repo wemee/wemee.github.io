@@ -4,125 +4,489 @@ import Navbar from '@/components/Navbar.astro';
 ---
 <BaseLayout title="下樓梯遊戲">
   <Navbar currentPage="game" />
-  <div class="container mt-4 text-center">
-    <h1 class="mb-3">下樓梯遊戲</h1>
-    <p class="text-muted">使用 ← → 方向鍵移動，空白鍵暫停</p>
-    <canvas id="gameCanvas" width="400" height="600" style="background: #eee; display: block; margin: 0 auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></canvas>
+  <div class="container-fluid mt-3">
+    <div class="row justify-content-center">
+      <div class="col-auto">
+        <div class="game-container">
+          <canvas id="gameCanvas" width="400" height="600"></canvas>
+          <div class="game-overlay" id="startScreen">
+            <h2>🏃 下樓梯</h2>
+            <p>不要掉出去，也別被頂到頂部！</p>
+            <button class="btn btn-lg btn-success" id="startBtn">開始遊戲</button>
+            <div class="controls-info mt-3">
+              <small>← → 或 A D 移動 | 空白鍵暫停</small>
+            </div>
+          </div>
+          <div class="game-overlay hidden" id="gameOverScreen">
+            <h2>💀 遊戲結束</h2>
+            <p>分數: <span id="finalScore">0</span></p>
+            <p>最高分: <span id="highScore">0</span></p>
+            <button class="btn btn-lg btn-primary" id="restartBtn">再玩一次</button>
+          </div>
+          <div class="game-overlay hidden" id="pauseScreen">
+            <h2>⏸️ 暫停</h2>
+            <p>按空白鍵繼續</p>
+          </div>
+          <div class="score-display" id="scoreDisplay">0</div>
+        </div>
+      </div>
+    </div>
   </div>
 </BaseLayout>
 
+<style>
+  .game-container {
+    position: relative;
+    display: inline-block;
+  }
+  
+  #gameCanvas {
+    display: block;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+  
+  .game-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    border-radius: 12px;
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .game-overlay.hidden {
+    display: none;
+  }
+  
+  .game-overlay h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .controls-info {
+    color: #aaa;
+  }
+  
+  .score-display {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    pointer-events: none;
+  }
+</style>
+
 <script>
-  function startGame() {
-    const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
-    const ctx = canvas.getContext('2d')!;
-    ctx.font = "16px Arial";
-
-    const player = { x: 200, y: 100, width: 20, height: 20, dy: 2, speed: 5, onStair: false };
-    const stairs: Array<{x: number, y: number, width: number, height: number}> = [];
-    let gameOver = false;
-    let gamePause = false;
-    let keys = { left: false, right: false };
-
-    let score = 0;
-
-    function stairX() {
-      return Math.random() * (canvas.width - 50);
-    }
-
-    function stairWidth() {
-      return Math.random() * (canvas.width / 3) + 20;
-    }
-
-    function createStairs() {
-      stairs.length = 0;
-      let y = 150;
-      for (let i = 0; i < 10; i++) {
-        stairs.push({ x: stairX(), y: y, width: stairWidth(), height: 10 });
-        y += 60;
-      }
-    }
-
-    function drawPlayer() {
-      ctx.fillStyle = 'blue';
-      ctx.fillRect(player.x, player.y, player.width, player.height);
-    }
-
-    function drawStairs() {
-      ctx.fillStyle = 'brown';
-      stairs.forEach(stair => {
-        ctx.fillRect(stair.x, stair.y, stair.width, stair.height);
-      });
-    }
-
-    function checkCollision() {
-      player.onStair = false;
-      stairs.forEach(stair => {
-        if (
-          player.x < stair.x + stair.width &&
-          player.x + player.width > stair.x &&
-          player.y + player.height <= stair.y &&
-          player.y + player.height + player.dy >= stair.y
-        ) {
-          player.onStair = true;
-          player.y = stair.y - player.height;
-        }
-      });
-    }
-
-    function update() {
-      if (gameOver) return;
-      if (gamePause) return requestAnimationFrame(update);
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      checkCollision();
-
-      player.y += player.dy * (player.onStair ? -1 : 1);
-
-      if (keys.left) player.x -= player.speed;
-      if (keys.right) player.x += player.speed;
-
-      player.x = Math.max(0, Math.min(player.x, canvas.width - player.width));
-
-      stairs.forEach(stair => {
-        stair.y -= player.dy;
-        if (stair.y + stair.height < 0) {
-          stair.y = canvas.height;
-          stair.x = stairX();
-          stair.width = stairWidth();
-          score += 1;
-        }
-      });
-      ctx.fillText(score.toString(), 10, 16);
-
-      if (player.y > canvas.height) {
-        gameOver = true;
-        return startGame();
-      }
-
-      drawPlayer();
-      drawStairs();
-
-      requestAnimationFrame(update);
-    }
-
-    createStairs();
-    update();
-
-    document.addEventListener('keypress', (e) => {
-      if (e.key === ' ') gamePause = !gamePause;
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowLeft') keys.left = true;
-      if (e.key === 'ArrowRight') keys.right = true;
-    });
-
-    document.addEventListener('keyup', (e) => {
-      if (e.key === 'ArrowLeft') keys.left = false;
-      if (e.key === 'ArrowRight') keys.right = false;
-    });
+  // === 型別定義 ===
+  interface Stair {
+    x: number;
+    y: number;
+    width: number;
+    type: 'normal' | 'bounce' | 'fragile' | 'moving';
+    broken: boolean;
+    moveDir?: number;
+    color: string;
   }
 
-  startGame();
+  interface Particle {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    life: number;
+    color: string;
+    size: number;
+  }
+
+  interface Star {
+    x: number;
+    y: number;
+    size: number;
+    speed: number;
+    opacity: number;
+  }
+
+  // === 遊戲類別 ===
+  class StairsGame {
+    private canvas: HTMLCanvasElement;
+    private ctx: CanvasRenderingContext2D;
+    
+    // 玩家
+    private player = { x: 200, y: 100, radius: 15, vy: 0, vx: 0, onStair: false, expression: '😊' };
+    
+    // 遊戲狀態
+    private stairs: Stair[] = [];
+    private particles: Particle[] = [];
+    private stars: Star[] = [];
+    private score = 0;
+    private highScore = 0;
+    private gameState: 'start' | 'playing' | 'paused' | 'gameover' = 'start';
+    private scrollSpeed = 2;
+    private keys = { left: false, right: false };
+    
+    // 常數
+    private readonly GRAVITY = 0.3;
+    private readonly MOVE_SPEED = 5;
+    private readonly STAIR_HEIGHT = 12;
+    private readonly STAIR_GAP = 70;
+
+    constructor() {
+      this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+      this.ctx = this.canvas.getContext('2d')!;
+      
+      this.highScore = parseInt(localStorage.getItem('stairsHighScore') || '0');
+      
+      this.initStars();
+      this.bindEvents();
+      this.gameLoop();
+    }
+
+    private initStars() {
+      for (let i = 0; i < 50; i++) {
+        this.stars.push({
+          x: Math.random() * this.canvas.width,
+          y: Math.random() * this.canvas.height,
+          size: Math.random() * 2 + 0.5,
+          speed: Math.random() * 0.5 + 0.2,
+          opacity: Math.random() * 0.5 + 0.3
+        });
+      }
+    }
+
+    private createStair(y: number): Stair {
+      const types: Stair['type'][] = ['normal', 'normal', 'normal', 'normal', 'bounce', 'fragile', 'moving'];
+      const type = this.score > 10 ? types[Math.floor(Math.random() * types.length)] : 'normal';
+      
+      const colors: Record<Stair['type'], string> = {
+        normal: '#78c2ad',
+        bounce: '#5cb85c',
+        fragile: '#d9534f',
+        moving: '#9b59b6'
+      };
+
+      return {
+        x: Math.random() * (this.canvas.width - 80) + 20,
+        y: y,
+        width: Math.random() * 60 + 60,
+        type: type,
+        broken: false,
+        moveDir: type === 'moving' ? (Math.random() > 0.5 ? 1 : -1) : undefined,
+        color: colors[type]
+      };
+    }
+
+    private initGame() {
+      this.player = { x: 200, y: 100, radius: 15, vy: 0, vx: 0, onStair: false, expression: '😊' };
+      this.score = 0;
+      this.scrollSpeed = 2;
+      this.stairs = [];
+      this.particles = [];
+      
+      // 建立初始樓梯
+      for (let i = 0; i < 10; i++) {
+        this.stairs.push(this.createStair(150 + i * this.STAIR_GAP));
+      }
+    }
+
+    private bindEvents() {
+      document.getElementById('startBtn')?.addEventListener('click', () => this.startGame());
+      document.getElementById('restartBtn')?.addEventListener('click', () => this.startGame());
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.keys.left = true;
+        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.keys.right = true;
+        if (e.key === ' ') {
+          e.preventDefault();
+          if (this.gameState === 'playing') {
+            this.gameState = 'paused';
+            this.showOverlay('pauseScreen');
+          } else if (this.gameState === 'paused') {
+            this.gameState = 'playing';
+            this.hideOverlay('pauseScreen');
+          }
+        }
+      });
+
+      document.addEventListener('keyup', (e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.keys.left = false;
+        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.keys.right = false;
+      });
+
+      // 觸控支援
+      let touchStartX = 0;
+      this.canvas.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+      });
+      this.canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touchX = e.touches[0].clientX;
+        const diff = touchX - touchStartX;
+        this.keys.left = diff < -10;
+        this.keys.right = diff > 10;
+      });
+      this.canvas.addEventListener('touchend', () => {
+        this.keys.left = false;
+        this.keys.right = false;
+      });
+    }
+
+    private startGame() {
+      this.initGame();
+      this.gameState = 'playing';
+      this.hideOverlay('startScreen');
+      this.hideOverlay('gameOverScreen');
+    }
+
+    private showOverlay(id: string) {
+      document.getElementById(id)?.classList.remove('hidden');
+    }
+
+    private hideOverlay(id: string) {
+      document.getElementById(id)?.classList.add('hidden');
+    }
+
+    private spawnParticles(x: number, y: number, color: string, count: number) {
+      for (let i = 0; i < count; i++) {
+        this.particles.push({
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 8,
+          vy: (Math.random() - 0.5) * 8,
+          life: 1,
+          color: color,
+          size: Math.random() * 4 + 2
+        });
+      }
+    }
+
+    private update() {
+      if (this.gameState !== 'playing') return;
+
+      // 更新玩家
+      if (this.keys.left) this.player.vx = -this.MOVE_SPEED;
+      else if (this.keys.right) this.player.vx = this.MOVE_SPEED;
+      else this.player.vx *= 0.8;
+
+      this.player.x += this.player.vx;
+      this.player.x = Math.max(this.player.radius, Math.min(this.player.x, this.canvas.width - this.player.radius));
+
+      // 重力
+      if (!this.player.onStair) {
+        this.player.vy += this.GRAVITY;
+      }
+      this.player.y += this.player.vy;
+
+      // 碰撞檢測
+      this.player.onStair = false;
+      for (const stair of this.stairs) {
+        if (stair.broken) continue;
+        
+        const playerBottom = this.player.y + this.player.radius;
+        const playerTop = this.player.y - this.player.radius;
+        
+        if (this.player.x > stair.x - this.player.radius && 
+            this.player.x < stair.x + stair.width + this.player.radius &&
+            playerBottom >= stair.y && 
+            playerBottom <= stair.y + this.STAIR_HEIGHT + this.player.vy) {
+          
+          if (this.player.vy >= 0) {
+            this.player.y = stair.y - this.player.radius;
+            this.player.onStair = true;
+
+            if (stair.type === 'bounce') {
+              this.player.vy = -12;
+              this.player.onStair = false;
+              this.spawnParticles(this.player.x, this.player.y + this.player.radius, '#5cb85c', 8);
+              this.player.expression = '😮';
+            } else if (stair.type === 'fragile') {
+              stair.broken = true;
+              this.spawnParticles(stair.x + stair.width/2, stair.y, '#d9534f', 15);
+              this.player.expression = '😱';
+            } else {
+              this.player.vy = 0;
+              this.player.expression = '😊';
+            }
+
+            // 跟隨移動樓梯
+            if (stair.type === 'moving' && stair.moveDir) {
+              this.player.x += stair.moveDir * 2;
+            }
+          }
+        }
+      }
+
+      // 樓梯移動（向上滾動）
+      for (const stair of this.stairs) {
+        stair.y -= this.scrollSpeed;
+        
+        // 移動樓梯左右移動
+        if (stair.type === 'moving' && stair.moveDir) {
+          stair.x += stair.moveDir * 2;
+          if (stair.x <= 10 || stair.x + stair.width >= this.canvas.width - 10) {
+            stair.moveDir *= -1;
+          }
+        }
+
+        // 回收並重生樓梯
+        if (stair.y + this.STAIR_HEIGHT < 0) {
+          Object.assign(stair, this.createStair(this.canvas.height + 50));
+          stair.broken = false;
+          this.score++;
+        }
+      }
+
+      // 難度遞增
+      this.scrollSpeed = 2 + Math.floor(this.score / 10) * 0.5;
+      if (this.scrollSpeed > 6) this.scrollSpeed = 6;
+
+      // 玩家跟隨滾動
+      this.player.y -= this.scrollSpeed;
+
+      // 更新粒子
+      this.particles = this.particles.filter(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.2;
+        p.life -= 0.02;
+        return p.life > 0;
+      });
+
+      // 更新星星
+      for (const star of this.stars) {
+        star.y -= star.speed;
+        if (star.y < 0) {
+          star.y = this.canvas.height;
+          star.x = Math.random() * this.canvas.width;
+        }
+      }
+
+      // 死亡檢測
+      if (this.player.y > this.canvas.height + 50 || this.player.y < -20) {
+        this.gameOver();
+      }
+
+      // 更新分數顯示
+      document.getElementById('scoreDisplay')!.textContent = this.score.toString();
+    }
+
+    private gameOver() {
+      this.gameState = 'gameover';
+      this.spawnParticles(this.player.x, this.player.y, '#fff', 30);
+      
+      if (this.score > this.highScore) {
+        this.highScore = this.score;
+        localStorage.setItem('stairsHighScore', this.highScore.toString());
+      }
+
+      document.getElementById('finalScore')!.textContent = this.score.toString();
+      document.getElementById('highScore')!.textContent = this.highScore.toString();
+      this.showOverlay('gameOverScreen');
+    }
+
+    private draw() {
+      const ctx = this.ctx;
+      const w = this.canvas.width;
+      const h = this.canvas.height;
+
+      // 背景漸層
+      const gradient = ctx.createLinearGradient(0, 0, 0, h);
+      gradient.addColorStop(0, '#1a1a2e');
+      gradient.addColorStop(1, '#16213e');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, w, h);
+
+      // 星星
+      for (const star of this.stars) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 樓梯
+      for (const stair of this.stairs) {
+        if (stair.broken) continue;
+        
+        ctx.fillStyle = stair.color;
+        ctx.shadowColor = stair.color;
+        ctx.shadowBlur = 10;
+        
+        // 圓角矩形
+        const r = 6;
+        ctx.beginPath();
+        ctx.moveTo(stair.x + r, stair.y);
+        ctx.lineTo(stair.x + stair.width - r, stair.y);
+        ctx.quadraticCurveTo(stair.x + stair.width, stair.y, stair.x + stair.width, stair.y + r);
+        ctx.lineTo(stair.x + stair.width, stair.y + this.STAIR_HEIGHT - r);
+        ctx.quadraticCurveTo(stair.x + stair.width, stair.y + this.STAIR_HEIGHT, stair.x + stair.width - r, stair.y + this.STAIR_HEIGHT);
+        ctx.lineTo(stair.x + r, stair.y + this.STAIR_HEIGHT);
+        ctx.quadraticCurveTo(stair.x, stair.y + this.STAIR_HEIGHT, stair.x, stair.y + this.STAIR_HEIGHT - r);
+        ctx.lineTo(stair.x, stair.y + r);
+        ctx.quadraticCurveTo(stair.x, stair.y, stair.x + r, stair.y);
+        ctx.fill();
+        
+        ctx.shadowBlur = 0;
+      }
+
+      // 粒子
+      for (const p of this.particles) {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // 玩家
+      if (this.gameState === 'playing' || this.gameState === 'paused') {
+        // 身體
+        ctx.fillStyle = '#ffcc5c';
+        ctx.shadowColor = '#ffcc5c';
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(this.player.x, this.player.y, this.player.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // 表情
+        ctx.font = '18px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.player.expression, this.player.x, this.player.y);
+      }
+
+      // 危險區域提示
+      if (this.gameState === 'playing') {
+        // 頂部危險
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
+        ctx.fillRect(0, 0, w, 30);
+        
+        // 底部危險
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
+        ctx.fillRect(0, h - 30, w, 30);
+      }
+    }
+
+    private gameLoop = () => {
+      this.update();
+      this.draw();
+      requestAnimationFrame(this.gameLoop);
+    }
+  }
+
+  // 啟動遊戲
+  new StairsGame();
 </script>
