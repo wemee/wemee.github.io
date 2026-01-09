@@ -27,16 +27,10 @@ const { currentPage = '' } = Astro.props;
           </ul>
         </li>
         <li class="nav-item">
-          <a class={`nav-link ${currentPage === '3d' ? 'active' : ''}`} href="/3d/">3D 場景</a>
-        </li>
-        <li class="nav-item">
           <a class={`nav-link ${currentPage === 'game' ? 'active' : ''}`} href="/game/stairs">下樓梯遊戲</a>
         </li>
         <li class="nav-item">
           <a class={`nav-link ${currentPage === 'qrcode' ? 'active' : ''}`} href="/tools/qrcode/">QR Code 掃描</a>
-        </li>
-        <li class="nav-item">
-          <a class={`nav-link ${currentPage === 'fishbanks' ? 'active' : ''}`} href="/fishbanks/">Fishbanks</a>
         </li>
       </ul>
     </div>
