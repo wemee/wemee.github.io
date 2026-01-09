@@ -15,8 +15,14 @@ const { currentPage = '' } = Astro.props;
         <li class="nav-item">
           <a class={`nav-link ${currentPage === 'home' ? 'active' : ''}`} href="/">首頁</a>
         </li>
-        <li class="nav-item">
-          <a class={`nav-link ${currentPage === 'math' ? 'active' : ''}`} href="/math/gcdlcm">數學工具</a>
+        <li class="nav-item dropdown">
+          <a class={`nav-link dropdown-toggle ${currentPage === 'math' ? 'active' : ''}`} href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            數學工具
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/math/gcdlcm">數學計算器</a></li>
+            <li><a class="dropdown-item" href="/math/fourier">傅立葉畫畫</a></li>
+          </ul>
         </li>
         <li class="nav-item">
           <a class={`nav-link ${currentPage === 'game' ? 'active' : ''}`} href="/game/stairs">下樓梯遊戲</a>

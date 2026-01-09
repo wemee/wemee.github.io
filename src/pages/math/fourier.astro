@@ -1,0 +1,314 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Navbar from '@/components/Navbar.astro';
+---
+<BaseLayout title="傅立葉畫畫">
+  <Navbar currentPage="math" />
+  <div class="container-fluid mt-4">
+    <h1 class="text-center mb-3">🎨 傅立葉畫畫</h1>
+    <p class="text-center text-muted mb-4">在左側畫布上畫一個圖形，看旋轉的圓圈如何重繪它！</p>
+    
+    <div class="row g-3">
+      <!-- 繪圖區 -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span>🖌️ 繪圖區</span>
+            <button class="btn btn-sm btn-outline-danger" id="clearBtn">清除</button>
+          </div>
+          <div class="card-body p-2">
+            <canvas id="drawCanvas" width="500" height="400" style="border: 1px solid #ddd; cursor: crosshair; width: 100%; touch-action: none;"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 動畫區 -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span>🔄 傅立葉動畫</span>
+            <div>
+              <button class="btn btn-sm btn-primary" id="playBtn" disabled>播放</button>
+              <button class="btn btn-sm btn-secondary" id="pauseBtn" disabled>暫停</button>
+            </div>
+          </div>
+          <div class="card-body p-2">
+            <canvas id="animCanvas" width="500" height="400" style="border: 1px solid #ddd; width: 100%;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 控制項 -->
+    <div class="row mt-3">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <label for="circleCount" class="form-label">圓圈數量: <span id="circleCountValue">50</span></label>
+            <input type="range" class="form-range" id="circleCount" min="1" max="200" value="50">
+            <small class="text-muted">圓圈越多，還原度越高，但動畫越複雜</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <label for="speedControl" class="form-label">動畫速度: <span id="speedValue">1x</span></label>
+            <input type="range" class="form-range" id="speedControl" min="0.1" max="3" step="0.1" value="1">
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="text-center mt-4">
+      <a href="/math/gcdlcm" class="btn btn-outline-secondary">← 返回數學工具</a>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  interface Complex {
+    re: number;
+    im: number;
+  }
+
+  interface FourierCoeff {
+    freq: number;
+    amp: number;
+    phase: number;
+  }
+
+  // === 全域變數 ===
+  const drawCanvas = document.getElementById('drawCanvas') as HTMLCanvasElement;
+  const animCanvas = document.getElementById('animCanvas') as HTMLCanvasElement;
+  const drawCtx = drawCanvas.getContext('2d')!;
+  const animCtx = animCanvas.getContext('2d')!;
+  
+  let path: Complex[] = [];
+  let isDrawing = false;
+  let coefficients: FourierCoeff[] = [];
+  let animationId: number | null = null;
+  let time = 0;
+  let drawnPath: Complex[] = [];
+  let speed = 1;
+  let circleCount = 50;
+
+  // === 繪圖功能 ===
+  function getPos(e: MouseEvent | Touch): Complex {
+    const rect = drawCanvas.getBoundingClientRect();
+    const scaleX = drawCanvas.width / rect.width;
+    const scaleY = drawCanvas.height / rect.height;
+    return {
+      re: (e.clientX - rect.left) * scaleX - drawCanvas.width / 2,
+      im: (e.clientY - rect.top) * scaleY - drawCanvas.height / 2
+    };
+  }
+
+  function startDraw(e: MouseEvent | TouchEvent) {
+    isDrawing = true;
+    path = [];
+    drawnPath = [];
+    stopAnimation();
+    drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    
+    const pos = e instanceof MouseEvent ? getPos(e) : getPos(e.touches[0]);
+    path.push(pos);
+  }
+
+  function draw(e: MouseEvent | TouchEvent) {
+    if (!isDrawing) return;
+    e.preventDefault();
+    
+    const pos = e instanceof MouseEvent ? getPos(e) : getPos(e.touches[0]);
+    path.push(pos);
+    
+    // 繪製路徑
+    drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    drawCtx.save();
+    drawCtx.translate(drawCanvas.width / 2, drawCanvas.height / 2);
+    drawCtx.beginPath();
+    drawCtx.strokeStyle = '#78c2ad';
+    drawCtx.lineWidth = 2;
+    path.forEach((p, i) => {
+      if (i === 0) drawCtx.moveTo(p.re, p.im);
+      else drawCtx.lineTo(p.re, p.im);
+    });
+    drawCtx.stroke();
+    drawCtx.restore();
+  }
+
+  function endDraw() {
+    if (!isDrawing) return;
+    isDrawing = false;
+    
+    if (path.length > 10) {
+      computeFourier();
+      document.getElementById('playBtn')!.removeAttribute('disabled');
+    }
+  }
+
+  // === 傅立葉轉換 (DFT) ===
+  function dft(x: Complex[]): FourierCoeff[] {
+    const N = x.length;
+    const X: FourierCoeff[] = [];
+    
+    for (let k = 0; k < N; k++) {
+      let sumRe = 0;
+      let sumIm = 0;
+      
+      for (let n = 0; n < N; n++) {
+        const phi = (2 * Math.PI * k * n) / N;
+        sumRe += x[n].re * Math.cos(phi) + x[n].im * Math.sin(phi);
+        sumIm += x[n].im * Math.cos(phi) - x[n].re * Math.sin(phi);
+      }
+      
+      sumRe /= N;
+      sumIm /= N;
+      
+      X.push({
+        freq: k,
+        amp: Math.sqrt(sumRe * sumRe + sumIm * sumIm),
+        phase: Math.atan2(sumIm, sumRe)
+      });
+    }
+    
+    return X.sort((a, b) => b.amp - a.amp);
+  }
+
+  function computeFourier() {
+    coefficients = dft(path);
+    time = 0;
+    drawnPath = [];
+  }
+
+  // === 動畫 ===
+  function drawEpicycles(x: number, y: number, rotation: number, fourier: FourierCoeff[], count: number): Complex {
+    const limitedFourier = fourier.slice(0, count);
+    
+    for (const f of limitedFourier) {
+      const prevX = x;
+      const prevY = y;
+      const radius = f.amp;
+      
+      x += radius * Math.cos(f.freq * time + f.phase + rotation);
+      y += radius * Math.sin(f.freq * time + f.phase + rotation);
+      
+      // 畫圓圈
+      animCtx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+      animCtx.lineWidth = 1;
+      animCtx.beginPath();
+      animCtx.arc(prevX, prevY, radius, 0, 2 * Math.PI);
+      animCtx.stroke();
+      
+      // 畫半徑線
+      animCtx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
+      animCtx.beginPath();
+      animCtx.moveTo(prevX, prevY);
+      animCtx.lineTo(x, y);
+      animCtx.stroke();
+    }
+    
+    return { re: x, im: y };
+  }
+
+  function animate() {
+    animCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+    animCtx.save();
+    animCtx.translate(animCanvas.width / 2, animCanvas.height / 2);
+    
+    const result = drawEpicycles(0, 0, 0, coefficients, circleCount);
+    drawnPath.unshift(result);
+    
+    // 限制路徑長度
+    if (drawnPath.length > path.length) {
+      drawnPath.pop();
+    }
+    
+    // 畫出重建的路徑
+    animCtx.beginPath();
+    animCtx.strokeStyle = '#ff6b6b';
+    animCtx.lineWidth = 2;
+    drawnPath.forEach((p, i) => {
+      if (i === 0) animCtx.moveTo(p.re, p.im);
+      else animCtx.lineTo(p.re, p.im);
+    });
+    animCtx.stroke();
+    
+    // 畫出筆尖
+    animCtx.fillStyle = '#ff6b6b';
+    animCtx.beginPath();
+    animCtx.arc(result.re, result.im, 4, 0, 2 * Math.PI);
+    animCtx.fill();
+    
+    animCtx.restore();
+    
+    const dt = (2 * Math.PI) / path.length;
+    time += dt * speed;
+    
+    if (time < 2 * Math.PI) {
+      animationId = requestAnimationFrame(animate);
+    } else {
+      time = 0;
+      animationId = requestAnimationFrame(animate); // 循環播放
+    }
+  }
+
+  function startAnimation() {
+    if (coefficients.length === 0) return;
+    time = 0;
+    drawnPath = [];
+    animate();
+    document.getElementById('playBtn')!.setAttribute('disabled', 'true');
+    document.getElementById('pauseBtn')!.removeAttribute('disabled');
+  }
+
+  function stopAnimation() {
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+    }
+    document.getElementById('playBtn')!.removeAttribute('disabled');
+    document.getElementById('pauseBtn')!.setAttribute('disabled', 'true');
+  }
+
+  function clearAll() {
+    stopAnimation();
+    path = [];
+    coefficients = [];
+    drawnPath = [];
+    time = 0;
+    drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    animCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+    document.getElementById('playBtn')!.setAttribute('disabled', 'true');
+  }
+
+  // === 事件綁定 ===
+  drawCanvas.addEventListener('mousedown', startDraw);
+  drawCanvas.addEventListener('mousemove', draw);
+  drawCanvas.addEventListener('mouseup', endDraw);
+  drawCanvas.addEventListener('mouseleave', endDraw);
+  
+  drawCanvas.addEventListener('touchstart', startDraw);
+  drawCanvas.addEventListener('touchmove', draw);
+  drawCanvas.addEventListener('touchend', endDraw);
+
+  document.getElementById('clearBtn')!.addEventListener('click', clearAll);
+  document.getElementById('playBtn')!.addEventListener('click', startAnimation);
+  document.getElementById('pauseBtn')!.addEventListener('click', stopAnimation);
+
+  document.getElementById('circleCount')!.addEventListener('input', (e) => {
+    circleCount = parseInt((e.target as HTMLInputElement).value);
+    document.getElementById('circleCountValue')!.textContent = circleCount.toString();
+  });
+
+  document.getElementById('speedControl')!.addEventListener('input', (e) => {
+    speed = parseFloat((e.target as HTMLInputElement).value);
+    document.getElementById('speedValue')!.textContent = speed.toFixed(1) + 'x';
+  });
+</script>
+
+<style>
+  canvas {
+    background: #fafafa;
+  }
+</style>
