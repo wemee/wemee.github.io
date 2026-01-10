@@ -77,4 +77,4 @@ SVM 的原理很優雅：**找空間中的最佳分隔線**。
 
 ---
 
-**(下集待續：AI 演進史 Part 2 - 視覺的爆發：從 GAN 到 Stable Diffusion)**
+👉 **下一篇：** [AI 演進史 Part 2 - 視覺的爆發：從 GAN 到 Stable Diffusion](/blog/ai-evolution-part2-creation)
