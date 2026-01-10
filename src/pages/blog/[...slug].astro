@@ -40,6 +40,17 @@ function formatDate(date: Date) {
           <span class="badge bg-secondary me-1">{tag}</span>
         ))}
       </div>
+      
+      {post.data.image && (
+        <div class="my-4">
+          <img 
+            src={post.data.image} 
+            alt={post.data.title} 
+            class="img-fluid rounded shadow-sm w-100" 
+            style="max-height: 500px; object-fit: cover;"
+          />
+        </div>
+      )}
       <hr />
     </header>
     
