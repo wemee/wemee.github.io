@@ -2,11 +2,26 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Navbar from '@/components/Navbar.astro';
 ---
-<BaseLayout title="QR Code 掃描器">
+<BaseLayout 
+  title="QR Code 圖片解析器 | 挫屎勇的實用工具" 
+  description="手機只有一台，畫面卻出現 QR Code 要你掃？別再借別人手機來翻拍了！直接截圖上傳，這個工具幫你解析出網址。"
+>
   <Navbar currentPage="qrcode" />
   <div class="container mt-5">
-    <h1 class="mb-3">挫屎勇ㄟ線上QR Code解析器</h1>
-    <p class="mb-4">上傳圖片，解析QR Code的內容</p>
+    <h1 class="mb-3">挫屎勇ㄟ線上 QR Code 解析器</h1>
+    
+    <!-- 開發故事 -->
+    <div class="alert alert-info border-0 shadow-sm mb-4">
+      <h5 class="alert-heading fw-bold">😡 為什麼會有這個工具？</h5>
+      <p class="mb-0">
+        你是否遇過這種狀況？用手機瀏覽網頁或 Line，結果對方給你一個 QR Code 要你掃描...<br>
+        <strong>拜託！我就只有這支手機，是要我怎麼掃自己的螢幕啦？</strong>😠<br>
+        難道要脫褲子放屁找朋友的手機來拍我的螢幕，再用我的手機去掃他的照片？太白癡了吧！<br>
+        所以我就做了這個工具：<strong>直接截圖上傳，還你原本的網址。</strong> 收工。
+      </p>
+    </div>
+
+    <p class="mb-4">👇 請上傳包含 QR Code 的圖片或截圖</p>
 
     <div class="mb-4">
       <label for="fileInput" class="form-label">上傳圖片以解析 QR Code</label>
