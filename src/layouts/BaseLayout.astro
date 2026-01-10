@@ -8,6 +8,15 @@ const { title } = Astro.props;
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L980F1NV6M"></script>
+  <script is:inline>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-L980F1NV6M');
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{title}</title>
   <!-- Bootswatch Minty Theme (includes Bootstrap CSS) -->
