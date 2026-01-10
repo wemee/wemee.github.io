@@ -6,15 +6,16 @@ const { currentPage = '' } = Astro.props;
 ---
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
   <div class="container-fluid">
-    <a class="navbar-brand" href="/">我的網站</a>
+    <!-- Brand Logo (CSS Styled) -->
+    <a class="navbar-brand brand-logo" href="/">
+      WEMEE
+    </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav">
-        <li class="nav-item">
-          <a class={`nav-link ${currentPage === 'home' ? 'active' : ''}`} href="/">首頁</a>
-        </li>
+
         <li class="nav-item dropdown">
           <a class={`nav-link dropdown-toggle ${currentPage === 'math' ? 'active' : ''}`} href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             數學工具
@@ -51,3 +52,36 @@ const { currentPage = '' } = Astro.props;
     </div>
   </div>
 </nav>
+
+<style>
+  /* Import Google Font for Steampunk look */
+  @import url('https://fonts.googleapis.com/css2?family=Rye&display=swap');
+
+  .brand-logo {
+    font-family: 'Rye', serif;
+    font-size: 2rem;
+    letter-spacing: 0.15rem;
+    font-weight: bold;
+    /* Golden Gradient Text */
+    background: linear-gradient(180deg, #FFD700 20%, #DAA520 50%, #B8860B 80%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: #FFD700; /* Fallback */
+    
+    /* Text Shadow for depth (industrial/metallic feel) */
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+    
+    /* Enhance visibility */
+    display: inline-block;
+    padding-top: 0;
+    padding-bottom: 0;
+    transition: transform 0.2s ease, text-shadow 0.2s ease;
+  }
+
+  .brand-logo:hover {
+    transform: scale(1.05);
+    text-shadow: 3px 3px 0px rgba(0,0,0,0.6);
+    cursor: pointer;
+  }
+</style>
