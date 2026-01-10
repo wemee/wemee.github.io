@@ -22,7 +22,12 @@ function formatDate(date: Date) {
   });
 }
 ---
-<BaseLayout title={post.data.title}>
+<BaseLayout 
+  title={post.data.title} 
+  description={post.data.description} 
+  image={post.data.image}
+  articleDate={post.data.pubDate}
+>
   <Navbar currentPage="blog" />
   <article class="container mt-5">
     <header class="mb-4">
