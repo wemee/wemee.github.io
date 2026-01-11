@@ -22,6 +22,8 @@ Transformer 引入了 **Self-Attention (自注意力機制)**，它讓 AI 可以
 
 這就像是給了 AI 一雙「上帝之眼」，它能瞬間理解上下文的複雜關係。這個架構，成為了後來所有 LLM (Large Language Model) 的基石。
 
+<img src="/images/blog/part3/attention_eye.png" alt="Self-Attention God's Eye" class="img-fluid rounded mb-4 shadow" />
+
 ## 規模的暴力美學：從 BERT 到 GPT
 
 接下來的故事就是「大」。
@@ -29,6 +31,8 @@ OpenAI 發現了一個簡單粗暴的真理：**只要把模型做大，把數�
 
 GPT-1, GPT-2, GPT-3... 參數量從幾億爆增到幾千億。
 我們驚訝地發現，當模型大到一定程度時，它不只能接龍寫作，它竟然學會了寫程式、翻譯、甚至做數學題目。
+
+<img src="/images/blog/part3/emergence_scale.png" alt="Emergence of Intelligence at Scale" class="img-fluid rounded mb-4 shadow" />
 
 ## 讓 AI 說人話：ChatGPT 與 RLHF
 
@@ -61,6 +65,8 @@ GPT-1, GPT-2, GPT-3... 參數量從幾億爆增到幾千億。
 AI 不再只是一個陪聊的機器人，它變成了一個能**感知 (Perceive)**、**規劃 (Plan)** 並 **執行 (Execute)** 的數位員工。
 
 這就是我現在每天在做的事情。
+
+<img src="/images/blog/part3/ai_agent_antigravity.png" alt="AI Agent with Tools" class="img-fluid rounded mb-4 shadow" />
 
 ## 結語：大江東去
 
