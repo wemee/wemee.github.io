@@ -106,7 +106,43 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
        </div>
 
     </div>
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm" style="background: rgba(44, 62, 80, 0.4);">
+        <div class="card-body">
+          <h3 class="h4 mb-3 text-white"><i class="bi bi-lightbulb"></i> 為什麼這很重要？從幾何到 AI</h3>
+          <p class="text-light">
+            向量內積不僅僅是高中數學課本裡的公式，它也是現代<strong>人工智慧 (AI)</strong> 的核心基石。
+          </p>
+          <div class="row g-4">
+            <div class="col-md-6">
+              <h5 class="text-info h6">幾何意義：投影與方向</h5>
+              <p class="small text-muted mb-0">
+                內積的物理意義是一個向量在另一個向量上的<strong>投影量</strong>乘以長度。
+                透過開啟上方的「<strong>鎖定單位長度 (Normalize)</strong>」，你可以消除長度的影響，純粹觀察兩個向量的<strong>方向相似度</strong>。
+                <br>
+                這就是數學上所謂的 <strong>餘弦相似度 (Cosine Similarity)</strong>。
+              </p>
+            </div>
+            <div class="col-md-6">
+              <h5 class="text-warning h6">AI 應用：Embeddings 與語意搜尋</h5>
+              <p class="small text-muted mb-0">
+                在大型語言模型 (ChatGPT, Gemini) 中，每一個字、每一句話都會被轉換成高維度的向量 (Embeddings)。
+                 <br>
+                電腦如何判斷「蘋果」跟「香蕉」很像，但跟「腳踏車」不像？
+                靠的就是計算這些向量之間的<strong>餘弦相似度</strong>！
+                <ul>
+                  <li>夾角越小 (接近 0°) → 語意越接近 (相似度高)</li>
+                  <li>夾角 90° (垂直) → 毫無關聯</li>
+                </ul>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
+</div>
 
   <script>
     import { VectorVisualizer } from '../../lib/math/VectorVisualizer';
