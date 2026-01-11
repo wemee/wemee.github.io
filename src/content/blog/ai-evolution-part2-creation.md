@@ -72,4 +72,4 @@ Ian Goodfellow 在 2014 年提出 GAN (Generative Adversarial Network) 時，整
 
 ---
 
-**(下集待續：AI 演進史 Part 3 - 語言與代理：LLM 引領的 AI Agent 時代)**
+👉 **下一篇：** [AI 演進史 Part 3 - 語言與代理：LLM 引領的 AI Agent 時代](/blog/ai-evolution-part3-agency)
