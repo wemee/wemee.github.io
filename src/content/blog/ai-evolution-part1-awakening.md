@@ -25,6 +25,8 @@ tags: ["AI", "SVM", "CNN", "AlphaGo", "Deep Learning", "機器學習", "回憶�
 SVM 的原理很優雅：**找空間中的最佳分隔線**。
 這對當時的我來說很有說服力。它邏輯嚴謹，數學證明完美。雖然它能做的事情有限（主要就是分類和回歸），但它讓我第一次感覺到，電腦可以透過數學，「理解」空間的結構。
 
+<img src="/images/blog/part1/svm.png" alt="SVM Hyperplane Visualization" class="img-fluid rounded mb-4 shadow" />
+
 ## 第一次衝擊：不可能的貓狗大戰
 
 畢業後工作了幾年，某天突然聽到一個消息：**「只要丟照片給電腦，它就能分得出哪張是貓，哪張是狗。」**
@@ -44,6 +46,8 @@ SVM 的原理很優雅：**找空間中的最佳分隔線**。
 
 這是我人生中第一次對 AI 感到「敬畏」。它做到了一件我認為邏輯上不可能的事情。
 
+<img src="/images/blog/part1/cnn.png" alt="Traditional Coding vs Deep Learning" class="img-fluid rounded mb-4 shadow" />
+
 ## 王者的誕生：AlphaGo
 
 如果說 CNN 只是讓我驚訝，那 **AlphaGo** 就是讓全世界恐慌了。
@@ -58,6 +62,8 @@ SVM 的原理很優雅：**找空間中的最佳分隔線**。
 *   **MCTS (蒙地卡羅樹搜尋)**：在關鍵時刻進行深度計算（算力）。
 
 這三個東西結合在一起，AlphaGo 統治了世界。
+
+<img src="/images/blog/part1/alphago.png" alt="AlphaGo Mind" class="img-fluid rounded mb-4 shadow" />
 
 ## 埋頭苦幹：類神經網路的戰國時代
 
