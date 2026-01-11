@@ -1,0 +1,227 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+---
+
+<BaseLayout pageTitle="向量內積視覺化 (Dot Product Visualizer)">
+  <Navbar currentPage="math" />
+  <div class="row mb-4">
+    <div class="col-lg-12 text-center">
+      <h1 class="display-4"><i class="bi bi-arrows-angle"></i> 向量內積視覺化</h1>
+      <p class="lead text-muted">直觀感受向量相似度、內積與投影的幾何意義</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- 左側：視覺化畫布 -->
+    <div class="col-lg-8 mb-4">
+      <div class="card shadow border-0" style="background: #1a1a2e;">
+        <div class="card-body p-0 position-relative">
+          <canvas id="vectorCanvas" style="width: 100%; height: 500px; display: block; border-radius: 0.375rem; cursor: crosshair;"></canvas>
+          <div class="position-absolute bottom-0 start-0 p-3 text-white-50 small">
+            <i class="bi bi-hand-index-thumb"></i> 拖曳箭頭端點以改變向量
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右側：控制與數據 -->
+    <div class="col-lg-4">
+      
+      <!-- 控制面板 -->
+      <div class="card mb-3 border-secondary shadow-sm">
+        <div class="card-header bg-transparent border-secondary fw-bold text-primary">
+          <i class="bi bi-sliders"></i> 控制選項
+        </div>
+        <div class="card-body">
+          <div class="form-check form-switch mb-3">
+            <input class="form-check-input" type="checkbox" id="normalizeToggle">
+            <label class="form-check-label" for="normalizeToggle">
+              鎖定單位長度 (Normalize)
+              <br><small class="text-muted">排除長度影響，純觀察方向相似度</small>
+            </label>
+          </div>
+          
+          <p class="mb-2 fw-bold small text-uppercase text-secondary">快速預設</p>
+          <div class="d-grid gap-2 grid-cols-2 d-md-block">
+            <button class="btn btn-outline-info btn-sm me-1 mb-1 preset-btn" data-type="similar">
+              <i class="bi bi-check-lg"></i> 相似 (0°)
+            </button>
+            <button class="btn btn-outline-warning btn-sm me-1 mb-1 preset-btn" data-type="orthogonal">
+              <i class="bi bi-plus-lg"></i> 正交 (90°)
+            </button>
+            <button class="btn btn-outline-danger btn-sm me-1 mb-1 preset-btn" data-type="opposite">
+              <i class="bi bi-arrow-left-right"></i> 相反 (180°)
+            </button>
+            <button class="btn btn-outline-light btn-sm mb-1 preset-btn" data-type="random">
+              <i class="bi bi-shuffle"></i> 隨機
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 數學數值 -->
+      <div class="card border-primary shadow-sm" style="background: rgba(var(--bs-dark-rgb), 0.5);">
+        <div class="card-header bg-primary text-white">
+          <i class="bi bi-calculator"></i> 即時數據
+        </div>
+        <div class="card-body font-monospace">
+          <!-- 內積 -->
+          <div class="mb-3">
+            <label class="text-muted small">內積 (Dot Product)</label>
+            <div class="h3 mb-0 text-white" id="val-dot">0.00</div>
+            <small class="text-muted d-block">
+              <span class="text-danger">A</span> · <span class="text-info">B</span> = |A| |B| cos(θ)
+            </small>
+          </div>
+          
+          <hr class="border-secondary">
+
+          <!-- 相似度 -->
+          <div class="mb-3">
+            <label class="text-muted small">餘弦相似度 (Cosine Similarity)</label>
+            <div class="h3 mb-0" id="val-cos" style="color: #00d2d3;">0.000</div>
+            <div class="progress mt-2" style="height: 6px; background: #333;">
+              <div id="sim-bar" class="progress-bar bg-info" role="progressbar" style="width: 50%"></div>
+            </div>
+            <small class="text-muted">純方向性 (-1 ~ 1)</small>
+          </div>
+
+          <!-- 角度 -->
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="text-muted small">夾角 (θ)</label>
+              <div class="h5 mb-0 text-white" id="val-deg">0°</div>
+            </div>
+            <div class="col-6 text-end">
+              <label class="text-muted small">投影特性</label>
+               <div class="h5 mb-0" id="val-status">--</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 數學解釋 -->
+       <div class="mt-3 text-muted small fst-italic">
+         <i class="bi bi-info-circle me-1"></i>
+         <span id="math-hint">拖曳向量以觀察變化...</span>
+       </div>
+
+    </div>
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm" style="background: rgba(44, 62, 80, 0.4);">
+        <div class="card-body">
+          <h3 class="h4 mb-3 text-white"><i class="bi bi-lightbulb"></i> 為什麼這很重要？從幾何到 AI</h3>
+          <p class="text-light">
+            向量內積不僅僅是高中數學課本裡的公式，它也是現代<strong>人工智慧 (AI)</strong> 的核心基石。
+          </p>
+          <div class="row g-4">
+            <div class="col-md-6">
+              <h5 class="text-info h6">幾何意義：投影與方向</h5>
+              <p class="small text-muted mb-0">
+                內積的物理意義是一個向量在另一個向量上的<strong>投影量</strong>乘以長度。
+                透過開啟上方的「<strong>鎖定單位長度 (Normalize)</strong>」，你可以消除長度的影響，純粹觀察兩個向量的<strong>方向相似度</strong>。
+                <br>
+                這就是數學上所謂的 <strong>餘弦相似度 (Cosine Similarity)</strong>。
+              </p>
+            </div>
+            <div class="col-md-6">
+              <h5 class="text-warning h6">AI 應用：Embeddings 與語意搜尋</h5>
+              <p class="small text-muted mb-0">
+                在大型語言模型 (ChatGPT, Gemini) 中，每一個字、每一句話都會被轉換成高維度的向量 (Embeddings)。
+                 <br>
+                電腦如何判斷「蘋果」跟「香蕉」很像，但跟「腳踏車」不像？
+                靠的就是計算這些向量之間的<strong>餘弦相似度</strong>！
+                <ul>
+                  <li>夾角越小 (接近 0°) → 語意越接近 (相似度高)</li>
+                  <li>夾角 90° (垂直) → 毫無關聯</li>
+                </ul>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script>
+    import { VectorVisualizer } from '../../lib/math/VectorVisualizer';
+
+    // 確保在客戶端執行
+    document.addEventListener('DOMContentLoaded', () => {
+      const canvas = document.getElementById('vectorCanvas') as HTMLCanvasElement;
+      
+      // UI Elements
+      const elDot = document.getElementById('val-dot');
+      const elCos = document.getElementById('val-cos');
+      const elDeg = document.getElementById('val-deg');
+      const elStatus = document.getElementById('val-status');
+      const elSimBar = document.getElementById('sim-bar');
+      const elHint = document.getElementById('math-hint');
+      const toggleNorm = document.getElementById('normalizeToggle') as HTMLInputElement;
+
+      const viz = new VectorVisualizer('vectorCanvas', (state) => {
+        // Update UI
+        if(elDot) elDot.innerText = state.dotProduct.toFixed(2);
+        
+        if(elCos) {
+            const cos = state.cosineSimilarity;
+            elCos.innerText = cos.toFixed(3);
+            
+            // Progress Bar logic: Map -1~1 to 0~100%
+            const pct = ((cos + 1) / 2) * 100;
+            if (elSimBar) {
+                elSimBar.style.width = `${pct}%`;
+                elSimBar.className = `progress-bar ${cos > 0.5 ? 'bg-success' : cos < -0.5 ? 'bg-danger' : 'bg-warning'}`;
+            }
+        }
+
+        if(elDeg) elDeg.innerText = `${state.angleDeg.toFixed(1)}°`;
+
+        if(elStatus) {
+            const cos = state.cosineSimilarity;
+            let status = '';
+            let hint = '';
+            if (Math.abs(cos) < 0.05) {
+                status = '正交 / 無關';
+                elStatus.className = 'h5 mb-0 text-warning';
+                hint = '向量互相垂直 (90°)，內積為 0，代表兩者毫不相關。';
+            } else if (cos > 0.9) {
+                status = '極度相似';
+                elStatus.className = 'h5 mb-0 text-success';
+                hint = '方向幾乎一致，內積為正最大值。';
+            } else if (cos < -0.9) {
+                status = '完全相反';
+                elStatus.className = 'h5 mb-0 text-danger';
+                hint = '方向相反，內積為負最大值。';
+            } else if (cos > 0) {
+                status = '正相關';
+                elStatus.className = 'h5 mb-0 text-info';
+                hint = '投影方向相同。';
+            } else {
+                status = '負相關';
+                elStatus.className = 'h5 mb-0 text-warning';
+                hint = '投影方向相反。';
+            }
+            elStatus.innerText = status;
+            if(elHint) elHint.innerText = hint;
+        }
+      });
+
+      // Events
+      toggleNorm.addEventListener('change', (e) => {
+        viz.setNormalizedMode((e.target as HTMLInputElement).checked);
+      });
+
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+           const type = (e.currentTarget as HTMLElement).dataset.type;
+           viz.setVectors(type as any);
+        });
+      });
+
+    });
+  </script>
+</BaseLayout>
