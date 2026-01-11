@@ -26,6 +26,8 @@ Ian Goodfellow 在 2014 年提出 GAN (Generative Adversarial Network) 時，整
 一開始生成器畫得像鬼畫符，判別器一眼就識破。生成器為了騙過判別器，只好越畫越好；判別器為了不被騙，也只好眼力越來越尖。
 最終達到一個納什均衡 (Nash Equilibrium)，生成器畫出來的圖，連最強的判別器都分不出來。
 
+<img src="/images/blog/part2/gan_duel.png" alt="GAN Duel: Generator vs Discriminator" class="img-fluid rounded mb-4 shadow" />
+
 那段時間我也沉迷於此。看著螢幕上那一團雜訊，隨著訓練 epoch 的增加，慢慢浮現出人的五官，那種感覺就像是在看著一個生命在數位世界裡誕生。
 
 ## 潛在空間的魔法：AE, VAE 與 StyleGAN
@@ -38,6 +40,8 @@ Ian Goodfellow 在 2014 年提出 GAN (Generative Adversarial Network) 時，整
 
 **StyleGAN** 把這件事推到了極致。我們發現可以做出超高解析度、毛孔清晰可見的人臉，而且這些人根本不存在於世界上 (`thispersondoesnotexist.com`)。
 
+<img src="/images/blog/part2/latent_space.png" alt="Latent Space Arithmetic" class="img-fluid rounded mb-4 shadow" />
+
 但這時候的生成式 AI 還有一個致命傷：**難訓練**。GAN 很容易「崩潰 (Mode Collapse)」，訓練十次有九次會失敗，參數超難調。
 
 ## 擴散模型的革命：Diffusion Model
@@ -48,6 +52,8 @@ Ian Goodfellow 在 2014 年提出 GAN (Generative Adversarial Network) 時，整
 想像這是一個要把墨汁從清水中分離出來的過程。你給它一張充滿雜訊 (Noise) 的圖片，AI 的任務是一點一點地把雜訊拿掉，還原出原本的圖像。
 
 這聽起來很慢，但效果驚人的好，而且訓練非常穩定。
+
+<img src="/images/blog/part2/diffusion_process.png" alt="Diffusion Model Denoising Process" class="img-fluid rounded mb-4 shadow" />
 
 緊接著 **Stable Diffusion** 開源了。這真的是核彈級的消息。
 以前我們要在超級電腦上跑的模型，現在可以在你我的家用顯卡上跑。加上 Prompt (提示詞) 的引入，所有人都變成了藝術家。
