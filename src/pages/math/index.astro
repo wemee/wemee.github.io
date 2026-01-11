@@ -2,7 +2,20 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Navbar from '@/components/Navbar.astro';
 
-const tools = [
+/**
+ * 數學工具項目的型別定義
+ * @property badge - 可選。若提供，該工具會顯示為「開發中」狀態，
+ *                   標題旁會顯示 badge 文字，按鈕變為 disabled 的「敬請期待」
+ */
+interface Tool {
+  title: string;
+  description: string;
+  href: string;
+  color: string;
+  badge?: string;
+}
+
+const tools: Tool[] = [
   {
     title: '🧮 數學計算器',
     description: '質數檢查、質因數分解、最大公因數 (GCD)、最小公倍數 (LCM)',
