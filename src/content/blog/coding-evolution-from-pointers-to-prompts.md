@@ -15,7 +15,7 @@ tags: ["程式開發", "C語言", "Python", "AI", "Claude Code", "回憶錄"]
 
 ## 石器時代：C 與指標的煉獄
 
-<img src="/images/blog/coding/c-pointer-hell.webp" alt="C 語言指標地獄" class="img-fluid rounded mb-4 shadow" />
+![C 語言指標地獄](/images/blog/coding/c-pointer-hell.webp)
 
 ```c
 char *ptr = (char *)malloc(100 * sizeof(char));
@@ -44,7 +44,7 @@ int (*(*callbacks[10])(int, char *))[5];
 
 ## 青銅時代：腳本語言的解放
 
-<img src="/images/blog/coding/scripting-freedom.webp" alt="腳本語言的解放" class="img-fluid rounded mb-4 shadow" />
+![腳本語言的解放](/images/blog/coding/scripting-freedom.webp)
 
 後來，**Python** 和 **Ruby** 開始流行。
 
@@ -69,7 +69,7 @@ print(doubled)
 
 ## 白銀時代：語言模型的曙光
 
-<img src="/images/blog/coding/llm-assistant.webp" alt="語言模型輔助開發" class="img-fluid rounded mb-4 shadow" />
+![語言模型輔助開發](/images/blog/coding/llm-assistant.webp)
 
 大約兩三年前，**ChatGPT** 橫空出世。
 
@@ -96,7 +96,7 @@ ChatGPT：好的，這是一個計算費波那契數列的函數...
 
 ## 黃金時代：Agentic AI 與 Claude Code
 
-<img src="/images/blog/coding/agentic-collaboration.webp" alt="AI 協作開發" class="img-fluid rounded mb-4 shadow" />
+![AI 協作開發](/images/blog/coding/agentic-collaboration.webp)
 
 然後，**Claude Code** 出現了。
 
