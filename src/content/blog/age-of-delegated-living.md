@@ -11,7 +11,7 @@ image: "/images/blog/delegated_living/proxy_fishing.webp"
 
 打開社群媒體，我們已經習慣了各種「AI 生成」的內容。從新聞稿的潤飾、電影編劇的草稿，到那些精美卻略顯空洞的數位繪圖。不知不覺中，我們的視覺與閱讀體驗，已經有一半以上是 AI 代勞產出的。
 
-![AI 內容氾濫的現代社會](/images/blog/delegated_living/saturation.png)
+![AI 內容氾濫的現代社會](/images/blog/delegated_living/saturation.webp)
 
 隨著技術與 Agent（代理人）概念的成熟，我不禁開始思考：**這種「代勞」的邊界在哪裡？**
 
@@ -25,7 +25,7 @@ image: "/images/blog/delegated_living/proxy_fishing.webp"
 
 但我所預見的未來，是**連「操控」都覺得累**。
 
-![躺在沙發上下指令的人類](/images/blog/delegated_living/passive_human.png)
+![躺在沙發上下指令的人類](/images/blog/delegated_living/passive_human.webp)
 
 未來的人類，可能只是躺在沙發上，對著空中的虛擬管家說一句：
 
@@ -43,7 +43,7 @@ image: "/images/blog/delegated_living/proxy_fishing.webp"
 
 你的專屬 Agent 機器人，會開著車到湖邊。它會精準地計算風向、水流，甩出完美的一竿。它在湖邊靜靜站了三個小時，享受（如果它有感覺的話）微風吹過金屬外殼的觸感。
 
-![代理人代為釣魚的空虛場景](/images/blog/delegated_living/proxy_fishing.png)
+![代理人代為釣魚的空虛場景](/images/blog/delegated_living/proxy_fishing.webp)
 
 然後它釣到了一條大魚。它拍了照，上傳到你的社群帳號，配上一段生成好的文案：*「久違的寧靜，與大自然的對話。」*
 

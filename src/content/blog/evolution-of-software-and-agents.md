@@ -17,7 +17,7 @@ image: "/images/blog/evolution/future.webp"
 
 在過去，軟體被開發出來後，責任就轉移到了使用者身上。
 
-![複雜的說明書與介面](/images/blog/evolution/past.png)
+![複雜的說明書與介面](/images/blog/evolution/past.webp)
 
 我們有了功能強大的 Photoshop、Excel 或是各種企業級 ERP 系統。它們無所不能，但也極其難用。我們必須：
 *   閱讀厚厚的操作手冊。
@@ -31,7 +31,7 @@ image: "/images/blog/evolution/future.webp"
 
 現在，或是最近的未來，我們正在經歷一場巨大的典範轉移。AI Agent 的出現改變了遊戲規則。
 
-![AI Agent 操作介面](/images/blog/evolution/present.png)
+![AI Agent 操作介面](/images/blog/evolution/present.webp)
 
 軟體本身可能依然很難用，甚至為了容納更多功能變得**更難用**（更多的 API 參數、更靈活但繁瑣的設定）。但這已經不再重要了，因為**軟體不再是設計給人用的**。
 
@@ -47,7 +47,7 @@ image: "/images/blog/evolution/future.webp"
 
 如果 Agent 已經強大到能理解所有意圖，並能精準操作電腦，那我們**還需要預先開發好的軟體嗎？**
 
-![意圖即代碼的未來](/images/blog/evolution/future.png)
+![意圖即代碼的未來](/images/blog/evolution/future.webp)
 
 想像一下，未來你不需要去下載一個「修圖軟體」來把照片變亮。你只需要告訴 AI：「幫我把這張照片調亮，去掉背景雜訊。」
 
