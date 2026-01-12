@@ -3,7 +3,7 @@
 這是 [wemee.github.io](https://wemee.github.io) 的原始碼倉庫。
 這是一個基於 **Astro** 構建的現代化個人網站，專注於效能與簡潔的設計。
 
-## 🛠️ 技術棧 (Tech Stack)
+## 🛠️ Tech Stack
 
 - **Framework**: [Astro](https://astro.build/) - 為速度而生的網頁框架。
 - **Styling**: Vanilla CSS / Scoped CSS
