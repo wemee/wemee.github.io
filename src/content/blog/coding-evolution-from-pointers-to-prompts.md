@@ -3,7 +3,7 @@ title: "從指標到提示詞：一個老工程師的程式開發滄桑史"
 pubDate: 2026-01-12
 description: "從 C 語言的指標地獄，到腳本語言的解放，再到 AI 輔助開發的新時代。一個寫了 20 年程式的工程師，回顧那些年我們追過的編譯器錯誤。"
 author: "wemee"
-image: "/images/blog/coding-evolution.png"
+image: "/images/blog/coding-evolution.webp"
 tags: ["程式開發", "C語言", "Python", "AI", "Claude Code", "回憶錄"]
 ---
 
@@ -15,7 +15,7 @@ tags: ["程式開發", "C語言", "Python", "AI", "Claude Code", "回憶錄"]
 
 ## 石器時代：C 與指標的煉獄
 
-<img src="/images/blog/coding/c-pointer-hell.png" alt="C 語言指標地獄" class="img-fluid rounded mb-4 shadow" />
+<img src="/images/blog/coding/c-pointer-hell.webp" alt="C 語言指標地獄" class="img-fluid rounded mb-4 shadow" />
 
 ```c
 char *ptr = (char *)malloc(100 * sizeof(char));
@@ -44,7 +44,7 @@ int (*(*callbacks[10])(int, char *))[5];
 
 ## 青銅時代：腳本語言的解放
 
-<img src="/images/blog/coding/scripting-freedom.png" alt="腳本語言的解放" class="img-fluid rounded mb-4 shadow" />
+<img src="/images/blog/coding/scripting-freedom.webp" alt="腳本語言的解放" class="img-fluid rounded mb-4 shadow" />
 
 後來，**Python** 和 **Ruby** 開始流行。
 
@@ -69,7 +69,7 @@ print(doubled)
 
 ## 白銀時代：語言模型的曙光
 
-<img src="/images/blog/coding/llm-assistant.png" alt="語言模型輔助開發" class="img-fluid rounded mb-4 shadow" />
+<img src="/images/blog/coding/llm-assistant.webp" alt="語言模型輔助開發" class="img-fluid rounded mb-4 shadow" />
 
 大約兩三年前，**ChatGPT** 橫空出世。
 
@@ -96,7 +96,7 @@ ChatGPT：好的，這是一個計算費波那契數列的函數...
 
 ## 黃金時代：Agentic AI 與 Claude Code
 
-<img src="/images/blog/coding/agentic-collaboration.png" alt="AI 協作開發" class="img-fluid rounded mb-4 shadow" />
+<img src="/images/blog/coding/agentic-collaboration.webp" alt="AI 協作開發" class="img-fluid rounded mb-4 shadow" />
 
 然後，**Claude Code** 出現了。
 

@@ -4,7 +4,7 @@ pubDate: 2026-01-11
 description: "如果 AI 不只幫我們工作，甚至幫我們「體驗」生活？探討一個人類極度懶惰的未來，所有事情都成為指令，連釣魚、旅遊都由 Agent 代勞。"
 author: "wemee (with AI assistant)"
 tags: ["ai", "future-tech", "philosophy", "dystopia"]
-image: "/images/blog/delegated_living/proxy_fishing.png"
+image: "/images/blog/delegated_living/proxy_fishing.webp"
 ---
 
 最近 AI 的發展速度快得讓人焦慮，但也讓人忍不住遐想未來的終局。

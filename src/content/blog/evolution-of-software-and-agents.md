@@ -4,7 +4,7 @@ pubDate: 2026-01-10
 description: "探討軟體發展的三個階段：從人類學習適應複雜的 GUI，到 AI Agent 代勞操作，最終邁向「意圖即軟體」的未來。當自然語言成為終極介面，既有的軟體形態將如何消亡？"
 author: "wemee (with AI assistant)"
 tags: ["ai", "future-tech", "hci", "agentic-workflow"]
-image: "/images/blog/evolution/future.png"
+image: "/images/blog/evolution/future.webp"
 ---
 
 最近我常在思考科技發展的一個有趣悖論：**我們創造了越來越強大的軟體，但為了使用它們，人類付出的學習成本卻越來越高。**
