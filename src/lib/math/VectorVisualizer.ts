@@ -25,6 +25,8 @@ export class VectorVisualizer {
     // State
     private vectorA: Vector = { x: 100, y: 0 };
     private vectorB: Vector = { x: 50, y: 86.6 }; // approx 60 degrees
+    private originalVectorA: Vector | null = null;
+    private originalVectorB: Vector | null = null;
     private isNormalizedMode: boolean = false;
     private isDraggingA: boolean = false;
     private isDraggingB: boolean = false;
@@ -34,22 +36,46 @@ export class VectorVisualizer {
     // Callback for UI updates
     private onUpdate: ((state: VectorState) => void) | null = null;
 
+    // Event handler references for cleanup
+    private boundHandleStart: (e: MouseEvent | Touch) => void;
+    private boundHandleMove: (e: MouseEvent | Touch) => void;
+    private boundHandleEnd: () => void;
+    private boundHandleResize: () => void;
+    private boundHandleTouchStart: (e: TouchEvent) => void;
+    private boundHandleTouchMove: (e: TouchEvent) => void;
+
     constructor(canvasId: string, onUpdate?: (state: VectorState) => void) {
         const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
         if (!canvas) throw new Error(`Canvas with id ${canvasId} not found`);
 
         this.canvas = canvas;
-        this.ctx = canvas.getContext('2d')!;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Could not get 2D context from canvas');
+        this.ctx = ctx;
         this.onUpdate = onUpdate || null;
 
-        // 初始化尺寸 (必須在事件監聽前執行)
+        // Bind event handlers
+        this.boundHandleStart = this.handleStart.bind(this);
+        this.boundHandleMove = this.handleMove.bind(this);
+        this.boundHandleEnd = this.handleEnd.bind(this);
+        this.boundHandleResize = () => {
+            this.setupCanvas();
+            this.render();
+        };
+        this.boundHandleTouchStart = (e: TouchEvent) => {
+            e.preventDefault();
+            this.handleStart(e.touches[0]);
+        };
+        this.boundHandleTouchMove = (e: TouchEvent) => {
+            if (this.isDraggingA || this.isDraggingB) e.preventDefault();
+            this.handleMove(e.touches[0]);
+        };
+
+        // 初始化尺寸 (必須在事件監聯前執行)
         this.setupCanvas();
 
         // 監聽視窗大小改變以重設 Canvas
-        window.addEventListener('resize', () => {
-            this.setupCanvas();
-            this.render();
-        });
+        window.addEventListener('resize', this.boundHandleResize);
 
         this.initEventListeners();
         this.render();
@@ -85,20 +111,31 @@ export class VectorVisualizer {
     public setNormalizedMode(enabled: boolean) {
         this.isNormalizedMode = enabled;
         if (enabled) {
+            // Save original vectors before normalizing
+            this.originalVectorA = { ...this.vectorA };
+            this.originalVectorB = { ...this.vectorB };
             this.normalizeVector(this.vectorA, 150); // Fixed length for visualization
             this.normalizeVector(this.vectorB, 150);
+        } else {
+            // Restore original vectors
+            if (this.originalVectorA && this.originalVectorB) {
+                this.vectorA = { ...this.originalVectorA };
+                this.vectorB = { ...this.originalVectorB };
+                this.originalVectorA = null;
+                this.originalVectorB = null;
+            }
         }
         this.render();
         this.notifyUpdate();
     }
 
     public setVectors(type: 'similar' | 'orthogonal' | 'opposite' | 'random') {
-        const len = this.isNormalizedMode ? 150 : 150;
+        const len = 150;
 
         switch (type) {
             case 'similar':
                 this.vectorA = { x: len, y: 0 };
-                this.vectorB = { x: len * 0.9, y: len * 0.2 }; // Close but distinct
+                this.vectorB = { x: len, y: 0 };
                 break;
             case 'orthogonal':
                 this.vectorA = { x: len, y: 0 };
@@ -123,20 +160,26 @@ export class VectorVisualizer {
 
     private initEventListeners() {
         // Mouse events
-        this.canvas.addEventListener('mousedown', this.handleStart.bind(this));
-        window.addEventListener('mousemove', this.handleMove.bind(this));
-        window.addEventListener('mouseup', this.handleEnd.bind(this));
+        this.canvas.addEventListener('mousedown', this.boundHandleStart as EventListener);
+        window.addEventListener('mousemove', this.boundHandleMove as EventListener);
+        window.addEventListener('mouseup', this.boundHandleEnd);
 
         // Touch events
-        this.canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            this.handleStart(e.touches[0]);
-        }, { passive: false });
-        window.addEventListener('touchmove', (e) => {
-            if (this.isDraggingA || this.isDraggingB) e.preventDefault();
-            this.handleMove(e.touches[0]);
-        }, { passive: false });
-        window.addEventListener('touchend', this.handleEnd.bind(this));
+        this.canvas.addEventListener('touchstart', this.boundHandleTouchStart, { passive: false });
+        window.addEventListener('touchmove', this.boundHandleTouchMove, { passive: false });
+        window.addEventListener('touchend', this.boundHandleEnd);
+    }
+
+    public destroy() {
+        // Remove all event listeners
+        this.canvas.removeEventListener('mousedown', this.boundHandleStart as EventListener);
+        window.removeEventListener('mousemove', this.boundHandleMove as EventListener);
+        window.removeEventListener('mouseup', this.boundHandleEnd);
+        window.removeEventListener('resize', this.boundHandleResize);
+
+        this.canvas.removeEventListener('touchstart', this.boundHandleTouchStart);
+        window.removeEventListener('touchmove', this.boundHandleTouchMove);
+        window.removeEventListener('touchend', this.boundHandleEnd);
     }
 
     private getMousePos(e: MouseEvent | Touch) {
@@ -296,15 +339,27 @@ export class VectorVisualizer {
         }
         this.ctx.setLineDash([]);
 
-        // Draw Angle
+        // Draw Angle Arc
         const angleA = Math.atan2(this.vectorA.y, this.vectorA.x);
         const angleB = Math.atan2(this.vectorB.y, this.vectorB.x);
-        // Be careful with angle drawing logic
         const radius = 40;
+
+        // Determine the shorter arc direction
+        let startAngle = angleB;
+        let endAngle = angleA;
+        let angleDiff = endAngle - startAngle;
+
+        // Normalize to [-PI, PI]
+        while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+        while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+
+        const counterClockwise = angleDiff < 0;
+
         this.ctx.beginPath();
-        this.ctx.arc(0, 0, radius, angleB, angleA, this.calculateCosineSim() < 0 ? Math.abs(angleA - angleB) > Math.PI : Math.abs(angleA - angleB) < Math.PI ? false : true);
-        // Arc logic is complex, simple approach:
-        // Just draw two lines and maybe fill? Let's just draw vectors first.
+        this.ctx.arc(0, 0, radius, startAngle, endAngle, counterClockwise);
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
 
         // Draw Vector B (Blue)
         this.drawArrow({ x: 0, y: 0 }, this.vectorB, '#4facfe', 4, 'B'); // Solar Blue
