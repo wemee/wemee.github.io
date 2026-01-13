@@ -4,6 +4,7 @@ pubDate: 2026-01-13
 description: "從零開始訓練 MNIST 模型，轉換為 TensorFlow.js 格式，並在瀏覽器中實現即時推理與 Saliency Map 可解釋性視覺化。完整記錄技術選型、踩坑經驗與效能優化。"
 author: "wemee (with AI assistant)"
 tags: ["machine-learning", "tensorflow", "browser", "mnist", "explainability"]
+image: "/images/blog/mnist-browser-ml-cover.webp"
 ---
 
 ## 前言
