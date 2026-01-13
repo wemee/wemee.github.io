@@ -1,0 +1,590 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Navbar from '@/components/Navbar.astro';
+---
+<BaseLayout
+  title="手寫數字辨識 | 挫屎勇的實用工具"
+  description="在畫布上手寫數字，AI 即時辨識！使用 TensorFlow.js 在瀏覽器端運行深度學習模型，支援手機與電腦。"
+>
+  <Navbar currentPage="tools" />
+
+  <div class="container mt-4">
+    <h1 class="mb-3">✏️ 手寫數字辨識</h1>
+
+    <!-- 功能說明 -->
+    <div class="alert alert-info border-0 shadow-sm mb-4">
+      <h5 class="alert-heading fw-bold">🧠 AI 在你的瀏覽器裡運行</h5>
+      <p class="mb-0">
+        使用深度學習模型辨識手寫數字，<strong>不需要網路連線</strong>，所有運算都在本地完成。
+      </p>
+    </div>
+
+    <div class="row">
+      <!-- 左側：畫布區域 -->
+      <div class="col-lg-6 mb-4">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><span class="step-badge">1</span> 在下方畫一個數字 (0-9)</span>
+            <button id="clearBtn" class="btn btn-sm btn-outline-secondary">清除</button>
+          </div>
+          <div class="card-body text-center">
+            <div class="canvas-wrapper">
+              <canvas id="drawCanvas" width="280" height="280"></canvas>
+            </div>
+            <p class="text-muted small mt-2 mb-0">用滑鼠或手指在畫布上書寫</p>
+          </div>
+        </div>
+
+        <!-- 預處理預覽 -->
+        <div class="card mt-3">
+          <div class="card-header">
+            <span class="step-badge">2</span> 模型視角
+          </div>
+          <div class="card-body">
+            <div class="preview-row">
+              <div class="preview-item">
+                <canvas id="previewCanvas" width="140" height="140" class="preview-canvas"></canvas>
+                <p class="text-muted small mt-2 mb-0">輸入圖片 (28×28)</p>
+              </div>
+              <div class="preview-item">
+                <canvas id="saliencyCanvas" width="140" height="140" class="preview-canvas"></canvas>
+                <p class="text-muted small mt-2 mb-0">Saliency Map</p>
+              </div>
+            </div>
+            <p class="text-muted small mt-3 mb-0 text-center">
+              <span class="saliency-legend high">紅</span> = 高影響 &nbsp;
+              <span class="saliency-legend low">藍</span> = 低影響
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右側：預測結果 -->
+      <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+          <div class="card-header">
+            <span class="step-badge">3</span> 預測結果
+          </div>
+          <div class="card-body">
+            <!-- 模型載入狀態 -->
+            <div id="modelStatus" class="text-center py-4">
+              <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">載入中...</span>
+              </div>
+              <p class="text-muted mb-0">正在載入模型...</p>
+            </div>
+
+            <!-- 預測數字 -->
+            <div id="predictionResult" class="d-none">
+              <div class="text-center mb-4">
+                <div class="predicted-digit" id="predictedDigit">?</div>
+                <p class="text-muted mb-0">預測數字</p>
+              </div>
+
+              <!-- 機率長條圖 -->
+              <div class="probability-chart" id="probabilityChart">
+                <!-- 動態生成 -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 技術說明 -->
+    <div class="card mt-2 mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><span class="step-badge">?</span> 這是怎麼運作的？</span>
+        <a href="/blog/mnist-browser-ml/" class="btn btn-sm btn-outline-primary">閱讀開發筆記</a>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3 mb-3 mb-md-0">
+            <h6>模型架構</h6>
+            <p class="small text-muted mb-0">
+              輕量級 CNN，2 層卷積 + 1 層全連接，MNIST 準確度 98.77%。
+            </p>
+          </div>
+          <div class="col-md-3 mb-3 mb-md-0">
+            <h6>前端推理</h6>
+            <p class="small text-muted mb-0">
+              TensorFlow.js 載入模型，瀏覽器端運算，約 420KB。
+            </p>
+          </div>
+          <div class="col-md-3 mb-3 mb-md-0">
+            <h6>圖片預處理</h6>
+            <p class="small text-muted mb-0">
+              筆跡置中、縮放 28×28、正規化為黑底白字。
+            </p>
+          </div>
+          <div class="col-md-3">
+            <h6>Saliency Map</h6>
+            <p class="small text-muted mb-0">
+              計算輸入梯度，顯示哪些像素對預測影響最大。
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  /* Canvas 樣式 */
+  .canvas-wrapper {
+    display: inline-block;
+    border: 3px solid var(--bs-primary);
+    border-radius: 1rem;
+    overflow: hidden;
+    touch-action: none; /* 防止手機滑動 */
+  }
+
+  #drawCanvas {
+    display: block;
+    background: #1a1a2e;
+    cursor: crosshair;
+  }
+
+  .preview-canvas {
+    border: 2px solid var(--bs-secondary);
+    border-radius: 0.5rem;
+    image-rendering: pixelated;
+    background: #000;
+  }
+
+  .preview-row {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .preview-item {
+    text-align: center;
+  }
+
+  .saliency-legend {
+    display: inline-block;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+    font-weight: bold;
+    font-size: 0.75rem;
+  }
+
+  .saliency-legend.high {
+    background: rgba(255, 0, 0, 0.3);
+    color: #ff6b6b;
+  }
+
+  .saliency-legend.low {
+    background: rgba(0, 0, 255, 0.3);
+    color: #6b9bff;
+  }
+
+  /* Step badge */
+  .step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: var(--bs-primary);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-right: 0.5rem;
+  }
+
+  /* 預測數字顯示 */
+  .predicted-digit {
+    font-size: 5rem;
+    font-weight: bold;
+    line-height: 1;
+    color: var(--bs-primary);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
+
+  /* 機率長條圖 */
+  .probability-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .prob-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .prob-label {
+    width: 1.5rem;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+
+  .prob-bar-wrapper {
+    flex: 1;
+    height: 1.2rem;
+    background: rgba(255,255,255,0.1);
+    border-radius: 0.25rem;
+    overflow: hidden;
+  }
+
+  .prob-bar {
+    height: 100%;
+    background: var(--bs-primary);
+    border-radius: 0.25rem;
+    transition: width 0.3s ease;
+  }
+
+  .prob-bar.top-prediction {
+    background: var(--bs-success);
+  }
+
+  .prob-value {
+    width: 3.5rem;
+    text-align: right;
+    font-size: 0.8rem;
+    font-family: monospace;
+  }
+</style>
+
+<script is:inline src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+<script is:inline>
+document.addEventListener('DOMContentLoaded', async function() {
+  // ===== DOM Elements =====
+  const drawCanvas = document.getElementById('drawCanvas');
+  const drawCtx = drawCanvas.getContext('2d');
+  const previewCanvas = document.getElementById('previewCanvas');
+  const previewCtx = previewCanvas.getContext('2d');
+  const saliencyCanvas = document.getElementById('saliencyCanvas');
+  const saliencyCtx = saliencyCanvas.getContext('2d');
+  const clearBtn = document.getElementById('clearBtn');
+  const modelStatus = document.getElementById('modelStatus');
+  const predictionResult = document.getElementById('predictionResult');
+  const predictedDigit = document.getElementById('predictedDigit');
+  const probabilityChart = document.getElementById('probabilityChart');
+
+  // ===== State =====
+  let isDrawing = false;
+  let model = null;
+  let lastX = 0;
+  let lastY = 0;
+
+  // ===== Initialize Canvas =====
+  function initCanvas() {
+    drawCtx.fillStyle = '#1a1a2e';
+    drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+    drawCtx.strokeStyle = '#ffffff';
+    drawCtx.lineWidth = 15;
+    drawCtx.lineCap = 'round';
+    drawCtx.lineJoin = 'round';
+  }
+  initCanvas();
+
+  // ===== Load Model =====
+  try {
+    model = await tf.loadLayersModel('/models/mnist/model.json');
+    modelStatus.classList.add('d-none');
+    predictionResult.classList.remove('d-none');
+    initProbabilityChart();
+    console.log('Model loaded successfully');
+  } catch (error) {
+    console.error('Failed to load model:', error);
+    modelStatus.innerHTML = `
+      <p class="text-danger mb-0">模型載入失敗</p>
+      <p class="text-muted small mt-2">${error.message}</p>
+    `;
+  }
+
+  // ===== Drawing Functions =====
+  function getPosition(e) {
+    const rect = drawCanvas.getBoundingClientRect();
+    const scaleX = drawCanvas.width / rect.width;
+    const scaleY = drawCanvas.height / rect.height;
+
+    if (e.touches) {
+      return {
+        x: (e.touches[0].clientX - rect.left) * scaleX,
+        y: (e.touches[0].clientY - rect.top) * scaleY
+      };
+    }
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY
+    };
+  }
+
+  function startDrawing(e) {
+    e.preventDefault();
+    isDrawing = true;
+    const pos = getPosition(e);
+    lastX = pos.x;
+    lastY = pos.y;
+  }
+
+  function draw(e) {
+    if (!isDrawing) return;
+    e.preventDefault();
+
+    const pos = getPosition(e);
+    drawCtx.beginPath();
+    drawCtx.moveTo(lastX, lastY);
+    drawCtx.lineTo(pos.x, pos.y);
+    drawCtx.stroke();
+
+    lastX = pos.x;
+    lastY = pos.y;
+  }
+
+  function stopDrawing(e) {
+    if (!isDrawing) return;
+    isDrawing = false;
+    predict();
+  }
+
+  // Mouse events
+  drawCanvas.addEventListener('mousedown', startDrawing);
+  drawCanvas.addEventListener('mousemove', draw);
+  drawCanvas.addEventListener('mouseup', stopDrawing);
+  drawCanvas.addEventListener('mouseleave', stopDrawing);
+
+  // Touch events
+  drawCanvas.addEventListener('touchstart', startDrawing, { passive: false });
+  drawCanvas.addEventListener('touchmove', draw, { passive: false });
+  drawCanvas.addEventListener('touchend', stopDrawing);
+
+  // Clear button
+  clearBtn.addEventListener('click', () => {
+    initCanvas();
+    clearPreview();
+    resetPrediction();
+  });
+
+  // ===== Preview & Preprocessing =====
+  function clearPreview() {
+    previewCtx.fillStyle = '#000';
+    previewCtx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+    saliencyCtx.fillStyle = '#000';
+    saliencyCtx.fillRect(0, 0, saliencyCanvas.width, saliencyCanvas.height);
+  }
+  clearPreview();
+
+  function preprocessImage() {
+    // 取得原始畫布數據
+    const imageData = drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+    const data = imageData.data;
+
+    // 找出筆跡的邊界框
+    let minX = drawCanvas.width, minY = drawCanvas.height, maxX = 0, maxY = 0;
+    let hasContent = false;
+
+    for (let y = 0; y < drawCanvas.height; y++) {
+      for (let x = 0; x < drawCanvas.width; x++) {
+        const idx = (y * drawCanvas.width + x) * 4;
+        // 檢查是否為白色筆跡（R > 200）
+        if (data[idx] > 200) {
+          hasContent = true;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+
+    if (!hasContent) return null;
+
+    // 加上邊距
+    const padding = 20;
+    minX = Math.max(0, minX - padding);
+    minY = Math.max(0, minY - padding);
+    maxX = Math.min(drawCanvas.width, maxX + padding);
+    maxY = Math.min(drawCanvas.height, maxY + padding);
+
+    // 計算邊界框大小，保持正方形
+    const bboxWidth = maxX - minX;
+    const bboxHeight = maxY - minY;
+    const size = Math.max(bboxWidth, bboxHeight);
+
+    // 居中偏移
+    const offsetX = minX - (size - bboxWidth) / 2;
+    const offsetY = minY - (size - bboxHeight) / 2;
+
+    // 建立臨時畫布用於裁切和縮放
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = 28;
+    tempCanvas.height = 28;
+    const tempCtx = tempCanvas.getContext('2d');
+
+    // 黑色背景
+    tempCtx.fillStyle = '#000';
+    tempCtx.fillRect(0, 0, 28, 28);
+
+    // 縮放並繪製（MNIST 使用 20x20 的內容區域，周圍 4px 邊距）
+    const scale = 20 / size;
+    tempCtx.drawImage(
+      drawCanvas,
+      offsetX, offsetY, size, size,
+      4, 4, 20, 20
+    );
+
+    // 更新預覽畫布（放大顯示）
+    previewCtx.imageSmoothingEnabled = false;
+    previewCtx.drawImage(tempCanvas, 0, 0, 140, 140);
+
+    // 取得 28x28 灰階數據
+    const smallImageData = tempCtx.getImageData(0, 0, 28, 28);
+    const pixels = new Float32Array(28 * 28);
+
+    for (let i = 0; i < 28 * 28; i++) {
+      // 取 R 通道值並正規化到 0-1
+      pixels[i] = smallImageData.data[i * 4] / 255.0;
+    }
+
+    return pixels;
+  }
+
+  // ===== Prediction =====
+  function initProbabilityChart() {
+    let html = '';
+    for (let i = 0; i < 10; i++) {
+      html += `
+        <div class="prob-row">
+          <span class="prob-label">${i}</span>
+          <div class="prob-bar-wrapper">
+            <div class="prob-bar" id="bar-${i}" style="width: 0%"></div>
+          </div>
+          <span class="prob-value" id="prob-${i}">0.0%</span>
+        </div>
+      `;
+    }
+    probabilityChart.innerHTML = html;
+  }
+
+  function resetPrediction() {
+    predictedDigit.textContent = '?';
+    for (let i = 0; i < 10; i++) {
+      const bar = document.getElementById(`bar-${i}`);
+      const prob = document.getElementById(`prob-${i}`);
+      bar.style.width = '0%';
+      bar.classList.remove('top-prediction');
+      prob.textContent = '0.0%';
+    }
+  }
+
+  // ===== Saliency Map =====
+  function renderSaliencyMap(gradients) {
+    // 取絕對值並找最大值用於正規化
+    const absGradients = gradients.map(Math.abs);
+    const maxGrad = Math.max(...absGradients);
+
+    if (maxGrad === 0) return;
+
+    // 建立 28x28 ImageData
+    const imageData = saliencyCtx.createImageData(28, 28);
+
+    for (let i = 0; i < 28 * 28; i++) {
+      const normalized = absGradients[i] / maxGrad;
+
+      // 使用藍-紅色階（低影響=藍，高影響=紅）
+      let r, g, b;
+      if (normalized < 0.5) {
+        // 藍到白
+        const t = normalized * 2;
+        r = Math.floor(t * 255);
+        g = Math.floor(t * 255);
+        b = 255;
+      } else {
+        // 白到紅
+        const t = (normalized - 0.5) * 2;
+        r = 255;
+        g = Math.floor((1 - t) * 255);
+        b = Math.floor((1 - t) * 255);
+      }
+
+      imageData.data[i * 4] = r;
+      imageData.data[i * 4 + 1] = g;
+      imageData.data[i * 4 + 2] = b;
+      imageData.data[i * 4 + 3] = 255;
+    }
+
+    // 繪製到臨時 canvas 再放大
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = 28;
+    tempCanvas.height = 28;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.putImageData(imageData, 0, 0);
+
+    // 放大顯示
+    saliencyCtx.imageSmoothingEnabled = false;
+    saliencyCtx.drawImage(tempCanvas, 0, 0, 140, 140);
+  }
+
+  async function predict() {
+    if (!model) return;
+
+    const pixels = preprocessImage();
+    if (!pixels) {
+      resetPrediction();
+      return;
+    }
+
+    // 建立 tensor: [1, 28, 28, 1]
+    const input = tf.tensor4d(pixels, [1, 28, 28, 1]);
+
+    // 推理
+    const prediction = model.predict(input);
+    const probabilities = await prediction.data();
+
+    // 找出最高機率的數字
+    let maxProb = 0;
+    let maxIdx = 0;
+    for (let i = 0; i < 10; i++) {
+      if (probabilities[i] > maxProb) {
+        maxProb = probabilities[i];
+        maxIdx = i;
+      }
+    }
+
+    // 計算 Saliency Map（對預測類別的梯度）
+    const gradientFunc = tf.grad(x => {
+      const pred = model.predict(x);
+      // 取預測類別的 logit
+      return pred.gather([maxIdx], 1).squeeze();
+    });
+
+    const gradients = gradientFunc(input);
+    const gradData = await gradients.data();
+
+    // 渲染 Saliency Map
+    renderSaliencyMap(Array.from(gradData));
+
+    // 釋放 tensor
+    input.dispose();
+    prediction.dispose();
+    gradients.dispose();
+
+    // 更新 UI
+    predictedDigit.textContent = maxIdx;
+
+    for (let i = 0; i < 10; i++) {
+      const bar = document.getElementById(`bar-${i}`);
+      const prob = document.getElementById(`prob-${i}`);
+      const percentage = probabilities[i] * 100;
+
+      bar.style.width = `${percentage}%`;
+      prob.textContent = `${percentage.toFixed(1)}%`;
+
+      if (i === maxIdx) {
+        bar.classList.add('top-prediction');
+      } else {
+        bar.classList.remove('top-prediction');
+      }
+    }
+  }
+});
+</script>
