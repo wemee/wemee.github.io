@@ -40,11 +40,11 @@ import Navbar from '@/components/Navbar.astro';
         <div class="col-lg-6 mb-4">
           <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-              <span>步驟 1：裁切大頭照</span>
+              <span><span class="step-badge">1</span> 裁切大頭照</span>
               <div class="btn-group btn-group-sm" role="group">
-                <button type="button" id="zoomOutBtn" class="btn btn-outline-light" title="縮小">🔍➖</button>
-                <button type="button" id="zoomInBtn" class="btn btn-outline-light" title="放大">🔍➕</button>
-                <button type="button" id="zoomResetBtn" class="btn btn-outline-light" title="重設縮放">↺</button>
+                <button type="button" id="zoomOutBtn" class="btn btn-outline-light" title="縮小">➖</button>
+                <button type="button" id="zoomInBtn" class="btn btn-outline-light" title="放大">➕</button>
+                <button type="button" id="zoomResetBtn" class="btn btn-outline-light" title="重設">↺</button>
               </div>
             </div>
             <div class="card-body p-0">
@@ -53,7 +53,7 @@ import Navbar from '@/components/Navbar.astro';
               </div>
             </div>
             <div class="card-footer">
-              <small class="text-muted">💡 拖曳可移動圖片，<strong>滑鼠滾輪可縮放</strong>，將臉部對準框框內</small>
+              <small class="text-muted">💡 滑鼠滾輪縮放，將臉部對準框框</small>
             </div>
           </div>
         </div>
@@ -62,7 +62,7 @@ import Navbar from '@/components/Navbar.astro';
         <div class="col-lg-6">
           <!-- 尺寸設定 -->
           <div class="card mb-3">
-            <div class="card-header">步驟 2：選擇尺寸</div>
+            <div class="card-header"><span class="step-badge">2</span> 選擇尺寸</div>
             <div class="card-body">
               <div class="mb-3">
                 <label class="form-label small">證件照尺寸</label>
@@ -91,7 +91,7 @@ import Navbar from '@/components/Navbar.astro';
           <!-- 排版預覽 -->
           <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
-              <span>步驟 3：排版預覽</span>
+              <span><span class="step-badge">3</span> 排版預覽</span>
               <span id="photoCount" class="badge bg-info">8 張</span>
             </div>
             <div class="card-body text-center">
@@ -124,31 +124,46 @@ import Navbar from '@/components/Navbar.astro';
     transition: all 0.3s ease;
     background: rgba(var(--bs-success-rgb), 0.05);
   }
-  
+
   .upload-area:hover,
   .upload-area.dragover {
     background: rgba(var(--bs-success-rgb), 0.15);
     border-color: var(--bs-primary);
   }
-  
+
   .upload-icon {
     font-size: 4rem;
     margin-bottom: 1rem;
   }
-  
+
   .cropper-container-wrapper {
     max-height: 400px;
     overflow: hidden;
     background: #1a1a1a;
   }
-  
+
   .cropper-container-wrapper img {
     display: block;
     max-width: 100%;
   }
-  
+
   #previewCanvas {
     background: #fff;
+  }
+
+  /* Step badge */
+  .step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: var(--bs-success);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-right: 0.5rem;
   }
 </style>
 

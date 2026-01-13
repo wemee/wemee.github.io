@@ -2,25 +2,23 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Navbar from '@/components/Navbar.astro';
 ---
-<BaseLayout 
-  title="圖片處理工廠 | 挫屎勇的實用工具" 
+<BaseLayout
+  title="圖片處理工廠 | 挫屎勇的實用工具"
   description="線上圖片壓縮、裁切、縮放工具。純瀏覽器處理，你的照片不會被上傳到伺服器，安心使用！"
 >
   <Navbar currentPage="tools" />
-  
+
   <!-- Cropper.js CSS -->
   <link rel="stylesheet" href="/libs/cropperjs/cropper.min.css">
-  
+
   <div class="container mt-4">
     <h1 class="mb-3">🖼️ 圖片處理工廠</h1>
-    
-    <!-- 開發故事 -->
+
+    <!-- 安全提示 -->
     <div class="alert alert-info border-0 shadow-sm mb-4">
       <h5 class="alert-heading fw-bold">🔒 你的照片很安全</h5>
       <p class="mb-0">
-        填表單上傳證件照被說「檔案太大」？用這個工具壓縮！<br>
-        <strong>所有處理都在你的瀏覽器完成，圖片不會上傳到任何伺服器。</strong><br>
-        放心壓縮你的身分證、信用卡照片吧！
+        所有處理都在瀏覽器完成，圖片<strong>不會上傳到任何伺服器</strong>。
       </p>
     </div>
 
@@ -41,12 +39,12 @@ import Navbar from '@/components/Navbar.astro';
         <div class="col-lg-8 mb-4">
           <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-              <span>✂️ 裁切編輯</span>
+              <span>📷 編輯圖片</span>
               <div class="d-flex align-items-center gap-2">
                 <div class="btn-group btn-group-sm" role="group">
-                  <button type="button" id="zoomOutBtn" class="btn btn-outline-light" title="縮小">🔍➖</button>
-                  <button type="button" id="zoomInBtn" class="btn btn-outline-light" title="放大">🔍➕</button>
-                  <button type="button" id="zoomResetBtn" class="btn btn-outline-light" title="重設縮放">↺</button>
+                  <button type="button" id="zoomOutBtn" class="btn btn-outline-light" title="縮小">➖</button>
+                  <button type="button" id="zoomInBtn" class="btn btn-outline-light" title="放大">➕</button>
+                  <button type="button" id="zoomResetBtn" class="btn btn-outline-light" title="重設">↺</button>
                 </div>
                 <span id="originalInfo" class="badge bg-secondary"></span>
               </div>
@@ -56,121 +54,106 @@ import Navbar from '@/components/Navbar.astro';
                 <img id="previewImage" src="" alt="預覽">
               </div>
             </div>
-            <div class="card-footer">
-              <small class="text-muted">💡 拖曳移動圖片，<strong>滑鼠滾輪縮放</strong>，拖拉邊框調整裁切範圍</small>
-            </div>
-          </div>
-          
-          <!-- 輸出預覽區 -->
-          <div class="card mt-3">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <span>👁️ 輸出預覽</span>
-              <div class="d-flex align-items-center gap-2">
-                <div class="btn-group btn-group-sm" role="group">
-                  <button type="button" id="previewActualBtn" class="btn btn-outline-light active" title="實際大小">1:1</button>
-                  <button type="button" id="previewFitBtn" class="btn btn-outline-light" title="符合版面">符合</button>
-                </div>
-                <span id="outputInfo" class="badge bg-info"></span>
-              </div>
-            </div>
-            <div class="card-body p-0">
-              <div id="outputPreviewWrapper" class="output-preview-wrapper actual-size">
-                <canvas id="outputCanvas"></canvas>
-              </div>
-            </div>
-            <div class="card-footer">
-              <small class="text-muted">✨ 即時預覽最終輸出效果，可切換「實際大小」或「符合版面」</small>
+            <div class="card-footer d-flex justify-content-between align-items-center">
+              <small class="text-muted">💡 滑鼠滾輪縮放，拖拉邊框調整裁切</small>
+              <span id="outputDimensions" class="badge bg-info">-- × -- px</span>
             </div>
           </div>
         </div>
-        
+
         <!-- 右側：控制面板 -->
         <div class="col-lg-4">
-          <!-- 區塊 1：裁切 -->
+          <!-- 步驟 1：裁切比例 -->
           <div class="card mb-3">
-            <div class="card-header">✂️ 裁切</div>
+            <div class="card-header">
+              <span class="step-badge">1</span> 裁切比例
+            </div>
             <div class="card-body">
-              <div class="btn-group w-100 mb-2" role="group">
+              <div class="btn-group w-100" role="group">
                 <button type="button" class="btn btn-outline-primary aspect-btn active" data-aspect="free">自由</button>
                 <button type="button" class="btn btn-outline-primary aspect-btn" data-aspect="1">1:1</button>
                 <button type="button" class="btn btn-outline-primary aspect-btn" data-aspect="1.778">16:9</button>
                 <button type="button" class="btn btn-outline-primary aspect-btn" data-aspect="1.333">4:3</button>
               </div>
-              <button id="resetCropBtn" class="btn btn-sm btn-outline-secondary w-100">重設裁切範圍</button>
             </div>
           </div>
-          
-          <!-- 區塊 2：輸出尺寸 -->
+
+          <!-- 步驟 2：輸出大小 -->
           <div class="card mb-3">
-            <div class="card-header">📐 輸出尺寸</div>
+            <div class="card-header">
+              <span class="step-badge">2</span> 輸出大小
+            </div>
             <div class="card-body">
-              <!-- 寬高輸入 -->
-              <div class="row g-2 align-items-center mb-3">
-                <div class="col-5">
-                  <label class="form-label small mb-1">寬度 (px)</label>
-                  <input type="number" id="resizeWidth" class="form-control form-control-sm" placeholder="寬">
-                </div>
-                <div class="col-2 text-center">
-                  <button id="lockRatioBtn" class="btn btn-sm btn-outline-warning mt-3" title="鎖定/解鎖比例">
-                    🔒
-                  </button>
-                </div>
-                <div class="col-5">
-                  <label class="form-label small mb-1">高度 (px)</label>
-                  <input type="number" id="resizeHeight" class="form-control form-control-sm" placeholder="高">
-                </div>
-              </div>
-              <!-- 縮放滑桿 -->
-              <div class="mb-2">
-                <label class="form-label small d-flex justify-content-between">
-                  <span>縮放比例</span>
-                  <span id="scaleValue">100%</span>
+              <div class="size-options">
+                <label class="size-option">
+                  <input type="radio" name="sizeMode" value="original" checked>
+                  <span class="size-option-content">
+                    <span class="size-option-label">原始大小</span>
+                    <span class="size-option-desc">維持裁切後的尺寸</span>
+                  </span>
                 </label>
-                <input type="range" id="scaleSlider" class="form-range" min="10" max="400" value="100">
+                <label class="size-option">
+                  <input type="radio" name="sizeMode" value="half">
+                  <span class="size-option-content">
+                    <span class="size-option-label">縮小 50%</span>
+                    <span class="size-option-desc">適合一般分享</span>
+                  </span>
+                </label>
+                <label class="size-option">
+                  <input type="radio" name="sizeMode" value="custom">
+                  <span class="size-option-content">
+                    <span class="size-option-label">指定寬度</span>
+                    <span class="size-option-desc">自動計算高度</span>
+                  </span>
+                </label>
               </div>
-              <!-- 快捷按鈕 -->
-              <div class="btn-group w-100" role="group">
-                <button type="button" class="btn btn-sm btn-outline-secondary scale-btn" data-scale="0.25">25%</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary scale-btn" data-scale="0.5">50%</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary scale-btn active" data-scale="1">100%</button>
+              <!-- 自訂寬度輸入 (預設隱藏) -->
+              <div id="customWidthArea" class="mt-3 d-none">
+                <div class="input-group input-group-sm">
+                  <input type="number" id="customWidth" class="form-control" placeholder="800" value="800">
+                  <span class="input-group-text">px</span>
+                </div>
               </div>
             </div>
           </div>
-          
-          <!-- 區塊 3：輸出格式 -->
+
+          <!-- 步驟 3：輸出格式 -->
           <div class="card mb-3">
-            <div class="card-header">💾 輸出格式</div>
+            <div class="card-header">
+              <span class="step-badge">3</span> 格式與品質
+            </div>
             <div class="card-body">
-              <div class="mb-3">
-                <label class="form-label small">檔案格式</label>
-                <select id="outputFormat" class="form-select form-select-sm">
-                  <option value="auto">✨ 自動偵測</option>
-                  <option value="jpeg">JPG - 照片首選</option>
-                  <option value="webp">WebP - 現代通用</option>
-                  <option value="png">PNG - 無失真</option>
-                </select>
+              <div class="row g-2 mb-3">
+                <div class="col-6">
+                  <select id="outputFormat" class="form-select form-select-sm">
+                    <option value="auto">自動</option>
+                    <option value="jpeg">JPG</option>
+                    <option value="webp">WebP</option>
+                    <option value="png">PNG</option>
+                  </select>
+                </div>
+                <div class="col-6">
+                  <div class="d-flex align-items-center h-100">
+                    <input type="range" id="qualitySlider" class="form-range me-2" min="10" max="100" value="80" style="flex:1">
+                    <span id="qualityValue" class="small text-nowrap">80%</span>
+                  </div>
+                </div>
               </div>
-              <div class="mb-2">
-                <label class="form-label small d-flex justify-content-between">
-                  <span>壓縮品質</span>
-                  <span id="qualityValue">80%</span>
-                </label>
-                <input type="range" id="qualitySlider" class="form-range" min="10" max="100" value="80">
-              </div>
-              <div class="d-flex justify-content-between small text-muted">
-                <span>原始: <span id="originalSize">-</span></span>
-                <span>預估: <span id="estimatedSize">-</span></span>
+              <div class="file-size-info">
+                <span>原始: <strong id="originalSize">-</strong></span>
+                <span class="mx-2">→</span>
+                <span>預估: <strong id="estimatedSize" class="text-success">-</strong></span>
               </div>
             </div>
           </div>
-          
+
           <!-- 下載按鈕 -->
-          <button id="downloadBtn" class="btn btn-success w-100 btn-lg">
+          <button id="downloadBtn" class="btn btn-success w-100 btn-lg mb-2">
             ⬇️ 下載圖片
           </button>
-          
+
           <!-- 重新上傳 -->
-          <button id="resetBtn" class="btn btn-outline-secondary w-100 mt-2">
+          <button id="resetBtn" class="btn btn-outline-secondary w-100">
             🔄 重新選擇圖片
           </button>
         </div>
@@ -189,93 +172,129 @@ import Navbar from '@/components/Navbar.astro';
     transition: all 0.3s ease;
     background: rgba(var(--bs-primary-rgb), 0.05);
   }
-  
+
   .upload-area:hover,
   .upload-area.dragover {
     background: rgba(var(--bs-primary-rgb), 0.15);
     border-color: var(--bs-success);
   }
-  
+
   .upload-icon {
     font-size: 4rem;
     margin-bottom: 1rem;
   }
-  
+
   .cropper-container-wrapper {
     max-height: 500px;
     overflow: hidden;
     background: #1a1a1a;
   }
-  
+
   .cropper-container-wrapper img {
     display: block;
     max-width: 100%;
   }
-  
+
+  /* Step badge */
+  .step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: var(--bs-primary);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-right: 0.5rem;
+  }
+
+  /* Aspect buttons */
   .aspect-btn.active {
     background-color: var(--bs-primary);
     color: white;
   }
-  
-  /* 輸出預覽區 */
-  .output-preview-wrapper {
-    background: #1a1a1a;
-    min-height: 150px;
-    max-height: 300px;
+
+  /* Size options - radio card style */
+  .size-options {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+    gap: 0.5rem;
   }
-  
-  .output-preview-wrapper.actual-size {
-    overflow: auto;
-    justify-content: flex-start;
-    align-items: flex-start;
-  }
-  
-  .output-preview-wrapper.fit-size {
-    overflow: hidden;
-  }
-  
-  .output-preview-wrapper.fit-size canvas {
-    max-width: 100%;
-    max-height: 300px;
-    object-fit: contain;
-  }
-  
-  #outputCanvas {
+
+  .size-option {
     display: block;
-    background: #fff;
+    cursor: pointer;
+    margin: 0;
+  }
+
+  .size-option input {
+    display: none;
+  }
+
+  .size-option-content {
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem;
+    border: 2px solid var(--bs-border-color);
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+  }
+
+  .size-option input:checked + .size-option-content {
+    border-color: var(--bs-primary);
+    background: rgba(var(--bs-primary-rgb), 0.1);
+  }
+
+  .size-option-content:hover {
+    border-color: var(--bs-primary);
+  }
+
+  .size-option-label {
+    font-weight: 500;
+  }
+
+  .size-option-desc {
+    font-size: 0.75rem;
+    color: var(--bs-secondary);
+  }
+
+  /* File size info */
+  .file-size-info {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+    background: rgba(0,0,0,0.2);
+    border-radius: 0.25rem;
   }
 </style>
 
 <script is:inline src="/libs/cropperjs/cropper.min.js"></script>
 <script is:inline>
-  // ===== 圖片處理函式 (內嵌) =====
-  
+  // ===== 工具函式 =====
   function formatFileSize(bytes) {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   }
-  
+
   function getSmartFormat(originalFile) {
     const type = originalFile.type.toLowerCase();
-    if (type === 'image/jpeg' || type === 'image/jpg') {
-      return 'jpeg';
-    }
+    if (type === 'image/jpeg' || type === 'image/jpg') return 'jpeg';
     return 'webp';
   }
-  
+
   function getExtension(format) {
     return format === 'jpeg' ? 'jpg' : format;
   }
-  
+
   function compressCanvas(canvas, format, quality) {
     return new Promise((resolve, reject) => {
       let targetCanvas = canvas;
-      
-      // PNG 轉 JPG 需要填白底
+
       if (format === 'jpeg') {
         const newCanvas = document.createElement('canvas');
         const newCtx = newCanvas.getContext('2d');
@@ -286,19 +305,16 @@ import Navbar from '@/components/Navbar.astro';
         newCtx.drawImage(canvas, 0, 0);
         targetCanvas = newCanvas;
       }
-      
+
       const mimeType = 'image/' + format;
       targetCanvas.toBlob(
-        (blob) => {
-          if (blob) resolve(blob);
-          else reject(new Error('無法壓縮圖片'));
-        },
+        (blob) => blob ? resolve(blob) : reject(new Error('無法壓縮圖片')),
         mimeType,
         quality
       );
     });
   }
-  
+
   function downloadBlob(blob, filename) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -316,52 +332,40 @@ import Navbar from '@/components/Navbar.astro';
   const editorArea = document.getElementById('editorArea');
   const previewImage = document.getElementById('previewImage');
   const aspectBtns = document.querySelectorAll('.aspect-btn');
-  const resetCropBtn = document.getElementById('resetCropBtn');
-  const resizeWidth = document.getElementById('resizeWidth');
-  const resizeHeight = document.getElementById('resizeHeight');
-  const lockRatioBtn = document.getElementById('lockRatioBtn');
-  const scaleBtns = document.querySelectorAll('.scale-btn');
-  const scaleSlider = document.getElementById('scaleSlider');
-  const scaleValue = document.getElementById('scaleValue');
+  const sizeModeRadios = document.querySelectorAll('input[name="sizeMode"]');
+  const customWidthArea = document.getElementById('customWidthArea');
+  const customWidth = document.getElementById('customWidth');
   const outputFormat = document.getElementById('outputFormat');
   const qualitySlider = document.getElementById('qualitySlider');
   const qualityValue = document.getElementById('qualityValue');
   const originalSize = document.getElementById('originalSize');
   const estimatedSize = document.getElementById('estimatedSize');
   const originalInfo = document.getElementById('originalInfo');
+  const outputDimensions = document.getElementById('outputDimensions');
   const downloadBtn = document.getElementById('downloadBtn');
   const resetBtn = document.getElementById('resetBtn');
   const zoomOutBtn = document.getElementById('zoomOutBtn');
   const zoomInBtn = document.getElementById('zoomInBtn');
   const zoomResetBtn = document.getElementById('zoomResetBtn');
-  // 輸出預覽區
-  const outputPreviewWrapper = document.getElementById('outputPreviewWrapper');
-  const outputCanvas = document.getElementById('outputCanvas');
-  const outputInfo = document.getElementById('outputInfo');
-  const previewActualBtn = document.getElementById('previewActualBtn');
-  const previewFitBtn = document.getElementById('previewFitBtn');
-
 
   // ===== State =====
   let cropper = null;
   let originalFile = null;
-  let isRatioLocked = true;
-  let baseCropWidth = 0;  // 裁切區域的原始寬度
-  let baseCropHeight = 0; // 裁切區域的原始高度
-
+  let cropWidth = 0;
+  let cropHeight = 0;
 
   // ===== Upload handlers =====
   uploadArea.addEventListener('click', () => fileInput.click());
-  
+
   uploadArea.addEventListener('dragover', (e) => {
     e.preventDefault();
     uploadArea.classList.add('dragover');
   });
-  
+
   uploadArea.addEventListener('dragleave', () => {
     uploadArea.classList.remove('dragover');
   });
-  
+
   uploadArea.addEventListener('drop', (e) => {
     e.preventDefault();
     uploadArea.classList.remove('dragover');
@@ -370,7 +374,7 @@ import Navbar from '@/components/Navbar.astro';
       handleFile(file);
     }
   });
-  
+
   fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) handleFile(file);
@@ -379,25 +383,20 @@ import Navbar from '@/components/Navbar.astro';
   function handleFile(file) {
     originalFile = file;
     originalSize.textContent = formatFileSize(file.size);
-    
+
     const url = URL.createObjectURL(file);
     const img = new Image();
-    
+
     img.onload = function() {
       originalInfo.textContent = img.naturalWidth + ' × ' + img.naturalHeight;
-      resizeWidth.value = img.naturalWidth;
-      resizeHeight.value = img.naturalHeight;
-      
+
       previewImage.src = url;
       uploadArea.classList.add('d-none');
       editorArea.classList.remove('d-none');
-      
-      // 等 DOM 更新後初始化 Cropper
+
       setTimeout(() => {
-        if (cropper) {
-          cropper.destroy();
-        }
-        
+        if (cropper) cropper.destroy();
+
         cropper = new Cropper(previewImage, {
           viewMode: 1,
           dragMode: 'move',
@@ -410,6 +409,7 @@ import Navbar from '@/components/Navbar.astro';
           cropBoxResizable: true,
           toggleDragModeOnDblclick: false,
           ready: function() {
+            updateCropDimensions();
             updateEstimatedSize();
           },
           crop: function() {
@@ -418,134 +418,40 @@ import Navbar from '@/components/Navbar.astro';
         });
       }, 100);
     };
-    
+
     img.onerror = function() {
       alert('無法讀取圖片，請確認檔案格式正確。');
       URL.revokeObjectURL(url);
     };
-    
+
     img.src = url;
   }
 
   // ===== Aspect ratio buttons =====
   aspectBtns.forEach(function(btn) {
     btn.addEventListener('click', function() {
-      aspectBtns.forEach(function(b) { b.classList.remove('active'); });
+      aspectBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      
+
       const aspect = btn.dataset.aspect;
-      if (aspect === 'free') {
-        cropper.setAspectRatio(NaN);
-      } else {
-        cropper.setAspectRatio(parseFloat(aspect));
-      }
+      cropper.setAspectRatio(aspect === 'free' ? NaN : parseFloat(aspect));
     });
   });
 
-  // ===== Reset crop =====
-  resetCropBtn.addEventListener('click', function() {
-    cropper.reset();
-    aspectBtns.forEach(function(b) { b.classList.remove('active'); });
-    aspectBtns[0].classList.add('active');
-  });
-
   // ===== Zoom buttons =====
-  zoomOutBtn.addEventListener('click', function() {
-    if (!cropper) return;
-    cropper.zoom(-0.1);
-  });
+  zoomOutBtn.addEventListener('click', () => cropper && cropper.zoom(-0.1));
+  zoomInBtn.addEventListener('click', () => cropper && cropper.zoom(0.1));
+  zoomResetBtn.addEventListener('click', () => cropper && cropper.zoomTo(1));
 
-  zoomInBtn.addEventListener('click', function() {
-    if (!cropper) return;
-    cropper.zoom(0.1);
-  });
-
-  zoomResetBtn.addEventListener('click', function() {
-    if (!cropper) return;
-    cropper.zoomTo(1);
-  });
-
-
-  // ===== Lock ratio toggle =====
-  lockRatioBtn.addEventListener('click', function() {
-    isRatioLocked = !isRatioLocked;
-    lockRatioBtn.textContent = isRatioLocked ? '🔒' : '🔓';
-    lockRatioBtn.classList.toggle('btn-outline-warning', isRatioLocked);
-    lockRatioBtn.classList.toggle('btn-outline-secondary', !isRatioLocked);
-  });
-
-  // ===== Resize inputs =====
-  resizeWidth.addEventListener('input', function() {
-    if (isRatioLocked && resizeWidth.value && baseCropWidth > 0) {
-      const cropRatio = baseCropWidth / baseCropHeight;
-      resizeHeight.value = Math.round(parseInt(resizeWidth.value) / cropRatio);
-    }
-    updateScaleFromDimensions();
-    updateEstimatedSize();
-  });
-
-  resizeHeight.addEventListener('input', function() {
-    if (isRatioLocked && resizeHeight.value && baseCropHeight > 0) {
-      const cropRatio = baseCropWidth / baseCropHeight;
-      resizeWidth.value = Math.round(parseInt(resizeHeight.value) * cropRatio);
-    }
-    updateScaleFromDimensions();
-    updateEstimatedSize();
-  });
-
-  // ===== Scale slider =====
-  scaleSlider.addEventListener('input', function() {
-    const scale = parseInt(scaleSlider.value) / 100;
-    scaleValue.textContent = scaleSlider.value + '%';
-    
-    if (baseCropWidth > 0 && baseCropHeight > 0) {
-      resizeWidth.value = Math.round(baseCropWidth * scale);
-      resizeHeight.value = Math.round(baseCropHeight * scale);
-    }
-    
-    // 更新快捷按鈕狀態
-    updateScaleBtnState(scale);
-    updateEstimatedSize();
-  });
-
-  // ===== Scale buttons =====
-  scaleBtns.forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      if (!cropper) return;
-      const scale = parseFloat(btn.dataset.scale);
-      
-      // 更新滑桿
-      scaleSlider.value = scale * 100;
-      scaleValue.textContent = Math.round(scale * 100) + '%';
-      
-      // 更新輸入框
-      resizeWidth.value = Math.round(baseCropWidth * scale);
-      resizeHeight.value = Math.round(baseCropHeight * scale);
-      
-      // 更新按鈕狀態
-      updateScaleBtnState(scale);
+  // ===== Size mode selection =====
+  sizeModeRadios.forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      customWidthArea.classList.toggle('d-none', this.value !== 'custom');
       updateEstimatedSize();
     });
   });
 
-  // 輔助函數：從輸入框數值反推滑桿位置
-  function updateScaleFromDimensions() {
-    if (baseCropWidth > 0) {
-      const currentScale = parseInt(resizeWidth.value) / baseCropWidth;
-      const percentage = Math.round(currentScale * 100);
-      scaleSlider.value = Math.min(400, Math.max(10, percentage));
-      scaleValue.textContent = percentage + '%';
-      updateScaleBtnState(currentScale);
-    }
-  }
-
-  // 輔助函數：更新快捷按鈕的 active 狀態
-  function updateScaleBtnState(scale) {
-    scaleBtns.forEach(function(b) {
-      const btnScale = parseFloat(b.dataset.scale);
-      b.classList.toggle('active', Math.abs(btnScale - scale) < 0.01);
-    });
-  }
+  customWidth.addEventListener('input', updateEstimatedSize);
 
   // ===== Quality slider =====
   qualitySlider.addEventListener('input', function() {
@@ -560,111 +466,95 @@ import Navbar from '@/components/Navbar.astro';
   function updateCropDimensions() {
     if (!cropper) return;
     const data = cropper.getData();
-    
-    // 更新基準尺寸
-    baseCropWidth = Math.round(data.width);
-    baseCropHeight = Math.round(data.height);
-    
-    // 更新輸入框
-    resizeWidth.value = baseCropWidth;
-    resizeHeight.value = baseCropHeight;
-    
-    // 重設滑桿到 100%
-    scaleSlider.value = 100;
-    scaleValue.textContent = '100%';
-    updateScaleBtnState(1);
+    cropWidth = Math.round(data.width);
+    cropHeight = Math.round(data.height);
+    updateOutputDimensionsDisplay();
+  }
+
+  // ===== Calculate output dimensions based on size mode =====
+  function getOutputDimensions() {
+    const sizeMode = document.querySelector('input[name="sizeMode"]:checked').value;
+
+    switch (sizeMode) {
+      case 'half':
+        return {
+          width: Math.round(cropWidth * 0.5),
+          height: Math.round(cropHeight * 0.5)
+        };
+      case 'custom':
+        const targetWidth = parseInt(customWidth.value) || cropWidth;
+        const ratio = cropHeight / cropWidth;
+        return {
+          width: targetWidth,
+          height: Math.round(targetWidth * ratio)
+        };
+      default: // original
+        return { width: cropWidth, height: cropHeight };
+    }
+  }
+
+  function updateOutputDimensionsDisplay() {
+    const dims = getOutputDimensions();
+    outputDimensions.textContent = dims.width + ' × ' + dims.height + ' px';
   }
 
   // ===== Estimate output size =====
   let estimateTimeout = null;
   function updateEstimatedSize() {
     if (!cropper) return;
-    
-    // Debounce
+
+    updateOutputDimensionsDisplay();
+
     clearTimeout(estimateTimeout);
     estimateTimeout = setTimeout(async function() {
       try {
-        const targetWidth = parseInt(resizeWidth.value) || undefined;
-        const targetHeight = parseInt(resizeHeight.value) || undefined;
-        
+        const dims = getOutputDimensions();
+
         const canvas = cropper.getCroppedCanvas({
-          width: targetWidth,
-          height: targetHeight
+          width: dims.width,
+          height: dims.height
         });
-        
+
         if (!canvas) return;
-        
-        // 更新輸出預覽區
-        updateOutputPreview(canvas);
-        
-        // 更新尺寸資訊
-        outputInfo.textContent = canvas.width + ' × ' + canvas.height + ' px';
-        
+
         let format = outputFormat.value;
-        if (format === 'auto') {
-          format = getSmartFormat(originalFile);
-        }
-        
+        if (format === 'auto') format = getSmartFormat(originalFile);
+
         const quality = parseInt(qualitySlider.value) / 100;
         const blob = await compressCanvas(canvas, format, quality);
         estimatedSize.textContent = formatFileSize(blob.size);
-        
+
       } catch (error) {
         console.error('Error estimating size:', error);
       }
     }, 300);
   }
 
-  // ===== 更新輸出預覽 Canvas =====
-  function updateOutputPreview(sourceCanvas) {
-    outputCanvas.width = sourceCanvas.width;
-    outputCanvas.height = sourceCanvas.height;
-    const ctx = outputCanvas.getContext('2d');
-    ctx.drawImage(sourceCanvas, 0, 0);
-  }
-
-  // ===== 輸出預覽區切換按鈕 =====
-  previewActualBtn.addEventListener('click', function() {
-    outputPreviewWrapper.classList.remove('fit-size');
-    outputPreviewWrapper.classList.add('actual-size');
-    previewActualBtn.classList.add('active');
-    previewFitBtn.classList.remove('active');
-  });
-
-  previewFitBtn.addEventListener('click', function() {
-    outputPreviewWrapper.classList.remove('actual-size');
-    outputPreviewWrapper.classList.add('fit-size');
-    previewFitBtn.classList.add('active');
-    previewActualBtn.classList.remove('active');
-  });
-
   // ===== Download =====
   downloadBtn.addEventListener('click', async function() {
     if (!cropper) return;
-    
+
     downloadBtn.disabled = true;
     downloadBtn.textContent = '⏳ 處理中...';
-    
+
     try {
+      const dims = getOutputDimensions();
+
       const canvas = cropper.getCroppedCanvas({
-        width: parseInt(resizeWidth.value) || undefined,
-        height: parseInt(resizeHeight.value) || undefined
+        width: dims.width,
+        height: dims.height
       });
-      
+
       let format = outputFormat.value;
-      if (format === 'auto') {
-        format = getSmartFormat(originalFile);
-      }
-      
+      if (format === 'auto') format = getSmartFormat(originalFile);
+
       const quality = parseInt(qualitySlider.value) / 100;
       const blob = await compressCanvas(canvas, format, quality);
-      
+
       const originalName = originalFile.name.replace(/\.[^/.]+$/, '');
       const extension = getExtension(format);
-      const filename = originalName + '_processed.' + extension;
-      
-      downloadBlob(blob, filename);
-      
+      downloadBlob(blob, originalName + '_processed.' + extension);
+
     } catch (error) {
       console.error('Error processing:', error);
       alert('處理圖片時發生錯誤');
@@ -681,27 +571,26 @@ import Navbar from '@/components/Navbar.astro';
       cropper = null;
     }
     originalFile = null;
-    baseCropWidth = 0;
-    baseCropHeight = 0;
+    cropWidth = 0;
+    cropHeight = 0;
     previewImage.src = '';
     fileInput.value = '';
     editorArea.classList.add('d-none');
     uploadArea.classList.remove('d-none');
-    
-    resizeWidth.value = '';
-    resizeHeight.value = '';
-    scaleSlider.value = 100;
-    scaleValue.textContent = '100%';
+
     qualitySlider.value = 80;
     qualityValue.textContent = '80%';
     outputFormat.value = 'auto';
     originalSize.textContent = '-';
     estimatedSize.textContent = '-';
     originalInfo.textContent = '';
-    
-    aspectBtns.forEach(function(b) { b.classList.remove('active'); });
+    outputDimensions.textContent = '-- × -- px';
+    customWidth.value = '800';
+    customWidthArea.classList.add('d-none');
+
+    aspectBtns.forEach(b => b.classList.remove('active'));
     aspectBtns[0].classList.add('active');
-    scaleBtns.forEach(function(b) { b.classList.remove('active'); });
-    scaleBtns[2].classList.add('active'); // 100% 按鈕
+
+    sizeModeRadios.forEach(r => r.checked = r.value === 'original');
   });
 </script>
