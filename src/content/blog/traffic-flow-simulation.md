@@ -4,6 +4,7 @@ pubDate: 2026-01-14
 description: "從 IDM 智慧駕駛模型開始，逐步加入隨機減速與反應時間延遲，讓車流模擬從「機械感」變得「像真的」。完整記錄幽靈塞車的物理原理與調校心得。"
 author: "wemee (with AI assistant)"
 tags: ["simulation", "physics", "traffic", "idm", "javascript"]
+image: "/images/blog/traffic-flow-cover.webp"
 ---
 
 ## 前言
