@@ -1,0 +1,487 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Navbar from '@/components/Navbar.astro';
+---
+<BaseLayout
+  title="免登入待辦清單 - 不用註冊、資料存本地 | 快速備忘"
+  description="受夠了每個待辦 App 都要註冊帳號？這個極簡待辦清單免登入、免註冊，資料直接存在你的瀏覽器。秒開即用，支援細項和備註，完全離線可用。"
+>
+  <Navbar currentPage="tools" />
+
+  <div class="container mt-4">
+    <h1 class="mb-3">✏️ 免登入待辦清單</h1>
+
+    <!-- 說明（含 SEO 關鍵字） -->
+    <div class="alert alert-info border-0 shadow-sm mb-4">
+      <h5 class="alert-heading fw-bold">😤 為什麼又要我註冊帳號？</h5>
+      <p>
+        想記個待辦事項，打開 App 卻要你「建立帳號」「驗證 Email」「同意隱私條款」...<br>
+        <strong>拜託，我只是想記一下等等要買牛奶！</strong>
+      </p>
+      <p>
+        所以我做了這個<strong>免登入、免註冊的極簡待辦清單</strong>：
+      </p>
+      <ul class="mb-2">
+        <li>✅ <strong>秒開即用</strong> — 打開網頁就能寫，沒有任何阻礙</li>
+        <li>✅ <strong>資料存本地</strong> — 用瀏覽器 localStorage，不上傳任何伺服器</li>
+        <li>✅ <strong>離線也能用</strong> — 沒網路？照樣運作</li>
+        <li>✅ <strong>支援細項</strong> — 點開可加備註和子任務</li>
+      </ul>
+      <p class="mb-0 small text-muted">
+        ⚠️ 提醒：清除瀏覽器資料會遺失待辦事項，重要內容請自行備份。
+      </p>
+    </div>
+
+    <!-- 主要區域 -->
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span>待辦事項</span>
+            <span id="itemCount" class="badge bg-secondary">0 項</span>
+          </div>
+          <div class="card-body">
+            <!-- 輸入框 -->
+            <div class="input-group mb-3">
+              <input type="text" id="newItemInput" class="form-control" placeholder="輸入後按 Enter 新增...">
+              <button id="addBtn" class="btn btn-primary" type="button">新增</button>
+            </div>
+
+            <!-- 待辦列表 -->
+            <ul id="todoList" class="list-group">
+              <!-- Items will be rendered here -->
+            </ul>
+
+            <!-- 空狀態 -->
+            <div id="emptyState" class="text-center py-5 text-muted">
+              <div class="display-4 mb-2">📝</div>
+              <p>還沒有任何事項，開始新增吧！</p>
+            </div>
+          </div>
+          <div class="card-footer d-flex justify-content-between align-items-center">
+            <small class="text-muted">點擊項目可編輯細項</small>
+            <button id="clearCompletedBtn" class="btn btn-sm btn-outline-secondary d-none">
+              清除已完成
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 編輯 Modal -->
+  <div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">編輯事項</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <!-- 標題 -->
+          <div class="mb-3">
+            <label class="form-label small">標題</label>
+            <input type="text" id="editTitle" class="form-control">
+          </div>
+
+          <!-- 備註 -->
+          <div class="mb-3">
+            <label class="form-label small">備註</label>
+            <textarea id="editNotes" class="form-control" rows="2" placeholder="可選：補充說明..."></textarea>
+          </div>
+
+          <!-- 細項 -->
+          <div class="mb-3">
+            <label class="form-label small">細項</label>
+            <ul id="subItemsList" class="list-group mb-2">
+              <!-- Sub-items will be rendered here -->
+            </ul>
+            <div class="input-group input-group-sm">
+              <input type="text" id="newSubItemInput" class="form-control" placeholder="新增細項...">
+              <button id="addSubItemBtn" class="btn btn-outline-primary" type="button">+</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer justify-content-between">
+          <button type="button" id="deleteItemBtn" class="btn btn-outline-danger">刪除事項</button>
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">完成</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style is:global>
+  /* Todo item */
+  .list-group-item.todo-item {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    padding: 0.75rem 1rem;
+  }
+
+  .todo-item:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+  }
+
+  .todo-item .todo-checkbox {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin: 0;
+  }
+
+  .todo-item .todo-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .todo-item .todo-title {
+    margin: 0;
+    word-break: break-word;
+  }
+
+  .todo-item.completed .todo-title {
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+
+  .todo-item .todo-indicator {
+    font-size: 0.75rem;
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+
+  .todo-item .todo-delete {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    flex-shrink: 0;
+  }
+
+  .todo-item:hover .todo-delete {
+    opacity: 1;
+  }
+
+  /* Sub-items in modal */
+  .list-group-item.sub-item {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .sub-item .sub-item-checkbox {
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin: 0;
+  }
+
+  .sub-item .sub-item-text {
+    flex: 1;
+    font-size: 0.9rem;
+  }
+
+  .sub-item.completed .sub-item-text {
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+
+  .sub-item .sub-item-delete {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    background: none;
+    border: none;
+    color: var(--bs-danger);
+    padding: 0;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+
+  .sub-item:hover .sub-item-delete {
+    opacity: 1;
+  }
+
+  /* Empty state */
+  #emptyState {
+    display: none;
+  }
+
+  #todoList:empty + #emptyState {
+    display: block;
+  }
+</style>
+
+<script is:inline>
+  // ===== State =====
+  let todos = [];
+  let editingId = null;
+  let editModal = null;
+
+  // ===== DOM Elements =====
+  const newItemInput = document.getElementById('newItemInput');
+  const addBtn = document.getElementById('addBtn');
+  const todoList = document.getElementById('todoList');
+  const itemCount = document.getElementById('itemCount');
+  const clearCompletedBtn = document.getElementById('clearCompletedBtn');
+  const editModalEl = document.getElementById('editModal');
+  const editTitle = document.getElementById('editTitle');
+  const editNotes = document.getElementById('editNotes');
+  const subItemsList = document.getElementById('subItemsList');
+  const newSubItemInput = document.getElementById('newSubItemInput');
+  const addSubItemBtn = document.getElementById('addSubItemBtn');
+  const deleteItemBtn = document.getElementById('deleteItemBtn');
+
+  // ===== Initialize =====
+  document.addEventListener('DOMContentLoaded', () => {
+    editModal = new bootstrap.Modal(editModalEl);
+    loadTodos();
+    render();
+
+    // Save on modal close
+    editModalEl.addEventListener('hidden.bs.modal', saveCurrentEdit);
+  });
+
+  // ===== LocalStorage =====
+  function loadTodos() {
+    try {
+      const stored = localStorage.getItem('wemee_todos');
+      todos = stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      todos = [];
+    }
+  }
+
+  function saveTodos() {
+    localStorage.setItem('wemee_todos', JSON.stringify(todos));
+  }
+
+  // ===== Render =====
+  function render() {
+    todoList.innerHTML = '';
+
+    todos.forEach(todo => {
+      const li = document.createElement('li');
+      li.className = 'list-group-item todo-item' + (todo.completed ? ' completed' : '');
+      li.dataset.id = todo.id;
+
+      const hasDetails = todo.notes || (todo.subItems && todo.subItems.length > 0);
+      const indicator = hasDetails ? '<span class="todo-indicator">📝</span>' : '';
+
+      li.innerHTML = `
+        <input type="checkbox" class="form-check-input todo-checkbox" ${todo.completed ? 'checked' : ''}>
+        <div class="todo-content">
+          <p class="todo-title">${escapeHtml(todo.title)}</p>
+        </div>
+        ${indicator}
+        <button class="btn btn-sm btn-outline-danger todo-delete" title="刪除">×</button>
+      `;
+
+      // Checkbox click
+      li.querySelector('.todo-checkbox').addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleTodo(todo.id);
+      });
+
+      // Delete click
+      li.querySelector('.todo-delete').addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteTodo(todo.id);
+      });
+
+      // Item click - open edit modal
+      li.addEventListener('click', () => openEditModal(todo.id));
+
+      todoList.appendChild(li);
+    });
+
+    updateCounts();
+  }
+
+  function updateCounts() {
+    const total = todos.length;
+    const completed = todos.filter(t => t.completed).length;
+
+    itemCount.textContent = total + ' 項';
+
+    if (completed > 0) {
+      clearCompletedBtn.classList.remove('d-none');
+      clearCompletedBtn.textContent = `清除已完成 (${completed})`;
+    } else {
+      clearCompletedBtn.classList.add('d-none');
+    }
+  }
+
+  // ===== Todo Actions =====
+  function addTodo(title) {
+    if (!title.trim()) return;
+
+    const todo = {
+      id: Date.now().toString(),
+      title: title.trim(),
+      completed: false,
+      notes: '',
+      subItems: []
+    };
+
+    todos.unshift(todo);
+    saveTodos();
+    render();
+  }
+
+  function toggleTodo(id) {
+    const todo = todos.find(t => t.id === id);
+    if (todo) {
+      todo.completed = !todo.completed;
+      saveTodos();
+      render();
+    }
+  }
+
+  function deleteTodo(id) {
+    todos = todos.filter(t => t.id !== id);
+    saveTodos();
+    render();
+  }
+
+  function clearCompleted() {
+    todos = todos.filter(t => !t.completed);
+    saveTodos();
+    render();
+  }
+
+  // ===== Edit Modal =====
+  function openEditModal(id) {
+    const todo = todos.find(t => t.id === id);
+    if (!todo) return;
+
+    editingId = id;
+    editTitle.value = todo.title;
+    editNotes.value = todo.notes || '';
+    renderSubItems(todo.subItems || []);
+
+    editModal.show();
+  }
+
+  function saveCurrentEdit() {
+    if (!editingId) return;
+
+    const todo = todos.find(t => t.id === editingId);
+    if (todo) {
+      todo.title = editTitle.value.trim() || todo.title;
+      todo.notes = editNotes.value.trim();
+      saveTodos();
+      render();
+    }
+
+    editingId = null;
+  }
+
+  function renderSubItems(subItems) {
+    subItemsList.innerHTML = '';
+
+    subItems.forEach((sub, index) => {
+      const li = document.createElement('li');
+      li.className = 'list-group-item sub-item py-2' + (sub.completed ? ' completed' : '');
+      li.dataset.index = index;
+
+      li.innerHTML = `
+        <input type="checkbox" class="form-check-input sub-item-checkbox" ${sub.completed ? 'checked' : ''}>
+        <span class="sub-item-text">${escapeHtml(sub.text)}</span>
+        <button class="sub-item-delete" title="刪除">×</button>
+      `;
+
+      // Checkbox
+      li.querySelector('.sub-item-checkbox').addEventListener('change', (e) => {
+        toggleSubItem(index);
+      });
+
+      // Delete
+      li.querySelector('.sub-item-delete').addEventListener('click', () => {
+        deleteSubItem(index);
+      });
+
+      subItemsList.appendChild(li);
+    });
+  }
+
+  function addSubItem(text) {
+    if (!text.trim() || !editingId) return;
+
+    const todo = todos.find(t => t.id === editingId);
+    if (todo) {
+      if (!todo.subItems) todo.subItems = [];
+      todo.subItems.push({ text: text.trim(), completed: false });
+      saveTodos();
+      renderSubItems(todo.subItems);
+    }
+  }
+
+  function toggleSubItem(index) {
+    const todo = todos.find(t => t.id === editingId);
+    if (todo && todo.subItems && todo.subItems[index]) {
+      todo.subItems[index].completed = !todo.subItems[index].completed;
+      saveTodos();
+      renderSubItems(todo.subItems);
+    }
+  }
+
+  function deleteSubItem(index) {
+    const todo = todos.find(t => t.id === editingId);
+    if (todo && todo.subItems) {
+      todo.subItems.splice(index, 1);
+      saveTodos();
+      renderSubItems(todo.subItems);
+    }
+  }
+
+  // ===== Event Listeners =====
+  newItemInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.isComposing) {
+      addTodo(newItemInput.value);
+      newItemInput.value = '';
+    }
+  });
+
+  addBtn.addEventListener('click', () => {
+    addTodo(newItemInput.value);
+    newItemInput.value = '';
+    newItemInput.focus();
+  });
+
+  clearCompletedBtn.addEventListener('click', clearCompleted);
+
+  newSubItemInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.isComposing) {
+      addSubItem(newSubItemInput.value);
+      newSubItemInput.value = '';
+    }
+  });
+
+  addSubItemBtn.addEventListener('click', () => {
+    addSubItem(newSubItemInput.value);
+    newSubItemInput.value = '';
+    newSubItemInput.focus();
+  });
+
+  deleteItemBtn.addEventListener('click', () => {
+    if (editingId) {
+      deleteTodo(editingId);
+      editingId = null;
+      editModal.hide();
+    }
+  });
+
+  // ===== Utilities =====
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+</script>
