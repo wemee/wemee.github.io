@@ -39,7 +39,14 @@ import Navbar from '@/components/Navbar.astro';
         <!-- 左側：圖片裁切 -->
         <div class="col-lg-6 mb-4">
           <div class="card">
-            <div class="card-header">步驟 1：裁切大頭照</div>
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>步驟 1：裁切大頭照</span>
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" id="zoomOutBtn" class="btn btn-outline-light" title="縮小">🔍➖</button>
+                <button type="button" id="zoomInBtn" class="btn btn-outline-light" title="放大">🔍➕</button>
+                <button type="button" id="zoomResetBtn" class="btn btn-outline-light" title="重設縮放">↺</button>
+              </div>
+            </div>
             <div class="card-body p-0">
               <div class="cropper-container-wrapper">
                 <img id="previewImage" src="" alt="預覽">
@@ -178,6 +185,10 @@ import Navbar from '@/components/Navbar.astro';
   const photoCountBadge = document.getElementById('photoCount');
   const downloadBtn = document.getElementById('downloadBtn');
   const resetBtn = document.getElementById('resetBtn');
+  const zoomOutBtn = document.getElementById('zoomOutBtn');
+  const zoomInBtn = document.getElementById('zoomInBtn');
+  const zoomResetBtn = document.getElementById('zoomResetBtn');
+
   
   // ===== State =====
   let cropper = null;
@@ -268,6 +279,23 @@ import Navbar from '@/components/Navbar.astro';
   
   paperSizeSelect.addEventListener('change', updatePreview);
   showCutLinesCheckbox.addEventListener('change', updatePreview);
+
+  // ===== Zoom buttons =====
+  zoomOutBtn.addEventListener('click', function() {
+    if (!cropper) return;
+    cropper.zoom(-0.1);
+  });
+
+  zoomInBtn.addEventListener('click', function() {
+    if (!cropper) return;
+    cropper.zoom(0.1);
+  });
+
+  zoomResetBtn.addEventListener('click', function() {
+    if (!cropper) return;
+    cropper.zoomTo(1);
+  });
+
 
   // ===== 計算排版 =====
   function calculateLayout() {

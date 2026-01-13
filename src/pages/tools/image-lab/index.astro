@@ -41,8 +41,15 @@ import Navbar from '@/components/Navbar.astro';
         <div class="col-lg-8 mb-4">
           <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-              <span>圖片預覽</span>
-              <span id="originalInfo" class="badge bg-secondary"></span>
+              <span>✂️ 裁切編輯</span>
+              <div class="d-flex align-items-center gap-2">
+                <div class="btn-group btn-group-sm" role="group">
+                  <button type="button" id="zoomOutBtn" class="btn btn-outline-light" title="縮小">🔍➖</button>
+                  <button type="button" id="zoomInBtn" class="btn btn-outline-light" title="放大">🔍➕</button>
+                  <button type="button" id="zoomResetBtn" class="btn btn-outline-light" title="重設縮放">↺</button>
+                </div>
+                <span id="originalInfo" class="badge bg-secondary"></span>
+              </div>
             </div>
             <div class="card-body p-0">
               <div class="cropper-container-wrapper">
@@ -50,14 +57,36 @@ import Navbar from '@/components/Navbar.astro';
               </div>
             </div>
             <div class="card-footer">
-              <small class="text-muted">💡 操作提示：拖曳可移動圖片，<strong>滑鼠滾輪可縮放</strong>，拖拉邊框調整裁切範圍</small>
+              <small class="text-muted">💡 拖曳移動圖片，<strong>滑鼠滾輪縮放</strong>，拖拉邊框調整裁切範圍</small>
+            </div>
+          </div>
+          
+          <!-- 輸出預覽區 -->
+          <div class="card mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>👁️ 輸出預覽</span>
+              <div class="d-flex align-items-center gap-2">
+                <div class="btn-group btn-group-sm" role="group">
+                  <button type="button" id="previewActualBtn" class="btn btn-outline-light active" title="實際大小">1:1</button>
+                  <button type="button" id="previewFitBtn" class="btn btn-outline-light" title="符合版面">符合</button>
+                </div>
+                <span id="outputInfo" class="badge bg-info"></span>
+              </div>
+            </div>
+            <div class="card-body p-0">
+              <div id="outputPreviewWrapper" class="output-preview-wrapper actual-size">
+                <canvas id="outputCanvas"></canvas>
+              </div>
+            </div>
+            <div class="card-footer">
+              <small class="text-muted">✨ 即時預覽最終輸出效果，可切換「實際大小」或「符合版面」</small>
             </div>
           </div>
         </div>
         
         <!-- 右側：控制面板 -->
         <div class="col-lg-4">
-          <!-- 裁切設定 -->
+          <!-- 區塊 1：裁切 -->
           <div class="card mb-3">
             <div class="card-header">✂️ 裁切</div>
             <div class="card-body">
@@ -71,11 +100,12 @@ import Navbar from '@/components/Navbar.astro';
             </div>
           </div>
           
-          <!-- 縮放設定 -->
+          <!-- 區塊 2：輸出尺寸 -->
           <div class="card mb-3">
-            <div class="card-header">📐 縮放</div>
+            <div class="card-header">📐 輸出尺寸</div>
             <div class="card-body">
-              <div class="row g-2 align-items-center">
+              <!-- 寬高輸入 -->
+              <div class="row g-2 align-items-center mb-3">
                 <div class="col-5">
                   <label class="form-label small mb-1">寬度 (px)</label>
                   <input type="number" id="resizeWidth" class="form-control form-control-sm" placeholder="寬">
@@ -90,21 +120,29 @@ import Navbar from '@/components/Navbar.astro';
                   <input type="number" id="resizeHeight" class="form-control form-control-sm" placeholder="高">
                 </div>
               </div>
-              <div class="btn-group w-100 mt-2" role="group">
+              <!-- 縮放滑桿 -->
+              <div class="mb-2">
+                <label class="form-label small d-flex justify-content-between">
+                  <span>縮放比例</span>
+                  <span id="scaleValue">100%</span>
+                </label>
+                <input type="range" id="scaleSlider" class="form-range" min="10" max="400" value="100">
+              </div>
+              <!-- 快捷按鈕 -->
+              <div class="btn-group w-100" role="group">
                 <button type="button" class="btn btn-sm btn-outline-secondary scale-btn" data-scale="0.25">25%</button>
                 <button type="button" class="btn btn-sm btn-outline-secondary scale-btn" data-scale="0.5">50%</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary scale-btn" data-scale="0.75">75%</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary scale-btn" data-scale="1">100%</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary scale-btn active" data-scale="1">100%</button>
               </div>
             </div>
           </div>
           
-          <!-- 壓縮設定 -->
+          <!-- 區塊 3：輸出格式 -->
           <div class="card mb-3">
-            <div class="card-header">💾 壓縮輸出</div>
+            <div class="card-header">💾 輸出格式</div>
             <div class="card-body">
               <div class="mb-3">
-                <label class="form-label small">輸出格式</label>
+                <label class="form-label small">檔案格式</label>
                 <select id="outputFormat" class="form-select form-select-sm">
                   <option value="auto">✨ 自動偵測</option>
                   <option value="jpeg">JPG - 照片首選</option>
@@ -114,7 +152,7 @@ import Navbar from '@/components/Navbar.astro';
               </div>
               <div class="mb-2">
                 <label class="form-label small d-flex justify-content-between">
-                  <span>品質</span>
+                  <span>壓縮品質</span>
                   <span id="qualityValue">80%</span>
                 </label>
                 <input type="range" id="qualitySlider" class="form-range" min="10" max="100" value="80">
@@ -177,6 +215,37 @@ import Navbar from '@/components/Navbar.astro';
   .aspect-btn.active {
     background-color: var(--bs-primary);
     color: white;
+  }
+  
+  /* 輸出預覽區 */
+  .output-preview-wrapper {
+    background: #1a1a1a;
+    min-height: 150px;
+    max-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .output-preview-wrapper.actual-size {
+    overflow: auto;
+    justify-content: flex-start;
+    align-items: flex-start;
+  }
+  
+  .output-preview-wrapper.fit-size {
+    overflow: hidden;
+  }
+  
+  .output-preview-wrapper.fit-size canvas {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+  }
+  
+  #outputCanvas {
+    display: block;
+    background: #fff;
   }
 </style>
 
@@ -252,6 +321,8 @@ import Navbar from '@/components/Navbar.astro';
   const resizeHeight = document.getElementById('resizeHeight');
   const lockRatioBtn = document.getElementById('lockRatioBtn');
   const scaleBtns = document.querySelectorAll('.scale-btn');
+  const scaleSlider = document.getElementById('scaleSlider');
+  const scaleValue = document.getElementById('scaleValue');
   const outputFormat = document.getElementById('outputFormat');
   const qualitySlider = document.getElementById('qualitySlider');
   const qualityValue = document.getElementById('qualityValue');
@@ -260,11 +331,24 @@ import Navbar from '@/components/Navbar.astro';
   const originalInfo = document.getElementById('originalInfo');
   const downloadBtn = document.getElementById('downloadBtn');
   const resetBtn = document.getElementById('resetBtn');
+  const zoomOutBtn = document.getElementById('zoomOutBtn');
+  const zoomInBtn = document.getElementById('zoomInBtn');
+  const zoomResetBtn = document.getElementById('zoomResetBtn');
+  // 輸出預覽區
+  const outputPreviewWrapper = document.getElementById('outputPreviewWrapper');
+  const outputCanvas = document.getElementById('outputCanvas');
+  const outputInfo = document.getElementById('outputInfo');
+  const previewActualBtn = document.getElementById('previewActualBtn');
+  const previewFitBtn = document.getElementById('previewFitBtn');
+
 
   // ===== State =====
   let cropper = null;
   let originalFile = null;
   let isRatioLocked = true;
+  let baseCropWidth = 0;  // 裁切區域的原始寬度
+  let baseCropHeight = 0; // 裁切區域的原始高度
+
 
   // ===== Upload handlers =====
   uploadArea.addEventListener('click', () => fileInput.click());
@@ -365,6 +449,23 @@ import Navbar from '@/components/Navbar.astro';
     aspectBtns[0].classList.add('active');
   });
 
+  // ===== Zoom buttons =====
+  zoomOutBtn.addEventListener('click', function() {
+    if (!cropper) return;
+    cropper.zoom(-0.1);
+  });
+
+  zoomInBtn.addEventListener('click', function() {
+    if (!cropper) return;
+    cropper.zoom(0.1);
+  });
+
+  zoomResetBtn.addEventListener('click', function() {
+    if (!cropper) return;
+    cropper.zoomTo(1);
+  });
+
+
   // ===== Lock ratio toggle =====
   lockRatioBtn.addEventListener('click', function() {
     isRatioLocked = !isRatioLocked;
@@ -375,20 +476,35 @@ import Navbar from '@/components/Navbar.astro';
 
   // ===== Resize inputs =====
   resizeWidth.addEventListener('input', function() {
-    if (isRatioLocked && resizeWidth.value && cropper) {
-      const cropData = cropper.getData();
-      const cropRatio = cropData.width / cropData.height;
+    if (isRatioLocked && resizeWidth.value && baseCropWidth > 0) {
+      const cropRatio = baseCropWidth / baseCropHeight;
       resizeHeight.value = Math.round(parseInt(resizeWidth.value) / cropRatio);
     }
+    updateScaleFromDimensions();
     updateEstimatedSize();
   });
 
   resizeHeight.addEventListener('input', function() {
-    if (isRatioLocked && resizeHeight.value && cropper) {
-      const cropData = cropper.getData();
-      const cropRatio = cropData.width / cropData.height;
+    if (isRatioLocked && resizeHeight.value && baseCropHeight > 0) {
+      const cropRatio = baseCropWidth / baseCropHeight;
       resizeWidth.value = Math.round(parseInt(resizeHeight.value) * cropRatio);
     }
+    updateScaleFromDimensions();
+    updateEstimatedSize();
+  });
+
+  // ===== Scale slider =====
+  scaleSlider.addEventListener('input', function() {
+    const scale = parseInt(scaleSlider.value) / 100;
+    scaleValue.textContent = scaleSlider.value + '%';
+    
+    if (baseCropWidth > 0 && baseCropHeight > 0) {
+      resizeWidth.value = Math.round(baseCropWidth * scale);
+      resizeHeight.value = Math.round(baseCropHeight * scale);
+    }
+    
+    // 更新快捷按鈕狀態
+    updateScaleBtnState(scale);
     updateEstimatedSize();
   });
 
@@ -397,12 +513,39 @@ import Navbar from '@/components/Navbar.astro';
     btn.addEventListener('click', function() {
       if (!cropper) return;
       const scale = parseFloat(btn.dataset.scale);
-      const cropData = cropper.getData();
-      resizeWidth.value = Math.round(cropData.width * scale);
-      resizeHeight.value = Math.round(cropData.height * scale);
+      
+      // 更新滑桿
+      scaleSlider.value = scale * 100;
+      scaleValue.textContent = Math.round(scale * 100) + '%';
+      
+      // 更新輸入框
+      resizeWidth.value = Math.round(baseCropWidth * scale);
+      resizeHeight.value = Math.round(baseCropHeight * scale);
+      
+      // 更新按鈕狀態
+      updateScaleBtnState(scale);
       updateEstimatedSize();
     });
   });
+
+  // 輔助函數：從輸入框數值反推滑桿位置
+  function updateScaleFromDimensions() {
+    if (baseCropWidth > 0) {
+      const currentScale = parseInt(resizeWidth.value) / baseCropWidth;
+      const percentage = Math.round(currentScale * 100);
+      scaleSlider.value = Math.min(400, Math.max(10, percentage));
+      scaleValue.textContent = percentage + '%';
+      updateScaleBtnState(currentScale);
+    }
+  }
+
+  // 輔助函數：更新快捷按鈕的 active 狀態
+  function updateScaleBtnState(scale) {
+    scaleBtns.forEach(function(b) {
+      const btnScale = parseFloat(b.dataset.scale);
+      b.classList.toggle('active', Math.abs(btnScale - scale) < 0.01);
+    });
+  }
 
   // ===== Quality slider =====
   qualitySlider.addEventListener('input', function() {
@@ -417,8 +560,19 @@ import Navbar from '@/components/Navbar.astro';
   function updateCropDimensions() {
     if (!cropper) return;
     const data = cropper.getData();
-    resizeWidth.value = Math.round(data.width);
-    resizeHeight.value = Math.round(data.height);
+    
+    // 更新基準尺寸
+    baseCropWidth = Math.round(data.width);
+    baseCropHeight = Math.round(data.height);
+    
+    // 更新輸入框
+    resizeWidth.value = baseCropWidth;
+    resizeHeight.value = baseCropHeight;
+    
+    // 重設滑桿到 100%
+    scaleSlider.value = 100;
+    scaleValue.textContent = '100%';
+    updateScaleBtnState(1);
   }
 
   // ===== Estimate output size =====
@@ -430,12 +584,21 @@ import Navbar from '@/components/Navbar.astro';
     clearTimeout(estimateTimeout);
     estimateTimeout = setTimeout(async function() {
       try {
+        const targetWidth = parseInt(resizeWidth.value) || undefined;
+        const targetHeight = parseInt(resizeHeight.value) || undefined;
+        
         const canvas = cropper.getCroppedCanvas({
-          width: parseInt(resizeWidth.value) || undefined,
-          height: parseInt(resizeHeight.value) || undefined
+          width: targetWidth,
+          height: targetHeight
         });
         
         if (!canvas) return;
+        
+        // 更新輸出預覽區
+        updateOutputPreview(canvas);
+        
+        // 更新尺寸資訊
+        outputInfo.textContent = canvas.width + ' × ' + canvas.height + ' px';
         
         let format = outputFormat.value;
         if (format === 'auto') {
@@ -451,6 +614,29 @@ import Navbar from '@/components/Navbar.astro';
       }
     }, 300);
   }
+
+  // ===== 更新輸出預覽 Canvas =====
+  function updateOutputPreview(sourceCanvas) {
+    outputCanvas.width = sourceCanvas.width;
+    outputCanvas.height = sourceCanvas.height;
+    const ctx = outputCanvas.getContext('2d');
+    ctx.drawImage(sourceCanvas, 0, 0);
+  }
+
+  // ===== 輸出預覽區切換按鈕 =====
+  previewActualBtn.addEventListener('click', function() {
+    outputPreviewWrapper.classList.remove('fit-size');
+    outputPreviewWrapper.classList.add('actual-size');
+    previewActualBtn.classList.add('active');
+    previewFitBtn.classList.remove('active');
+  });
+
+  previewFitBtn.addEventListener('click', function() {
+    outputPreviewWrapper.classList.remove('actual-size');
+    outputPreviewWrapper.classList.add('fit-size');
+    previewFitBtn.classList.add('active');
+    previewActualBtn.classList.remove('active');
+  });
 
   // ===== Download =====
   downloadBtn.addEventListener('click', async function() {
@@ -495,6 +681,8 @@ import Navbar from '@/components/Navbar.astro';
       cropper = null;
     }
     originalFile = null;
+    baseCropWidth = 0;
+    baseCropHeight = 0;
     previewImage.src = '';
     fileInput.value = '';
     editorArea.classList.add('d-none');
@@ -502,6 +690,8 @@ import Navbar from '@/components/Navbar.astro';
     
     resizeWidth.value = '';
     resizeHeight.value = '';
+    scaleSlider.value = 100;
+    scaleValue.textContent = '100%';
     qualitySlider.value = 80;
     qualityValue.textContent = '80%';
     outputFormat.value = 'auto';
@@ -511,5 +701,7 @@ import Navbar from '@/components/Navbar.astro';
     
     aspectBtns.forEach(function(b) { b.classList.remove('active'); });
     aspectBtns[0].classList.add('active');
+    scaleBtns.forEach(function(b) { b.classList.remove('active'); });
+    scaleBtns[2].classList.add('active'); // 100% 按鈕
   });
 </script>
