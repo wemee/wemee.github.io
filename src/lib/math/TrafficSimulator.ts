@@ -21,6 +21,11 @@ export interface Vehicle {
   maxAcceleration: number;
   comfortDecel: number;
   minGap: number;
+  // 隨機減速參數 (Nagel-Schreckenberg)
+  randomSlowdownProb: number;     // 隨機減速機率 (0-1)
+  // 反應時間延遲
+  reactionTime: number;           // 反應時間 (秒)
+  leaderHistory: { gap: number; velocity: number; time: number }[];  // 前車狀態歷史
   // 擾動者專用
   nextDisruptionTime?: number;
   disruptionEndTime?: number;     // 擾動結束時間
@@ -61,6 +66,8 @@ const VEHICLE_PARAMS = {
     maxAcceleration: 1.0,
     comfortDecel: 1.5,
     minGap: 0.08,
+    randomSlowdownProb: 0.1,   // 10% 機率隨機減速
+    reactionTime: 0.5,          // 0.5 秒反應時間
     color: '#2ecc71'  // 綠色
   },
   disruptor: {
@@ -69,6 +76,8 @@ const VEHICLE_PARAMS = {
     maxAcceleration: 1.5,
     comfortDecel: 2.5,
     minGap: 0.05,
+    randomSlowdownProb: 0.15,  // 15% 機率隨機減速（較不穩定）
+    reactionTime: 0.3,          // 0.3 秒反應時間（較激進）
     color: '#e74c3c'  // 紅色
   },
   absorber: {
@@ -77,6 +86,8 @@ const VEHICLE_PARAMS = {
     maxAcceleration: 0.6,
     comfortDecel: 1.0,
     minGap: 0.12,
+    randomSlowdownProb: 0.05,  // 5% 機率隨機減速（較穩定）
+    reactionTime: 0.8,          // 0.8 秒反應時間（較保守）
     color: '#3498db'  // 藍色
   }
 };
@@ -292,6 +303,10 @@ export class TrafficSimulator {
         maxAcceleration: params.maxAcceleration,
         comfortDecel: params.comfortDecel,
         minGap: params.minGap,
+        // 隨機減速與反應時間（加入 ±20% 的個體差異）
+        randomSlowdownProb: params.randomSlowdownProb * (0.8 + Math.random() * 0.4),
+        reactionTime: params.reactionTime * (0.8 + Math.random() * 0.4),
+        leaderHistory: [],
         typeColor: params.color,
         nextDisruptionTime: type === 'disruptor'
           ? Math.random() * (1 / this.config.disruptionFrequency)
@@ -332,11 +347,53 @@ export class TrafficSimulator {
     return gap;
   }
 
+  /** 記錄前車狀態到歷史（用於反應時間延遲） */
+  private recordLeaderState(vehicle: Vehicle, leader: Vehicle): void {
+    const gap = this.getGap(vehicle, leader);
+    const state = {
+      gap,
+      velocity: leader.velocity,
+      time: this.simulationTime
+    };
+
+    vehicle.leaderHistory.push(state);
+
+    // 只保留最近 2 秒的歷史
+    const maxHistoryTime = 2.0;
+    while (
+      vehicle.leaderHistory.length > 0 &&
+      this.simulationTime - vehicle.leaderHistory[0].time > maxHistoryTime
+    ) {
+      vehicle.leaderHistory.shift();
+    }
+  }
+
+  /** 獲取延遲後的前車狀態（反應時間延遲） */
+  private getDelayedLeaderState(vehicle: Vehicle, leader: Vehicle): { gap: number; velocity: number } {
+    const targetTime = this.simulationTime - vehicle.reactionTime;
+
+    // 找到最接近目標時間的歷史記錄
+    for (let i = vehicle.leaderHistory.length - 1; i >= 0; i--) {
+      if (vehicle.leaderHistory[i].time <= targetTime) {
+        return vehicle.leaderHistory[i];
+      }
+    }
+
+    // 如果沒有足夠的歷史，使用當前狀態
+    return {
+      gap: this.getGap(vehicle, leader),
+      velocity: leader.velocity
+    };
+  }
+
   private calculateIDMAcceleration(vehicle: Vehicle, leader: Vehicle): number {
     const v = vehicle.velocity;
     const v0 = this.getEffectiveDesiredVelocity(vehicle); // 使用動態期望速度
-    const s = this.getGap(vehicle, leader);
-    const deltaV = v - leader.velocity;
+
+    // 使用延遲後的前車狀態（反應時間）
+    const delayedState = this.getDelayedLeaderState(vehicle, leader);
+    const s = delayedState.gap;
+    const deltaV = v - delayedState.velocity;
 
     const s0 = vehicle.minGap;
     const T = vehicle.safeTimeHeadway;
@@ -408,6 +465,12 @@ export class TrafficSimulator {
       this.updateDisruptor(vehicle, dt);
     }
 
+    // 記錄所有車輛的前車狀態（用於反應時間延遲）
+    for (const vehicle of this.vehicles) {
+      const leader = this.getLeader(vehicle);
+      this.recordLeaderState(vehicle, leader);
+    }
+
     // 計算所有車輛的加速度
     for (const vehicle of this.vehicles) {
       // 先檢查是否在擾動中
@@ -419,6 +482,14 @@ export class TrafficSimulator {
         // 正常：使用 IDM
         const leader = this.getLeader(vehicle);
         vehicle.acceleration = this.calculateIDMAcceleration(vehicle, leader);
+
+        // 隨機減速（Nagel-Schreckenberg 風格）
+        // 只在車輛正在移動時才可能減速，避免靜止時觸發
+        if (vehicle.velocity > 0.01 && Math.random() < vehicle.randomSlowdownProb * dt * 10) {
+          // 減速量：0.5 ~ 1.5 倍的舒適減速度
+          const randomDecel = vehicle.comfortDecel * (0.5 + Math.random());
+          vehicle.acceleration -= randomDecel;
+        }
       }
     }
 

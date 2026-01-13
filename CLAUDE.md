@@ -64,3 +64,4 @@ class MyVisualizer {
 ## Deployment
 
 Pushes to `main` branch auto-deploy to GitHub Pages via `.github/workflows/deploy.yml`. The workflow runs `npm ci && npm run build` and deploys `dist/`.
+
