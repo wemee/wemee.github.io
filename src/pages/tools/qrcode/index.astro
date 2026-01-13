@@ -2,80 +2,404 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Navbar from '@/components/Navbar.astro';
 ---
-<BaseLayout 
-  title="QR Code 圖片解析器 | 挫屎勇的實用工具" 
-  description="手機只有一台，畫面卻出現 QR Code 要你掃？別再借別人手機來翻拍了！直接截圖上傳，這個工具幫你解析出網址。"
+<BaseLayout
+  title="QR Code 工具 | 挫屎勇的實用工具"
+  description="QR Code 解碼與產生工具。上傳圖片解析 QR Code，或輸入文字產生 QR Code。純瀏覽器處理，資料不上傳伺服器。"
 >
-  <Navbar currentPage="qrcode" />
-  <div class="container mt-5">
-    <h1 class="mb-3">挫屎勇ㄟ線上 QR Code 解析器</h1>
-    
-    <!-- 開發故事 -->
+  <Navbar currentPage="tools" />
+
+  <div class="container mt-4">
+    <h1 class="mb-3">📱 QR Code 工具</h1>
+
+    <!-- 功能說明 -->
     <div class="alert alert-info border-0 shadow-sm mb-4">
-      <h5 class="alert-heading fw-bold">😡 為什麼會有這個工具？</h5>
+      <h5 class="alert-heading fw-bold">🔒 所有處理都在瀏覽器完成</h5>
       <p class="mb-0">
-        你是否遇過這種狀況？用手機瀏覽網頁或 Line，結果對方給你一個 QR Code 要你掃描...<br>
-        <strong>拜託！我就只有這支手機，是要我怎麼掃自己的螢幕啦？</strong>😠<br>
-        難道要脫褲子放屁找朋友的手機來拍我的螢幕，再用我的手機去掃他的照片？太白癡了吧！<br>
-        所以我就做了這個工具：<strong>直接截圖上傳，還你原本的網址。</strong> 收工。
+        你的圖片和文字<strong>不會上傳到任何伺服器</strong>，放心使用。
       </p>
     </div>
 
-    <p class="mb-4">👇 請上傳包含 QR Code 的圖片或截圖</p>
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="decode-tab" data-bs-toggle="tab" data-bs-target="#decode-panel" type="button" role="tab">
+          📷 解碼 QR Code
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="encode-tab" data-bs-toggle="tab" data-bs-target="#encode-panel" type="button" role="tab">
+          ✨ 產生 QR Code
+        </button>
+      </li>
+    </ul>
 
-    <div class="mb-4">
-      <label for="fileInput" class="form-label">上傳圖片以解析 QR Code</label>
-      <input class="form-control" type="file" id="fileInput" accept="image/*">
-    </div>
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <!-- 解碼 Panel -->
+      <div class="tab-pane fade show active" id="decode-panel" role="tabpanel">
+        <div class="row">
+          <div class="col-lg-6 mb-4">
+            <div class="card">
+              <div class="card-header">
+                <span class="step-badge">1</span> 上傳圖片
+              </div>
+              <div class="card-body">
+                <div id="uploadArea" class="upload-area">
+                  <div class="upload-icon">📁</div>
+                  <p class="mb-2">拖拉圖片到這裡，或點擊選擇</p>
+                  <p class="text-muted small mb-0">支援 JPG、PNG、截圖</p>
+                  <input type="file" id="fileInput" accept="image/*" class="d-none">
+                </div>
+                <!-- 圖片預覽 -->
+                <div id="previewArea" class="d-none mt-3">
+                  <img id="preview" class="img-fluid rounded" alt="預覽">
+                  <button id="clearBtn" class="btn btn-sm btn-outline-secondary mt-2 w-100">清除重選</button>
+                </div>
+              </div>
+            </div>
+          </div>
 
-    <!-- 圖片預覽 -->
-    <div class="mb-4 text-center">
-      <img id="preview" class="img-fluid rounded shadow-sm d-none" alt="圖像預覽">
-    </div>
+          <div class="col-lg-6 mb-4">
+            <div class="card">
+              <div class="card-header">
+                <span class="step-badge">2</span> 解析結果
+              </div>
+              <div class="card-body">
+                <div id="decodeResult" class="result-area">
+                  <p class="text-muted mb-0">尚未解析任何 QR Code</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-    <!-- 隱藏用 Canvas -->
-    <canvas id="canvas" class="d-none"></canvas>
+        <!-- 隱藏用 Canvas -->
+        <canvas id="decodeCanvas" class="d-none"></canvas>
+      </div>
 
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">解析結果</h5>
-        <p id="result" class="card-text text-muted">尚未解析任何 QR Code。</p>
+      <!-- 產生 Panel -->
+      <div class="tab-pane fade" id="encode-panel" role="tabpanel">
+        <div class="row">
+          <div class="col-lg-6 mb-4">
+            <div class="card">
+              <div class="card-header">
+                <span class="step-badge">1</span> 輸入內容
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <label class="form-label small">文字或網址</label>
+                  <textarea id="encodeInput" class="form-control" rows="3" placeholder="輸入要轉換的文字或網址..."></textarea>
+                </div>
+                <div class="row g-2 mb-3">
+                  <div class="col-6">
+                    <label class="form-label small">大小</label>
+                    <select id="qrSize" class="form-select form-select-sm">
+                      <option value="4">小 (132px)</option>
+                      <option value="6" selected>中 (198px)</option>
+                      <option value="8">大 (264px)</option>
+                      <option value="10">特大 (330px)</option>
+                    </select>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label small">容錯等級</label>
+                    <select id="qrErrorLevel" class="form-select form-select-sm">
+                      <option value="L">L (7%)</option>
+                      <option value="M" selected>M (15%)</option>
+                      <option value="Q">Q (25%)</option>
+                      <option value="H">H (30%)</option>
+                    </select>
+                  </div>
+                </div>
+                <button id="generateBtn" class="btn btn-primary w-100">
+                  ✨ 產生 QR Code
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6 mb-4">
+            <div class="card">
+              <div class="card-header">
+                <span class="step-badge">2</span> QR Code 預覽
+              </div>
+              <div class="card-body text-center">
+                <div id="qrOutput" class="qr-output">
+                  <p class="text-muted mb-0">輸入內容後點擊產生</p>
+                </div>
+                <div id="qrActions" class="d-none mt-3">
+                  <button id="downloadQrBtn" class="btn btn-success">
+                    ⬇️ 下載 PNG
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </BaseLayout>
 
+<style>
+  .upload-area {
+    border: 3px dashed var(--bs-primary);
+    border-radius: 1rem;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(var(--bs-primary-rgb), 0.05);
+  }
+
+  .upload-area:hover,
+  .upload-area.dragover {
+    background: rgba(var(--bs-primary-rgb), 0.15);
+    border-color: var(--bs-success);
+  }
+
+  .upload-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Step badge */
+  .step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: var(--bs-primary);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-right: 0.5rem;
+  }
+
+  /* Result area */
+  .result-area {
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .result-content {
+    word-break: break-all;
+    padding: 1rem;
+    background: rgba(0,0,0,0.2);
+    border-radius: 0.5rem;
+    font-family: monospace;
+  }
+
+  .result-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  /* QR Output */
+  .qr-output {
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .qr-output canvas {
+    border: 4px solid white;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+</style>
+
 <script is:inline src="/tools/qrcode/jsQR.min.js"></script>
+<script is:inline src="/tools/qrcode/qrcode-generator.min.js"></script>
 <script is:inline>
-  var fileInput = document.getElementById('fileInput');
-  var preview = document.getElementById('preview');
-  var canvas = document.getElementById('canvas');
-  var ctx = canvas.getContext('2d');
-  var resultDiv = document.getElementById('result');
+  // ===== Decode Elements =====
+  const uploadArea = document.getElementById('uploadArea');
+  const fileInput = document.getElementById('fileInput');
+  const previewArea = document.getElementById('previewArea');
+  const preview = document.getElementById('preview');
+  const clearBtn = document.getElementById('clearBtn');
+  const decodeResult = document.getElementById('decodeResult');
+  const decodeCanvas = document.getElementById('decodeCanvas');
+  const decodeCtx = decodeCanvas.getContext('2d');
 
-  fileInput.addEventListener('change', function(e) {
-    var file = e.target.files && e.target.files[0];
-    if (!file) return;
+  // ===== Encode Elements =====
+  const encodeInput = document.getElementById('encodeInput');
+  const qrSize = document.getElementById('qrSize');
+  const qrErrorLevel = document.getElementById('qrErrorLevel');
+  const generateBtn = document.getElementById('generateBtn');
+  const qrOutput = document.getElementById('qrOutput');
+  const qrActions = document.getElementById('qrActions');
+  const downloadQrBtn = document.getElementById('downloadQrBtn');
 
-    var url = URL.createObjectURL(file);
+  // ===== Decode: Upload handlers =====
+  uploadArea.addEventListener('click', () => fileInput.click());
+
+  uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+  });
+
+  uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+  });
+
+  uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      handleDecodeFile(file);
+    }
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) handleDecodeFile(file);
+  });
+
+  clearBtn.addEventListener('click', () => {
+    preview.src = '';
+    fileInput.value = '';
+    uploadArea.classList.remove('d-none');
+    previewArea.classList.add('d-none');
+    decodeResult.innerHTML = '<p class="text-muted mb-0">尚未解析任何 QR Code</p>';
+  });
+
+  function handleDecodeFile(file) {
+    const url = URL.createObjectURL(file);
     preview.src = url;
-    preview.classList.remove('d-none');
+    uploadArea.classList.add('d-none');
+    previewArea.classList.remove('d-none');
 
-    var img = new Image();
+    const img = new Image();
     img.onload = function() {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
+      decodeCanvas.width = img.width;
+      decodeCanvas.height = img.height;
+      decodeCtx.drawImage(img, 0, 0);
 
-      var imgData = ctx.getImageData(0, 0, img.width, img.height);
-      var code = jsQR(imgData.data, imgData.width, imgData.height);
+      const imgData = decodeCtx.getImageData(0, 0, img.width, img.height);
+      const code = jsQR(imgData.data, imgData.width, imgData.height);
 
-      resultDiv.textContent = code
-        ? code.data
-        : "未偵測到 QR Code。";
+      if (code) {
+        showDecodeResult(code.data);
+      } else {
+        decodeResult.innerHTML = '<p class="text-warning mb-0">⚠️ 未偵測到 QR Code，請確認圖片清晰</p>';
+      }
 
       URL.revokeObjectURL(url);
     };
     img.src = url;
+  }
+
+  function showDecodeResult(data) {
+    const isUrl = /^https?:\/\//i.test(data);
+
+    let html = '<div class="result-content">' + escapeHtml(data) + '</div>';
+    html += '<div class="result-actions">';
+    html += '<button class="btn btn-sm btn-outline-primary copy-btn" data-text="' + escapeAttr(data) + '">📋 複製</button>';
+    if (isUrl) {
+      html += '<a href="' + escapeAttr(data) + '" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success">🔗 開啟連結</a>';
+    }
+    html += '</div>';
+
+    decodeResult.innerHTML = html;
+
+    // Add copy handler
+    decodeResult.querySelector('.copy-btn').addEventListener('click', function() {
+      navigator.clipboard.writeText(this.dataset.text).then(() => {
+        this.textContent = '✓ 已複製';
+        setTimeout(() => { this.textContent = '📋 複製'; }, 2000);
+      });
+    });
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function escapeAttr(text) {
+    return text.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // ===== Encode: Generate QR Code =====
+  let currentQrCanvas = null;
+
+  generateBtn.addEventListener('click', generateQrCode);
+  encodeInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.ctrlKey) generateQrCode();
+  });
+
+  function generateQrCode() {
+    const text = encodeInput.value.trim();
+    if (!text) {
+      qrOutput.innerHTML = '<p class="text-warning mb-0">請輸入內容</p>';
+      qrActions.classList.add('d-none');
+      return;
+    }
+
+    try {
+      const typeNumber = 0; // Auto-detect
+      const errorLevel = qrErrorLevel.value;
+      const cellSize = parseInt(qrSize.value);
+
+      const qr = qrcode(typeNumber, errorLevel);
+      qr.addData(text);
+      qr.make();
+
+      // Create canvas
+      const moduleCount = qr.getModuleCount();
+      const size = moduleCount * cellSize;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      // White background
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, size, size);
+
+      // Draw modules
+      ctx.fillStyle = '#000000';
+      for (let row = 0; row < moduleCount; row++) {
+        for (let col = 0; col < moduleCount; col++) {
+          if (qr.isDark(row, col)) {
+            ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+          }
+        }
+      }
+
+      currentQrCanvas = canvas;
+      qrOutput.innerHTML = '';
+      qrOutput.appendChild(canvas);
+      qrActions.classList.remove('d-none');
+
+    } catch (error) {
+      console.error('QR generation error:', error);
+      qrOutput.innerHTML = '<p class="text-danger mb-0">產生失敗：內容可能太長</p>';
+      qrActions.classList.add('d-none');
+    }
+  }
+
+  downloadQrBtn.addEventListener('click', () => {
+    if (!currentQrCanvas) return;
+
+    currentQrCanvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'qrcode.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 'image/png');
   });
 </script>
