@@ -1,0 +1,515 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Navbar from '@/components/Navbar.astro';
+---
+<BaseLayout 
+  title="圖片處理工廠 | 挫屎勇的實用工具" 
+  description="線上圖片壓縮、裁切、縮放工具。純瀏覽器處理，你的照片不會被上傳到伺服器，安心使用！"
+>
+  <Navbar currentPage="tools" />
+  
+  <!-- Cropper.js CSS -->
+  <link rel="stylesheet" href="/libs/cropperjs/cropper.min.css">
+  
+  <div class="container mt-4">
+    <h1 class="mb-3">🖼️ 圖片處理工廠</h1>
+    
+    <!-- 開發故事 -->
+    <div class="alert alert-info border-0 shadow-sm mb-4">
+      <h5 class="alert-heading fw-bold">🔒 你的照片很安全</h5>
+      <p class="mb-0">
+        填表單上傳證件照被說「檔案太大」？用這個工具壓縮！<br>
+        <strong>所有處理都在你的瀏覽器完成，圖片不會上傳到任何伺服器。</strong><br>
+        放心壓縮你的身分證、信用卡照片吧！
+      </p>
+    </div>
+
+    <!-- 上傳區 -->
+    <div id="uploadArea" class="upload-area mb-4">
+      <div class="upload-content">
+        <div class="upload-icon">📁</div>
+        <p class="mb-2">拖拉圖片到這裡，或點擊選擇檔案</p>
+        <p class="text-muted small">支援 JPG、PNG、WebP、GIF</p>
+        <input type="file" id="fileInput" accept="image/*" class="d-none">
+      </div>
+    </div>
+
+    <!-- 編輯區 (預設隱藏) -->
+    <div id="editorArea" class="d-none">
+      <div class="row">
+        <!-- 左側：圖片預覽 -->
+        <div class="col-lg-8 mb-4">
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>圖片預覽</span>
+              <span id="originalInfo" class="badge bg-secondary"></span>
+            </div>
+            <div class="card-body p-0">
+              <div class="cropper-container-wrapper">
+                <img id="previewImage" src="" alt="預覽">
+              </div>
+            </div>
+            <div class="card-footer">
+              <small class="text-muted">💡 操作提示：拖曳可移動圖片，<strong>滑鼠滾輪可縮放</strong>，拖拉邊框調整裁切範圍</small>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 右側：控制面板 -->
+        <div class="col-lg-4">
+          <!-- 裁切設定 -->
+          <div class="card mb-3">
+            <div class="card-header">✂️ 裁切</div>
+            <div class="card-body">
+              <div class="btn-group w-100 mb-2" role="group">
+                <button type="button" class="btn btn-outline-primary aspect-btn active" data-aspect="free">自由</button>
+                <button type="button" class="btn btn-outline-primary aspect-btn" data-aspect="1">1:1</button>
+                <button type="button" class="btn btn-outline-primary aspect-btn" data-aspect="1.778">16:9</button>
+                <button type="button" class="btn btn-outline-primary aspect-btn" data-aspect="1.333">4:3</button>
+              </div>
+              <button id="resetCropBtn" class="btn btn-sm btn-outline-secondary w-100">重設裁切範圍</button>
+            </div>
+          </div>
+          
+          <!-- 縮放設定 -->
+          <div class="card mb-3">
+            <div class="card-header">📐 縮放</div>
+            <div class="card-body">
+              <div class="row g-2 align-items-center">
+                <div class="col-5">
+                  <label class="form-label small mb-1">寬度 (px)</label>
+                  <input type="number" id="resizeWidth" class="form-control form-control-sm" placeholder="寬">
+                </div>
+                <div class="col-2 text-center">
+                  <button id="lockRatioBtn" class="btn btn-sm btn-outline-warning mt-3" title="鎖定/解鎖比例">
+                    🔒
+                  </button>
+                </div>
+                <div class="col-5">
+                  <label class="form-label small mb-1">高度 (px)</label>
+                  <input type="number" id="resizeHeight" class="form-control form-control-sm" placeholder="高">
+                </div>
+              </div>
+              <div class="btn-group w-100 mt-2" role="group">
+                <button type="button" class="btn btn-sm btn-outline-secondary scale-btn" data-scale="0.25">25%</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary scale-btn" data-scale="0.5">50%</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary scale-btn" data-scale="0.75">75%</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary scale-btn" data-scale="1">100%</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 壓縮設定 -->
+          <div class="card mb-3">
+            <div class="card-header">💾 壓縮輸出</div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label small">輸出格式</label>
+                <select id="outputFormat" class="form-select form-select-sm">
+                  <option value="auto">✨ 自動偵測</option>
+                  <option value="jpeg">JPG - 照片首選</option>
+                  <option value="webp">WebP - 現代通用</option>
+                  <option value="png">PNG - 無失真</option>
+                </select>
+              </div>
+              <div class="mb-2">
+                <label class="form-label small d-flex justify-content-between">
+                  <span>品質</span>
+                  <span id="qualityValue">80%</span>
+                </label>
+                <input type="range" id="qualitySlider" class="form-range" min="10" max="100" value="80">
+              </div>
+              <div class="d-flex justify-content-between small text-muted">
+                <span>原始: <span id="originalSize">-</span></span>
+                <span>預估: <span id="estimatedSize">-</span></span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 下載按鈕 -->
+          <button id="downloadBtn" class="btn btn-success w-100 btn-lg">
+            ⬇️ 下載圖片
+          </button>
+          
+          <!-- 重新上傳 -->
+          <button id="resetBtn" class="btn btn-outline-secondary w-100 mt-2">
+            🔄 重新選擇圖片
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .upload-area {
+    border: 3px dashed var(--bs-primary);
+    border-radius: 1rem;
+    padding: 3rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(var(--bs-primary-rgb), 0.05);
+  }
+  
+  .upload-area:hover,
+  .upload-area.dragover {
+    background: rgba(var(--bs-primary-rgb), 0.15);
+    border-color: var(--bs-success);
+  }
+  
+  .upload-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+  
+  .cropper-container-wrapper {
+    max-height: 500px;
+    overflow: hidden;
+    background: #1a1a1a;
+  }
+  
+  .cropper-container-wrapper img {
+    display: block;
+    max-width: 100%;
+  }
+  
+  .aspect-btn.active {
+    background-color: var(--bs-primary);
+    color: white;
+  }
+</style>
+
+<script is:inline src="/libs/cropperjs/cropper.min.js"></script>
+<script is:inline>
+  // ===== 圖片處理函式 (內嵌) =====
+  
+  function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  }
+  
+  function getSmartFormat(originalFile) {
+    const type = originalFile.type.toLowerCase();
+    if (type === 'image/jpeg' || type === 'image/jpg') {
+      return 'jpeg';
+    }
+    return 'webp';
+  }
+  
+  function getExtension(format) {
+    return format === 'jpeg' ? 'jpg' : format;
+  }
+  
+  function compressCanvas(canvas, format, quality) {
+    return new Promise((resolve, reject) => {
+      let targetCanvas = canvas;
+      
+      // PNG 轉 JPG 需要填白底
+      if (format === 'jpeg') {
+        const newCanvas = document.createElement('canvas');
+        const newCtx = newCanvas.getContext('2d');
+        newCanvas.width = canvas.width;
+        newCanvas.height = canvas.height;
+        newCtx.fillStyle = '#FFFFFF';
+        newCtx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+        newCtx.drawImage(canvas, 0, 0);
+        targetCanvas = newCanvas;
+      }
+      
+      const mimeType = 'image/' + format;
+      targetCanvas.toBlob(
+        (blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('無法壓縮圖片'));
+        },
+        mimeType,
+        quality
+      );
+    });
+  }
+  
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ===== DOM Elements =====
+  const uploadArea = document.getElementById('uploadArea');
+  const fileInput = document.getElementById('fileInput');
+  const editorArea = document.getElementById('editorArea');
+  const previewImage = document.getElementById('previewImage');
+  const aspectBtns = document.querySelectorAll('.aspect-btn');
+  const resetCropBtn = document.getElementById('resetCropBtn');
+  const resizeWidth = document.getElementById('resizeWidth');
+  const resizeHeight = document.getElementById('resizeHeight');
+  const lockRatioBtn = document.getElementById('lockRatioBtn');
+  const scaleBtns = document.querySelectorAll('.scale-btn');
+  const outputFormat = document.getElementById('outputFormat');
+  const qualitySlider = document.getElementById('qualitySlider');
+  const qualityValue = document.getElementById('qualityValue');
+  const originalSize = document.getElementById('originalSize');
+  const estimatedSize = document.getElementById('estimatedSize');
+  const originalInfo = document.getElementById('originalInfo');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  // ===== State =====
+  let cropper = null;
+  let originalFile = null;
+  let isRatioLocked = true;
+
+  // ===== Upload handlers =====
+  uploadArea.addEventListener('click', () => fileInput.click());
+  
+  uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+  });
+  
+  uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+  });
+  
+  uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      handleFile(file);
+    }
+  });
+  
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) handleFile(file);
+  });
+
+  function handleFile(file) {
+    originalFile = file;
+    originalSize.textContent = formatFileSize(file.size);
+    
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    
+    img.onload = function() {
+      originalInfo.textContent = img.naturalWidth + ' × ' + img.naturalHeight;
+      resizeWidth.value = img.naturalWidth;
+      resizeHeight.value = img.naturalHeight;
+      
+      previewImage.src = url;
+      uploadArea.classList.add('d-none');
+      editorArea.classList.remove('d-none');
+      
+      // 等 DOM 更新後初始化 Cropper
+      setTimeout(() => {
+        if (cropper) {
+          cropper.destroy();
+        }
+        
+        cropper = new Cropper(previewImage, {
+          viewMode: 1,
+          dragMode: 'move',
+          autoCropArea: 1,
+          restore: false,
+          guides: true,
+          center: true,
+          highlight: false,
+          cropBoxMovable: true,
+          cropBoxResizable: true,
+          toggleDragModeOnDblclick: false,
+          ready: function() {
+            updateEstimatedSize();
+          },
+          crop: function() {
+            updateCropDimensions();
+          }
+        });
+      }, 100);
+    };
+    
+    img.onerror = function() {
+      alert('無法讀取圖片，請確認檔案格式正確。');
+      URL.revokeObjectURL(url);
+    };
+    
+    img.src = url;
+  }
+
+  // ===== Aspect ratio buttons =====
+  aspectBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      aspectBtns.forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      
+      const aspect = btn.dataset.aspect;
+      if (aspect === 'free') {
+        cropper.setAspectRatio(NaN);
+      } else {
+        cropper.setAspectRatio(parseFloat(aspect));
+      }
+    });
+  });
+
+  // ===== Reset crop =====
+  resetCropBtn.addEventListener('click', function() {
+    cropper.reset();
+    aspectBtns.forEach(function(b) { b.classList.remove('active'); });
+    aspectBtns[0].classList.add('active');
+  });
+
+  // ===== Lock ratio toggle =====
+  lockRatioBtn.addEventListener('click', function() {
+    isRatioLocked = !isRatioLocked;
+    lockRatioBtn.textContent = isRatioLocked ? '🔒' : '🔓';
+    lockRatioBtn.classList.toggle('btn-outline-warning', isRatioLocked);
+    lockRatioBtn.classList.toggle('btn-outline-secondary', !isRatioLocked);
+  });
+
+  // ===== Resize inputs =====
+  resizeWidth.addEventListener('input', function() {
+    if (isRatioLocked && resizeWidth.value && cropper) {
+      const cropData = cropper.getData();
+      const cropRatio = cropData.width / cropData.height;
+      resizeHeight.value = Math.round(parseInt(resizeWidth.value) / cropRatio);
+    }
+    updateEstimatedSize();
+  });
+
+  resizeHeight.addEventListener('input', function() {
+    if (isRatioLocked && resizeHeight.value && cropper) {
+      const cropData = cropper.getData();
+      const cropRatio = cropData.width / cropData.height;
+      resizeWidth.value = Math.round(parseInt(resizeHeight.value) * cropRatio);
+    }
+    updateEstimatedSize();
+  });
+
+  // ===== Scale buttons =====
+  scaleBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (!cropper) return;
+      const scale = parseFloat(btn.dataset.scale);
+      const cropData = cropper.getData();
+      resizeWidth.value = Math.round(cropData.width * scale);
+      resizeHeight.value = Math.round(cropData.height * scale);
+      updateEstimatedSize();
+    });
+  });
+
+  // ===== Quality slider =====
+  qualitySlider.addEventListener('input', function() {
+    qualityValue.textContent = qualitySlider.value + '%';
+    updateEstimatedSize();
+  });
+
+  // ===== Format change =====
+  outputFormat.addEventListener('change', updateEstimatedSize);
+
+  // ===== Update crop dimensions =====
+  function updateCropDimensions() {
+    if (!cropper) return;
+    const data = cropper.getData();
+    resizeWidth.value = Math.round(data.width);
+    resizeHeight.value = Math.round(data.height);
+  }
+
+  // ===== Estimate output size =====
+  let estimateTimeout = null;
+  function updateEstimatedSize() {
+    if (!cropper) return;
+    
+    // Debounce
+    clearTimeout(estimateTimeout);
+    estimateTimeout = setTimeout(async function() {
+      try {
+        const canvas = cropper.getCroppedCanvas({
+          width: parseInt(resizeWidth.value) || undefined,
+          height: parseInt(resizeHeight.value) || undefined
+        });
+        
+        if (!canvas) return;
+        
+        let format = outputFormat.value;
+        if (format === 'auto') {
+          format = getSmartFormat(originalFile);
+        }
+        
+        const quality = parseInt(qualitySlider.value) / 100;
+        const blob = await compressCanvas(canvas, format, quality);
+        estimatedSize.textContent = formatFileSize(blob.size);
+        
+      } catch (error) {
+        console.error('Error estimating size:', error);
+      }
+    }, 300);
+  }
+
+  // ===== Download =====
+  downloadBtn.addEventListener('click', async function() {
+    if (!cropper) return;
+    
+    downloadBtn.disabled = true;
+    downloadBtn.textContent = '⏳ 處理中...';
+    
+    try {
+      const canvas = cropper.getCroppedCanvas({
+        width: parseInt(resizeWidth.value) || undefined,
+        height: parseInt(resizeHeight.value) || undefined
+      });
+      
+      let format = outputFormat.value;
+      if (format === 'auto') {
+        format = getSmartFormat(originalFile);
+      }
+      
+      const quality = parseInt(qualitySlider.value) / 100;
+      const blob = await compressCanvas(canvas, format, quality);
+      
+      const originalName = originalFile.name.replace(/\.[^/.]+$/, '');
+      const extension = getExtension(format);
+      const filename = originalName + '_processed.' + extension;
+      
+      downloadBlob(blob, filename);
+      
+    } catch (error) {
+      console.error('Error processing:', error);
+      alert('處理圖片時發生錯誤');
+    } finally {
+      downloadBtn.disabled = false;
+      downloadBtn.textContent = '⬇️ 下載圖片';
+    }
+  });
+
+  // ===== Reset =====
+  resetBtn.addEventListener('click', function() {
+    if (cropper) {
+      cropper.destroy();
+      cropper = null;
+    }
+    originalFile = null;
+    previewImage.src = '';
+    fileInput.value = '';
+    editorArea.classList.add('d-none');
+    uploadArea.classList.remove('d-none');
+    
+    resizeWidth.value = '';
+    resizeHeight.value = '';
+    qualitySlider.value = 80;
+    qualityValue.textContent = '80%';
+    outputFormat.value = 'auto';
+    originalSize.textContent = '-';
+    estimatedSize.textContent = '-';
+    originalInfo.textContent = '';
+    
+    aspectBtns.forEach(function(b) { b.classList.remove('active'); });
+    aspectBtns[0].classList.add('active');
+  });
+</script>

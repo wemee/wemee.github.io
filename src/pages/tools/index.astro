@@ -1,0 +1,59 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Navbar from '@/components/Navbar.astro';
+---
+<BaseLayout 
+  title="實用工具集 | 挫屎勇的工具箱" 
+  description="一系列解決生活小痛點的線上工具：圖片壓縮、QR Code 解析、證件照製作，全部純瀏覽器處理，不上傳資料。"
+>
+  <Navbar currentPage="tools" />
+  
+  <div class="container mt-5">
+    <h1 class="mb-4">🛠️ 挫屎勇的實用工具</h1>
+    <p class="lead mb-5">一系列解決生活小麻煩的線上工具，<strong>全部純瀏覽器處理</strong>，你的資料不會被上傳到任何伺服器。</p>
+    
+    <div class="row g-4">
+      <!-- QR Code 解析 -->
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <div class="display-4 mb-3">📱</div>
+            <h5 class="card-title">QR Code 解析器</h5>
+            <p class="card-text">手機畫面出現 QR Code 卻沒第二支手機可以掃？截圖上傳，直接幫你解析出網址。</p>
+          </div>
+          <div class="card-footer bg-transparent border-0">
+            <a href="/tools/qrcode/" class="btn btn-primary w-100">開始使用 →</a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 圖片處理工廠 -->
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <div class="display-4 mb-3">🖼️</div>
+            <h5 class="card-title">圖片處理工廠</h5>
+            <p class="card-text">上傳證件照被說檔案太大？裁切、縮放、壓縮一站搞定，還能選輸出格式。</p>
+          </div>
+          <div class="card-footer bg-transparent border-0">
+            <a href="/tools/image-lab/" class="btn btn-primary w-100">開始使用 →</a>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 省錢證件照 -->
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <div class="display-4 mb-3">📷</div>
+            <h5 class="card-title">省錢證件照</h5>
+            <p class="card-text">自己排版大頭照，去超商印一張 4x6 只要 6 塊錢，省下照相館的錢！</p>
+          </div>
+          <div class="card-footer bg-transparent border-0">
+            <a href="/tools/id-photo/" class="btn btn-primary w-100">開始使用 →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

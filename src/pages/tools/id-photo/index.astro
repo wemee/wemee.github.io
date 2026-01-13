@@ -1,0 +1,452 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Navbar from '@/components/Navbar.astro';
+---
+<BaseLayout 
+  title="省錢證件照製造機 | 挫屎勇的實用工具" 
+  description="自己排版大頭照，去超商印一張 4x6 只要 6 塊錢！純瀏覽器處理，照片不上傳伺服器。"
+>
+  <Navbar currentPage="tools" />
+  
+  <!-- Cropper.js CSS -->
+  <link rel="stylesheet" href="/libs/cropperjs/cropper.min.css">
+  
+  <div class="container mt-4">
+    <h1 class="mb-3">📷 省錢證件照製造機</h1>
+    
+    <!-- 開發故事 -->
+    <div class="alert alert-success border-0 shadow-sm mb-4">
+      <h5 class="alert-heading fw-bold">💰 超商印一組只要 6~10 元！</h5>
+      <p class="mb-0">
+        照相館洗一組大頭照要好幾百？自己裁好、排版，去超商選「4x6 生活照列印」就搞定！<br>
+        <strong>一張 4x6 可以印 8 張 2 吋大頭照，花費不到 10 塊錢。</strong>
+      </p>
+    </div>
+
+    <!-- 上傳區 -->
+    <div id="uploadArea" class="upload-area mb-4">
+      <div class="upload-content">
+        <div class="upload-icon">📁</div>
+        <p class="mb-2">上傳你的大頭照原圖</p>
+        <p class="text-muted small">建議使用高解析度照片以獲得最佳列印效果</p>
+        <input type="file" id="fileInput" accept="image/*" class="d-none">
+      </div>
+    </div>
+
+    <!-- 編輯區 (預設隱藏) -->
+    <div id="editorArea" class="d-none">
+      <div class="row">
+        <!-- 左側：圖片裁切 -->
+        <div class="col-lg-6 mb-4">
+          <div class="card">
+            <div class="card-header">步驟 1：裁切大頭照</div>
+            <div class="card-body p-0">
+              <div class="cropper-container-wrapper">
+                <img id="previewImage" src="" alt="預覽">
+              </div>
+            </div>
+            <div class="card-footer">
+              <small class="text-muted">💡 拖曳可移動圖片，<strong>滑鼠滾輪可縮放</strong>，將臉部對準框框內</small>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 右側：設定與預覽 -->
+        <div class="col-lg-6">
+          <!-- 尺寸設定 -->
+          <div class="card mb-3">
+            <div class="card-header">步驟 2：選擇尺寸</div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label small">證件照尺寸</label>
+                <select id="photoSize" class="form-select">
+                  <option value="2inch" selected>2 吋大頭照 (3.5cm × 4.5cm) - 身分證/護照</option>
+                  <option value="1inch">1 吋 (2.5cm × 3cm) - 駕照/執照</option>
+                  <option value="2inch-half">2 吋半身 (3.5cm × 5cm) - 履歷/健保卡</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label small">輸出相紙尺寸</label>
+                <select id="paperSize" class="form-select">
+                  <option value="4x6" selected>4×6 相片紙 (超商沖印推薦)</option>
+                  <option value="a4">A4 紙張 (家用印表機)</option>
+                </select>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="showCutLines" checked>
+                <label class="form-check-label" for="showCutLines">
+                  顯示裁剪輔助線
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 排版預覽 -->
+          <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>步驟 3：排版預覽</span>
+              <span id="photoCount" class="badge bg-info">8 張</span>
+            </div>
+            <div class="card-body text-center">
+              <canvas id="previewCanvas" class="border rounded" style="max-width: 100%; height: auto;"></canvas>
+              <p class="small text-muted mt-2 mb-0">預覽為縮小顯示，實際列印為 300 DPI 高解析</p>
+            </div>
+          </div>
+          
+          <!-- 下載按鈕 -->
+          <button id="downloadBtn" class="btn btn-success w-100 btn-lg mb-2">
+            ⬇️ 下載排版圖片
+          </button>
+          
+          <button id="resetBtn" class="btn btn-outline-secondary w-100">
+            🔄 重新選擇照片
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .upload-area {
+    border: 3px dashed var(--bs-success);
+    border-radius: 1rem;
+    padding: 3rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(var(--bs-success-rgb), 0.05);
+  }
+  
+  .upload-area:hover,
+  .upload-area.dragover {
+    background: rgba(var(--bs-success-rgb), 0.15);
+    border-color: var(--bs-primary);
+  }
+  
+  .upload-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+  
+  .cropper-container-wrapper {
+    max-height: 400px;
+    overflow: hidden;
+    background: #1a1a1a;
+  }
+  
+  .cropper-container-wrapper img {
+    display: block;
+    max-width: 100%;
+  }
+  
+  #previewCanvas {
+    background: #fff;
+  }
+</style>
+
+<script is:inline src="/libs/cropperjs/cropper.min.js"></script>
+<script is:inline>
+  // ===== 證件照尺寸常數 (單位: cm) =====
+  const PHOTO_SIZES = {
+    '2inch': { width: 3.5, height: 4.5, name: '2吋' },
+    '1inch': { width: 2.5, height: 3.0, name: '1吋' },
+    '2inch-half': { width: 3.5, height: 5.0, name: '2吋半身' }
+  };
+  
+  const PAPER_SIZES = {
+    '4x6': { width: 15.2, height: 10.2 },  // 橫放
+    'a4': { width: 29.7, height: 21.0 }    // 橫放
+  };
+  
+  const DPI = 300;
+  const CM_TO_INCH = 0.393701;
+  
+  function cmToPixels(cm) {
+    return Math.round(cm * CM_TO_INCH * DPI);
+  }
+  
+  // ===== DOM Elements =====
+  const uploadArea = document.getElementById('uploadArea');
+  const fileInput = document.getElementById('fileInput');
+  const editorArea = document.getElementById('editorArea');
+  const previewImage = document.getElementById('previewImage');
+  const photoSizeSelect = document.getElementById('photoSize');
+  const paperSizeSelect = document.getElementById('paperSize');
+  const showCutLinesCheckbox = document.getElementById('showCutLines');
+  const previewCanvas = document.getElementById('previewCanvas');
+  const photoCountBadge = document.getElementById('photoCount');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  
+  // ===== State =====
+  let cropper = null;
+  let originalFile = null;
+
+  // ===== Upload handlers =====
+  uploadArea.addEventListener('click', () => fileInput.click());
+  
+  uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+  });
+  
+  uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+  });
+  
+  uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      handleFile(file);
+    }
+  });
+  
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) handleFile(file);
+  });
+
+  function handleFile(file) {
+    originalFile = file;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    
+    img.onload = function() {
+      previewImage.src = url;
+      uploadArea.classList.add('d-none');
+      editorArea.classList.remove('d-none');
+      
+      setTimeout(() => {
+        if (cropper) {
+          cropper.destroy();
+        }
+        
+        // 取得當前選擇的證件照比例
+        const photoSize = PHOTO_SIZES[photoSizeSelect.value];
+        const aspectRatio = photoSize.width / photoSize.height;
+        
+        cropper = new Cropper(previewImage, {
+          viewMode: 1,
+          dragMode: 'move',
+          aspectRatio: aspectRatio,
+          autoCropArea: 0.8,
+          restore: false,
+          guides: true,
+          center: true,
+          highlight: false,
+          cropBoxMovable: true,
+          cropBoxResizable: true,
+          toggleDragModeOnDblclick: false,
+          ready: function() {
+            updatePreview();
+          },
+          crop: function() {
+            updatePreview();
+          }
+        });
+      }, 100);
+    };
+    
+    img.onerror = function() {
+      alert('無法讀取圖片，請確認檔案格式正確。');
+      URL.revokeObjectURL(url);
+    };
+    
+    img.src = url;
+  }
+
+  // ===== 尺寸變更 =====
+  photoSizeSelect.addEventListener('change', function() {
+    if (!cropper) return;
+    const photoSize = PHOTO_SIZES[this.value];
+    cropper.setAspectRatio(photoSize.width / photoSize.height);
+    updatePreview();
+  });
+  
+  paperSizeSelect.addEventListener('change', updatePreview);
+  showCutLinesCheckbox.addEventListener('change', updatePreview);
+
+  // ===== 計算排版 =====
+  function calculateLayout() {
+    const photoSize = PHOTO_SIZES[photoSizeSelect.value];
+    const paperSize = PAPER_SIZES[paperSizeSelect.value];
+    
+    // 計算可以放幾張 (加上間距 0.2cm)
+    const gap = 0.2;
+    const cols = Math.floor(paperSize.width / (photoSize.width + gap));
+    const rows = Math.floor(paperSize.height / (photoSize.height + gap));
+    
+    return {
+      cols: cols,
+      rows: rows,
+      total: cols * rows,
+      photoWidth: cmToPixels(photoSize.width),
+      photoHeight: cmToPixels(photoSize.height),
+      paperWidth: cmToPixels(paperSize.width),
+      paperHeight: cmToPixels(paperSize.height),
+      gapPixels: cmToPixels(gap)
+    };
+  }
+
+  // ===== 更新預覽 =====
+  let previewTimeout = null;
+  function updatePreview() {
+    clearTimeout(previewTimeout);
+    previewTimeout = setTimeout(doUpdatePreview, 300);
+  }
+  
+  function doUpdatePreview() {
+    if (!cropper) return;
+    
+    const layout = calculateLayout();
+    photoCountBadge.textContent = layout.total + ' 張';
+    
+    // 設定 Canvas 尺寸 (預覽用，縮小顯示)
+    const scale = 0.3; // 預覽縮放比例
+    previewCanvas.width = layout.paperWidth * scale;
+    previewCanvas.height = layout.paperHeight * scale;
+    
+    const ctx = previewCanvas.getContext('2d');
+    
+    // 白底
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+    
+    // 取得裁切後的圖片
+    const croppedCanvas = cropper.getCroppedCanvas({
+      width: layout.photoWidth,
+      height: layout.photoHeight
+    });
+    
+    if (!croppedCanvas) return;
+    
+    const showLines = showCutLinesCheckbox.checked;
+    
+    // 計算置中的起始位置
+    const totalPhotosWidth = layout.cols * layout.photoWidth + (layout.cols - 1) * layout.gapPixels;
+    const totalPhotosHeight = layout.rows * layout.photoHeight + (layout.rows - 1) * layout.gapPixels;
+    const startX = (layout.paperWidth - totalPhotosWidth) / 2;
+    const startY = (layout.paperHeight - totalPhotosHeight) / 2;
+    
+    // 繪製每張照片
+    for (let row = 0; row < layout.rows; row++) {
+      for (let col = 0; col < layout.cols; col++) {
+        const x = startX + col * (layout.photoWidth + layout.gapPixels);
+        const y = startY + row * (layout.photoHeight + layout.gapPixels);
+        
+        ctx.drawImage(
+          croppedCanvas,
+          x * scale,
+          y * scale,
+          layout.photoWidth * scale,
+          layout.photoHeight * scale
+        );
+        
+        // 繪製裁剪線
+        if (showLines) {
+          ctx.strokeStyle = '#CCCCCC';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(
+            x * scale,
+            y * scale,
+            layout.photoWidth * scale,
+            layout.photoHeight * scale
+          );
+        }
+      }
+    }
+  }
+
+  // ===== 下載 =====
+  downloadBtn.addEventListener('click', function() {
+    if (!cropper) return;
+    
+    downloadBtn.disabled = true;
+    downloadBtn.textContent = '⏳ 產生中...';
+    
+    try {
+      const layout = calculateLayout();
+      
+      // 建立完整尺寸的 Canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = layout.paperWidth;
+      canvas.height = layout.paperHeight;
+      const ctx = canvas.getContext('2d');
+      
+      // 白底
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // 取得裁切後的圖片
+      const croppedCanvas = cropper.getCroppedCanvas({
+        width: layout.photoWidth,
+        height: layout.photoHeight
+      });
+      
+      const showLines = showCutLinesCheckbox.checked;
+      
+      // 計算置中
+      const totalPhotosWidth = layout.cols * layout.photoWidth + (layout.cols - 1) * layout.gapPixels;
+      const totalPhotosHeight = layout.rows * layout.photoHeight + (layout.rows - 1) * layout.gapPixels;
+      const startX = (layout.paperWidth - totalPhotosWidth) / 2;
+      const startY = (layout.paperHeight - totalPhotosHeight) / 2;
+      
+      // 繪製每張照片
+      for (let row = 0; row < layout.rows; row++) {
+        for (let col = 0; col < layout.cols; col++) {
+          const x = startX + col * (layout.photoWidth + layout.gapPixels);
+          const y = startY + row * (layout.photoHeight + layout.gapPixels);
+          
+          ctx.drawImage(croppedCanvas, x, y, layout.photoWidth, layout.photoHeight);
+          
+          if (showLines) {
+            ctx.strokeStyle = '#CCCCCC';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, layout.photoWidth, layout.photoHeight);
+          }
+        }
+      }
+      
+      // 下載
+      canvas.toBlob(function(blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'id_photo_' + paperSizeSelect.value + '.jpg';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        downloadBtn.disabled = false;
+        downloadBtn.textContent = '⬇️ 下載排版圖片';
+      }, 'image/jpeg', 0.95);
+      
+    } catch (error) {
+      console.error('Error:', error);
+      alert('產生圖片時發生錯誤');
+      downloadBtn.disabled = false;
+      downloadBtn.textContent = '⬇️ 下載排版圖片';
+    }
+  });
+
+  // ===== 重設 =====
+  resetBtn.addEventListener('click', function() {
+    if (cropper) {
+      cropper.destroy();
+      cropper = null;
+    }
+    originalFile = null;
+    previewImage.src = '';
+    fileInput.value = '';
+    editorArea.classList.add('d-none');
+    uploadArea.classList.remove('d-none');
+    
+    // 清除 Canvas
+    const ctx = previewCanvas.getContext('2d');
+    ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+  });
+</script>

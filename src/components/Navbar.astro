@@ -40,8 +40,17 @@ const { currentPage = '' } = Astro.props;
             <li><a class="dropdown-item" href="/game/breakout">打磚塊</a></li>
           </ul>
         </li>
-        <li class="nav-item">
-          <a class={`nav-link ${currentPage === 'qrcode' ? 'active' : ''}`} href="/tools/qrcode/">QR Code 掃描</a>
+        <li class="nav-item dropdown">
+          <a class={`nav-link dropdown-toggle ${currentPage === 'tools' ? 'active' : ''}`} href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            實用工具
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/tools/">🛠️ 全部工具</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="/tools/qrcode/">QR Code 解析</a></li>
+            <li><a class="dropdown-item" href="/tools/image-lab/">圖片處理工廠</a></li>
+            <li><a class="dropdown-item" href="/tools/id-photo/">省錢證件照</a></li>
+          </ul>
         </li>
         <li class="nav-item">
           <a class={`nav-link ${currentPage === 'about' ? 'active' : ''}`} href="/about">關於我</a>
