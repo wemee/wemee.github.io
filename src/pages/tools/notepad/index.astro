@@ -174,12 +174,33 @@ import Navbar from '@/components/Navbar.astro';
 
 <script is:inline>
   // ==========================================
-  // IndexedDB Manager
+  // Constants
   // ==========================================
   const DB_NAME = 'WemeeQuickMemo';
   const DB_VERSION = 1;
   const STORE_NAME = 'notes';
+  const AUTO_SAVE_DELAY_MS = 1000;
+  const MOBILE_BREAKPOINT = 768;
 
+  // ==========================================
+  // Utilities
+  // ==========================================
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function closeSidebarOnMobile() {
+    if (window.innerWidth <= MOBILE_BREAKPOINT) {
+      sidebar.classList.remove('open');
+      sidebar.classList.add('closed');
+    }
+  }
+
+  // ==========================================
+  // IndexedDB Manager
+  // ==========================================
   let db;
   let currentNoteId = null;
 
@@ -281,16 +302,15 @@ import Navbar from '@/components/Navbar.astro';
     } else {
       createNewNote(false); // don't auto-save immediately on init empty
     }
+  }).catch((err) => {
+    console.error('IndexedDB initialization failed:', err);
+    alert('無法初始化儲存空間。您可能正在使用隱私瀏覽模式，筆記將無法儲存。');
   });
 
   // Event Listeners
   document.getElementById('newNoteBtn').addEventListener('click', () => {
     createNewNote();
-    // On mobile, close sidebar after creating new note
-    if (window.innerWidth <= 768) {
-      sidebar.classList.remove('open');
-      sidebar.classList.add('closed');
-    }
+    closeSidebarOnMobile();
   });
 
   // Auto-save debouncer
@@ -302,18 +322,11 @@ import Navbar from '@/components/Navbar.astro';
     
     saveTimeout = setTimeout(async () => {
       await performSave();
-    }, 1000); // 1 sec delay
+    }, AUTO_SAVE_DELAY_MS);
   });
 
-  // Paste handler (images)
-  editor.addEventListener('paste', (e) => {
-    // Just default behavior usually handles text
-    // Handle Images specifically to resize/optimize if needed in future
-    // For now, default browser paste behavior for images (data URI) is acceptable for "Quick" prototype
-    // But we might want to prevent massive BMPs?
-    // Let's stick to default contenteditable behavior for MVP. 
-    // It automatically handles formatting and images as Base64.
-  });
+  // Note: Paste handling relies on default contenteditable behavior.
+  // Images are stored as Base64 data URIs. Future enhancement: compress large images.
 
   toggleSidebarBtn.addEventListener('click', () => {
     sidebar.classList.toggle('open');
@@ -364,17 +377,13 @@ import Navbar from '@/components/Navbar.astro';
         if (e.target.closest('.delete-btn')) return;
         
         loadNote(note.id, note);
-        // On mobile, close sidebar
-        if (window.innerWidth <= 768) {
-            sidebar.classList.remove('open');
-            sidebar.classList.add('closed');
-        }
+        closeSidebarOnMobile();
       };
 
       item.innerHTML = `
         <div class="text-truncate">
-          <div class="fw-bold text-truncate">${title}</div>
-          <small class="text-muted">${date}</small>
+          <div class="fw-bold text-truncate">${escapeHtml(title)}</div>
+          <small class="text-muted">${escapeHtml(date)}</small>
         </div>
         <button class="btn btn-sm btn-link text-danger delete-btn p-0 ms-2" title="刪除">
           🗑️
