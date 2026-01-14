@@ -21,6 +21,9 @@ import Navbar from '@/components/Navbar.astro';
         <span id="saveStatus" class="ms-3 badge bg-success opacity-0 transition-opacity">已儲存</span>
       </div>
       <div>
+        <button id="helpBtn" class="btn btn-outline-info btn-sm me-2" title="說明與 SEO">
+          ❔
+        </button>
         <button id="newNoteBtn" class="btn btn-primary btn-sm">
           + 新筆記
         </button>
@@ -55,7 +58,40 @@ import Navbar from '@/components/Navbar.astro';
       </div>
     </div>
   </div>
+    <!-- Help Modal for SEO Content -->
+    <div class="modal fade" id="helpModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">關於快速記事本</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <h6 class="fw-bold">🚀 這是什麼？</h6>
+            <p>這是一個<strong>免登入、免註冊</strong>的極簡線上記事本。專為「暫存靈感」與「快速筆記」設計。</p>
+            
+            <h6 class="fw-bold">✨ 特色功能</h6>
+            <ul>
+              <li><strong>秒開即用</strong>：沒有登入畫面，打開就是筆記本。</li>
+              <li><strong>自動儲存</strong>：內容自動存在瀏覽器 (IndexedDB)，關閉分頁也不怕遺失。</li>
+              <li><strong>支援圖片</strong>：直接貼上截圖 (Ctrl+V) 就能插入圖片。</li>
+              <li><strong>離線可用</strong>：不需網路連線也能正常運作與儲存。</li>
+              <li><strong>隱私安全</strong>：資料只存在你的裝置上，<strong>不會上傳</strong>到任何伺服器。</li>
+            </ul>
+            
+            <div class="alert alert-warning small">
+              ⚠️ 注意：若清除瀏覽器快取 (Cache/Storage)，筆記可能會消失。重要資料請記得自行備份。
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">開始使用</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </BaseLayout>
+
 
 <style>
   .h-100-vh-custom {
@@ -223,10 +259,20 @@ import Navbar from '@/components/Navbar.astro';
   const sidebar = document.getElementById('sidebar');
   const searchNotes = document.getElementById('searchNotes');
   
+
   let allNotesCache = [];
+  let helpModal;
 
   // Initialize
   initDB().then(async () => {
+    // Init Bootstrap Modal
+    helpModal = new bootstrap.Modal(document.getElementById('helpModal'));
+    
+    // Bind Help Button
+    document.getElementById('helpBtn').addEventListener('click', () => {
+      helpModal.show();
+    });
+
     await refreshNoteList();
     
     // Auto-load most recent note or create new
