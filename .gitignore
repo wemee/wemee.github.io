@@ -13,5 +13,11 @@ node_modules/
 # Logs
 *.log
 
-# ML Training
-ml-training/
+# ML Training (ignore outputs and venv, but keep framework code)
+ml-training/**/venv/
+ml-training/**/output/
+ml-training/**/dist/
+ml-training/**/__pycache__/
+ml-training/**/*.pyc
+ml-training/**/saved_model/
+ml-training/**/tfjs_model/
