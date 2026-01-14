@@ -1,6 +1,7 @@
 import { type Particle, type KeyState } from './types';
 import { showOverlay, hideOverlay, updateParticles, drawParticles, drawRoundedRect } from './GameUtils';
 import { StairsGameCore, type Stair, type Action, type GameState } from './StairsGameCore';
+import type { StairsWeightsAgent } from '@/lib/ai/agents/StairsWeightsAgent';
 
 // === 渲染用的擴展型別 ===
 interface RenderStair extends Stair {
@@ -40,7 +41,8 @@ export class StairsGame {
     private keys: KeyState = { left: false, right: false };
 
     // AI 模式
-    private aiMode = false;
+    private aiMode: 'rule' | 'rl' | false = false;
+    private rlAgent: StairsWeightsAgent | null = null;
     private lastAIAction: 'left' | 'right' | 'stop' = 'stop';
     private lockedAction: 'left' | 'right' | null = null;
     private lockedStairIndex: number | null = null;
@@ -50,7 +52,8 @@ export class StairsGame {
     private readonly MOVE_SPEED = 5;
     private readonly STAIR_HEIGHT = 12;
 
-    constructor() {
+    constructor(rlAgent?: StairsWeightsAgent) {
+        this.rlAgent = rlAgent || null;
         this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
         this.ctx = this.canvas.getContext('2d')!;
 
@@ -81,7 +84,7 @@ export class StairsGame {
 
     private bindEvents() {
         document.getElementById('startBtn')?.addEventListener('click', () => this.startGame(false));
-        document.getElementById('aiStartBtn')?.addEventListener('click', () => this.startGame(true));
+        document.getElementById('aiStartBtn')?.addEventListener('click', () => this.startGame('rule'));
         document.getElementById('restartBtn')?.addEventListener('click', () => this.startGame(this.aiMode));
 
         document.addEventListener('keydown', (e) => {
@@ -122,8 +125,8 @@ export class StairsGame {
         });
     }
 
-    private startGame(enableAI: boolean = false) {
-        this.aiMode = enableAI;
+    public startGame(aiMode: 'rule' | 'rl' | false = false) {
+        this.aiMode = aiMode;
         this.core.reset();
         this.particles = [];
         this.expression = '😊';
@@ -137,6 +140,12 @@ export class StairsGame {
         const aiIndicator = document.getElementById('aiIndicator');
         if (aiIndicator) {
             aiIndicator.classList.toggle('hidden', !this.aiMode);
+            // 更新 AI 指示器文字
+            if (this.aiMode === 'rl') {
+                aiIndicator.textContent = '🧠 ';
+            } else if (this.aiMode === 'rule') {
+                aiIndicator.textContent = '🤖 ';
+            }
         }
     }
 
@@ -322,12 +331,39 @@ export class StairsGame {
         return null;
     }
 
+    // === RL AI 邏輯 ===
+    private updateRLAI() {
+        if (!this.rlAgent) {
+            console.warn('RL agent not available, falling back to manual control');
+            return;
+        }
+
+        const state = this.core.getState();
+
+        // 異步預測（使用 Promise，但不阻塞遊戲循環）
+        this.rlAgent.predict(state).then(result => {
+            // 根據預測結果設置按鍵
+            this.keys.left = result.action === 'left';
+            this.keys.right = result.action === 'right';
+
+            // 記錄動作用於調試
+            this.lastAIAction = result.action === 'none' ? 'stop' : result.action;
+        }).catch(error => {
+            console.error('RL AI prediction error:', error);
+            // 發生錯誤時停止移動
+            this.keys.left = false;
+            this.keys.right = false;
+        });
+    }
+
     private update() {
         if (this.uiGameState !== 'playing') return;
 
         // AI 控制
-        if (this.aiMode) {
+        if (this.aiMode === 'rule') {
             this.updateAI();
+        } else if (this.aiMode === 'rl') {
+            this.updateRLAI();
         }
 
         // 記錄更新前的狀態，用於粒子效果

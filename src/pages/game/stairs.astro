@@ -24,8 +24,8 @@ import '@/styles/game-common.css';
             <div class="controls-info mt-3">
               <small>← → 或 A D 移動 | 空白鍵暫停</small>
             </div>
-            <div id="rlAiLoadingInfo" class="mt-2 text-muted hidden">
-              <small>🧠 正在載入 RL 模型...</small>
+            <div id="rlAiLoadingInfo" class="mt-2 hidden">
+              <small class="text-info">🧠 正在載入 RL 模型...</small>
             </div>
           </div>
           <div class="game-overlay hidden" id="gameOverScreen">
@@ -68,12 +68,9 @@ import '@/styles/game-common.css';
   import { StairsGame } from '@/lib/games/StairsGame';
   import { StairsWeightsAgent } from '@/lib/ai/agents/StairsWeightsAgent';
 
-  // 啟動遊戲
-  const game = new StairsGame();
-
   // RL AI 支援
   let rlAgent: StairsWeightsAgent | null = null;
-  let rlAiEnabled = false;
+  let game: StairsGame | null = null;
 
   // 載入 RL AI
   const loadRLAgent = async () => {
@@ -99,28 +96,35 @@ import '@/styles/game-common.css';
       loadingInfo?.classList.add('hidden');
 
       console.log('✅ RL AI loaded successfully');
+
+      // 重新創建遊戲實例，這次傳入 RL agent
+      game = new StairsGame(rlAgent);
+
+      return true;
     } catch (error) {
       console.error('❌ Failed to load RL AI:', error);
       rlAiBtn.textContent = '🧠 載入失敗';
       loadingInfo!.innerHTML = '<small class="text-danger">載入失敗，請檢查控制台</small>';
+      return false;
     }
   };
 
   // RL AI 按鈕事件
   document.getElementById('rlAiStartBtn')?.addEventListener('click', async () => {
     if (!rlAgent) {
-      await loadRLAgent();
+      const loaded = await loadRLAgent();
+      if (!loaded) return;
     }
 
-    if (rlAgent) {
-      rlAiEnabled = true;
-      // 開始遊戲 (這裡需要修改 StairsGame 來支援 RL AI)
-      // 暫時先使用規則 AI，稍後整合
-      alert('RL AI 模式開發中，目前先使用規則 AI 作為示範');
-      (game as any).startGame(true);
+    if (rlAgent && game) {
+      // 開始 RL AI 模式
+      game.startGame('rl');
     }
   });
 
-  // 預載 RL AI (可選)
-  // loadRLAgent().catch(console.error);
+  // 初始化遊戲（沒有 RL agent）
+  game = new StairsGame();
+
+  // 預載 RL AI (可選 - 取消註解以提前載入模型)
+  // setTimeout(() => loadRLAgent().catch(console.error), 1000);
 </script>
