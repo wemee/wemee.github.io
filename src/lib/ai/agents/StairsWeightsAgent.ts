@@ -193,24 +193,32 @@ export class StairsWeightsAgent extends TFJSAgent<StairsGameState, Action> {
 
   /**
    * 將遊戲狀態轉換為 Tensor（與 Python 訓練時的編碼一致）
+   *
+   * CRITICAL: Must match stairs_env.py _get_obs() exactly!
+   * - Stairs sorted by distance to player
+   * - Using relative positions (stair - player)
    */
   protected observationToTensor(state: StairsGameState): any {
     const obs = new Float32Array(54);
 
-    // Player state (4 dims) - 與 stairs_env.py 的 _get_obs() 一致
+    // Player state (4 dims)
     obs[0] = state.player.x / 400.0;
     obs[1] = state.player.y / 600.0;
     obs[2] = state.player.vx / 10.0;
     obs[3] = state.player.vy / 20.0;
 
-    // Stairs state (10 stairs * 5 dims each)
-    const stairs = state.stairs.slice(0, 10);
-    for (let i = 0; i < stairs.length; i++) {
-      const stair = stairs[i];
+    // **KEY FIX**: Sort stairs by distance to player (same as Python)
+    const sortedStairs = [...state.stairs]
+      .sort((a, b) => Math.abs(a.y - state.player.y) - Math.abs(b.y - state.player.y))
+      .slice(0, 10);
+
+    for (let i = 0; i < sortedStairs.length; i++) {
+      const stair = sortedStairs[i];
       const base = 4 + i * 5;
 
-      obs[base] = stair.x / 400.0;
-      obs[base + 1] = stair.y / 600.0;
+      // Use relative positions (same as Python)
+      obs[base] = (stair.x - state.player.x) / 400.0;
+      obs[base + 1] = (stair.y - state.player.y) / 600.0;
       obs[base + 2] = stair.width / 120.0;
       obs[base + 3] = stair.broken ? 1.0 : 0.0;
 
@@ -225,7 +233,7 @@ export class StairsWeightsAgent extends TFJSAgent<StairsGameState, Action> {
     }
 
     // Pad remaining stairs with zeros if < 10
-    for (let i = stairs.length; i < 10; i++) {
+    for (let i = sortedStairs.length; i < 10; i++) {
       const base = 4 + i * 5;
       obs[base] = 0;
       obs[base + 1] = 0;

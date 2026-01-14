@@ -81,7 +81,11 @@ class StairsEnv(gym.Env):
         return json.loads(state_json)
 
     def _get_obs(self):
-        """Get current observation from game state."""
+        """Get current observation from game state.
+
+        CRITICAL: Stairs are sorted by Y coordinate (distance to player)
+        to ensure stable observation representation for the neural network.
+        """
         state = self._get_state_dict()
 
         # Normalize player position (canvas is 400x600)
@@ -91,12 +95,16 @@ class StairsEnv(gym.Env):
         obs[2] = state['player']['vx'] / 10.0
         obs[3] = state['player']['vy'] / 20.0
 
-        # Flatten stairs info (up to 10 stairs)
-        stairs = state['stairs'][:10]
+        # **KEY FIX**: Sort stairs by Y coordinate (closest to farthest)
+        # This ensures stairs[0] is always the closest stair to the player,
+        # providing stable semantic meaning for the neural network.
+        stairs = sorted(state['stairs'], key=lambda s: abs(s['y'] - state['player']['y']))[:10]
+
         for i, stair in enumerate(stairs):
             base = 4 + i * 5
-            obs[base] = stair['x'] / 400.0
-            obs[base + 1] = stair['y'] / 600.0
+            # Also encode relative position for better learning
+            obs[base] = (stair['x'] - state['player']['x']) / 400.0  # Relative X
+            obs[base + 1] = (stair['y'] - state['player']['y']) / 600.0  # Relative Y
             obs[base + 2] = stair['width'] / 120.0
             obs[base + 3] = 1.0 if stair['broken'] else 0.0
             # Encode type: normal=0, bounce=1, fragile=2, moving=3
