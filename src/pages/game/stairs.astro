@@ -3,10 +3,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import Navbar from '@/components/Navbar.astro';
 import '@/styles/game-common.css';
 ---
-<BaseLayout 
-  title="下樓梯遊戲 | 挫屎勇的遊戲間" 
-  description="經典反應遊戲「下樓梯」，挑戰你的反應極限！是男人就下 100 層。支援觸控、鍵盤與 AI 自動遊玩模式。"
+<BaseLayout
+  title="下樓梯遊戲 | 挫屎勇的遊戲間"
+  description="經典反應遊戲「下樓梯」，挑戰你的反應極限！是男人就下 100 層。支援觸控、鍵盤、規則 AI 與強化學習 AI 自動遊玩模式。"
 >
+  <!-- 載入 TensorFlow.js for RL AI -->
+  <script is:inline src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
   <Navbar currentPage="game" />
   <div class="container-fluid mt-3">
     <div class="row justify-content-center">
@@ -17,9 +19,13 @@ import '@/styles/game-common.css';
             <h2>🏃 下樓梯</h2>
             <p>不要掉出去，也別被頂到頂部！</p>
             <button class="btn btn-lg btn-success" id="startBtn">開始遊戲</button>
-            <button class="btn btn-lg btn-warning mt-2" id="aiStartBtn">🤖 AI 模式</button>
+            <button class="btn btn-lg btn-warning mt-2" id="aiStartBtn">🤖 規則 AI</button>
+            <button class="btn btn-lg btn-info mt-2" id="rlAiStartBtn">🧠 強化學習 AI</button>
             <div class="controls-info mt-3">
               <small>← → 或 A D 移動 | 空白鍵暫停</small>
+            </div>
+            <div id="rlAiLoadingInfo" class="mt-2 text-muted hidden">
+              <small>🧠 正在載入 RL 模型...</small>
             </div>
           </div>
           <div class="game-overlay hidden" id="gameOverScreen">
@@ -44,7 +50,61 @@ import '@/styles/game-common.css';
 
 <script>
   import { StairsGame } from '@/lib/games/StairsGame';
-  
+  import { StairsWeightsAgent } from '@/lib/ai/agents/StairsWeightsAgent';
+
   // 啟動遊戲
-  new StairsGame();
+  const game = new StairsGame();
+
+  // RL AI 支援
+  let rlAgent: StairsWeightsAgent | null = null;
+  let rlAiEnabled = false;
+
+  // 載入 RL AI
+  const loadRLAgent = async () => {
+    const loadingInfo = document.getElementById('rlAiLoadingInfo');
+    const rlAiBtn = document.getElementById('rlAiStartBtn') as HTMLButtonElement;
+
+    if (rlAgent) return; // 已載入
+
+    try {
+      loadingInfo?.classList.remove('hidden');
+      rlAiBtn.disabled = true;
+      rlAiBtn.textContent = '🧠 載入中...';
+
+      rlAgent = new StairsWeightsAgent({
+        weightsPath: '/models/stairs/model_weights.json',
+        deterministic: true
+      });
+
+      await rlAgent.load();
+
+      rlAiBtn.textContent = '🧠 強化學習 AI';
+      rlAiBtn.disabled = false;
+      loadingInfo?.classList.add('hidden');
+
+      console.log('✅ RL AI loaded successfully');
+    } catch (error) {
+      console.error('❌ Failed to load RL AI:', error);
+      rlAiBtn.textContent = '🧠 載入失敗';
+      loadingInfo!.innerHTML = '<small class="text-danger">載入失敗，請檢查控制台</small>';
+    }
+  };
+
+  // RL AI 按鈕事件
+  document.getElementById('rlAiStartBtn')?.addEventListener('click', async () => {
+    if (!rlAgent) {
+      await loadRLAgent();
+    }
+
+    if (rlAgent) {
+      rlAiEnabled = true;
+      // 開始遊戲 (這裡需要修改 StairsGame 來支援 RL AI)
+      // 暫時先使用規則 AI，稍後整合
+      alert('RL AI 模式開發中，目前先使用規則 AI 作為示範');
+      (game as any).startGame(true);
+    }
+  });
+
+  // 預載 RL AI (可選)
+  // loadRLAgent().catch(console.error);
 </script>
