@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "build:rl-core": "esbuild src/lib/games/StairsGameCore.ts --bundle --format=iife --global-name=StairsGameCore --outfile=ml-training/stairs-rl/dist/StairsGameCore.js"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.6.1",
@@ -12,5 +13,8 @@
     "phaser": "^3.90.0",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
   }
 }

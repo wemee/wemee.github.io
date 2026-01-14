@@ -65,3 +65,43 @@ class MyVisualizer {
 
 Pushes to `main` branch auto-deploy to GitHub Pages via `.github/workflows/deploy.yml`. The workflow runs `npm ci && npm run build` and deploys `dist/`.
 
+## ML Training (`ml-training/`)
+
+Machine learning training code lives separately from the web frontend. Each project has its own subdirectory with independent Python virtual environments.
+
+### Directory Structure
+- `ml-training/mnist/` - MNIST handwritten digit recognition (TensorFlow → TensorFlow.js)
+- `ml-training/stairs-rl/` - Stairs game reinforcement learning (PyMiniRacer + Stable Baselines3)
+
+### Stairs RL Architecture
+
+The Stairs game supports headless training via a separated core:
+
+```
+src/lib/games/
+├── StairsGameCore.ts     # Pure logic (no DOM/Canvas) - shared by browser & training
+└── StairsGame.ts         # Browser version, uses Core + handles rendering
+
+ml-training/stairs-rl/
+├── dist/StairsGameCore.js  # Compiled core for PyMiniRacer
+├── stairs_env.py           # Gymnasium environment wrapper
+└── train.py                # Training script
+```
+
+### Build Commands for RL
+
+```bash
+# Build game core for Python training
+npm run build:rl-core
+
+# Run training (from ml-training/stairs-rl/)
+cd ml-training/stairs-rl
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+python train.py
+```
+
+### Key Principle
+
+Game logic is maintained **only in TypeScript** (`StairsGameCore.ts`). Python uses PyMiniRacer (V8 engine) to run the same code, ensuring 100% numerical consistency between training and browser deployment.
+
