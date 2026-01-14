@@ -9,6 +9,7 @@
   "dependencies": {
     "@astrojs/sitemap": "^3.6.1",
     "astro": "^5.0.0",
+    "phaser": "^3.90.0",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0"
   }

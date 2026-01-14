@@ -1,0 +1,203 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Navbar from '@/components/Navbar.astro';
+---
+
+<BaseLayout title="基礎碰撞 - 物理引擎測試" description="使用 Phaser 3 Arcade Physics 展示完全彈性碰撞">
+    <Navbar currentPage="game" />
+    <main class="game-container">
+        <div class="game-header">
+            <a href="/game" class="back-link">← 返回遊戲列表</a>
+            <h1>⚪ 基礎碰撞</h1>
+            <p class="subtitle">Phaser 3 Arcade Physics - 完全彈性碰撞展示</p>
+        </div>
+
+        <div class="game-wrapper">
+            <div id="game-canvas" class="game-canvas"></div>
+        </div>
+
+        <div class="physics-info">
+            <h2>物理說明</h2>
+            <ul>
+                <li><strong>完全彈性碰撞</strong>：動能守恆、動量守恆</li>
+                <li><strong>無摩擦力</strong>：球體永遠不會停下來</li>
+                <li><strong>質量與面積成正比</strong>：大球質量較大</li>
+                <li><strong>牆壁反射</strong>：邊界完美反彈</li>
+            </ul>
+        </div>
+
+        <div class="tech-info">
+            <h2>技術資訊</h2>
+            <ul>
+                <li><strong>物理引擎</strong>：Phaser Arcade Physics</li>
+                <li><strong>碰撞係數</strong>：bounce = 1.0（完全彈性）</li>
+                <li><strong>阻力</strong>：drag = 0、friction = 0</li>
+            </ul>
+        </div>
+
+        <div class="related-article">
+            <h2>📝 相關文章</h2>
+            <a href="/blog/phaser-physics-gotcha" class="article-link">
+                <span class="article-title">Phaser Arcade Physics 的隱藏陷阱</span>
+                <span class="article-desc">為什麼 bounce=1 不等於完全彈性碰撞？深入研究動能損失的根本原因</span>
+            </a>
+        </div>
+    </main>
+
+    <script>
+        import { initCollisionGame } from '@/lib/games/phaser/games/collision';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const game = initCollisionGame('game-canvas');
+
+            window.addEventListener('beforeunload', () => {
+                game.destroy();
+            });
+        });
+    </script>
+
+    <style>
+        .game-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #fff;
+        }
+
+        .back-link {
+            color: #74b9ff;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-bottom: 1rem;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: #a29bfe;
+        }
+
+        .game-header h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            text-shadow: 0 0 20px rgba(116, 185, 255, 0.5);
+        }
+
+        .subtitle {
+            color: #888;
+            margin-top: 0.5rem;
+        }
+
+        .game-wrapper {
+            background: #000;
+            border-radius: 16px;
+            padding: 8px;
+            box-shadow: 
+                0 0 40px rgba(116, 185, 255, 0.2),
+                inset 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .game-canvas {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .physics-info, .tech-info {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            margin-top: 2rem;
+            color: #fff;
+            max-width: 640px;
+            width: 100%;
+        }
+
+        .physics-info h2, .tech-info h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #74b9ff;
+        }
+
+        .physics-info ul, .tech-info ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .physics-info li, .tech-info li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .physics-info li:last-child, .tech-info li:last-child {
+            border-bottom: none;
+        }
+
+        .physics-info strong, .tech-info strong {
+            color: #74b9ff;
+        }
+
+        .related-article {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            margin-top: 2rem;
+            color: #fff;
+            max-width: 640px;
+            width: 100%;
+        }
+
+        .related-article h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #ffeaa7;
+        }
+
+        .article-link {
+            display: block;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .article-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #74b9ff;
+            transform: translateY(-2px);
+        }
+
+        .article-title {
+            display: block;
+            color: #74b9ff;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .article-desc {
+            display: block;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 680px) {
+            .game-container {
+                padding: 1rem;
+            }
+
+            .game-header h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</BaseLayout>
