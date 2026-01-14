@@ -206,7 +206,7 @@ export class StairsGameCore extends GameCore<StairsGameState, Action> {
     private createPlayer(): Player {
         return {
             x: this.canvasWidth / 2,
-            y: 100,
+            y: 300,
             radius: 15,
             vx: 0,
             vy: 0,
@@ -277,7 +277,7 @@ export class StairsGameCore extends GameCore<StairsGameState, Action> {
                     this.player.onStair = true;
 
                     if (stair.type === 'bounce') {
-                        this.player.vy = -12;
+                        this.player.vy = -6;
                         this.player.onStair = false;
                     } else if (stair.type === 'fragile') {
                         stair.broken = true;
