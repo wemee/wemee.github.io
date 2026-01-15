@@ -502,9 +502,22 @@ export class StairsGame {
         }
     }
 
+    private animationFrameId: number | null = null;
+
     private gameLoop = () => {
         this.update();
         this.draw();
-        requestAnimationFrame(this.gameLoop);
+        this.animationFrameId = requestAnimationFrame(this.gameLoop);
+    }
+
+    /**
+     * 停止遊戲循環並清理資源
+     */
+    public destroy() {
+        if (this.animationFrameId !== null) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+        console.log('🧹 StairsGame instance destroyed');
     }
 }

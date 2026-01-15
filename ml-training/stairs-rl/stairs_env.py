@@ -56,9 +56,22 @@ class StairsEnv(gym.Env):
         # Initialize V8 context
         self.ctx = MiniRacer()
         self.ctx.eval(js_path.read_text())
-        # esbuild IIFE format wraps exports, need to unwrap
-        self.ctx.eval("const StairsGameCoreClass = StairsGameCore.StairsGameCore;")
-        self.ctx.eval("const game = new StairsGameCoreClass();")
+
+        # Access classes from esbuild bundle
+        # The IIFE returns an exports object, classes are nested inside
+        self.ctx.eval("""
+        // Access the exported module (IIFE return value stored in StairsGameCore variable)
+        const StairsGameCoreClass = StairsGameCore.StairsGameCore;
+
+        // Scoring strategies are exposed to globalThis directly
+        const TrainingStrategyClass = globalThis.TrainingScoringStrategy;
+
+        // Create training scoring strategy and inject into GameCore
+        const trainingScoringStrategy = new TrainingStrategyClass();
+        const game = new StairsGameCoreClass({
+            scoringStrategy: trainingScoringStrategy
+        });
+        """)
 
         # Define action space
         self.action_space = spaces.Discrete(3)
@@ -146,11 +159,7 @@ class StairsEnv(gym.Env):
 
         self.current_step += 1
 
-        obs = self._get_obs()
-        reward = result['reward']
-        terminated = result['terminated']
         truncated = self.current_step >= self.max_steps
-        info = self._get_info()
 
         return obs, reward, terminated, truncated, info
 

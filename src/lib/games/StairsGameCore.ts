@@ -1,5 +1,9 @@
 /**
- * StairsGameCore - 純遊戲邏輯核心
+ * StairsGameCore - 純遊戲邏輯核心（重構版）
+ *
+ * 職責分離：
+ * - GameCore: 只負責物理邏輯、碰撞檢測、遊戲狀態
+ * - ScoringStrategy: 負責所有計分邏輯
  *
  * 不依賴任何 DOM/Canvas API，可在以下環境運行：
  * - 瀏覽器 (搭配 StairsGame.ts 渲染)
@@ -10,6 +14,7 @@
  */
 
 import { GameCore, type GameObservation, type StepResult, type GameCoreConfig } from './core/GameCore';
+import { type ScoringStrategy, FrontendScoringStrategy } from './core/ScoringStrategy';
 
 // === 型別定義 ===
 
@@ -20,6 +25,7 @@ export interface Stair {
     type: 'normal' | 'bounce' | 'fragile' | 'moving';
     broken: boolean;
     moveDir?: number;
+    scored?: boolean;  // 是否已計分（踩樓梯計分用）
 }
 
 export interface Player {
@@ -50,6 +56,7 @@ export interface StairsCoreConfig extends GameCoreConfig {
     stairGap?: number;
     initialScrollSpeed?: number;
     maxScrollSpeed?: number;
+    scoringStrategy?: ScoringStrategy;  // 注入計分策略
 }
 
 // === 簡易隨機數產生器 (可設定種子) ===
@@ -87,6 +94,9 @@ export class StairsGameCore extends GameCore<StairsGameState, Action> {
     private readonly INITIAL_SCROLL_SPEED: number;
     private readonly MAX_SCROLL_SPEED: number;
 
+    // 計分策略（依賴注入）
+    private readonly scoringStrategy: ScoringStrategy;
+
     // 遊戲狀態
     private player: Player;
     private stairs: Stair[];
@@ -94,6 +104,7 @@ export class StairsGameCore extends GameCore<StairsGameState, Action> {
     private scrollSpeed: number;
     private gameOver: boolean;
     private lastScore: number;
+    private stepCount: number;  // 遊戲步數計數
 
     // 隨機數
     private random: SeededRandom;
@@ -109,11 +120,15 @@ export class StairsGameCore extends GameCore<StairsGameState, Action> {
         this.INITIAL_SCROLL_SPEED = config.initialScrollSpeed ?? 2;
         this.MAX_SCROLL_SPEED = config.maxScrollSpeed ?? 6;
 
+        // 依賴注入：計分策略（預設為前端策略）
+        this.scoringStrategy = config.scoringStrategy ?? new FrontendScoringStrategy();
+
         this.random = new SeededRandom();
         this.player = this.createPlayer();
         this.stairs = [];
         this.score = 0;
         this.lastScore = 0;
+        this.stepCount = 0;
         this.scrollSpeed = this.INITIAL_SCROLL_SPEED;
         this.gameOver = false;
 
@@ -136,9 +151,11 @@ export class StairsGameCore extends GameCore<StairsGameState, Action> {
         this.player = this.createPlayer();
         this.score = 0;
         this.lastScore = 0;
+        this.stepCount = 0;
         this.scrollSpeed = this.INITIAL_SCROLL_SPEED;
         this.gameOver = false;
         this.stairs = [];
+        this.scoringStrategy.reset();
         this.initStairs();
         return this.getState();
     }
@@ -157,11 +174,15 @@ export class StairsGameCore extends GameCore<StairsGameState, Action> {
         }
 
         this.lastScore = this.score;
+        this.stepCount++;
+
+        // 計分 1: 每步計分（根據策略）
+        this.score += this.scoringStrategy.onStep(this.stepCount);
 
         // 執行動作
         this.applyAction(action);
 
-        // 更新物理
+        // 更新物理（包含踩樓梯計分和撞牆懲罰）
         this.updatePhysics();
 
         // 更新樓梯
@@ -170,7 +191,7 @@ export class StairsGameCore extends GameCore<StairsGameState, Action> {
         // 檢查死亡
         this.checkDeath();
 
-        // 計算獎勵
+        // 計算獎勵（用於 RL 訓練）
         const reward = this.calculateReward();
 
         return {
@@ -232,7 +253,8 @@ export class StairsGameCore extends GameCore<StairsGameState, Action> {
             width: this.random.next() * 60 + 60,
             type: type,
             broken: false,
-            moveDir: type === 'moving' ? (this.random.next() > 0.5 ? 1 : -1) : undefined
+            moveDir: type === 'moving' ? (this.random.next() > 0.5 ? 1 : -1) : undefined,
+            scored: false
         };
     }
 
@@ -247,12 +269,19 @@ export class StairsGameCore extends GameCore<StairsGameState, Action> {
     }
 
     private updatePhysics(): void {
-        // 水平移動
-        this.player.x += this.player.vx;
-        this.player.x = Math.max(
+        // 水平移動（含撞牆檢測）
+        const intendedX = this.player.x + this.player.vx;
+        const clampedX = Math.max(
             this.player.radius,
-            Math.min(this.player.x, this.canvasWidth - this.player.radius)
+            Math.min(intendedX, this.canvasWidth - this.player.radius)
         );
+
+        // 計分 2: 撞牆懲罰（根據策略）
+        if (Math.abs(intendedX - clampedX) > 0.01) {
+            this.score += this.scoringStrategy.onWallHit();
+        }
+
+        this.player.x = clampedX;
 
         // 重力
         if (!this.player.onStair) {
@@ -275,6 +304,12 @@ export class StairsGameCore extends GameCore<StairsGameState, Action> {
                 if (this.player.vy >= 0) {
                     this.player.y = stair.y - this.player.radius;
                     this.player.onStair = true;
+
+                    // 計分 3: 踩樓梯計分（根據策略）
+                    if (!stair.scored) {
+                        this.score += this.scoringStrategy.onStairLanded();
+                        stair.scored = true;
+                    }
 
                     if (stair.type === 'bounce') {
                         this.player.vy = -6;
@@ -313,8 +348,6 @@ export class StairsGameCore extends GameCore<StairsGameState, Action> {
             // 回收並重生樓梯
             if (stair.y + this.STAIR_HEIGHT < 0) {
                 Object.assign(stair, this.createStair(this.canvasHeight + 50));
-                stair.broken = false;
-                this.score++;
             }
         }
 
@@ -333,31 +366,15 @@ export class StairsGameCore extends GameCore<StairsGameState, Action> {
     }
 
     private calculateReward(): number {
+        // 計分 4: 死亡懲罰（根據策略）
         if (this.gameOver) {
-            // 死亡懲罰，但根據存活時間給予補償
-            // 活得越久（分數越高），懲罰越小，鼓勵探索
-            const survivalBonus = Math.min(this.score * 2, 50);
-            return -100 + survivalBonus;
+            return this.scoringStrategy.onDeath();
         }
 
-        let reward = 0;
-
-        // 1. 得分獎勵（絕對主要目標，再次大幅提升）
-        if (this.score > this.lastScore) {
-            reward += 100;  // 從 50 → 100
-        }
-
-        // 2. 存活獎勵（降低，避免過度側重生存）
-        reward += 0.5;  // 從 1.0 → 0.5
-
-        // 3. 移動獎勵（降低，輔助性質）
-        if (this.player.vy > 0) {
-            reward += 0.2;  // 從 0.5 → 0.2
-        }
-
-        // 4. 移除位置獎勵（避免鼓勵停留在固定位置）
-
-        return reward;
+        // RL 訓練用：獎勵 = 分數變化
+        // 這樣可以捕捉所有計分事件（踩樓梯、撞牆等）
+        const scoreDelta = this.score - this.lastScore;
+        return scoreDelta;
     }
 }
 
@@ -365,4 +382,6 @@ export class StairsGameCore extends GameCore<StairsGameState, Action> {
 // 這行只在非模組環境下生效
 if (typeof globalThis !== 'undefined') {
     (globalThis as unknown as Record<string, unknown>).StairsGameCore = StairsGameCore;
+    (globalThis as unknown as Record<string, unknown>).FrontendScoringStrategy = FrontendScoringStrategy;
+    (globalThis as unknown as Record<string, unknown>).TrainingScoringStrategy = TrainingScoringStrategy;
 }

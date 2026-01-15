@@ -97,6 +97,12 @@ import '@/styles/game-common.css';
 
       console.log('✅ RL AI loaded successfully');
 
+      // 銷毀舊的遊戲實例（停止遊戲循環）
+      if (game) {
+        game.destroy();
+        console.log('🧹 Old game instance destroyed');
+      }
+
       // 重新創建遊戲實例，這次傳入 RL agent
       game = new StairsGame(rlAgent);
 

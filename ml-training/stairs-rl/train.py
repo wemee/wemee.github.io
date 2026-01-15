@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "shared"))
 
 from base_trainer import BaseRLTrainer
 from stable_baselines3 import PPO
-from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
+from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback, StopTrainingOnNoModelImprovement
 import gymnasium as gym
 
 # Import environment (registers Stairs-v0)
@@ -79,23 +79,33 @@ def main():
         # 訓練模式
         # 設定回調
         eval_env = gym.make('Stairs-v0')
-        callbacks = [
-            EvalCallback(
-                eval_env,
-                best_model_save_path=str(trainer.model_dir),
-                log_path=str(trainer.log_dir),
-                eval_freq=args.eval_freq,
-                deterministic=True,
-                render=False,
-                n_eval_episodes=5,  # 快速評估用較少回合
-                verbose=1,
-            ),
-            CheckpointCallback(
-                save_freq=max(2000, args.timesteps // 2),  # 至少保存一次
-                save_path=str(trainer.model_dir),
-                name_prefix="stairs_ppo",
-            )
-        ]
+
+        # Early Stopping: 連續 3 次評估沒有提升 1% 就停止
+        stop_callback = StopTrainingOnNoModelImprovement(
+            max_no_improvement_evals=3,  # 連續 3 次沒改善
+            min_evals=2,  # 至少評估 2 次才開始檢查
+            verbose=1
+        )
+
+        eval_callback = EvalCallback(
+            eval_env,
+            best_model_save_path=str(trainer.model_dir),
+            log_path=str(trainer.log_dir),
+            eval_freq=args.eval_freq,
+            deterministic=True,
+            render=False,
+            n_eval_episodes=5,  # 快速評估用較少回合
+            verbose=1,
+            callback_after_eval=stop_callback,  # 評估後檢查是否 early stop
+        )
+
+        checkpoint_callback = CheckpointCallback(
+            save_freq=max(2000, args.timesteps // 2),  # 至少保存一次
+            save_path=str(trainer.model_dir),
+            name_prefix="stairs_ppo",
+        )
+
+        callbacks = [eval_callback, checkpoint_callback]
 
         print(f"Monitor training with: tensorboard --logdir {trainer.log_dir}\n")
 
