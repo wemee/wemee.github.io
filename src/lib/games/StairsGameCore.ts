@@ -334,23 +334,28 @@ export class StairsGameCore extends GameCore<StairsGameState, Action> {
 
     private calculateReward(): number {
         if (this.gameOver) {
-            return -100; // 死亡懲罰
+            // 死亡懲罰，但根據存活時間給予補償
+            // 活得越久（分數越高），懲罰越小，鼓勵探索
+            const survivalBonus = Math.min(this.score * 2, 50);
+            return -100 + survivalBonus;
         }
 
         let reward = 0;
 
-        // 存活獎勵
-        reward += 0.1;
-
-        // 得分獎勵
+        // 1. 得分獎勵（主要獎勵，大幅提升）
         if (this.score > this.lastScore) {
-            reward += 10;
+            reward += 50;  // 從 10 → 50
         }
 
-        // 位置獎勵：鼓勵待在畫面中間偏下
-        const idealY = this.canvasHeight * 0.6;
-        const yDistance = Math.abs(this.player.y - idealY) / this.canvasHeight;
-        reward += (1 - yDistance) * 0.5;
+        // 2. 存活獎勵（提高基礎價值）
+        reward += 1.0;  // 從 0.1 → 1.0
+
+        // 3. 移動獎勵（鼓勵主動下落，避免原地不動）
+        if (this.player.vy > 0) {
+            reward += 0.5;
+        }
+
+        // 4. 移除位置獎勵（避免鼓勵停留在固定位置）
 
         return reward;
     }

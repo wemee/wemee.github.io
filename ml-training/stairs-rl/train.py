@@ -53,12 +53,14 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description='Train Stairs RL Agent')
-    parser.add_argument('--timesteps', type=int, default=500_000,
-                        help='Total training timesteps (default: 500,000)')
+    parser.add_argument('--timesteps', type=int, default=5_000,
+                        help='Total training timesteps (default: 5,000)')
     parser.add_argument('--n-envs', type=int, default=4,
                         help='Number of parallel environments (default: 4)')
     parser.add_argument('--eval', action='store_true',
                         help='Evaluate existing model instead of training')
+    parser.add_argument('--eval-freq', type=int, default=1000,
+                        help='Evaluation frequency in steps (default: 1000)')
     args = parser.parse_args()
 
     # 建立訓練器
@@ -82,12 +84,14 @@ def main():
                 eval_env,
                 best_model_save_path=str(trainer.model_dir),
                 log_path=str(trainer.log_dir),
-                eval_freq=10000,
+                eval_freq=args.eval_freq,
                 deterministic=True,
                 render=False,
+                n_eval_episodes=5,  # 快速評估用較少回合
+                verbose=1,
             ),
             CheckpointCallback(
-                save_freq=50000,
+                save_freq=max(2000, args.timesteps // 2),  # 至少保存一次
                 save_path=str(trainer.model_dir),
                 name_prefix="stairs_ppo",
             )

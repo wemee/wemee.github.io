@@ -83,8 +83,9 @@ class StairsEnv(gym.Env):
     def _get_obs(self):
         """Get current observation from game state.
 
-        CRITICAL: Stairs are sorted by Y coordinate (distance to player)
-        to ensure stable observation representation for the neural network.
+        CRITICAL: Only include stairs BELOW the player (y >= player.y),
+        as stairs above are unreachable in a falling game.
+        Sorted by distance (closest first) for stable representation.
         """
         state = self._get_state_dict()
 
@@ -95,16 +96,19 @@ class StairsEnv(gym.Env):
         obs[2] = state['player']['vx'] / 10.0
         obs[3] = state['player']['vy'] / 20.0
 
-        # **KEY FIX**: Sort stairs by Y coordinate (closest to farthest)
-        # This ensures stairs[0] is always the closest stair to the player,
-        # providing stable semantic meaning for the neural network.
-        stairs = sorted(state['stairs'], key=lambda s: abs(s['y'] - state['player']['y']))[:10]
+        # **CRITICAL FIX**: Only include stairs below player (y >= player.y)
+        # Stairs above are irrelevant in a downward-falling game
+        player_y = state['player']['y']
+        stairs_below = [s for s in state['stairs'] if s['y'] >= player_y]
 
-        for i, stair in enumerate(stairs):
+        # Sort by distance (closest first)
+        stairs_below = sorted(stairs_below, key=lambda s: s['y'] - player_y)[:10]
+
+        for i, stair in enumerate(stairs_below):
             base = 4 + i * 5
-            # Also encode relative position for better learning
+            # Encode relative position for better learning
             obs[base] = (stair['x'] - state['player']['x']) / 400.0  # Relative X
-            obs[base + 1] = (stair['y'] - state['player']['y']) / 600.0  # Relative Y
+            obs[base + 1] = (stair['y'] - state['player']['y']) / 600.0  # Relative Y (always >= 0)
             obs[base + 2] = stair['width'] / 120.0
             obs[base + 3] = 1.0 if stair['broken'] else 0.0
             # Encode type: normal=0, bounce=1, fragile=2, moving=3

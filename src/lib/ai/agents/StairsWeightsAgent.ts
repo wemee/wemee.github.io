@@ -195,7 +195,8 @@ export class StairsWeightsAgent extends TFJSAgent<StairsGameState, Action> {
    * 將遊戲狀態轉換為 Tensor（與 Python 訓練時的編碼一致）
    *
    * CRITICAL: Must match stairs_env.py _get_obs() exactly!
-   * - Stairs sorted by distance to player
+   * - Only include stairs BELOW player (y >= player.y)
+   * - Sorted by distance (closest first)
    * - Using relative positions (stair - player)
    */
   protected observationToTensor(state: StairsGameState): any {
@@ -207,18 +208,20 @@ export class StairsWeightsAgent extends TFJSAgent<StairsGameState, Action> {
     obs[2] = state.player.vx / 10.0;
     obs[3] = state.player.vy / 20.0;
 
-    // **KEY FIX**: Sort stairs by distance to player (same as Python)
-    const sortedStairs = [...state.stairs]
-      .sort((a, b) => Math.abs(a.y - state.player.y) - Math.abs(b.y - state.player.y))
+    // **CRITICAL FIX**: Only include stairs BELOW player (y >= player.y)
+    // Stairs above are irrelevant in a downward-falling game
+    const stairsBelow = state.stairs
+      .filter(s => s.y >= state.player.y)  // Only stairs below
+      .sort((a, b) => (a.y - state.player.y) - (b.y - state.player.y))  // Sort by distance (no abs)
       .slice(0, 10);
 
-    for (let i = 0; i < sortedStairs.length; i++) {
-      const stair = sortedStairs[i];
+    for (let i = 0; i < stairsBelow.length; i++) {
+      const stair = stairsBelow[i];
       const base = 4 + i * 5;
 
       // Use relative positions (same as Python)
       obs[base] = (stair.x - state.player.x) / 400.0;
-      obs[base + 1] = (stair.y - state.player.y) / 600.0;
+      obs[base + 1] = (stair.y - state.player.y) / 600.0;  // Always >= 0
       obs[base + 2] = stair.width / 120.0;
       obs[base + 3] = stair.broken ? 1.0 : 0.0;
 
@@ -233,7 +236,7 @@ export class StairsWeightsAgent extends TFJSAgent<StairsGameState, Action> {
     }
 
     // Pad remaining stairs with zeros if < 10
-    for (let i = sortedStairs.length; i < 10; i++) {
+    for (let i = stairsBelow.length; i < 10; i++) {
       const base = 4 + i * 5;
       obs[base] = 0;
       obs[base + 1] = 0;
