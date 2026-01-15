@@ -342,17 +342,17 @@ export class StairsGameCore extends GameCore<StairsGameState, Action> {
 
         let reward = 0;
 
-        // 1. 得分獎勵（主要獎勵，大幅提升）
+        // 1. 得分獎勵（絕對主要目標，再次大幅提升）
         if (this.score > this.lastScore) {
-            reward += 50;  // 從 10 → 50
+            reward += 100;  // 從 50 → 100
         }
 
-        // 2. 存活獎勵（提高基礎價值）
-        reward += 1.0;  // 從 0.1 → 1.0
+        // 2. 存活獎勵（降低，避免過度側重生存）
+        reward += 0.5;  // 從 1.0 → 0.5
 
-        // 3. 移動獎勵（鼓勵主動下落，避免原地不動）
+        // 3. 移動獎勵（降低，輔助性質）
         if (this.player.vy > 0) {
-            reward += 0.5;
+            reward += 0.2;  // 從 0.5 → 0.2
         }
 
         // 4. 移除位置獎勵（避免鼓勵停留在固定位置）

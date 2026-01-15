@@ -53,8 +53,8 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description='Train Stairs RL Agent')
-    parser.add_argument('--timesteps', type=int, default=5_000,
-                        help='Total training timesteps (default: 5,000)')
+    parser.add_argument('--timesteps', type=int, default=10_000,
+                        help='Total training timesteps (default: 10,000)')
     parser.add_argument('--n-envs', type=int, default=4,
                         help='Number of parallel environments (default: 4)')
     parser.add_argument('--eval', action='store_true',
