@@ -56,3 +56,67 @@
    /* --- Font Family --- */
    --font-sans: 'Inter', sans-serif;
 }
+
+/* ==========================================
+   Bootstrap/Tailwind Coexistence Fixes
+   Protect Bootstrap components from Tailwind base resets
+   ========================================== */
+
+/* Restore Bootstrap Navbar list styles */
+.navbar-nav {
+   display: flex !important;
+   flex-direction: row !important;
+   list-style: none !important;
+   padding-left: 0 !important;
+   margin-bottom: 0 !important;
+}
+
+.navbar-nav .nav-item {
+   display: list-item !important;
+}
+
+.navbar-nav .nav-link {
+   display: block !important;
+}
+
+/* Restore Bootstrap Dropdown styles */
+.dropdown-menu {
+   display: none;
+   list-style: none !important;
+   padding-left: 0 !important;
+   margin: 0 !important;
+}
+
+.dropdown-menu.show {
+   display: block !important;
+}
+
+.dropdown-menu li {
+   display: list-item !important;
+}
+
+/* Ensure navbar-collapse works properly */
+.navbar-collapse {
+   flex-basis: 100%;
+   flex-grow: 1;
+   align-items: center;
+}
+
+.navbar-collapse.collapse:not(.show) {
+   display: none !important;
+}
+
+.navbar-collapse.collapse.show,
+.navbar-collapse.collapsing {
+   display: block !important;
+}
+
+@media (min-width: 992px) {
+   .navbar-expand-lg .navbar-collapse {
+      display: flex !important;
+   }
+
+   .navbar-expand-lg .navbar-nav {
+      flex-direction: row !important;
+   }
+}
