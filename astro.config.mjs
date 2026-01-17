@@ -5,12 +5,19 @@ import rehypeKatex from 'rehype-katex';
 
 import react from '@astrojs/react';
 
+import tailwindcss from '@tailwindcss/vite';
+
 export default defineConfig({
   site: 'https://wemee.github.io',
   output: 'static',
   integrations: [sitemap(), react()],
+
   markdown: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [rehypeKatex],
+  },
+
+  vite: {
+    plugins: [tailwindcss()],
   },
 });

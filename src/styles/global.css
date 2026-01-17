@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+/* ==========================================
+   Sudoku Design System (CSS Variables)
+   Tailwind v4 uses CSS-first configuration.
+   ========================================== */
+
+@theme {
+    /* --- Sudoku Color Palette --- */
+    --color-sudoku-bg: #073642;
+    --color-sudoku-cell-bg: #002b36;
+    --color-sudoku-cell-bg-fixed: #073642;
+    --color-sudoku-cell-bg-selected: #268bd2;
+    --color-sudoku-cell-bg-related: rgba(38, 139, 210, 0.15);
+    --color-sudoku-cell-bg-error: rgba(220, 50, 47, 0.3);
+    --color-sudoku-text: #93a1a1;
+    --color-sudoku-text-fixed: #fdf6e3;
+    --color-sudoku-text-user: #2aa198;
+    --color-sudoku-text-selected: #fdf6e3;
+    --color-sudoku-border: #586e75;
+    --color-sudoku-border-block: #93a1a1;
+    --color-sudoku-button-bg: #073642;
+    --color-sudoku-button-hover: #586e75;
+
+    /* --- Font Family --- */
+    --font-sans: 'Inter', sans-serif;
+}

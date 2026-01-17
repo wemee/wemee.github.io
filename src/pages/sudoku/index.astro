@@ -2,60 +2,26 @@
 import SudokuAppLayout from '../../layouts/SudokuAppLayout.astro';
 import { SudokuBoard } from '../../components/sudoku/Board';
 import { Controls } from '../../components/sudoku/Controls';
+import { GameInfo } from '../../components/sudoku/GameInfo';
+import { WinModal } from '../../components/sudoku/WinModal';
 ---
 
 <SudokuAppLayout title="Sudoku - Pure Logic" description="A next-gen Sudoku experience. Pure Logic. Pure Zen.">
-  <main class="container">
-    <div class="game-wrapper">
-      <header class="header">
-        <h1 class="title">SUDOKU</h1>
-        <p class="subtitle">Pure Logic. Pure Zen.</p>
+  <main class="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-sudoku-bg to-[#073642]">
+    <WinModal client:only="react" />
+    <div class="p-6 bg-[#073642]/50 backdrop-blur-md rounded-3xl border border-sudoku-text/20 relative">
+      <header class="text-center mb-6">
+        <h1 class="text-4xl font-extrabold text-[#fdf6e3] tracking-widest m-0 drop-shadow-md">
+          SUDOKU
+        </h1>
+        <p class="text-xs text-sudoku-text uppercase tracking-[0.2em] mt-1">
+          Pure Logic. Pure Zen.
+        </p>
       </header>
 
+      <GameInfo client:only="react" />
       <SudokuBoard client:only="react" />
       <Controls client:only="react" />
     </div>
   </main>
 </SudokuAppLayout>
-
-<style>
-  .container {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    background: linear-gradient(180deg, #002b36 0%, #073642 100%);
-  }
-
-  .game-wrapper {
-    padding: 1.5rem;
-    background: rgba(7, 54, 66, 0.5);
-    backdrop-filter: blur(10px);
-    border-radius: 24px;
-    border: 1px solid rgba(147, 161, 161, 0.2);
-  }
-
-  .header {
-    text-align: center;
-    margin-bottom: 1.5rem;
-  }
-
-  .title {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: #fdf6e3;
-    letter-spacing: 0.1em;
-    margin: 0;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  }
-
-  .subtitle {
-    font-size: 0.8rem;
-    color: #93a1a1;
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-    margin-top: 0.25rem;
-  }
-</style>

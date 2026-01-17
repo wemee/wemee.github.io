@@ -23,11 +23,14 @@ interface GameState {
 interface GameActions {
     newGame: (difficulty?: Difficulty) => void;
     selectCell: (row: number, col: number) => void;
+    moveSelection: (direction: 'up' | 'down' | 'left' | 'right') => void;
     setCellValue: (value: SudokuValue) => void;
+    deleteCellValue: () => void;
     toggleNote: (value: number) => void;
     erase: () => void;
     undo: () => void;
     redo: () => void;
+    tickTimer: () => void;
 }
 
 type GameStore = GameState & GameActions;
@@ -63,6 +66,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }));
     },
 
+    moveSelection: (direction) => {
+        const state = get();
+        const pos = engine.getSelectedPosition(state.grid);
+        if (!pos) {
+            set({ grid: engine.selectCell(state.grid, 0, 0) });
+            return;
+        }
+
+        let { row, col } = pos;
+        if (direction === 'up') row = Math.max(0, row - 1);
+        if (direction === 'down') row = Math.min(8, row + 1);
+        if (direction === 'left') col = Math.max(0, col - 1);
+        if (direction === 'right') col = Math.min(8, col + 1);
+
+        set({ grid: engine.selectCell(state.grid, row, col) });
+    },
+
     setCellValue: (value) => {
         const state = get();
         const pos = engine.getSelectedPosition(state.grid);
@@ -72,6 +92,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
         if (!newGrid) return; // Cell was fixed
 
         const validatedGrid = engine.validateGrid(newGrid);
+
+        // Mistake Logic: Check if the placed cell is valid (checking for immediate conflicts)
+        const placedCell = validatedGrid[pos.row][pos.col];
+        const isMistake = !placedCell.isValid;
+
         const preservedGrid = engine.selectCell(validatedGrid, pos.row, pos.col);
 
         // Check for win
@@ -81,8 +106,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
             grid: preservedGrid,
             status: isWon ? 'won' : 'playing',
             history: [...state.history.slice(0, state.historyIndex + 1), preservedGrid],
-            historyIndex: state.historyIndex + 1
+            historyIndex: state.historyIndex + 1,
+            mistakes: isMistake ? state.mistakes + 1 : state.mistakes
         });
+    },
+
+    deleteCellValue: () => {
+        get().setCellValue(null);
     },
 
     toggleNote: (value) => {
@@ -97,9 +127,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         set({ grid: preservedGrid });
     },
 
-    erase: () => {
-        get().setCellValue(null);
-    },
+    // `erase` is an alias for `deleteCellValue` for backward compatibility
+    erase: () => get().deleteCellValue(),
 
     undo: () => {
         const state = get();
@@ -120,6 +149,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
                 grid: nextGrid,
                 historyIndex: state.historyIndex + 1
             });
+        }
+    },
+
+    tickTimer: () => {
+        const { status, timer } = get();
+        if (status === 'playing') {
+            set({ timer: timer + 1 });
         }
     }
 }));

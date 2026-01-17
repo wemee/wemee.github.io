@@ -1,7 +1,7 @@
 import React from 'react';
 import { useGameStore } from '../../store/gameStore';
 import type { Cell as CellType } from '../../lib/sudoku/types';
-import styles from './sudoku.module.css';
+import { twMerge } from 'tailwind-merge';
 
 interface CellProps {
     cell: CellType;
@@ -14,27 +14,31 @@ export const Cell: React.FC<CellProps> = ({ cell }) => {
         selectCell(cell.row, cell.col);
     };
 
-    // Determine CSS classes based on cell state
-    const classNames = [styles.cell];
+    const isThickRight = (cell.col + 1) % 3 === 0 && cell.col !== 8;
+    const isThickBottom = (cell.row + 1) % 3 === 0 && cell.row !== 8;
 
-    if (cell.isFixed) classNames.push(styles.cellFixed);
-    if (cell.isSelected) classNames.push(styles.cellSelected);
-    else if (cell.isRelated) classNames.push(styles.cellRelated);
-    if (!cell.isValid) classNames.push(styles.cellError);
+    const baseClasses = "flex items-center justify-center text-2xl font-medium cursor-pointer select-none transition-all duration-150 relative hover:brightness-110 active:scale-95";
 
-    // Block borders (thicker lines for 3x3 blocks)
-    if ((cell.col + 1) % 3 === 0 && cell.col !== 8) {
-        classNames.push(styles.cellRightBorder);
-    }
-    if ((cell.row + 1) % 3 === 0 && cell.row !== 8) {
-        classNames.push(styles.cellBottomBorder);
-    }
+    const classes = twMerge(
+        baseClasses,
+        "bg-sudoku-cell-bg text-sudoku-text-user",
+        // Fixed value
+        cell.isFixed && "bg-sudoku-cell-bg-fixed text-sudoku-text-fixed font-bold",
+        // Selection and Relation
+        cell.isSelected && "bg-sudoku-cell-bg-selected text-sudoku-text-selected z-10",
+        (!cell.isSelected && cell.isRelated) && "bg-sudoku-cell-bg-related",
+        // Errors
+        !cell.isValid && "bg-sudoku-cell-bg-error text-red-500",
+        // Borders
+        isThickRight && "border-r-2 border-sudoku-border-block",
+        isThickBottom && "border-b-2 border-sudoku-border-block"
+    );
 
-    // Render notes if no value
+    // Notes Grid
     const renderNotes = () => (
-        <div className={styles.notes}>
+        <div className="grid grid-cols-3 grid-rows-3 w-full h-full pointer-events-none p-0.5">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                <div key={num} className={styles.note}>
+                <div key={num} className="flex items-center justify-center text-[0.6rem] leading-none text-sudoku-text opacity-70">
                     {cell.notes.includes(num) ? num : ''}
                 </div>
             ))}
@@ -42,7 +46,7 @@ export const Cell: React.FC<CellProps> = ({ cell }) => {
     );
 
     return (
-        <div onClick={handleClick} className={classNames.join(' ')}>
+        <div onClick={handleClick} className={classes}>
             {cell.value ? cell.value : renderNotes()}
         </div>
     );
