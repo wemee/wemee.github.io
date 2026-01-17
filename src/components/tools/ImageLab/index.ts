@@ -1,0 +1,1 @@
+export { SmartEditor } from './SmartEditor';
