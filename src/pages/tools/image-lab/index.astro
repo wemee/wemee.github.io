@@ -11,149 +11,142 @@ import Navbar from '@/components/Navbar.astro';
   <!-- Cropper.js CSS -->
   <link rel="stylesheet" href="/libs/cropperjs/cropper.min.css">
 
-  <div class="container mt-4">
-    <h1 class="mb-3">🖼️ 圖片處理工廠</h1>
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+    <h1 class="text-3xl font-bold text-base-50 mb-4">🖼️ 圖片處理工廠</h1>
 
     <!-- 安全提示 -->
-    <div class="alert alert-info border-0 shadow-sm mb-4">
-      <h5 class="alert-heading fw-bold">🔒 你的照片很安全</h5>
-      <p class="mb-0">
-        所有處理都在瀏覽器完成，圖片<strong>不會上傳到任何伺服器</strong>。
+    <div class="bg-accent-cyan/20 border border-accent-cyan rounded-lg p-4 mb-6">
+      <h5 class="font-bold text-accent-cyan mb-1">🔒 你的照片很安全</h5>
+      <p class="text-base-400">
+        所有處理都在瀏覽器完成，圖片<strong class="text-base-50">不會上傳到任何伺服器</strong>。
       </p>
     </div>
 
     <!-- 上傳區 -->
-    <div id="uploadArea" class="upload-area mb-4">
-      <div class="upload-content">
-        <div class="upload-icon">📁</div>
-        <p class="mb-2">拖拉圖片到這裡，或點擊選擇檔案</p>
-        <p class="text-muted small">支援 JPG、PNG、WebP、GIF</p>
-        <input type="file" id="fileInput" accept="image/*" class="d-none">
-      </div>
+    <div id="uploadArea" class="upload-area border-2 border-dashed border-accent-blue rounded-xl p-12 text-center cursor-pointer hover:bg-accent-blue/10 transition mb-6">
+      <div class="text-6xl mb-4">📁</div>
+      <p class="text-base-400 mb-2">拖拉圖片到這裡，或點擊選擇檔案</p>
+      <p class="text-base-600 text-sm">支援 JPG、PNG、WebP、GIF</p>
+      <input type="file" id="fileInput" accept="image/*" class="hidden">
     </div>
 
     <!-- 編輯區 (預設隱藏) -->
-    <div id="editorArea" class="d-none">
-      <div class="row">
+    <div id="editorArea" class="hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- 左側：圖片預覽 -->
-        <div class="col-lg-8 mb-4">
-          <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <span>📷 編輯圖片</span>
-              <div class="d-flex align-items-center gap-2">
-                <div class="btn-group btn-group-sm" role="group">
-                  <button type="button" id="zoomOutBtn" class="btn btn-outline-light" title="縮小">➖</button>
-                  <button type="button" id="zoomInBtn" class="btn btn-outline-light" title="放大">➕</button>
-                  <button type="button" id="zoomResetBtn" class="btn btn-outline-light" title="重設">↺</button>
+        <div class="lg:col-span-2">
+          <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+            <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 flex items-center justify-between">
+              <span class="text-base-50">📷 編輯圖片</span>
+              <div class="flex items-center gap-2">
+                <div class="flex">
+                  <button type="button" id="zoomOutBtn" class="px-2 py-1 border border-base-600 rounded-l text-base-400 hover:bg-base-600 transition" title="縮小">➖</button>
+                  <button type="button" id="zoomInBtn" class="px-2 py-1 border-y border-base-600 text-base-400 hover:bg-base-600 transition" title="放大">➕</button>
+                  <button type="button" id="zoomResetBtn" class="px-2 py-1 border border-base-600 rounded-r text-base-400 hover:bg-base-600 transition" title="重設">↺</button>
                 </div>
-                <span id="originalInfo" class="badge bg-secondary"></span>
+                <span id="originalInfo" class="px-2 py-1 bg-base-600 rounded text-sm text-base-400"></span>
               </div>
             </div>
-            <div class="card-body p-0">
-              <div class="cropper-container-wrapper">
-                <img id="previewImage" src="" alt="預覽">
-              </div>
+            <div class="cropper-container-wrapper max-h-[500px] overflow-hidden bg-base-900">
+              <img id="previewImage" src="" alt="預覽" class="block max-w-full">
             </div>
-            <div class="card-footer d-flex justify-content-between align-items-center">
-              <small class="text-muted">💡 滑鼠滾輪縮放，拖拉邊框調整裁切</small>
-              <span id="outputDimensions" class="badge bg-info">-- × -- px</span>
+            <div class="px-4 py-3 border-t border-base-600 flex items-center justify-between">
+              <small class="text-base-600">💡 滑鼠滾輪縮放，拖拉邊框調整裁切</small>
+              <span id="outputDimensions" class="px-2 py-1 bg-accent-cyan/20 text-accent-cyan rounded text-sm">-- × -- px</span>
             </div>
           </div>
         </div>
 
         <!-- 右側：控制面板 -->
-        <div class="col-lg-4">
+        <div class="space-y-4">
           <!-- 步驟 1：裁切比例 -->
-          <div class="card mb-3">
-            <div class="card-header">
-              <span class="step-badge">1</span> 裁切比例
+          <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+            <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 flex items-center">
+              <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-accent-blue text-base-50 text-sm font-bold mr-2">1</span>
+              裁切比例
             </div>
-            <div class="card-body">
-              <div class="btn-group w-100" role="group">
-                <button type="button" class="btn btn-outline-primary aspect-btn active" data-aspect="free">自由</button>
-                <button type="button" class="btn btn-outline-primary aspect-btn" data-aspect="1">1:1</button>
-                <button type="button" class="btn btn-outline-primary aspect-btn" data-aspect="1.778">16:9</button>
-                <button type="button" class="btn btn-outline-primary aspect-btn" data-aspect="1.333">4:3</button>
+            <div class="p-4">
+              <div class="grid grid-cols-4 gap-2">
+                <button type="button" class="aspect-btn active px-3 py-2 rounded border border-accent-blue bg-accent-blue text-base-50 text-sm transition" data-aspect="free">自由</button>
+                <button type="button" class="aspect-btn px-3 py-2 rounded border border-base-600 text-base-400 hover:border-accent-blue text-sm transition" data-aspect="1">1:1</button>
+                <button type="button" class="aspect-btn px-3 py-2 rounded border border-base-600 text-base-400 hover:border-accent-blue text-sm transition" data-aspect="1.778">16:9</button>
+                <button type="button" class="aspect-btn px-3 py-2 rounded border border-base-600 text-base-400 hover:border-accent-blue text-sm transition" data-aspect="1.333">4:3</button>
               </div>
             </div>
           </div>
 
           <!-- 步驟 2：輸出大小 -->
-          <div class="card mb-3">
-            <div class="card-header">
-              <span class="step-badge">2</span> 輸出大小
+          <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+            <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 flex items-center">
+              <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-accent-blue text-base-50 text-sm font-bold mr-2">2</span>
+              輸出大小
             </div>
-            <div class="card-body">
-              <div class="size-options">
-                <label class="size-option">
-                  <input type="radio" name="sizeMode" value="original" checked>
-                  <span class="size-option-content">
-                    <span class="size-option-label">原始大小</span>
-                    <span class="size-option-desc">維持裁切後的尺寸</span>
-                  </span>
-                </label>
-                <label class="size-option">
-                  <input type="radio" name="sizeMode" value="half">
-                  <span class="size-option-content">
-                    <span class="size-option-label">縮小 50%</span>
-                    <span class="size-option-desc">適合一般分享</span>
-                  </span>
-                </label>
-                <label class="size-option">
-                  <input type="radio" name="sizeMode" value="custom">
-                  <span class="size-option-content">
-                    <span class="size-option-label">指定寬度</span>
-                    <span class="size-option-desc">自動計算高度</span>
-                  </span>
-                </label>
-              </div>
-              <!-- 自訂寬度輸入 (預設隱藏) -->
-              <div id="customWidthArea" class="mt-3 d-none">
-                <div class="input-group input-group-sm">
-                  <input type="number" id="customWidth" class="form-control" placeholder="800" value="800">
-                  <span class="input-group-text">px</span>
+            <div class="p-4 space-y-2">
+              <label class="size-option block cursor-pointer">
+                <input type="radio" name="sizeMode" value="original" checked class="hidden">
+                <span class="size-option-content flex flex-col p-3 border-2 border-base-600 rounded-lg transition">
+                  <span class="font-medium text-base-50">原始大小</span>
+                  <span class="text-sm text-base-600">維持裁切後的尺寸</span>
+                </span>
+              </label>
+              <label class="size-option block cursor-pointer">
+                <input type="radio" name="sizeMode" value="half" class="hidden">
+                <span class="size-option-content flex flex-col p-3 border-2 border-base-600 rounded-lg transition">
+                  <span class="font-medium text-base-50">縮小 50%</span>
+                  <span class="text-sm text-base-600">適合一般分享</span>
+                </span>
+              </label>
+              <label class="size-option block cursor-pointer">
+                <input type="radio" name="sizeMode" value="custom" class="hidden">
+                <span class="size-option-content flex flex-col p-3 border-2 border-base-600 rounded-lg transition">
+                  <span class="font-medium text-base-50">指定寬度</span>
+                  <span class="text-sm text-base-600">自動計算高度</span>
+                </span>
+              </label>
+              <!-- 自訂寬度輸入 -->
+              <div id="customWidthArea" class="hidden mt-3">
+                <div class="flex">
+                  <input type="number" id="customWidth" class="flex-1 px-3 py-2 bg-base-900 border border-base-600 rounded-l text-base-50 focus:border-accent-blue focus:outline-none" placeholder="800" value="800">
+                  <span class="px-3 py-2 bg-base-600 border border-base-600 rounded-r text-base-400">px</span>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- 步驟 3：輸出格式 -->
-          <div class="card mb-3">
-            <div class="card-header">
-              <span class="step-badge">3</span> 格式與品質
+          <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+            <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 flex items-center">
+              <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-accent-blue text-base-50 text-sm font-bold mr-2">3</span>
+              格式與品質
             </div>
-            <div class="card-body">
-              <div class="row g-2 mb-3">
-                <div class="col-6">
-                  <select id="outputFormat" class="form-select form-select-sm">
-                    <option value="auto">自動</option>
-                    <option value="jpeg">JPG</option>
-                    <option value="webp">WebP</option>
-                    <option value="png">PNG</option>
-                  </select>
-                </div>
-                <div class="col-6">
-                  <div class="d-flex align-items-center h-100">
-                    <input type="range" id="qualitySlider" class="form-range me-2" min="10" max="100" value="80" style="flex:1">
-                    <span id="qualityValue" class="small text-nowrap">80%</span>
-                  </div>
+            <div class="p-4 space-y-3">
+              <div class="grid grid-cols-2 gap-3">
+                <select id="outputFormat" class="px-3 py-2 bg-base-900 border border-base-600 rounded text-base-50 focus:border-accent-blue focus:outline-none">
+                  <option value="auto">自動</option>
+                  <option value="jpeg">JPG</option>
+                  <option value="webp">WebP</option>
+                  <option value="png">PNG</option>
+                </select>
+                <div class="flex items-center gap-2">
+                  <input type="range" id="qualitySlider" class="flex-1" min="10" max="100" value="80">
+                  <span id="qualityValue" class="text-sm text-base-400 w-10 text-right">80%</span>
                 </div>
               </div>
-              <div class="file-size-info">
-                <span>原始: <strong id="originalSize">-</strong></span>
-                <span class="mx-2">→</span>
-                <span>預估: <strong id="estimatedSize" class="text-success">-</strong></span>
+              <div class="flex justify-center items-center gap-4 p-3 bg-black/20 rounded text-sm">
+                <span class="text-base-400">原始: <strong id="originalSize" class="text-base-50">-</strong></span>
+                <span class="text-base-600">→</span>
+                <span class="text-base-400">預估: <strong id="estimatedSize" class="text-accent-green">-</strong></span>
               </div>
             </div>
           </div>
 
           <!-- 下載按鈕 -->
-          <button id="downloadBtn" class="btn btn-success w-100 btn-lg mb-2">
+          <button id="downloadBtn" class="w-full px-4 py-3 rounded-lg bg-accent-green hover:bg-accent-green/80 text-base-50 font-bold text-lg transition">
             ⬇️ 下載圖片
           </button>
 
           <!-- 重新上傳 -->
-          <button id="resetBtn" class="btn btn-outline-secondary w-100">
+          <button id="resetBtn" class="w-full px-4 py-2 rounded border border-base-600 text-base-400 hover:bg-base-600 transition">
             🔄 重新選擇圖片
           </button>
         </div>
@@ -163,112 +156,32 @@ import Navbar from '@/components/Navbar.astro';
 </BaseLayout>
 
 <style>
-  .upload-area {
-    border: 3px dashed var(--bs-primary);
-    border-radius: 1rem;
-    padding: 3rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: rgba(var(--bs-primary-rgb), 0.05);
-  }
-
-  .upload-area:hover,
-  .upload-area.dragover {
-    background: rgba(var(--bs-primary-rgb), 0.15);
-    border-color: var(--bs-success);
-  }
-
-  .upload-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-  }
-
-  .cropper-container-wrapper {
-    max-height: 500px;
-    overflow: hidden;
-    background: #1a1a1a;
-  }
-
-  .cropper-container-wrapper img {
-    display: block;
-    max-width: 100%;
-  }
-
-  /* Step badge */
-  .step-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 50%;
-    background: var(--bs-primary);
-    color: white;
-    font-size: 0.8rem;
-    font-weight: bold;
-    margin-right: 0.5rem;
-  }
-
-  /* Aspect buttons */
-  .aspect-btn.active {
-    background-color: var(--bs-primary);
-    color: white;
-  }
-
-  /* Size options - radio card style */
-  .size-options {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .size-option {
-    display: block;
-    cursor: pointer;
-    margin: 0;
-  }
-
-  .size-option input {
-    display: none;
-  }
-
-  .size-option-content {
-    display: flex;
-    flex-direction: column;
-    padding: 0.75rem;
-    border: 2px solid var(--bs-border-color);
-    border-radius: 0.5rem;
-    transition: all 0.2s ease;
-  }
-
+  /* Size option radio card style */
   .size-option input:checked + .size-option-content {
-    border-color: var(--bs-primary);
-    background: rgba(var(--bs-primary-rgb), 0.1);
+    border-color: var(--color-accent-blue);
+    background: rgba(38, 139, 210, 0.1);
   }
 
   .size-option-content:hover {
-    border-color: var(--bs-primary);
+    border-color: var(--color-accent-blue);
   }
 
-  .size-option-label {
-    font-weight: 500;
+  /* Aspect button active state */
+  .aspect-btn.active {
+    background-color: var(--color-accent-blue);
+    border-color: var(--color-accent-blue);
+    color: var(--color-base-50);
   }
 
-  .size-option-desc {
-    font-size: 0.75rem;
-    color: var(--bs-secondary);
+  .aspect-btn:not(.active):hover {
+    border-color: var(--color-accent-blue);
+    color: var(--color-base-50);
   }
 
-  /* File size info */
-  .file-size-info {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 0.85rem;
-    padding: 0.5rem;
-    background: rgba(0,0,0,0.2);
-    border-radius: 0.25rem;
+  /* Dragover state */
+  .upload-area.dragover {
+    background: rgba(38, 139, 210, 0.15);
+    border-color: var(--color-accent-green);
   }
 </style>
 
@@ -391,8 +304,8 @@ import Navbar from '@/components/Navbar.astro';
       originalInfo.textContent = img.naturalWidth + ' × ' + img.naturalHeight;
 
       previewImage.src = url;
-      uploadArea.classList.add('d-none');
-      editorArea.classList.remove('d-none');
+      uploadArea.classList.add('hidden');
+      editorArea.classList.remove('hidden');
 
       setTimeout(() => {
         if (cropper) cropper.destroy();
@@ -430,8 +343,12 @@ import Navbar from '@/components/Navbar.astro';
   // ===== Aspect ratio buttons =====
   aspectBtns.forEach(function(btn) {
     btn.addEventListener('click', function() {
-      aspectBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+      aspectBtns.forEach(b => {
+        b.classList.remove('active', 'bg-accent-blue', 'border-accent-blue', 'text-base-50');
+        b.classList.add('border-base-600', 'text-base-400');
+      });
+      btn.classList.add('active', 'bg-accent-blue', 'border-accent-blue', 'text-base-50');
+      btn.classList.remove('border-base-600', 'text-base-400');
 
       const aspect = btn.dataset.aspect;
       cropper.setAspectRatio(aspect === 'free' ? NaN : parseFloat(aspect));
@@ -446,7 +363,7 @@ import Navbar from '@/components/Navbar.astro';
   // ===== Size mode selection =====
   sizeModeRadios.forEach(function(radio) {
     radio.addEventListener('change', function() {
-      customWidthArea.classList.toggle('d-none', this.value !== 'custom');
+      customWidthArea.classList.toggle('hidden', this.value !== 'custom');
       updateEstimatedSize();
     });
   });
@@ -575,8 +492,8 @@ import Navbar from '@/components/Navbar.astro';
     cropHeight = 0;
     previewImage.src = '';
     fileInput.value = '';
-    editorArea.classList.add('d-none');
-    uploadArea.classList.remove('d-none');
+    editorArea.classList.add('hidden');
+    uploadArea.classList.remove('hidden');
 
     qualitySlider.value = 80;
     qualityValue.textContent = '80%';
@@ -586,10 +503,17 @@ import Navbar from '@/components/Navbar.astro';
     originalInfo.textContent = '';
     outputDimensions.textContent = '-- × -- px';
     customWidth.value = '800';
-    customWidthArea.classList.add('d-none');
+    customWidthArea.classList.add('hidden');
 
-    aspectBtns.forEach(b => b.classList.remove('active'));
-    aspectBtns[0].classList.add('active');
+    aspectBtns.forEach((b, i) => {
+      if (i === 0) {
+        b.classList.add('active', 'bg-accent-blue', 'border-accent-blue', 'text-base-50');
+        b.classList.remove('border-base-600', 'text-base-400');
+      } else {
+        b.classList.remove('active', 'bg-accent-blue', 'border-accent-blue', 'text-base-50');
+        b.classList.add('border-base-600', 'text-base-400');
+      }
+    });
 
     sizeModeRadios.forEach(r => r.checked = r.value === 'original');
   });
