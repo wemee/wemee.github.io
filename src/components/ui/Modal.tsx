@@ -26,7 +26,8 @@ export function Modal({
 }: ModalProps) {
     return (
         <Transition appear show={isOpen} as={Fragment}>
-            <Dialog as="div" className="relative z-50" onClose={onClose}>
+            {/* onClose={() => {}} disables ESC key closing to prevent conflict with Chinese IME */}
+            <Dialog as="div" className="relative z-50" onClose={() => { }}>
                 {/* Backdrop */}
                 <TransitionChild
                     as={Fragment}
