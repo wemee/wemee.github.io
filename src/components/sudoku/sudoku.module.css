@@ -1,0 +1,273 @@
+/* ========================================
+   Sudoku CSS Module
+   Fully scoped styles for Sudoku components.
+   No Tailwind dependency.
+   ======================================== */
+
+/* --- Variables --- */
+:root {
+  --sudoku-bg: #073642;
+  --sudoku-cell-bg: #002b36;
+  --sudoku-cell-bg-fixed: #073642;
+  --sudoku-cell-bg-selected: #268bd2;
+  --sudoku-cell-bg-related: rgba(38, 139, 210, 0.15);
+  --sudoku-cell-bg-error: rgba(220, 50, 47, 0.3);
+  --sudoku-text: #93a1a1;
+  --sudoku-text-fixed: #fdf6e3;
+  --sudoku-text-user: #2aa198;
+  --sudoku-text-selected: #fdf6e3;
+  --sudoku-border: #586e75;
+  --sudoku-border-block: #93a1a1;
+  --sudoku-button-bg: #073642;
+  --sudoku-button-hover: #586e75;
+}
+
+/* --- Board --- */
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(9, 1fr);
+  width: 100%;
+  max-width: 450px;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  border: 3px solid var(--sudoku-border-block);
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: var(--sudoku-border);
+  gap: 1px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* --- Cell --- */
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--sudoku-cell-bg);
+  color: var(--sudoku-text-user);
+  font-size: 1.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  position: relative;
+}
+
+.cell:hover {
+  filter: brightness(1.1);
+}
+
+.cell:active {
+  transform: scale(0.95);
+}
+
+/* --- Cell States --- */
+.cellFixed {
+  background-color: var(--sudoku-cell-bg-fixed);
+  color: var(--sudoku-text-fixed);
+  font-weight: 700;
+}
+
+.cellSelected {
+  background-color: var(--sudoku-cell-bg-selected);
+  color: var(--sudoku-text-selected);
+  z-index: 2;
+}
+
+.cellRelated {
+  background-color: var(--sudoku-cell-bg-related);
+}
+
+.cellError {
+  background-color: var(--sudoku-cell-bg-error);
+  color: #dc322f;
+}
+
+/* --- Block Borders (thicker lines for 3x3 blocks) --- */
+.cellRightBorder {
+  border-right: 2px solid var(--sudoku-border-block);
+}
+
+.cellBottomBorder {
+  border-bottom: 2px solid var(--sudoku-border-block);
+}
+
+/* --- Notes (Pencil Marks) --- */
+.notes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  color: var(--sudoku-text);
+  opacity: 0.7;
+}
+
+/* --- Controls --- */
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  width: 100%;
+  max-width: 450px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.actionBar {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.actionButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--sudoku-text);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.actionButton:hover {
+  background-color: var(--sudoku-button-hover);
+  color: var(--sudoku-text-fixed);
+}
+
+.actionButtonActive {
+  color: var(--sudoku-cell-bg-selected);
+}
+
+.actionLabel {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* --- Numpad --- */
+.numpad {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+}
+
+.numButton {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 300;
+  background-color: var(--sudoku-button-bg);
+  color: var(--sudoku-text-user);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  box-shadow: 0 4px 0 #002b36;
+}
+
+.numButton:hover {
+  filter: brightness(1.2);
+}
+
+.numButton:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+/* --- Layout --- */
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: linear-gradient(180deg, #002b36 0%, #073642 100%);
+}
+
+.gameWrapper {
+  padding: 1.5rem;
+  background: rgba(7, 54, 66, 0.5);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  border: 1px solid rgba(147, 161, 161, 0.2);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #fdf6e3;
+  letter-spacing: 0.1em;
+  margin: 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.subtitle {
+  font-size: 0.8rem;
+  color: var(--sudoku-text);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  margin-top: 0.25rem;
+}
+
+/* --- Loading --- */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--sudoku-text);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* --- Win Screen --- */
+.winOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.winTitle {
+  font-size: 3rem;
+  color: #2aa198;
+  font-weight: 800;
+  animation: bounceIn 0.5s ease-out;
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
