@@ -7,92 +7,96 @@ import Navbar from '@/components/Navbar.astro';
   description="免費的線上數學計算工具，包含：質數檢查、質因數分解、最大公因數 (GCD) 計算、最小公倍數 (LCM) 計算。即時計算，支援大數運算。"
 >
   <Navbar currentPage="math" />
-  <div class="container mt-5">
-    <h1 class="text-center mb-4">🧮 數學計算工具</h1>
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+    <h1 class="text-center text-3xl font-bold text-base-50 mb-6">🧮 數學計算工具</h1>
     
     <!-- 質數檢查 -->
-    <section class="card mb-4">
-      <div class="card-header">
-        <h2 class="h5 mb-0">質數檢查</h2>
+    <section class="rounded-lg border border-base-600 bg-base-800 mb-4 overflow-hidden">
+      <div class="px-4 py-3 bg-base-600/30 border-b border-base-600">
+        <h2 class="text-lg font-semibold text-base-50">質數檢查</h2>
       </div>
-      <div class="card-body">
-        <div class="row g-3 align-items-end">
-          <div class="col-md-8">
-            <label for="primeInput" class="form-label">輸入數字</label>
-            <input type="text" class="form-control" id="primeInput" placeholder="輸入一個整數">
+      <div class="p-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+          <div class="md:col-span-3">
+            <label for="primeInput" class="block text-sm text-base-400 mb-1">輸入數字</label>
+            <input type="text" id="primeInput" class="w-full px-3 py-2 bg-base-900 border border-base-600 rounded text-base-50 focus:border-accent-blue focus:outline-none" placeholder="輸入一個整數">
           </div>
-          <div class="col-md-4">
-            <button class="btn btn-primary w-100" id="primeButton">檢查</button>
+          <div>
+            <button id="primeButton" class="w-full px-4 py-2 rounded bg-accent-blue hover:bg-accent-blue/80 text-base-50 font-medium transition">檢查</button>
           </div>
         </div>
-        <div class="mt-3" id="primeResult"></div>
+        <div id="primeResult" class="mt-3"></div>
       </div>
     </section>
 
     <!-- 質因數分解 -->
-    <section class="card mb-4">
-      <div class="card-header">
-        <h2 class="h5 mb-0">質因數分解</h2>
+    <section class="rounded-lg border border-base-600 bg-base-800 mb-4 overflow-hidden">
+      <div class="px-4 py-3 bg-base-600/30 border-b border-base-600">
+        <h2 class="text-lg font-semibold text-base-50">質因數分解</h2>
       </div>
-      <div class="card-body">
-        <div class="row g-3 align-items-end">
-          <div class="col-md-8">
-            <label for="factorInput" class="form-label">輸入數字</label>
-            <input type="text" class="form-control" id="factorInput" placeholder="輸入一個大於 1 的整數">
+      <div class="p-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+          <div class="md:col-span-3">
+            <label for="factorInput" class="block text-sm text-base-400 mb-1">輸入數字</label>
+            <input type="text" id="factorInput" class="w-full px-3 py-2 bg-base-900 border border-base-600 rounded text-base-50 focus:border-accent-blue focus:outline-none" placeholder="輸入一個大於 1 的整數">
           </div>
-          <div class="col-md-4">
-            <button class="btn btn-primary w-100" id="factorButton">分解</button>
+          <div>
+            <button id="factorButton" class="w-full px-4 py-2 rounded bg-accent-blue hover:bg-accent-blue/80 text-base-50 font-medium transition">分解</button>
           </div>
         </div>
-        <div class="mt-3" id="factorResult"></div>
+        <div id="factorResult" class="mt-3"></div>
       </div>
     </section>
 
     <!-- 最大公因數 -->
-    <section class="card mb-4">
-      <div class="card-header">
-        <h2 class="h5 mb-0">最大公因數 (GCD)</h2>
+    <section class="rounded-lg border border-base-600 bg-base-800 mb-4 overflow-hidden">
+      <div class="px-4 py-3 bg-base-600/30 border-b border-base-600">
+        <h2 class="text-lg font-semibold text-base-50">最大公因數 (GCD)</h2>
       </div>
-      <div class="card-body">
-        <div class="row g-3 align-items-end">
-          <div class="col-md-4">
-            <label for="gcdInput1" class="form-label">第一個數字</label>
-            <input type="text" class="form-control" id="gcdInput1" placeholder="整數">
+      <div class="p-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+          <div>
+            <label for="gcdInput1" class="block text-sm text-base-400 mb-1">第一個數字</label>
+            <input type="text" id="gcdInput1" class="w-full px-3 py-2 bg-base-900 border border-base-600 rounded text-base-50 focus:border-accent-blue focus:outline-none" placeholder="整數">
           </div>
-          <div class="col-md-4">
-            <label for="gcdInput2" class="form-label">第二個數字</label>
-            <input type="text" class="form-control" id="gcdInput2" placeholder="整數">
+          <div>
+            <label for="gcdInput2" class="block text-sm text-base-400 mb-1">第二個數字</label>
+            <input type="text" id="gcdInput2" class="w-full px-3 py-2 bg-base-900 border border-base-600 rounded text-base-50 focus:border-accent-blue focus:outline-none" placeholder="整數">
           </div>
-          <div class="col-md-4">
-            <button class="btn btn-primary w-100" id="gcdButton">計算 GCD</button>
+          <div>
+            <button id="gcdButton" class="w-full px-4 py-2 rounded bg-accent-blue hover:bg-accent-blue/80 text-base-50 font-medium transition">計算 GCD</button>
           </div>
         </div>
-        <div class="mt-3" id="gcdResult"></div>
+        <div id="gcdResult" class="mt-3"></div>
       </div>
     </section>
 
     <!-- 最小公倍數 -->
-    <section class="card mb-4">
-      <div class="card-header">
-        <h2 class="h5 mb-0">最小公倍數 (LCM)</h2>
+    <section class="rounded-lg border border-base-600 bg-base-800 mb-4 overflow-hidden">
+      <div class="px-4 py-3 bg-base-600/30 border-b border-base-600">
+        <h2 class="text-lg font-semibold text-base-50">最小公倍數 (LCM)</h2>
       </div>
-      <div class="card-body">
-        <div class="row g-3 align-items-end">
-          <div class="col-md-4">
-            <label for="lcmInput1" class="form-label">第一個數字</label>
-            <input type="text" class="form-control" id="lcmInput1" placeholder="整數">
+      <div class="p-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+          <div>
+            <label for="lcmInput1" class="block text-sm text-base-400 mb-1">第一個數字</label>
+            <input type="text" id="lcmInput1" class="w-full px-3 py-2 bg-base-900 border border-base-600 rounded text-base-50 focus:border-accent-blue focus:outline-none" placeholder="整數">
           </div>
-          <div class="col-md-4">
-            <label for="lcmInput2" class="form-label">第二個數字</label>
-            <input type="text" class="form-control" id="lcmInput2" placeholder="整數">
+          <div>
+            <label for="lcmInput2" class="block text-sm text-base-400 mb-1">第二個數字</label>
+            <input type="text" id="lcmInput2" class="w-full px-3 py-2 bg-base-900 border border-base-600 rounded text-base-50 focus:border-accent-blue focus:outline-none" placeholder="整數">
           </div>
-          <div class="col-md-4">
-            <button class="btn btn-primary w-100" id="lcmButton">計算 LCM</button>
+          <div>
+            <button id="lcmButton" class="w-full px-4 py-2 rounded bg-accent-blue hover:bg-accent-blue/80 text-base-50 font-medium transition">計算 LCM</button>
           </div>
         </div>
-        <div class="mt-3" id="lcmResult"></div>
+        <div id="lcmResult" class="mt-3"></div>
       </div>
     </section>
+
+    <div class="text-center mt-6">
+      <a href="/math/" class="px-4 py-2 rounded border border-base-600 text-base-400 hover:bg-base-600 transition">← 返回數學工具</a>
+    </div>
   </div>
 </BaseLayout>
 
@@ -111,15 +115,15 @@ import Navbar from '@/components/Navbar.astro';
   function showResult(elementId: string, message: string, isError = false) {
     const el = document.getElementById(elementId);
     if (el) {
-      const alertClass = isError ? 'alert-danger' : 'alert-success';
-      el.innerHTML = `<div class="alert ${alertClass} mb-0">${message}</div>`;
+      const bgClass = isError ? 'bg-accent-red/20 border-accent-red text-accent-red' : 'bg-accent-green/20 border-accent-green text-accent-green';
+      el.innerHTML = `<div class="p-3 rounded border ${bgClass}">${message}</div>`;
     }
   }
 
   function appendResult(elementId: string, message: string) {
     const el = document.getElementById(elementId);
     if (el) {
-      el.innerHTML += `<div class="small text-muted">${message}</div>`;
+      el.innerHTML += `<div class="text-sm text-base-600">${message}</div>`;
     }
   }
 

@@ -4,64 +4,52 @@ import Navbar from '@/components/Navbar.astro';
 ---
 <BaseLayout title="傅立葉畫畫">
   <Navbar currentPage="math" />
-  <div class="container-fluid mt-4">
-    <h1 class="text-center mb-3">🎨 傅立葉畫畫</h1>
-    <p class="text-center text-muted mb-4">在左側畫布上畫一個圖形，看旋轉的圓圈如何重繪它！</p>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+    <h1 class="text-center text-3xl font-bold text-base-50 mb-2">🎨 傅立葉畫畫</h1>
+    <p class="text-center text-base-400 mb-6">在左側畫布上畫一個圖形，看旋轉的圓圈如何重繪它！</p>
     
-    <div class="row g-3">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <!-- 繪圖區 -->
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <span>🖌️ 繪圖區</span>
-            <button class="btn btn-sm btn-outline-danger" id="clearBtn">清除</button>
-          </div>
-          <div class="card-body p-2">
-            <canvas id="drawCanvas" width="500" height="400" style="border: 1px solid #ddd; cursor: crosshair; width: 100%; touch-action: none;"></canvas>
-          </div>
+      <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+        <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 flex items-center justify-between">
+          <span class="text-base-50">🖌️ 繪圖區</span>
+          <button id="clearBtn" class="px-3 py-1 rounded border border-accent-red text-accent-red hover:bg-accent-red/10 text-sm transition">清除</button>
+        </div>
+        <div class="p-2">
+          <canvas id="drawCanvas" width="500" height="400" class="w-full border border-base-600 rounded cursor-crosshair" style="touch-action: none;"></canvas>
         </div>
       </div>
       
       <!-- 動畫區 -->
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <span>🔄 傅立葉動畫</span>
-            <div>
-              <button class="btn btn-sm btn-primary" id="playBtn" disabled>播放</button>
-              <button class="btn btn-sm btn-secondary" id="pauseBtn" disabled>暫停</button>
-            </div>
+      <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+        <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 flex items-center justify-between">
+          <span class="text-base-50">🔄 傅立葉動畫</span>
+          <div class="flex gap-2">
+            <button id="playBtn" class="px-3 py-1 rounded bg-accent-blue hover:bg-accent-blue/80 text-base-50 text-sm transition disabled:opacity-50" disabled>播放</button>
+            <button id="pauseBtn" class="px-3 py-1 rounded border border-base-600 text-base-400 hover:bg-base-600 text-sm transition disabled:opacity-50" disabled>暫停</button>
           </div>
-          <div class="card-body p-2">
-            <canvas id="animCanvas" width="500" height="400" style="border: 1px solid #ddd; width: 100%;"></canvas>
-          </div>
+        </div>
+        <div class="p-2">
+          <canvas id="animCanvas" width="500" height="400" class="w-full border border-base-600 rounded"></canvas>
         </div>
       </div>
     </div>
     
     <!-- 控制項 -->
-    <div class="row mt-3">
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-body">
-            <label for="circleCount" class="form-label">圓圈數量: <span id="circleCountValue">50</span></label>
-            <input type="range" class="form-range" id="circleCount" min="1" max="200" value="50">
-            <small class="text-muted">圓圈越多，還原度越高，但動畫越複雜</small>
-          </div>
-        </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+      <div class="rounded-lg border border-base-600 bg-base-800 p-4">
+        <label for="circleCount" class="block text-base-50 mb-2">圓圈數量: <span id="circleCountValue" class="text-accent-blue">50</span></label>
+        <input type="range" id="circleCount" min="1" max="200" value="50" class="w-full">
+        <small class="text-base-600">圓圈越多，還原度越高，但動畫越複雜</small>
       </div>
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-body">
-            <label for="speedControl" class="form-label">動畫速度: <span id="speedValue">1x</span></label>
-            <input type="range" class="form-range" id="speedControl" min="0.1" max="3" step="0.1" value="1">
-          </div>
-        </div>
+      <div class="rounded-lg border border-base-600 bg-base-800 p-4">
+        <label for="speedControl" class="block text-base-50 mb-2">動畫速度: <span id="speedValue" class="text-accent-blue">1x</span></label>
+        <input type="range" id="speedControl" min="0.1" max="3" step="0.1" value="1" class="w-full">
       </div>
     </div>
     
-    <div class="text-center mt-4">
-      <a href="/math/" class="btn btn-outline-secondary">← 返回數學工具</a>
+    <div class="text-center mt-6">
+      <a href="/math/" class="px-4 py-2 rounded border border-base-600 text-base-400 hover:bg-base-600 transition">← 返回數學工具</a>
     </div>
   </div>
 </BaseLayout>
@@ -127,7 +115,7 @@ import Navbar from '@/components/Navbar.astro';
     drawCtx.save();
     drawCtx.translate(drawCanvas.width / 2, drawCanvas.height / 2);
     drawCtx.beginPath();
-    drawCtx.strokeStyle = '#78c2ad';
+    drawCtx.strokeStyle = '#2aa198';
     drawCtx.lineWidth = 2;
     path.forEach((p, i) => {
       if (i === 0) drawCtx.moveTo(p.re, p.im);
@@ -194,14 +182,14 @@ import Navbar from '@/components/Navbar.astro';
       y += radius * Math.sin(f.freq * time + f.phase + rotation);
       
       // 畫圓圈
-      animCtx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+      animCtx.strokeStyle = 'rgba(147, 161, 161, 0.3)';
       animCtx.lineWidth = 1;
       animCtx.beginPath();
       animCtx.arc(prevX, prevY, radius, 0, 2 * Math.PI);
       animCtx.stroke();
       
       // 畫半徑線
-      animCtx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
+      animCtx.strokeStyle = 'rgba(147, 161, 161, 0.5)';
       animCtx.beginPath();
       animCtx.moveTo(prevX, prevY);
       animCtx.lineTo(x, y);
@@ -212,7 +200,8 @@ import Navbar from '@/components/Navbar.astro';
   }
 
   function animate() {
-    animCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+    animCtx.fillStyle = '#002b36';
+    animCtx.fillRect(0, 0, animCanvas.width, animCanvas.height);
     animCtx.save();
     animCtx.translate(animCanvas.width / 2, animCanvas.height / 2);
     
@@ -226,7 +215,7 @@ import Navbar from '@/components/Navbar.astro';
     
     // 畫出重建的路徑
     animCtx.beginPath();
-    animCtx.strokeStyle = '#ff6b6b';
+    animCtx.strokeStyle = '#dc322f';
     animCtx.lineWidth = 2;
     drawnPath.forEach((p, i) => {
       if (i === 0) animCtx.moveTo(p.re, p.im);
@@ -235,7 +224,7 @@ import Navbar from '@/components/Navbar.astro';
     animCtx.stroke();
     
     // 畫出筆尖
-    animCtx.fillStyle = '#ff6b6b';
+    animCtx.fillStyle = '#dc322f';
     animCtx.beginPath();
     animCtx.arc(result.re, result.im, 4, 0, 2 * Math.PI);
     animCtx.fill();
@@ -278,7 +267,8 @@ import Navbar from '@/components/Navbar.astro';
     drawnPath = [];
     time = 0;
     drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-    animCtx.clearRect(0, 0, animCanvas.width, animCanvas.height);
+    animCtx.fillStyle = '#002b36';
+    animCtx.fillRect(0, 0, animCanvas.width, animCanvas.height);
     document.getElementById('playBtn')!.setAttribute('disabled', 'true');
   }
 
@@ -305,10 +295,14 @@ import Navbar from '@/components/Navbar.astro';
     speed = parseFloat((e.target as HTMLInputElement).value);
     document.getElementById('speedValue')!.textContent = speed.toFixed(1) + 'x';
   });
+
+  // 初始化動畫畫布背景
+  animCtx.fillStyle = '#002b36';
+  animCtx.fillRect(0, 0, animCanvas.width, animCanvas.height);
 </script>
 
 <style>
   canvas {
-    background: #fafafa;
+    background: #002b36;
   }
 </style>

@@ -5,143 +5,121 @@ import Navbar from '@/components/Navbar.astro';
 
 <BaseLayout
   title="交通流體力學模擬 | 幽靈塞車與交通波吸收視覺化"
-  description="為什麼高速公路會無故塞車？互動式模擬讓你親眼看見「幽靈塞車」如何產生，以及佛系駕駛的「交通波吸收」策略如何改善車流。使用 IDM 智慧駕駛模型，可調整車輛比例與擾動參數。"
+  description="為什麼高速公路會無故塞車？互動式模擬讓你親眼看見「幽靈塞車」如何產生，以及佛系駕駛的「交通波吸收」策略如何改善車流。"
 >
   <Navbar currentPage="math" />
 
-  <div class="container-fluid mt-4 px-4">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-8">
     <!-- 標題 -->
-    <div class="row mb-4">
-      <div class="col-12 text-center">
-        <h1 class="display-5">交通流體力學模擬</h1>
-        <p class="lead text-muted">
-          觀察「幽靈塞車」如何在無明確原因下產生與傳播
-        </p>
-      </div>
+    <div class="text-center mb-6">
+      <h1 class="text-3xl font-bold text-base-50 mb-2">🚗 交通流體力學模擬</h1>
+      <p class="text-base-400">觀察「幽靈塞車」如何在無明確原因下產生與傳播</p>
     </div>
 
-    <div class="row">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- 左側：Canvas -->
-      <div class="col-lg-8 mb-4">
-        <div class="card shadow border-0" style="background: #0a0a1a;">
-          <div class="card-body p-3 position-relative">
-            <canvas id="trafficCanvas" style="width: 100%; height: 450px; display: block;"></canvas>
-
-            <!-- 圖例 -->
-            <div class="position-absolute top-0 end-0 p-3">
-              <span class="badge me-1" style="background: #2ecc71;">正常車</span>
-              <span class="badge me-1" style="background: #e74c3c;">擾動者</span>
-              <span class="badge" style="background: #3498db;">吸收者</span>
-            </div>
+      <div class="lg:col-span-2 space-y-4">
+        <div class="rounded-lg border border-base-600 bg-base-900 overflow-hidden shadow-lg relative">
+          <canvas id="trafficCanvas" class="w-full" style="height: 450px;"></canvas>
+          
+          <div class="absolute top-3 right-3 flex gap-2">
+            <span class="px-2 py-1 rounded text-xs font-bold" style="background: #2ecc71;">正常車</span>
+            <span class="px-2 py-1 rounded text-xs font-bold" style="background: #e74c3c;">擾動者</span>
+            <span class="px-2 py-1 rounded text-xs font-bold" style="background: #3498db;">吸收者</span>
           </div>
         </div>
 
-        <!-- 速度歷史圖表 -->
-        <div class="card mt-3 border-secondary">
-          <div class="card-header bg-transparent py-2">
-            <small>平均速度歷史</small>
-          </div>
-          <div class="card-body p-2" style="background: #1a1a2e;">
-            <canvas id="historyChart" style="width: 100%; height: 80px; display: block;"></canvas>
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-2 bg-base-600/30 border-b border-base-600 text-sm text-base-400">平均速度歷史</div>
+          <div class="p-2 bg-base-900">
+            <canvas id="historyChart" class="w-full" style="height: 80px;"></canvas>
           </div>
         </div>
       </div>
 
       <!-- 右側：控制面板 -->
-      <div class="col-lg-4">
+      <div class="space-y-4">
         <!-- 播放控制 -->
-        <div class="card mb-3 border-secondary">
-          <div class="card-header bg-transparent py-2">
-            控制
-          </div>
-          <div class="card-body">
-            <div class="btn-group w-100 mb-3">
-              <button class="btn btn-success" id="playBtn">
-                <i class="bi bi-play-fill"></i> 播放
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-2 bg-base-600/30 border-b border-base-600 text-base-50">控制</div>
+          <div class="p-4">
+            <div class="grid grid-cols-3 gap-2 mb-4">
+              <button id="playBtn" class="px-4 py-2 rounded bg-accent-green hover:bg-accent-green/80 text-base-50 font-medium transition">
+                ▶ 播放
               </button>
-              <button class="btn btn-warning" id="pauseBtn" disabled>
-                <i class="bi bi-pause-fill"></i> 暫停
+              <button id="pauseBtn" class="px-4 py-2 rounded bg-accent-yellow hover:bg-accent-yellow/80 text-base-900 font-medium transition disabled:opacity-50" disabled>
+                ⏸ 暫停
               </button>
-              <button class="btn btn-secondary" id="resetBtn">
-                <i class="bi bi-arrow-counterclockwise"></i> 重置
+              <button id="resetBtn" class="px-4 py-2 rounded border border-base-600 text-base-400 hover:bg-base-600 font-medium transition">
+                ↺ 重置
               </button>
             </div>
 
-            <label class="form-label small">播放速度</label>
-            <div class="btn-group w-100" id="speedBtnGroup">
-              <button class="btn btn-outline-primary btn-sm" data-speed="0.5">0.5x</button>
-              <button class="btn btn-outline-primary btn-sm active" data-speed="1">1x</button>
-              <button class="btn btn-outline-primary btn-sm" data-speed="2">2x</button>
+            <label class="block text-sm text-base-400 mb-2">播放速度</label>
+            <div id="speedBtnGroup" class="grid grid-cols-3 gap-2">
+              <button class="px-3 py-1 rounded border border-accent-blue text-accent-blue hover:bg-accent-blue/10 text-sm transition" data-speed="0.5">0.5x</button>
+              <button class="px-3 py-1 rounded bg-accent-blue text-base-50 text-sm transition active" data-speed="1">1x</button>
+              <button class="px-3 py-1 rounded border border-accent-blue text-accent-blue hover:bg-accent-blue/10 text-sm transition" data-speed="2">2x</button>
             </div>
           </div>
         </div>
 
         <!-- 車輛設定 -->
-        <div class="card mb-3 border-secondary">
-          <div class="card-header bg-transparent py-2">
-            車輛設定
-          </div>
-          <div class="card-body">
-            <div class="mb-3">
-              <label class="form-label small d-flex justify-content-between">
-                <span>總車輛數</span>
-                <span id="totalVehiclesValue">30</span>
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-2 bg-base-600/30 border-b border-base-600 text-base-50">車輛設定</div>
+          <div class="p-4 space-y-4">
+            <div>
+              <label class="flex justify-between text-sm mb-1">
+                <span class="text-base-400">總車輛數</span>
+                <span id="totalVehiclesValue" class="text-base-50">30</span>
               </label>
-              <input type="range" class="form-range" id="totalVehicles"
-                     min="10" max="50" value="30">
+              <input type="range" id="totalVehicles" min="10" max="50" value="30" class="w-full">
             </div>
 
-            <div class="mb-3">
-              <label class="form-label small d-flex justify-content-between">
+            <div>
+              <label class="flex justify-between text-sm mb-1">
                 <span style="color: #2ecc71;">正常車</span>
-                <span id="normalRatioValue">60%</span>
+                <span id="normalRatioValue" class="text-base-50">60%</span>
               </label>
-              <input type="range" class="form-range" id="normalRatio"
-                     min="0" max="100" value="60">
+              <input type="range" id="normalRatio" min="0" max="100" value="60" class="w-full">
             </div>
 
-            <div class="mb-3">
-              <label class="form-label small d-flex justify-content-between">
+            <div>
+              <label class="flex justify-between text-sm mb-1">
                 <span style="color: #e74c3c;">擾動者</span>
-                <span id="disruptorRatioValue">20%</span>
+                <span id="disruptorRatioValue" class="text-base-50">20%</span>
               </label>
-              <input type="range" class="form-range" id="disruptorRatio"
-                     min="0" max="100" value="20">
+              <input type="range" id="disruptorRatio" min="0" max="100" value="20" class="w-full">
             </div>
 
-            <div class="mb-0">
-              <label class="form-label small d-flex justify-content-between">
+            <div>
+              <label class="flex justify-between text-sm mb-1">
                 <span style="color: #3498db;">吸收者</span>
-                <span id="absorberRatioValue">20%</span>
+                <span id="absorberRatioValue" class="text-base-50">20%</span>
               </label>
-              <input type="range" class="form-range" id="absorberRatio"
-                     min="0" max="100" value="20">
+              <input type="range" id="absorberRatio" min="0" max="100" value="20" class="w-full">
             </div>
           </div>
         </div>
 
         <!-- 擾動參數 -->
-        <div class="card border-secondary">
-          <div class="card-header bg-transparent py-2">
-            擾動參數
-          </div>
-          <div class="card-body">
-            <div class="mb-3">
-              <label class="form-label small d-flex justify-content-between">
-                <span>擾動頻率</span>
-                <span id="disruptionFreqValue">0.5 次/秒</span>
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-2 bg-base-600/30 border-b border-base-600 text-base-50">擾動參數</div>
+          <div class="p-4 space-y-4">
+            <div>
+              <label class="flex justify-between text-sm mb-1">
+                <span class="text-base-400">擾動頻率</span>
+                <span id="disruptionFreqValue" class="text-base-50">0.5 次/秒</span>
               </label>
-              <input type="range" class="form-range" id="disruptionFreq"
-                     min="0.1" max="2" step="0.1" value="0.5">
+              <input type="range" id="disruptionFreq" min="0.1" max="2" step="0.1" value="0.5" class="w-full">
             </div>
 
-            <div class="mb-0">
-              <label class="form-label small d-flex justify-content-between">
-                <span>擾動強度</span>
-                <span id="disruptionStrengthValue">50%</span>
+            <div>
+              <label class="flex justify-between text-sm mb-1">
+                <span class="text-base-400">擾動強度</span>
+                <span id="disruptionStrengthValue" class="text-base-50">50%</span>
               </label>
-              <input type="range" class="form-range" id="disruptionStrength"
-                     min="10" max="100" value="50">
+              <input type="range" id="disruptionStrength" min="10" max="100" value="50" class="w-full">
             </div>
           </div>
         </div>
@@ -149,92 +127,66 @@ import Navbar from '@/components/Navbar.astro';
     </div>
 
     <!-- 統計區 -->
-    <div class="row mt-4">
-      <div class="col-md-4 mb-3">
-        <div class="card text-center border-primary h-100">
-          <div class="card-body py-3">
-            <h6 class="text-muted small mb-1">平均速度</h6>
-            <h3 class="mb-0" id="avgVelocity">--</h3>
-          </div>
-        </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+      <div class="rounded-lg border border-accent-blue bg-base-800 p-4 text-center">
+        <h6 class="text-base-600 text-sm mb-1">平均速度</h6>
+        <h3 class="text-2xl font-bold text-base-50" id="avgVelocity">--</h3>
       </div>
-      <div class="col-md-4 mb-3">
-        <div class="card text-center border-warning h-100">
-          <div class="card-body py-3">
-            <h6 class="text-muted small mb-1">速度波動 (標準差)</h6>
-            <h3 class="mb-0" id="velocityStdDev">--</h3>
-          </div>
-        </div>
+      <div class="rounded-lg border border-accent-yellow bg-base-800 p-4 text-center">
+        <h6 class="text-base-600 text-sm mb-1">速度波動 (標準差)</h6>
+        <h3 class="text-2xl font-bold text-base-50" id="velocityStdDev">--</h3>
       </div>
-      <div class="col-md-4 mb-3">
-        <div class="card text-center border-success h-100">
-          <div class="card-body py-3">
-            <h6 class="text-muted small mb-1">模擬時間</h6>
-            <h3 class="mb-0" id="simTime">0:00</h3>
-          </div>
-        </div>
+      <div class="rounded-lg border border-accent-green bg-base-800 p-4 text-center">
+        <h6 class="text-base-600 text-sm mb-1">模擬時間</h6>
+        <h3 class="text-2xl font-bold text-base-50" id="simTime">0:00</h3>
       </div>
     </div>
 
     <!-- 創作緣起 -->
-    <div class="row mt-4">
-      <div class="col-12">
-        <div class="card border-0 shadow-sm" style="background: rgba(39, 174, 96, 0.15);">
-          <div class="card-body">
-            <h4 class="mb-3">創作緣起</h4>
-            <p class="mb-0" style="line-height: 1.8;">
-              在高速公路開車時，我常常在想：<strong>我能不能保持車速穩定？</strong><br><br>
-              譬如前車減速了，但我其實不必急著跟著煞車——因為在我逼近到危險距離之前，他可能就已經加速離開了。<br>
-              又譬如塞車時，前車起步衝刺，但我也不必猛踩油門追上去——反正他待會又會因為前方壅塞而停下來。<br><br>
-              這種「不急著反應」的駕駛方式，其實就是交通工程中所謂的<strong>「交通波吸收」</strong>。
-              透過保持穩定的車速與較大的跟車距離，我們可以避免將前方的速度波動放大傳遞給後方，進而減緩整體車流的壅塞。<br><br>
-              於是我做了這個模擬，讓你親眼看看：一個「佛系駕駛」如何默默改善交通。
-            </p>
-            <div class="mt-3">
-              <a href="/blog/traffic-flow-simulation/" class="btn btn-outline-success btn-sm">
-                閱讀開發筆記 →
-              </a>
-            </div>
-          </div>
-        </div>
+    <div class="rounded-lg bg-accent-green/15 mt-6 p-6">
+      <h4 class="text-xl font-bold text-base-50 mb-3">💡 創作緣起</h4>
+      <p class="text-base-400 leading-relaxed">
+        在高速公路開車時，我常常在想：<strong class="text-base-50">我能不能保持車速穩定？</strong><br><br>
+        譬如前車減速了，但我其實不必急著跟著煞車——因為在我逼近到危險距離之前，他可能就已經加速離開了。<br>
+        又譬如塞車時，前車起步衝刺，但我也不必猛踩油門追上去——反正他待會又會因為前方壅塞而停下來。<br><br>
+        這種「不急著反應」的駕駛方式，其實就是交通工程中所謂的<strong class="text-base-50">「交通波吸收」</strong>。
+        透過保持穩定的車速與較大的跟車距離，我們可以避免將前方的速度波動放大傳遞給後方，進而減緩整體車流的壅塞。
+      </p>
+      <div class="mt-4">
+        <a href="/blog/traffic-flow-simulation/" class="px-4 py-2 rounded border border-accent-green text-accent-green hover:bg-accent-green/10 transition">閱讀開發筆記 →</a>
       </div>
     </div>
 
     <!-- 教育說明 -->
-    <div class="row mt-4 mb-5">
-      <div class="col-12">
-        <div class="card border-0 shadow-sm" style="background: rgba(44, 62, 80, 0.4);">
-          <div class="card-body">
-            <h4 class="mb-3">為什麼會塞車？</h4>
-            <div class="row g-4">
-              <div class="col-md-4">
-                <h6 style="color: #e74c3c;">幽靈塞車 (Phantom Traffic Jam)</h6>
-                <p class="small text-muted mb-0">
-                  當一輛車稍微減速，後方車輛需要更大幅度的減速來維持安全距離。
-                  這個「減速波」會向後傳播，最終導致後方車輛完全停止，
-                  即使最初的減速只是輕微的。
-                </p>
-              </div>
-              <div class="col-md-4">
-                <h6 style="color: #3498db;">吸收者的作用</h6>
-                <p class="small text-muted mb-0">
-                  吸收者車輛保持較大的跟車距離，能夠「吸收」前方的速度波動，
-                  避免將減速放大傳遞給後方車輛。
-                  這就是為什麼部分自動駕駛車輛可以緩解塞車。
-                </p>
-              </div>
-              <div class="col-md-4">
-                <h6 style="color: #f39c12;">試試看！</h6>
-                <p class="small text-muted mb-0">
-                  調整吸收者比例，觀察「速度波動」指標的變化。
-                  研究顯示，只需約 5% 的車輛採用吸收策略，
-                  就能顯著改善交通流量！
-                </p>
-              </div>
-            </div>
-          </div>
+    <div class="rounded-lg bg-base-800/50 mt-6 p-6">
+      <h4 class="text-xl font-bold text-base-50 mb-4">🔬 為什麼會塞車？</h4>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+          <h6 class="font-bold mb-2" style="color: #e74c3c;">幽靈塞車 (Phantom Traffic Jam)</h6>
+          <p class="text-sm text-base-600">
+            當一輛車稍微減速，後方車輛需要更大幅度的減速來維持安全距離。
+            這個「減速波」會向後傳播，最終導致後方車輛完全停止，即使最初的減速只是輕微的。
+          </p>
+        </div>
+        <div>
+          <h6 class="font-bold mb-2" style="color: #3498db;">吸收者的作用</h6>
+          <p class="text-sm text-base-600">
+            吸收者車輛保持較大的跟車距離，能夠「吸收」前方的速度波動，
+            避免將減速放大傳遞給後方車輛。這就是為什麼部分自動駕駛車輛可以緩解塞車。
+          </p>
+        </div>
+        <div>
+          <h6 class="font-bold mb-2" style="color: #f39c12;">試試看！</h6>
+          <p class="text-sm text-base-600">
+            調整吸收者比例，觀察「速度波動」指標的變化。
+            研究顯示，只需約 5% 的車輛採用吸收策略，就能顯著改善交通流量！
+          </p>
         </div>
       </div>
+    </div>
+
+    <div class="text-center mt-6">
+      <a href="/math/" class="px-4 py-2 rounded border border-base-600 text-base-400 hover:bg-base-600 transition">← 返回數學工具</a>
     </div>
   </div>
 </BaseLayout>
@@ -243,7 +195,6 @@ import Navbar from '@/components/Navbar.astro';
   import { TrafficSimulator } from '@/lib/math/TrafficSimulator';
 
   document.addEventListener('DOMContentLoaded', () => {
-    // DOM 元素
     const playBtn = document.getElementById('playBtn') as HTMLButtonElement;
     const pauseBtn = document.getElementById('pauseBtn') as HTMLButtonElement;
     const resetBtn = document.getElementById('resetBtn') as HTMLButtonElement;
@@ -267,7 +218,6 @@ import Navbar from '@/components/Navbar.astro';
     const velocityStdDevEl = document.getElementById('velocityStdDev') as HTMLHeadingElement;
     const simTimeEl = document.getElementById('simTime') as HTMLHeadingElement;
 
-    // 初始化模擬器
     const sim = new TrafficSimulator('trafficCanvas', {
       onStatsUpdate: (stats) => {
         avgVelocityEl.textContent = stats.averageVelocity.toFixed(3);
@@ -285,7 +235,6 @@ import Navbar from '@/components/Navbar.astro';
 
     sim.setHistoryCanvas('historyChart');
 
-    // 初始配置
     const getConfig = () => ({
       totalVehicles: parseInt(totalVehiclesSlider.value),
       normalRatio: parseInt(normalRatioSlider.value) / 100,
@@ -300,7 +249,6 @@ import Navbar from '@/components/Navbar.astro';
 
     sim.init(getConfig());
 
-    // 控制按鈕事件
     playBtn.addEventListener('click', () => {
       const state = sim.getState();
       if (state === 'idle') {
@@ -310,31 +258,27 @@ import Navbar from '@/components/Navbar.astro';
       }
     });
 
-    pauseBtn.addEventListener('click', () => {
-      sim.pause();
-    });
-
+    pauseBtn.addEventListener('click', () => { sim.pause(); });
     resetBtn.addEventListener('click', () => {
       sim.reset();
       sim.init(getConfig());
     });
 
-    // 速度按鈕
     speedBtnGroup.querySelectorAll('button').forEach(btn => {
       btn.addEventListener('click', () => {
-        speedBtnGroup.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+        speedBtnGroup.querySelectorAll('button').forEach(b => {
+          b.className = 'px-3 py-1 rounded border border-accent-blue text-accent-blue hover:bg-accent-blue/10 text-sm transition';
+        });
+        btn.className = 'px-3 py-1 rounded bg-accent-blue text-base-50 text-sm transition active';
         sim.setTimeScale(parseFloat(btn.dataset.speed || '1'));
       });
     });
 
-    // 滑桿事件
     totalVehiclesSlider.addEventListener('input', () => {
       totalVehiclesValue.textContent = totalVehiclesSlider.value;
       sim.updateConfig('totalVehicles', parseInt(totalVehiclesSlider.value));
     });
 
-    // 車輛比例：正規化顯示實際百分比
     const updateRatioDisplay = () => {
       const normal = parseInt(normalRatioSlider.value);
       const disruptor = parseInt(disruptorRatioSlider.value);
@@ -359,7 +303,7 @@ import Navbar from '@/components/Navbar.astro';
     normalRatioSlider.addEventListener('input', updateRatioDisplay);
     disruptorRatioSlider.addEventListener('input', updateRatioDisplay);
     absorberRatioSlider.addEventListener('input', updateRatioDisplay);
-    updateRatioDisplay(); // 初始化顯示
+    updateRatioDisplay();
 
     disruptionFreqSlider.addEventListener('input', () => {
       disruptionFreqValue.textContent = disruptionFreqSlider.value + ' 次/秒';
@@ -371,9 +315,6 @@ import Navbar from '@/components/Navbar.astro';
       sim.updateConfig('disruptionStrength', parseInt(disruptionStrengthSlider.value) / 100);
     });
 
-    // 清理
-    window.addEventListener('beforeunload', () => {
-      sim.destroy();
-    });
+    window.addEventListener('beforeunload', () => { sim.destroy(); });
   });
 </script>
