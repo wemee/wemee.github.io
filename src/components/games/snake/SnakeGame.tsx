@@ -1,37 +1,76 @@
 /**
  * 貪吃蛇遊戲 React 組件
+ * 支援人類玩家 + AI 自動遊戲
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { SnakeGameCore, type Direction, type SnakeObservation } from '@/lib/games/SnakeGameCore';
+import { SnakeGameCore, type Direction, type SnakeObservation, type SnakeAction } from '@/lib/games/SnakeGameCore';
+import { SnakeAI } from '@/lib/games/SnakeAI';
 import { useGameLoop } from '@/hooks/useGameLoop';
 
 interface SnakeGameProps {
     gridWidth?: number;
     gridHeight?: number;
     cellSize?: number;
-    tickInterval?: number; // 每隔多少 ms 移動一次
+    tickInterval?: number;
 }
 
+const DIRECTION_TO_ACTION: Record<Direction, SnakeAction> = {
+    'UP': 0,
+    'DOWN': 1,
+    'LEFT': 2,
+    'RIGHT': 3,
+};
+
+const ACTION_TO_DIRECTION: Record<SnakeAction, Direction> = {
+    0: 'UP',
+    1: 'DOWN',
+    2: 'LEFT',
+    3: 'RIGHT',
+};
+
 export function SnakeGame({
-    gridWidth = 20,
-    gridHeight = 20,
-    cellSize = 20,
-    tickInterval = 150,
+    gridWidth = 10,  // 與訓練一致
+    gridHeight = 10,
+    cellSize = 30,
+    tickInterval = 100,
 }: SnakeGameProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const gameRef = useRef<SnakeGameCore | null>(null);
+    const aiRef = useRef<SnakeAI | null>(null);
     const lastTickRef = useRef<number>(0);
     const nextDirectionRef = useRef<Direction | null>(null);
 
     const [gameState, setGameState] = useState<SnakeObservation | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [isAIMode, setIsAIMode] = useState(false);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiError, setAiError] = useState<string | null>(null);
 
     // 初始化遊戲
     useEffect(() => {
         gameRef.current = new SnakeGameCore({ gridWidth, gridHeight });
         setGameState(gameRef.current.getState());
     }, [gridWidth, gridHeight]);
+
+    // 載入 AI
+    const loadAI = useCallback(async () => {
+        if (aiRef.current?.isLoaded()) return true;
+
+        setAiLoading(true);
+        setAiError(null);
+
+        try {
+            aiRef.current = new SnakeAI();
+            await aiRef.current.load();
+            setAiLoading(false);
+            return true;
+        } catch (e) {
+            setAiError('AI 載入失敗');
+            setAiLoading(false);
+            return false;
+        }
+    }, []);
 
     // 遊戲邏輯 tick
     const handleTick = useCallback((deltaTime: number) => {
@@ -41,16 +80,28 @@ export function SnakeGame({
         if (lastTickRef.current < tickInterval) return;
         lastTickRef.current = 0;
 
-        // 如果有待處理的方向變更
-        if (nextDirectionRef.current) {
-            gameRef.current.setDirection(nextDirectionRef.current);
-            nextDirectionRef.current = null;
+        let action: SnakeAction;
+
+        if (isAIMode && aiRef.current?.isLoaded()) {
+            // AI 決策
+            const state = gameRef.current.getState();
+            const snake: [number, number][] = state.snake.map(s => [s.x, s.y]);
+            const food: [number, number] = [state.food.x, state.food.y];
+            const direction = DIRECTION_TO_ACTION[state.direction];
+
+            action = aiRef.current.predict(snake, food, direction, gridWidth, gridHeight) as SnakeAction;
+        } else {
+            // 人類玩家
+            if (nextDirectionRef.current) {
+                gameRef.current.setDirection(nextDirectionRef.current);
+                nextDirectionRef.current = null;
+            }
+            action = gameRef.current.getDirectionAction();
         }
 
-        const action = gameRef.current.getDirectionAction();
         gameRef.current.step(action);
         setGameState(gameRef.current.getState());
-    }, [tickInterval]);
+    }, [tickInterval, isAIMode, gridWidth, gridHeight]);
 
     const { start, stop } = useGameLoop({
         onTick: handleTick,
@@ -58,16 +109,22 @@ export function SnakeGame({
     });
 
     // 開始遊戲
-    const startGame = useCallback(() => {
+    const startGame = useCallback(async (aiMode: boolean) => {
+        if (aiMode) {
+            const loaded = await loadAI();
+            if (!loaded) return;
+        }
+
         if (gameRef.current) {
             gameRef.current.reset();
             setGameState(gameRef.current.getState());
             lastTickRef.current = 0;
             nextDirectionRef.current = null;
+            setIsAIMode(aiMode);
             setIsPlaying(true);
             start();
         }
-    }, [start]);
+    }, [start, loadAI]);
 
     // 結束遊戲
     const stopGame = useCallback(() => {
@@ -85,7 +142,7 @@ export function SnakeGame({
     // 鍵盤控制
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (!isPlaying) return;
+            if (!isPlaying || isAIMode) return;
 
             let dir: Direction | null = null;
             switch (e.key) {
@@ -119,7 +176,7 @@ export function SnakeGame({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isPlaying]);
+    }, [isPlaying, isAIMode]);
 
     // 繪製畫面
     useEffect(() => {
@@ -167,7 +224,7 @@ export function SnakeGame({
         // 繪製蛇
         gameState.snake.forEach((segment, index) => {
             const isHead = index === 0;
-            ctx.fillStyle = isHead ? '#4ade80' : '#22c55e';
+            ctx.fillStyle = isHead ? (isAIMode ? '#60a5fa' : '#4ade80') : (isAIMode ? '#3b82f6' : '#22c55e');
             ctx.fillRect(
                 segment.x * cellSize + 1,
                 segment.y * cellSize + 1,
@@ -181,7 +238,6 @@ export function SnakeGame({
                 const eyeSize = 3;
                 const eyeOffset = cellSize / 4;
 
-                // 根據方向調整眼睛位置
                 let eye1 = { x: 0, y: 0 };
                 let eye2 = { x: 0, y: 0 };
                 switch (gameState.direction) {
@@ -228,11 +284,11 @@ export function SnakeGame({
             ctx.font = '18px sans-serif';
             ctx.fillText(`Score: ${gameState.score}`, width / 2, height / 2 + 10);
         }
-    }, [gameState, gridWidth, gridHeight, cellSize]);
+    }, [gameState, gridWidth, gridHeight, cellSize, isAIMode]);
 
     // 觸控控制
     const handleDirectionClick = (dir: Direction) => {
-        if (isPlaying) {
+        if (isPlaying && !isAIMode) {
             nextDirectionRef.current = dir;
         }
     };
@@ -244,8 +300,9 @@ export function SnakeGame({
         <div className="flex flex-col items-center gap-4">
             {/* 分數顯示 */}
             <div className="flex items-center gap-6 text-base-100">
-                <span className="text-lg">🏆 分數: <strong className="text-green-400">{gameState?.score ?? 0}</strong></span>
-                <span className="text-lg">🐍 長度: <strong className="text-green-400">{gameState?.snake.length ?? 0}</strong></span>
+                <span className="text-lg">🏆 分數: <strong className={isAIMode ? 'text-blue-400' : 'text-green-400'}>{gameState?.score ?? 0}</strong></span>
+                <span className="text-lg">🐍 長度: <strong className={isAIMode ? 'text-blue-400' : 'text-green-400'}>{gameState?.snake.length ?? 0}</strong></span>
+                {isAIMode && isPlaying && <span className="text-blue-400 text-sm">🤖 AI 模式</span>}
             </div>
 
             {/* 遊戲畫布 */}
@@ -259,61 +316,75 @@ export function SnakeGame({
 
                 {/* 開始按鈕 */}
                 {!isPlaying && (
-                    <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/50 rounded-lg">
                         <button
-                            onClick={startGame}
-                            className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition text-lg"
+                            onClick={() => startGame(false)}
+                            className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition text-lg w-48"
                         >
-                            {gameState?.gameOver ? '🔄 再來一局' : '▶️ 開始遊戲'}
+                            ▶️ 玩家遊戲
                         </button>
+                        <button
+                            onClick={() => startGame(true)}
+                            disabled={aiLoading}
+                            className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition text-lg w-48 disabled:opacity-50"
+                        >
+                            {aiLoading ? '載入中...' : '🤖 AI 遊戲'}
+                        </button>
+                        {aiError && <p className="text-red-400 text-sm">{aiError}</p>}
                     </div>
                 )}
             </div>
 
             {/* 手機觸控控制 */}
-            <div className="grid grid-cols-3 gap-2 lg:hidden">
-                <div></div>
-                <button
-                    onClick={() => handleDirectionClick('UP')}
-                    className="p-4 bg-base-700 hover:bg-base-600 rounded-lg text-2xl active:scale-95 transition"
-                >
-                    ⬆️
-                </button>
-                <div></div>
+            {!isAIMode && (
+                <div className="grid grid-cols-3 gap-2 lg:hidden">
+                    <div></div>
+                    <button
+                        onClick={() => handleDirectionClick('UP')}
+                        className="p-4 bg-base-700 hover:bg-base-600 rounded-lg text-2xl active:scale-95 transition"
+                    >
+                        ⬆️
+                    </button>
+                    <div></div>
 
-                <button
-                    onClick={() => handleDirectionClick('LEFT')}
-                    className="p-4 bg-base-700 hover:bg-base-600 rounded-lg text-2xl active:scale-95 transition"
-                >
-                    ⬅️
-                </button>
-                <div className="p-4 bg-base-800 rounded-lg text-center text-base-400 text-sm">
-                    🎮
+                    <button
+                        onClick={() => handleDirectionClick('LEFT')}
+                        className="p-4 bg-base-700 hover:bg-base-600 rounded-lg text-2xl active:scale-95 transition"
+                    >
+                        ⬅️
+                    </button>
+                    <div className="p-4 bg-base-800 rounded-lg text-center text-base-400 text-sm">
+                        🎮
+                    </div>
+                    <button
+                        onClick={() => handleDirectionClick('RIGHT')}
+                        className="p-4 bg-base-700 hover:bg-base-600 rounded-lg text-2xl active:scale-95 transition"
+                    >
+                        ➡️
+                    </button>
+
+                    <div></div>
+                    <button
+                        onClick={() => handleDirectionClick('DOWN')}
+                        className="p-4 bg-base-700 hover:bg-base-600 rounded-lg text-2xl active:scale-95 transition"
+                    >
+                        ⬇️
+                    </button>
+                    <div></div>
                 </div>
-                <button
-                    onClick={() => handleDirectionClick('RIGHT')}
-                    className="p-4 bg-base-700 hover:bg-base-600 rounded-lg text-2xl active:scale-95 transition"
-                >
-                    ➡️
-                </button>
-
-                <div></div>
-                <button
-                    onClick={() => handleDirectionClick('DOWN')}
-                    className="p-4 bg-base-700 hover:bg-base-600 rounded-lg text-2xl active:scale-95 transition"
-                >
-                    ⬇️
-                </button>
-                <div></div>
-            </div>
+            )}
 
             {/* 操作說明 */}
-            <p className="text-base-400 text-sm text-center hidden lg:block">
-                使用 <kbd className="px-1.5 py-0.5 bg-base-700 rounded text-xs">↑ ↓ ← →</kbd> 或
-                <kbd className="px-1.5 py-0.5 bg-base-700 rounded text-xs ml-1">W A S D</kbd> 控制方向
+            <p className="text-base-400 text-sm text-center">
+                {isAIMode
+                    ? '🤖 DQN 強化學習 AI 自動遊戲中...'
+                    : <>使用 <kbd className="px-1.5 py-0.5 bg-base-700 rounded text-xs">↑ ↓ ← →</kbd> 或
+                        <kbd className="px-1.5 py-0.5 bg-base-700 rounded text-xs ml-1">W A S D</kbd> 控制方向</>
+                }
             </p>
         </div>
     );
 }
 
 export default SnakeGame;
+
