@@ -96,7 +96,11 @@ class BaseRLTrainer(ABC):
         env = make_vec_env(self.env_id, n_envs=n_envs)
 
         # 建立模型
-        self.model = self.create_model(env)
+        if self.model is not None:
+            print("Using existing model for training...")
+            self.model.set_env(env)
+        else:
+            self.model = self.create_model(env)
 
         # 訓練
         self.model.learn(

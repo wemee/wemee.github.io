@@ -61,6 +61,8 @@ def main():
                         help='Evaluate existing model instead of training')
     parser.add_argument('--eval-freq', type=int, default=1000,
                         help='Evaluation frequency in steps (default: 1000)')
+    parser.add_argument('--load-model', type=str, default=None,
+                        help='Path to existing model to load (for continuing training)')
     args = parser.parse_args()
 
     # 建立訓練器
@@ -70,6 +72,16 @@ def main():
         output_dir=output_dir,
         config={'game_name': 'stairs'}
     )
+    
+    if args.load_model:
+        print(f"\n🔄 Loading pretrained model from: {args.load_model}")
+        trainer.model = PPO.load(args.load_model)
+        # Note: env will be set inside trainer.train() via self.model.set_env(env)
+        
+        # Reset logger
+        from stable_baselines3.common.logger import configure
+        new_logger = configure(str(trainer.log_dir), ["stdout", "tensorboard"])
+        trainer.model.set_logger(new_logger)
 
     if args.eval:
         # 評估模式

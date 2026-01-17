@@ -159,6 +159,16 @@ class StairsEnv(gym.Env):
 
         self.current_step += 1
 
+        obs = self._get_obs()
+        reward = result['reward']
+        terminated = result['terminated']
+        info = self._get_info()
+
+        # Curriculum Step 2: 只要得 2 分（成功跳兩次）就結束
+        if info['score'] >= 2:
+            terminated = True
+            reward = 20.0  # Success!
+        
         truncated = self.current_step >= self.max_steps
 
         return obs, reward, terminated, truncated, info
