@@ -2,11 +2,15 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Navbar from '@/components/Navbar.astro';
 
-/**
- * 數學工具項目的型別定義
- * @property badge - 可選。若提供，該工具會顯示為「開發中」狀態，
- *                   標題旁會顯示 badge 文字，按鈕變為 disabled 的「敬請期待」
- */
+// Map Bootstrap color names to Tailwind accent classes
+const colorMap: Record<string, { bg: string; hover: string; border: string }> = {
+  primary: { bg: 'bg-accent-blue', hover: 'hover:bg-accent-blue/80', border: 'border-accent-blue' },
+  success: { bg: 'bg-accent-green', hover: 'hover:bg-accent-green/80', border: 'border-accent-green' },
+  info: { bg: 'bg-accent-cyan', hover: 'hover:bg-accent-cyan/80', border: 'border-accent-cyan' },
+  warning: { bg: 'bg-accent-yellow', hover: 'hover:bg-accent-yellow/80', border: 'border-accent-yellow' },
+  danger: { bg: 'bg-accent-red', hover: 'hover:bg-accent-red/80', border: 'border-accent-red' },
+};
+
 interface Tool {
   title: string;
   description: string;
@@ -50,33 +54,47 @@ const tools: Tool[] = [
 ---
 <BaseLayout title="數學工具">
   <Navbar currentPage="math" />
-  <div class="container mt-5">
-    <h1 class="text-center mb-2">📐 數學工具</h1>
-    <p class="text-center text-muted mb-5">各種有趣的數學視覺化與計算工具</p>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+    <h1 class="text-center text-3xl font-bold text-base-50 mb-2">📐 數學工具</h1>
+    <p class="text-center text-base-400 mb-10">各種有趣的數學視覺化與計算工具</p>
     
-    <div class="row g-4">
-      {tools.map((tool) => (
-        <div class="col-md-6 col-lg-4">
-          <div class={`card h-100 border-${tool.color}`}>
-            <div class="card-body">
-              <h5 class="card-title">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {tools.map((tool) => {
+        const colors = colorMap[tool.color];
+        return (
+          <div class={`flex flex-col rounded-lg border ${colors.border} bg-base-800 h-full`}>
+            <div class="p-5 flex-1">
+              <h5 class="text-lg font-semibold text-base-50 mb-2">
                 {tool.title}
                 {tool.badge && (
-                  <span class="badge bg-warning text-dark ms-2">{tool.badge}</span>
+                  <span class="ml-2 px-2 py-0.5 text-xs rounded bg-accent-yellow text-base-900">
+                    {tool.badge}
+                  </span>
                 )}
               </h5>
-              <p class="card-text text-muted">{tool.description}</p>
+              <p class="text-base-400">{tool.description}</p>
             </div>
-            <div class="card-footer bg-transparent border-0">
+            <div class="px-5 pb-5">
               {tool.badge ? (
-                <button class="btn btn-outline-secondary w-100" disabled>敬請期待</button>
+                <button 
+                  class="block w-full text-center px-4 py-2 rounded border border-base-600 text-base-600 cursor-not-allowed"
+                  disabled
+                >
+                  敬請期待
+                </button>
               ) : (
-                <a href={tool.href} class={`btn btn-${tool.color} w-100`}>開始使用</a>
+                <a 
+                  href={tool.href} 
+                  class={`block text-center px-4 py-2 rounded ${colors.bg} ${colors.hover} text-base-50 font-medium transition`}
+                >
+                  開始使用
+                </a>
               )}
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   </div>
 </BaseLayout>
+

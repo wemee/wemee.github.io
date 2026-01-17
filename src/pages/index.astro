@@ -1,44 +1,52 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Navbar from '@/components/Navbar.astro';
+
+const sections = [
+  {
+    icon: '🧮',
+    title: '數學工具',
+    description: '提供互動式的數學視覺化工具，將抽象的公式概念具象化，助您直觀理解。',
+    href: '/math/'
+  },
+  {
+    icon: '🎮',
+    title: '遊戲',
+    description: '收錄經典重製與趣味的網頁小遊戲，無需下載安裝，打開瀏覽器即可輕鬆遊玩。',
+    href: '/game/'
+  },
+  {
+    icon: '🛠️',
+    title: '工具',
+    description: '解決生活小麻煩的線上工具：圖片壓縮、QR Code、證件照製作，全部純瀏覽器處理，不上傳資料。',
+    href: '/tools/'
+  }
+];
 ---
 <BaseLayout 
   title="挫屎勇的個人網站 | 數學工具・網頁遊戲・AI 開發日誌" 
   description="歡迎來到挫屎勇 (wemee) 的個人網站。這裡提供免費的數學教學工具 (GCD/LCM, 傅立葉變換)、經典網頁遊戲重製 (下樓梯, 打磚塊) 以及最新的 AI 技術開發部落格。"
 >
   <Navbar currentPage="home" />
-  <div class="container mt-5">
-    <h1>歡迎來到我的網站</h1>
-    <p>這是我的個人網站。</p>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+    <h1 class="text-3xl font-bold text-base-50 mb-2">歡迎來到我的網站</h1>
+    <p class="text-base-400 mb-8">這是我的個人網站。</p>
     
-    <div class="row mt-4">
-      <div class="col-md-4 mb-3">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">🧮 數學工具</h5>
-            <p class="card-text">提供互動式的數學視覺化工具，將抽象的公式概念具象化，助您直觀理解。</p>
-            <a href="/math/" class="btn btn-primary">前往</a>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {sections.map((section) => (
+        <div class="flex flex-col rounded-lg border border-base-600 bg-base-800 h-full">
+          <div class="p-5 flex-1">
+            <h5 class="text-lg font-semibold text-base-50 mb-2">{section.icon} {section.title}</h5>
+            <p class="text-base-400">{section.description}</p>
+          </div>
+          <div class="px-5 pb-5">
+            <a href={section.href} class="inline-block px-4 py-2 rounded bg-accent-blue hover:bg-accent-blue/80 text-base-50 font-medium transition">
+              前往
+            </a>
           </div>
         </div>
-      </div>
-      <div class="col-md-4 mb-3">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">🎮 遊戲</h5>
-            <p class="card-text">收錄經典重製與趣味的網頁小遊戲，無需下載安裝，打開瀏覽器即可輕鬆遊玩。</p>
-            <a href="/game/" class="btn btn-primary">前往</a>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4 mb-3">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">🛠️ 工具</h5>
-            <p class="card-text">解決生活小麻煩的線上工具：圖片壓縮、QR Code、證件照製作，全部純瀏覽器處理，不上傳資料。</p>
-            <a href="/tools/" class="btn btn-primary">前往</a>
-          </div>
-        </div>
-      </div>
+      ))}
     </div>
   </div>
 </BaseLayout>
+

@@ -1,6 +1,45 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Navbar from '@/components/Navbar.astro';
+
+const tools = [
+  {
+    icon: '📝',
+    title: '快速記事本',
+    description: '極速開啟的大版面記事本。自動儲存、可貼截圖，像便條紙一樣隨手記錄靈感。',
+    href: '/tools/notepad/'
+  },
+  {
+    icon: '✏️',
+    title: '免登入待辦清單',
+    description: '受夠了每個 App 都要註冊？這個待辦清單免帳號、資料存本地，秒開即用。',
+    href: '/tools/memo/'
+  },
+  {
+    icon: '📱',
+    title: 'QR Code 工具',
+    description: '解碼：截圖上傳解析 QR Code。產生：輸入文字或網址，產生 QR Code 下載使用。',
+    href: '/tools/qrcode/'
+  },
+  {
+    icon: '🖼️',
+    title: '圖片處理工廠',
+    description: '上傳證件照被說檔案太大？裁切、縮放、壓縮一站搞定，還能選輸出格式。',
+    href: '/tools/image-lab/'
+  },
+  {
+    icon: '📷',
+    title: '省錢證件照',
+    description: '自己排版大頭照，去超商印一張 4x6 只要 6 塊錢，省下照相館的錢！',
+    href: '/tools/id-photo/'
+  },
+  {
+    icon: '✏️',
+    title: '手寫數字辨識',
+    description: '在畫布上手寫數字，AI 即時辨識！深度學習模型在瀏覽器端運行，不需網路。',
+    href: '/tools/digit-recognition/'
+  }
+];
 ---
 <BaseLayout 
   title="實用工具集 | 挫屎勇的工具箱" 
@@ -8,94 +47,28 @@ import Navbar from '@/components/Navbar.astro';
 >
   <Navbar currentPage="tools" />
   
-  <div class="container mt-5">
-    <h1 class="mb-4">🛠️ 挫屎勇的實用工具</h1>
-    <p class="lead mb-5">一系列解決生活小麻煩的線上工具，<strong>全部純瀏覽器處理</strong>，你的資料不會被上傳到任何伺服器。</p>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+    <h1 class="text-3xl font-bold text-base-50 mb-4">🛠️ 挫屎勇的實用工具</h1>
+    <p class="text-lg text-base-400 mb-10">
+      一系列解決生活小麻煩的線上工具，<strong class="text-base-50">全部純瀏覽器處理</strong>，你的資料不會被上傳到任何伺服器。
+    </p>
     
-    <div class="row g-4">
-      <!-- 快速記事本 -->
-      <div class="col-md-6 col-lg-4">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body">
-            <div class="display-4 mb-3">📝</div>
-            <h5 class="card-title">快速記事本</h5>
-            <p class="card-text">極速開啟的大版面記事本。自動儲存、可貼截圖，像便條紙一樣隨手記錄靈感。</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {tools.map((tool) => (
+        <div class="flex flex-col rounded-lg border border-base-600 bg-base-800 shadow-sm h-full">
+          <div class="p-5 flex-1">
+            <div class="text-4xl mb-3">{tool.icon}</div>
+            <h5 class="text-lg font-semibold text-base-50 mb-2">{tool.title}</h5>
+            <p class="text-base-400">{tool.description}</p>
           </div>
-          <div class="card-footer bg-transparent border-0">
-            <a href="/tools/notepad/" class="btn btn-primary w-100">開始使用 →</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- 快速備忘 (待辦清單) -->
-      <div class="col-md-6 col-lg-4">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body">
-            <div class="display-4 mb-3">✏️</div>
-            <h5 class="card-title">免登入待辦清單</h5>
-            <p class="card-text">受夠了每個 App 都要註冊？這個待辦清單免帳號、資料存本地，秒開即用。</p>
-          </div>
-          <div class="card-footer bg-transparent border-0">
-            <a href="/tools/memo/" class="btn btn-primary w-100">開始使用 →</a>
+          <div class="px-5 pb-5">
+            <a href={tool.href} class="block text-center px-4 py-2 rounded bg-accent-blue hover:bg-accent-blue/80 text-base-50 font-medium transition">
+              開始使用 →
+            </a>
           </div>
         </div>
-      </div>
-
-      <!-- QR Code 工具 -->
-      <div class="col-md-6 col-lg-4">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body">
-            <div class="display-4 mb-3">📱</div>
-            <h5 class="card-title">QR Code 工具</h5>
-            <p class="card-text">解碼：截圖上傳解析 QR Code。產生：輸入文字或網址，產生 QR Code 下載使用。</p>
-          </div>
-          <div class="card-footer bg-transparent border-0">
-            <a href="/tools/qrcode/" class="btn btn-primary w-100">開始使用 →</a>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 圖片處理工廠 -->
-      <div class="col-md-6 col-lg-4">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body">
-            <div class="display-4 mb-3">🖼️</div>
-            <h5 class="card-title">圖片處理工廠</h5>
-            <p class="card-text">上傳證件照被說檔案太大？裁切、縮放、壓縮一站搞定，還能選輸出格式。</p>
-          </div>
-          <div class="card-footer bg-transparent border-0">
-            <a href="/tools/image-lab/" class="btn btn-primary w-100">開始使用 →</a>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 省錢證件照 -->
-      <div class="col-md-6 col-lg-4">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body">
-            <div class="display-4 mb-3">📷</div>
-            <h5 class="card-title">省錢證件照</h5>
-            <p class="card-text">自己排版大頭照，去超商印一張 4x6 只要 6 塊錢，省下照相館的錢！</p>
-          </div>
-          <div class="card-footer bg-transparent border-0">
-            <a href="/tools/id-photo/" class="btn btn-primary w-100">開始使用 →</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- 手寫數字辨識 -->
-      <div class="col-md-6 col-lg-4">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body">
-            <div class="display-4 mb-3">✏️</div>
-            <h5 class="card-title">手寫數字辨識</h5>
-            <p class="card-text">在畫布上手寫數字，AI 即時辨識！深度學習模型在瀏覽器端運行，不需網路。</p>
-          </div>
-          <div class="card-footer bg-transparent border-0">
-            <a href="/tools/digit-recognition/" class="btn btn-primary w-100">開始使用 →</a>
-          </div>
-        </div>
-      </div>
+      ))}
     </div>
   </div>
 </BaseLayout>
+

@@ -98,18 +98,23 @@ Phase 1: 基礎設施 (已完成 ✅)
 ├── 建立 global.css (@theme)
 └── 驗證 preflight: false 共存
 
-Phase 2: 低風險頁面
-├── game/index.astro (遊戲列表)
-├── tools/index.astro (工具列表)
-├── index.astro (首頁)
-└── about.astro (關於頁)
+Phase 2: 低風險頁面 (已完成 ✅ - 2026-01-17)
+├── game/index.astro (遊戲列表) ✅
+├── tools/index.astro (工具列表) ✅
+├── index.astro (首頁) ✅
+├── about.astro (關於頁) ✅
+├── BaseLayout.astro 加入 global.css import ✅
+└── ⚠️ 已知問題: Navbar 因 Tailwind/Bootstrap 衝突暫時消失
 
-Phase 3: 中等複雜度
-├── blog/index.astro
-├── blog/[...slug].astro
-├── math/index.astro
-├── 遊戲頁面 (stairs, breakout, collision, phaser-demo)
-└── Navbar.astro (關鍵！)
+Phase 3: 中等複雜度 (已完成 ✅ - 2026-01-17)
+├── blog/index.astro ✅
+├── blog/[...slug].astro ✅
+├── math/index.astro ✅
+├── game/stairs.astro ✅
+├── game/breakout.astro ✅
+├── game/collision/* (已使用自訂 CSS，無需遷移) ✅
+├── game/phaser-demo/* (已使用自訂 CSS，無需遷移) ✅
+└── Navbar.astro (完全遷移至 Tailwind) ✅
 
 Phase 4: 高複雜度工具
 ├── math/* (數學視覺化工具)

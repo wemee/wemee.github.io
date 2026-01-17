@@ -10,29 +10,29 @@ import '@/styles/game-common.css';
   <!-- 載入 TensorFlow.js for RL AI -->
   <script is:inline src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
   <Navbar currentPage="game" />
-  <div class="container-fluid mt-3">
-    <div class="row justify-content-center">
-      <div class="col-auto">
+  <div class="w-full px-4 mt-6">
+    <div class="flex justify-center">
+      <div class="inline-block">
         <div class="game-container">
           <canvas id="gameCanvas" width="400" height="600"></canvas>
           <div class="game-overlay" id="startScreen">
             <h2>🏃 下樓梯</h2>
             <p>不要掉出去，也別被頂到頂部！</p>
-            <button class="btn btn-lg btn-success" id="startBtn">開始遊戲</button>
-            <button class="btn btn-lg btn-warning mt-2" id="aiStartBtn">🤖 規則 AI</button>
-            <button class="btn btn-lg btn-info mt-2" id="rlAiStartBtn">🧠 強化學習 AI</button>
+            <button class="px-6 py-3 text-lg rounded bg-accent-green hover:bg-accent-green/80 text-base-50 font-medium transition" id="startBtn">開始遊戲</button>
+            <button class="px-6 py-3 text-lg rounded bg-accent-yellow hover:bg-accent-yellow/80 text-base-900 font-medium transition mt-2" id="aiStartBtn">🤖 規則 AI</button>
+            <button class="px-6 py-3 text-lg rounded bg-accent-cyan hover:bg-accent-cyan/80 text-base-50 font-medium transition mt-2" id="rlAiStartBtn">🧠 強化學習 AI</button>
             <div class="controls-info mt-3">
               <small>← → 或 A D 移動 | 空白鍵暫停</small>
             </div>
             <div id="rlAiLoadingInfo" class="mt-2 hidden">
-              <small class="text-info">🧠 正在載入 RL 模型...</small>
+              <small class="text-accent-cyan">🧠 正在載入 RL 模型...</small>
             </div>
           </div>
           <div class="game-overlay hidden" id="gameOverScreen">
             <h2>💀 遊戲結束</h2>
             <p>分數: <span id="finalScore">0</span></p>
             <p>最高分: <span id="highScore">0</span></p>
-            <button class="btn btn-lg btn-primary" id="restartBtn">再玩一次</button>
+            <button class="px-6 py-3 text-lg rounded bg-accent-blue hover:bg-accent-blue/80 text-base-50 font-medium transition" id="restartBtn">再玩一次</button>
           </div>
           <div class="game-overlay hidden" id="pauseScreen">
             <h2>⏸️ 暫停</h2>
@@ -45,17 +45,17 @@ import '@/styles/game-common.css';
         </div>
 
         <!-- AI 開發筆記 -->
-        <div class="mt-4 text-center">
-          <h5 class="text-muted mb-3">🤖 AI 開發筆記</h5>
-          <div class="d-flex flex-column gap-2">
-            <a href="/blog/stairs-ai-failure" class="btn btn-outline-warning btn-sm">
+        <div class="mt-6 text-center">
+          <h5 class="text-base-400 mb-3">🤖 AI 開發筆記</h5>
+          <div class="flex flex-col gap-2">
+            <a href="/blog/stairs-ai-failure" class="inline-block px-3 py-1.5 text-sm rounded border border-accent-yellow text-accent-yellow hover:bg-accent-yellow hover:text-base-900 transition">
               📖 規則 AI 的失敗實驗
             </a>
-            <a href="/blog/stairs-rl-success" class="btn btn-outline-info btn-sm">
+            <a href="/blog/stairs-rl-success" class="inline-block px-3 py-1.5 text-sm rounded border border-accent-cyan text-accent-cyan hover:bg-accent-cyan hover:text-base-50 transition">
               🎓 強化學習的成功之路
             </a>
           </div>
-          <p class="mt-3 text-muted small">
+          <p class="mt-3 text-base-600 text-sm">
             了解從規則引擎到深度強化學習的完整歷程
           </p>
         </div>
