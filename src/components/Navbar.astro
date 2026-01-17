@@ -3,99 +3,180 @@ interface Props {
   currentPage?: string;
 }
 const { currentPage = '' } = Astro.props;
----
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-  <div class="container-fluid">
-    <!-- Brand Logo (CSS Styled) -->
-    <a class="navbar-brand brand-logo" href="/">
-      WEMEE
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav">
 
-        <li class="nav-item dropdown">
-          <a class={`nav-link dropdown-toggle ${currentPage === 'math' ? 'active' : ''}`} href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            數學工具
+const navItems = [
+  {
+    label: '數學工具',
+    key: 'math',
+    items: [
+      { href: '/math/', label: '📐 全部工具' },
+      { divider: true },
+      { href: '/math/gcdlcm', label: '🧮 數學計算器' },
+      { href: '/math/fourier', label: '🎨 傅立葉畫畫' },
+      { href: '/math/waveform', label: '🎛️ 波形合成器' },
+      { href: '/math/dot-product', label: '🏹 向量內積視覺化' },
+      { href: '/math/traffic', label: '🚗 交通流體力學' },
+    ]
+  },
+  {
+    label: '遊戲',
+    key: 'game',
+    items: [
+      { href: '/game/', label: '🎮 全部遊戲' },
+      { divider: true },
+      { href: '/game/stairs', label: '🏃 下樓梯' },
+      { href: '/game/breakout', label: '🧱 打磚塊' },
+    ]
+  },
+  {
+    label: '實用工具',
+    key: 'tools',
+    items: [
+      { href: '/tools/', label: '🛠️ 全部工具' },
+      { divider: true },
+      { href: '/tools/memo/', label: '✏️ 免登入待辦清單' },
+      { href: '/tools/notepad/', label: '📝 快速記事本' },
+      { href: '/tools/qrcode/', label: '📱 QR Code 工具' },
+      { href: '/tools/image-lab/', label: '🖼️ 圖片處理工廠' },
+      { href: '/tools/id-photo/', label: '📷 省錢證件照' },
+      { href: '/tools/digit-recognition/', label: '✏️ 手寫數字辨識' },
+    ]
+  },
+  { label: '關於我', key: 'about', href: '/about' },
+  { label: '部落格', key: 'blog', href: '/blog/' },
+];
+---
+
+<nav class="tw-navbar">
+  <div class="tw-navbar-inner">
+    <div class="tw-navbar-content">
+      <!-- Brand Logo -->
+      <a href="/" class="tw-brand-logo">
+        WEMEE
+      </a>
+      
+      <!-- Desktop Navigation -->
+      <div class="tw-desktop-nav">
+        {navItems.map((item) => (
+          item.items ? (
+            <!-- Dropdown Menu -->
+            <div class="tw-dropdown">
+              <button 
+                class={`tw-nav-link ${currentPage === item.key ? 'active' : ''}`}
+              >
+                {item.label}
+                <svg class="tw-dropdown-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <!-- Dropdown Panel -->
+              <div class="tw-dropdown-menu">
+                {item.items.map((subItem) => (
+                  subItem.divider ? (
+                    <hr class="tw-dropdown-divider" />
+                  ) : (
+                    <a href={subItem.href} class="tw-dropdown-item">
+                      {subItem.label}
+                    </a>
+                  )
+                ))}
+              </div>
+            </div>
+          ) : (
+            <!-- Regular Link -->
+            <a 
+              href={item.href}
+              class={`tw-nav-link ${currentPage === item.key ? 'active' : ''}`}
+            >
+              {item.label}
+            </a>
+          )
+        ))}
+      </div>
+      
+      <!-- Mobile Menu Button -->
+      <button 
+        type="button" 
+        class="tw-mobile-menu-btn"
+        id="mobile-menu-button"
+        aria-expanded="false"
+      >
+        <span class="tw-sr-only">Open main menu</span>
+        <!-- Hamburger Icon -->
+        <svg class="tw-menu-icon" id="menu-icon-open" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        <!-- Close Icon -->
+        <svg class="tw-menu-icon hidden" id="menu-icon-close" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+  </div>
+  
+  <!-- Mobile Menu Panel -->
+  <div class="tw-mobile-menu hidden" id="mobile-menu">
+    <div class="tw-mobile-menu-content">
+      {navItems.map((item) => (
+        item.items ? (
+          <!-- Mobile Dropdown -->
+          <div class="tw-mobile-dropdown">
+            <button 
+              class={`tw-mobile-nav-link ${currentPage === item.key ? 'active' : ''}`}
+              data-dropdown-toggle
+            >
+              {item.label}
+              <svg class="tw-dropdown-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div class="tw-mobile-dropdown-content hidden" data-dropdown-content>
+              {item.items.map((subItem) => (
+                !subItem.divider && (
+                  <a href={subItem.href} class="tw-mobile-dropdown-item">
+                    {subItem.label}
+                  </a>
+                )
+              ))}
+            </div>
+          </div>
+        ) : (
+          <!-- Mobile Regular Link -->
+          <a 
+            href={item.href}
+            class={`tw-mobile-nav-link ${currentPage === item.key ? 'active' : ''}`}
+          >
+            {item.label}
           </a>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="/math/">📐 全部工具</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="/math/gcdlcm">🧮 數學計算器</a></li>
-            <li><a class="dropdown-item" href="/math/fourier">🎨 傅立葉畫畫</a></li>
-            <li><a class="dropdown-item" href="/math/waveform">🎛️ 波形合成器</a></li>
-            <li><a class="dropdown-item" href="/math/dot-product">🏹 向量內積視覺化</a></li>
-            <li><a class="dropdown-item" href="/math/traffic">🚗 交通流體力學</a></li>
-          </ul>
-        </li>
-        <li class="nav-item dropdown">
-          <a class={`nav-link dropdown-toggle ${currentPage === 'game' ? 'active' : ''}`} href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            遊戲
-          </a>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="/game/">🎮 全部遊戲</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="/game/stairs">🏃 下樓梯</a></li>
-            <li><a class="dropdown-item" href="/game/breakout">🧱 打磚塊</a></li>
-          </ul>
-        </li>
-        <li class="nav-item dropdown">
-          <a class={`nav-link dropdown-toggle ${currentPage === 'tools' ? 'active' : ''}`} href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            實用工具
-          </a>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="/tools/">🛠️ 全部工具</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="/tools/memo/">✏️ 免登入待辦清單</a></li>
-            <li><a class="dropdown-item" href="/tools/notepad/">📝 快速記事本</a></li>
-            <li><a class="dropdown-item" href="/tools/qrcode/">📱 QR Code 工具</a></li>
-            <li><a class="dropdown-item" href="/tools/image-lab/">🖼️ 圖片處理工廠</a></li>
-            <li><a class="dropdown-item" href="/tools/id-photo/">📷 省錢證件照</a></li>
-            <li><a class="dropdown-item" href="/tools/digit-recognition/">✏️ 手寫數字辨識</a></li>
-          </ul>
-        </li>
-        <li class="nav-item">
-          <a class={`nav-link ${currentPage === 'about' ? 'active' : ''}`} href="/about">關於我</a>
-        </li>
-        <li class="nav-item">
-          <a class={`nav-link ${currentPage === 'blog' ? 'active' : ''}`} href="/blog/">部落格</a>
-        </li>
-      </ul>
+        )
+      ))}
     </div>
   </div>
 </nav>
 
-<style>
-  /* Import Google Font for Steampunk look */
-  @import url('https://fonts.googleapis.com/css2?family=Rye&display=swap');
+<script>
+  // Mobile menu toggle
+  const mobileMenuButton = document.getElementById('mobile-menu-button');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const menuIconOpen = document.getElementById('menu-icon-open');
+  const menuIconClose = document.getElementById('menu-icon-close');
 
-  .brand-logo {
-    font-family: 'Rye', serif;
-    font-size: 2rem;
-    letter-spacing: 0.15rem;
-    font-weight: bold;
-    /* Golden Gradient Text */
-    background: linear-gradient(180deg, #FFD700 20%, #DAA520 50%, #B8860B 80%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    color: #FFD700; /* Fallback */
-    
-    /* Text Shadow for depth (industrial/metallic feel) */
-    text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
-    
-    /* Enhance visibility */
-    display: inline-block;
-    padding-top: 0;
-    padding-bottom: 0;
-    transition: transform 0.2s ease, text-shadow 0.2s ease;
-  }
+  mobileMenuButton?.addEventListener('click', () => {
+    const isOpen = mobileMenu?.classList.toggle('hidden') === false;
+    menuIconOpen?.classList.toggle('hidden', isOpen);
+    menuIconClose?.classList.toggle('hidden', !isOpen);
+    mobileMenuButton.setAttribute('aria-expanded', String(isOpen));
+  });
 
-  .brand-logo:hover {
-    transform: scale(1.05);
-    text-shadow: 3px 3px 0px rgba(0,0,0,0.6);
-    cursor: pointer;
-  }
-</style>
+  // Mobile dropdown toggles
+  document.querySelectorAll('[data-dropdown-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const content = button.nextElementSibling;
+      const icon = button.querySelector('svg');
+      const isOpen = content?.classList.toggle('hidden') === false;
+      if (icon) {
+        icon.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+      }
+    });
+  });
+</script>

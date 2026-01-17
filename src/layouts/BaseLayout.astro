@@ -72,10 +72,7 @@ const isArticle = !!articleDate;
     gtag('config', 'G-L980F1NV6M');
   </script>
 
-  <!-- Bootswatch Theme -->
-  <!-- <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/minty/bootstrap.min.css" rel="stylesheet"> -->
-  <!-- Switch to Solar theme for Steampunk/Geek vibe to match avatar -->
-  <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.0/dist/solar/bootstrap.min.css" rel="stylesheet">
+  <!-- Tailwind CSS is imported via global.css -->
 
   <!-- KaTeX CSS for math rendering (rendered at build time via rehype-katex) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
@@ -117,7 +114,6 @@ const isArticle = !!articleDate;
 <body>
   <slot />
   <Footer />
-  <!-- Bootstrap JS Bundle -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>
