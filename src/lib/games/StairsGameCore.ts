@@ -14,7 +14,7 @@
  */
 
 import { GameCore, type GameObservation, type StepResult, type GameCoreConfig } from './core/GameCore';
-import { type ScoringStrategy, FrontendScoringStrategy } from './core/ScoringStrategy';
+import { type ScoringStrategy, FrontendScoringStrategy, TrainingScoringStrategy } from './core/ScoringStrategy';
 
 // === 型別定義 ===
 

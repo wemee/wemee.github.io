@@ -9,6 +9,17 @@ import { WinModal } from '../../components/sudoku/WinModal';
 <SudokuAppLayout title="Sudoku - Pure Logic" description="A next-gen Sudoku experience. Pure Logic. Pure Zen.">
   <main class="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-sudoku-bg to-[#073642]">
     <WinModal client:only="react" />
+    
+    <!-- Back to game list link -->
+    <div class="w-full max-w-[450px] mb-4">
+      <a href="/game" class="inline-flex items-center text-sudoku-text hover:text-sudoku-text-user transition-colors text-sm">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        返回遊戲列表
+      </a>
+    </div>
+
     <div class="p-6 bg-[#073642]/50 backdrop-blur-md rounded-3xl border border-sudoku-text/20 relative">
       <header class="text-center mb-6">
         <h1 class="text-4xl font-extrabold text-[#fdf6e3] tracking-widest m-0 drop-shadow-md">
