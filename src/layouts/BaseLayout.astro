@@ -1,5 +1,6 @@
 ---
 import Footer from '@/components/Footer.astro';
+import Navbar from '@/components/Navbar.astro';
 import '@/styles/global.css';
 
 interface Props {
@@ -112,6 +113,7 @@ const isArticle = !!articleDate;
   )}
 </head>
 <body>
+  <Navbar />
   <slot />
   <Footer />
 

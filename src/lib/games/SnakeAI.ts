@@ -8,12 +8,8 @@ export interface SnakeAIConfig {
 }
 
 interface QNetWeights {
-    'q_net.0.weight': number[][];
-    'q_net.0.bias': number[];
-    'q_net.2.weight': number[][];
-    'q_net.2.bias': number[];
-    'q_net.4.weight': number[][];
-    'q_net.4.bias': number[];
+    // Layer names vary based on architecture
+    [key: string]: number[][] | number[];
 }
 
 /**
@@ -78,22 +74,36 @@ function extractFeatures(
 }
 
 /**
- * Simple feedforward network for Q-value prediction
+ * Feedforward network for Q-value prediction
+ * Supports any number of layers (detects from weights keys)
  */
 function forward(input: number[], weights: QNetWeights): number[] {
-    // Layer 1: Linear(11, 64) + ReLU
-    let x = matmul(weights['q_net.0.weight'], input);
-    x = addBias(x, weights['q_net.0.bias']);
-    x = relu(x);
+    let x = input;
 
-    // Layer 2: Linear(64, 64) + ReLU
-    x = matmul(weights['q_net.2.weight'], x);
-    x = addBias(x, weights['q_net.2.bias']);
-    x = relu(x);
+    // Find all layer indices (0, 2, 4, ... are Linear layers in Sequential)
+    const layerIndices: number[] = [];
+    for (const key of Object.keys(weights)) {
+        const match = key.match(/q_net\.(\d+)\.weight/);
+        if (match) {
+            layerIndices.push(parseInt(match[1]));
+        }
+    }
+    layerIndices.sort((a, b) => a - b);
 
-    // Layer 3: Linear(64, 4)
-    x = matmul(weights['q_net.4.weight'], x);
-    x = addBias(x, weights['q_net.4.bias']);
+    for (let i = 0; i < layerIndices.length; i++) {
+        const layerIdx = layerIndices[i];
+        const weight = weights[`q_net.${layerIdx}.weight`] as number[][];
+        const bias = weights[`q_net.${layerIdx}.bias`] as number[];
+
+        // Linear transformation
+        x = matmul(weight, x);
+        x = addBias(x, bias);
+
+        // ReLU for all but last layer
+        if (i < layerIndices.length - 1) {
+            x = relu(x);
+        }
+    }
 
     return x;
 }
@@ -146,9 +156,25 @@ export class SnakeAI {
             throw new Error('AI not loaded. Call load() first.');
         }
 
-        const features = extractFeatures(snake, food, direction, gridWidth, gridHeight);
+        // Ensure integer coordinates to match training environment
+        const r_snake = snake.map(p => [Math.round(p[0]), Math.round(p[1])] as [number, number]);
+        const r_food = [Math.round(food[0]), Math.round(food[1])] as [number, number];
+
+        const features = extractFeatures(r_snake, r_food, direction, gridWidth, gridHeight);
         const qValues = forward(features, this.weights);
-        return argmax(qValues);
+        const action = argmax(qValues);
+
+        // Debug logging - disabled for production
+        // console.log('SnakeAI State:', {
+        //     head: r_snake[0],
+        //     food: r_food,
+        //     dir: direction,
+        //     features,
+        //     qValues,
+        //     action
+        // });
+
+        return action;
     }
 }
 

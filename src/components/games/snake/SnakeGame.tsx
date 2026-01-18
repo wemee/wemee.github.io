@@ -30,9 +30,9 @@ const ACTION_TO_DIRECTION: Record<SnakeAction, Direction> = {
 };
 
 export function SnakeGame({
-    gridWidth = 10,  // 與訓練一致
-    gridHeight = 10,
-    cellSize = 30,
+    gridWidth = 32,
+    gridHeight = 32,
+    cellSize = 15,
     tickInterval = 100,
 }: SnakeGameProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
