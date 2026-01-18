@@ -1,15 +1,14 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import Navbar from '@/components/Navbar.astro';
 import '@/styles/game-common.css';
 ---
 <BaseLayout
   title="下樓梯遊戲 | 挫屎勇的遊戲間"
   description="經典反應遊戲「下樓梯」，挑戰你的反應極限！是男人就下 100 層。支援觸控、鍵盤、規則 AI 與強化學習 AI 自動遊玩模式。"
+  currentPage="game"
 >
   <!-- 載入 TensorFlow.js for RL AI -->
   <script is:inline src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
-  <Navbar currentPage="game" />
   <div class="w-full px-4 mt-6">
     <div class="flex justify-center">
       <div class="inline-block">

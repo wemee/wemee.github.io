@@ -1,13 +1,11 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import Navbar from '@/components/Navbar.astro';
 import NotepadApp from './_NotepadApp';
 ---
-<BaseLayout
+<BaseLayout currentPage="tools" currentPage="tools"
   title="快速記事本 - 秒開、自動儲存、可貼圖 | 實用工具"
   description="極速開啟的線上記事本。自動儲存到瀏覽器，支援貼上圖片，完全離線可用。隨開隨記，靈感不流失。"
 >
-  <Navbar currentPage="tools" />
   
   <NotepadApp client:load />
 </BaseLayout>

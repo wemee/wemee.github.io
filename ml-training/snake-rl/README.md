@@ -45,19 +45,39 @@ After training, `./output/` contains:
 
 ## Architecture
 
-- **Environment**: 10x10 grid, Snake game
-- **Features**: 11-dimensional Compact11Wrapper
-  - [0-2] Danger detection (straight, right, left)
-  - [3-6] Current direction (one-hot)
-  - [7-10] Food relative position
-- **Algorithm**: DQN with [128, 128] MLP
-- **Target**: 200+ avg score (20+ apples)
+Our architecture decouples training logic from inference, allowing fast Python training and lightweight browser deployment.
+
+### 1. Training (Backend)
+- **Environment**: Gymnasium-compatible `SnakeEnv`.
+- **Observation Space**:
+  - **LIDAR (28-dim)**: 8-directional raycasting for distance/wall/food detection. (New standard)
+  - **Compact11 (11-dim)**: Legacy simple vision.
+- **Algorithm**: Stable-Baselines3 DQN with MLP Policy.
+
+### 2. Inference (Frontend)
+- **Engine**: Pure TypeScript matrix math (no TF.js/ONNX runtime needed).
+- **Design Pattern**: **Strategy Pattern** for feature extraction.
+  - `SnakeAI` (Context) uses `FeatureExtractor` (Interface).
+  - Implementations: `LidarExtractor` & `Compact11Extractor`.
+- **Weights**: JSON format (weights & biases only).
 
 ## Frontend Integration
 
 The browser uses `SnakeAI.ts` to run inference:
-1. Extract 11 features from game state
-2. Forward pass through Q-network
+
+```typescript
+// Load Lidar-based AI (Default)
+const ai = new SnakeAI({ extractor: new LidarExtractor() });
+await ai.load('/models/snake/snake_lidar_weights.json');
+
+// Load Legacy AI
+const legacyAi = new SnakeAI({ extractor: new Compact11Extractor() });
+await legacyAi.load('/models/snake/snake_weights.json');
+```
+
+1. **Extract Features**: Convert game state to normalized array (using Strategy).
+2. **Forward Pass**: Run MLP inference using loaded JSON weights.
+3. **Action**: Choose argmax(Q-values).
 3. Select action with highest Q-value
 
 Weights are loaded from `/public/models/snake/snake_weights.json`.

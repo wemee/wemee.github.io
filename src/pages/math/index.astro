@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import Navbar from '@/components/Navbar.astro';
 
 // Map Bootstrap color names to Tailwind accent classes
 const colorMap: Record<string, { bg: string; hover: string; border: string }> = {
@@ -52,8 +51,7 @@ const tools: Tool[] = [
   }
 ];
 ---
-<BaseLayout title="數學工具">
-  <Navbar currentPage="math" />
+<BaseLayout currentPage="math" currentPage="math" title="數學工具">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
     <h1 class="text-center text-3xl font-bold text-base-50 mb-2">📐 數學工具</h1>
     <p class="text-center text-base-400 mb-10">各種有趣的數學視覺化與計算工具</p>

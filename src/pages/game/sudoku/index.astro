@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import Navbar from '@/components/Navbar.astro';
 import { SudokuBoard } from '@/components/sudoku/Board';
 import { Controls } from '@/components/sudoku/Controls';
 import { GameInfo } from '@/components/sudoku/GameInfo';
@@ -8,8 +7,7 @@ import { WinModal } from '@/components/sudoku/WinModal';
 import '@/styles/global.css';
 ---
 
-<BaseLayout title="數獨 - 挫屎勇的個人網站" description="經典數獨遊戲！運用邏輯填滿 9x9 方格，支援鍵盤操作與計時">
-  <Navbar currentPage="game" />
+<BaseLayout currentPage="game" currentPage="game" title="數獨 - 挫屎勇的個人網站" description="經典數獨遊戲！運用邏輯填滿 9x9 方格，支援鍵盤操作與計時">
   
   <!-- Tailwind Scoped Container -->
   <div class="container mt-5 mb-5">

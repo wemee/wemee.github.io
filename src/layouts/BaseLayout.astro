@@ -10,6 +10,8 @@ interface Props {
   articleDate?: Date;
   articleAuthor?: string;
   articleTags?: string[];
+  /** Current page identifier for nav highlighting (home, math, game, tools, about, blog) */
+  currentPage?: string;
 }
 
 const {
@@ -18,7 +20,8 @@ const {
   image = "/images/avatar.webp",
   articleDate,
   articleAuthor,
-  articleTags = []
+  articleTags = [],
+  currentPage,
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
@@ -113,7 +116,7 @@ const isArticle = !!articleDate;
   )}
 </head>
 <body>
-  <Navbar />
+  <Navbar currentPage={currentPage} />
   <slot />
   <Footer />
 

@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import Navbar from '@/components/Navbar.astro';
 
 const sections = [
   {
@@ -23,11 +22,10 @@ const sections = [
   }
 ];
 ---
-<BaseLayout 
+<BaseLayout currentPage="home" currentPage="home" 
   title="挫屎勇的個人網站 | 數學工具・網頁遊戲・AI 開發日誌" 
   description="歡迎來到挫屎勇 (wemee) 的個人網站。這裡提供免費的數學教學工具 (GCD/LCM, 傅立葉變換)、經典網頁遊戲重製 (下樓梯, 打磚塊) 以及最新的 AI 技術開發部落格。"
 >
-  <Navbar currentPage="home" />
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
     <h1 class="text-3xl font-bold text-base-50 mb-2">歡迎來到我的網站</h1>
     <p class="text-base-400 mb-8">這是我的個人網站。</p>

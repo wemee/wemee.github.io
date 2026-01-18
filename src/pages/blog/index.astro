@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import Navbar from '@/components/Navbar.astro';
 import { getCollection } from 'astro:content';
 import { formatDate } from '@/lib/utils';
 
@@ -8,8 +7,7 @@ const posts = (await getCollection('blog')).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
 );
 ---
-<BaseLayout title="部落格">
-  <Navbar currentPage="blog" />
+<BaseLayout currentPage="blog" currentPage="blog" title="部落格">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
     <h1 class="text-3xl font-bold text-base-50 mb-4">📝 部落格</h1>
     <p class="text-base-400 mb-8">技術筆記、學習心得與隨筆</p>

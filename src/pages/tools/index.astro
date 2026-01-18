@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import Navbar from '@/components/Navbar.astro';
 
 const tools = [
   {
@@ -41,11 +40,10 @@ const tools = [
   }
 ];
 ---
-<BaseLayout 
+<BaseLayout currentPage="tools" currentPage="tools" 
   title="實用工具集 | 挫屎勇的工具箱" 
   description="一系列解決生活小痛點的線上工具：圖片壓縮、QR Code 解析、證件照製作，全部純瀏覽器處理，不上傳資料。"
 >
-  <Navbar currentPage="tools" />
   
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
     <h1 class="text-3xl font-bold text-base-50 mb-4">🛠️ 挫屎勇的實用工具</h1>
