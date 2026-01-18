@@ -157,13 +157,26 @@ def train(args: argparse.Namespace) -> DQN:
             model_path,
             env=train_env, # Set the training environment
             tensorboard_log=str(OUTPUT_DIR / "logs"),
-            custom_objects={
-                "learning_rate": 1e-4,  # Keep low LR for fine-tuning
-                "exploration_fraction": 0.1, # Reduced exploration for fine-tuning
-                "exploration_initial_eps": 0.3,
-                "exploration_final_eps": 0.05
-            }
+            # Note: Exploration parameters passed here might be ignored by .load() in some SB3 versions
+            # We will manually override them below to be sure.
         )
+        
+        # === FORCE EXPLORATION ===
+        # The agent is stuck in a local optimum (looping).
+        # We enforce high initial exploration to break old habits.
+        # 0.5 -> 0.1 is more balanced for the Strict No-Retracing rule.
+        model.exploration_initial_eps = 0.5
+        model.exploration_final_eps = 0.1
+        model.exploration_fraction = 0.8  # Decay slowly over 80% of training
+        
+        # We must also reset the exploration schedule function
+        from stable_baselines3.common.utils import get_linear_fn
+        model.exploration_schedule = get_linear_fn(
+            model.exploration_initial_eps,
+            model.exploration_final_eps,
+            model.exploration_fraction,
+        )
+        print(f"🔄 Forced Exploration Reset: {model.exploration_initial_eps} -> {model.exploration_final_eps}")
     else:
         # Network architecture: slightly larger for 28-dim input
         policy_kwargs = dict(net_arch=[256, 256])

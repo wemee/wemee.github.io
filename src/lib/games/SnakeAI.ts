@@ -143,11 +143,10 @@ export class LidarExtractor implements FeatureExtractor {
     readonly name = 'LIDAR';
     readonly featureDim = 28;
 
-    // Hunger tracking (matches Python LidarHungerWrapper)
-    private readonly baseHungerPenalty = -0.01;
-    private readonly hungerIncrement = -0.01;
-    private readonly maxHungerPenalty = -0.5;
-    private currentHungerPenalty = -0.01;
+    // Hunger tracking replaced by Timeout (Matches Python LidarHungerWrapper update)
+    private stepsSinceEat = 0;
+    private readonly maxStepsTimeout = 500;
+
     private prevFoodDistance: number | null = null;
     private prevSnakeLength = 0;
 
@@ -165,18 +164,14 @@ export class LidarExtractor implements FeatureExtractor {
 
     /** Reset hunger state when starting a new game */
     reset(): void {
-        this.currentHungerPenalty = this.baseHungerPenalty;
+        this.stepsSinceEat = 0;
         this.prevFoodDistance = null;
         this.prevSnakeLength = 0;
     }
 
-    /** Get current normalized hunger level (0-1) */
+    /** Get current normalized hunger level (0-1) based on Timeout */
     getHunger(): number {
-        const hungerRange = Math.abs(this.maxHungerPenalty - this.baseHungerPenalty);
-        if (hungerRange > 0) {
-            return Math.abs(this.currentHungerPenalty - this.baseHungerPenalty) / hungerRange;
-        }
-        return 0;
+        return Math.min(this.stepsSinceEat / this.maxStepsTimeout, 1.0);
     }
 
     extract(state: SnakeGameState): number[] {
@@ -192,19 +187,9 @@ export class LidarExtractor implements FeatureExtractor {
         const ateFood = snake.length > this.prevSnakeLength && this.prevSnakeLength > 0;
 
         if (ateFood) {
-            // Reset penalty when eating
-            this.currentHungerPenalty = this.baseHungerPenalty;
-        } else if (this.prevFoodDistance !== null) {
-            const distanceDelta = this.prevFoodDistance - currentFoodDistance;
-            if (distanceDelta > 0) {
-                // Got closer to food - keep penalty unchanged
-            } else {
-                // Not approaching - accumulate penalty
-                this.currentHungerPenalty = Math.max(
-                    this.currentHungerPenalty + this.hungerIncrement,
-                    this.maxHungerPenalty
-                );
-            }
+            this.stepsSinceEat = 0;
+        } else {
+            this.stepsSinceEat++;
         }
 
         // Update state for next call
@@ -239,13 +224,9 @@ export class LidarExtractor implements FeatureExtractor {
         const maxPossibleLength = gridWidth * gridHeight;
         features[24] = snake.length / maxPossibleLength;
 
-        // Hunger (normalized, 0 = no hunger, 1 = max hunger)
-        const hungerRange = Math.abs(this.maxHungerPenalty - this.baseHungerPenalty);
-        if (hungerRange > 0) {
-            features[25] = Math.abs(this.currentHungerPenalty - this.baseHungerPenalty) / hungerRange;
-        } else {
-            features[25] = 0;
-        }
+        // Hunger (Normalized for input)
+        // Now using Timeout ratio (0 = fresh, 1 = timeout imminent)
+        features[25] = this.getHunger();
 
         // Food relative position (normalized, signed)
         features[26] = (food[0] - head[0]) / gridWidth;

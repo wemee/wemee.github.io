@@ -79,9 +79,9 @@ class LidarHungerWrapper(gym.Wrapper):
     
     def reset(self, **kwargs):
         obs, info = self.env.reset(**kwargs)
-        self.current_hunger_penalty = self.base_hunger_penalty
+        self.current_hunger_penalty = 0.0 # No longer using accumulated penalty
+        self.steps_since_eat = 0 # New Timeout Counter
         self.prev_food_distance = self._calculate_food_distance(obs)
-        self.steps_without_progress = 0
         return self._extract_features(obs), info
     
     def step(self, action):
@@ -95,36 +95,30 @@ class LidarHungerWrapper(gym.Wrapper):
         ate_food = reward > 0
         
         if ate_food:
-            # Reset penalty when eating
-            self.current_hunger_penalty = self.base_hunger_penalty
+            self.steps_since_eat = 0
+            # Clean slate
         else:
-            if self.prev_food_distance is not None:
-                distance_delta = self.prev_food_distance - current_food_distance
-                if distance_delta > 0:
-                    # Got closer to food - keep penalty unchanged
-                    pass
-                else:
-                    # Not approaching - accumulate penalty
-                    # STRATEGY: Shorter snakes get hungrier faster!
-                    # Multiplier = 1 + 5 * (1 - normalized_length)
-                    # Length 3/100 -> ~6x penalty (-0.06 per step)
-                    # Length 50/100 -> ~3.5x penalty (-0.035 per step)
-                    
-                    normalized_length = snake_length / (obs["grid_size"][0] * obs["grid_size"][1])
-                    penalty_multiplier = 1.0 + 5.0 * (1.0 - normalized_length)
-                    
-                    effective_increment = self.hunger_increment * penalty_multiplier
-                    
-                    self.current_hunger_penalty = max(
-                        self.current_hunger_penalty + effective_increment,
-                        self.max_hunger_penalty
-                    )
+            self.steps_since_eat += 1
+            # Tiny step penalty to prefer shorter paths when possible
+            # But small enough to allow waiting/looping when necessary
+            reward -= 0.001
         
-        # Apply hunger penalty
-        shaped_reward = reward + self.current_hunger_penalty
+        # === Hard Timeout (Anti-Looping) ===
+        if not terminated and self.steps_since_eat > 500:
+             truncated = True
+             # info["cause"] = "starvation_timeout"
+
+        # === NO Distance Reward ===
+        # === NO Space Awareness Penalty ===
+        # Pure RL: Figure it out yourself.
+        
+        # Apply shaped reward
+        shaped_reward = reward 
         
         # Update state
         self.prev_food_distance = current_food_distance
+        
+        # Failsafe is technically replaced by timeout, but keeping var logic clean
         
         return self._extract_features(obs), shaped_reward, terminated, truncated, info
     
@@ -133,6 +127,46 @@ class LidarHungerWrapper(gym.Wrapper):
         head = obs["snake"][0]
         food = obs["food"]
         return abs(head[0] - food[0]) + abs(head[1] - food[1])
+
+    def _calculate_accessible_area(self, obs: Dict[str, Any]) -> int:
+        """Calculate number of accessible cells from head using logical Flood Fill."""
+        snake = obs["snake"]
+        grid_size = obs["grid_size"]
+        w, h = grid_size
+        head = snake[0]
+        
+        # Create a set of obstacles (snake body)
+        # Note: Tail might move, but for safety we consider it an obstacle in this heuristic
+        obstacles = set(tuple(p) for p in snake)
+        
+        # BFS
+        queue = [tuple(head)]
+        visited = {tuple(head)}
+        count = 0
+        
+        while queue:
+            curr = queue.pop(0)
+            count += 1
+            
+            cx, cy = curr
+            for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                nx, ny = cx + dx, cy + dy
+                
+                # Check bounds
+                if not (0 <= nx < w and 0 <= ny < h):
+                    continue
+                
+                # Check obstacles
+                if (nx, ny) in obstacles:
+                    continue
+                    
+                if (nx, ny) not in visited:
+                    visited.add((nx, ny))
+                    queue.append((nx, ny))
+                    
+        # The count includes the head itself, so available empty space is count - 1
+        # But we compare against snake_length, so total area (including head) is a fine metric for "volume"
+        return count
     
     def _extract_features(self, obs: Dict[str, Any]) -> np.ndarray:
         """Extract 28-dimensional feature vector."""
@@ -160,10 +194,10 @@ class LidarHungerWrapper(gym.Wrapper):
                 head, dx, dy, grid_w, grid_h, snake_body, food
             )
             
-            # Normalize distance (0 = adjacent, 1 = far)
+            # Normalize distance (0=wall/body, 1=far)
             features[i] = distance / max_distance
             
-            # Is it a wall? (vs snake body)
+            # Is it a wall?
             features[8 + i] = 1.0 if hit_wall else 0.0
             
             # Food in this direction?
@@ -174,13 +208,9 @@ class LidarHungerWrapper(gym.Wrapper):
         max_possible_length = grid_w * grid_h
         features[24] = snake_length / max_possible_length
         
-        # Hunger (normalized penalty, 0 = no hunger, 1 = max hunger)
-        # current_hunger_penalty ranges from base_hunger_penalty to max_hunger_penalty
-        hunger_range = abs(self.max_hunger_penalty - self.base_hunger_penalty)
-        if hunger_range > 0:
-            features[25] = abs(self.current_hunger_penalty - self.base_hunger_penalty) / hunger_range
-        else:
-            features[25] = 0.0
+        # Hunger (Timeout Ratio)
+        # 0 = Just ate, 1 = About to die (timeout)
+        features[25] = min(self.steps_since_eat / 500.0, 1.0)
         
         # Food relative position (normalized, signed)
         features[26] = (food[0] - head[0]) / grid_w  # X
