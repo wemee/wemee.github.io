@@ -8,7 +8,210 @@ for various training strategies.
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
+
+
+class LidarHungerWrapper(gym.Wrapper):
+    """
+    Advanced Snake wrapper with 8-directional LIDAR vision and hunger penalty.
+    
+    This wrapper provides:
+    1. 8-directional ray casting (LIDAR) with normalized distances
+    2. Hunger penalty to prevent looping behavior
+    3. Distance-based reward shaping (closer to food = small reward)
+    
+    Features (28 total):
+        [0-7]   Distance to obstacle in 8 directions (normalized 0-1)
+                Directions: UP, DOWN, LEFT, RIGHT, UP-LEFT, UP-RIGHT, DOWN-LEFT, DOWN-RIGHT
+        [8-15]  Is obstacle a wall? (0 or 1) for each of 8 directions
+        [16-23] Is food visible in this direction? (0 or 1) for each direction
+        [24]    Snake length (normalized by max possible length)
+        [25]    Steps since last food (hunger, normalized)
+        [26]    Food distance X (normalized, signed: -1 to 1)
+        [27]    Food distance Y (normalized, signed: -1 to 1)
+    
+    Output: Box(shape=(28,), dtype=float32)
+    """
+    
+    # 8 directions: UP, DOWN, LEFT, RIGHT, UP-LEFT, UP-RIGHT, DOWN-LEFT, DOWN-RIGHT
+    DIRECTIONS = [
+        (0, -1),   # UP
+        (0, 1),    # DOWN
+        (-1, 0),   # LEFT
+        (1, 0),    # RIGHT
+        (-1, -1),  # UP-LEFT
+        (1, -1),   # UP-RIGHT
+        (-1, 1),   # DOWN-LEFT
+        (1, 1),    # DOWN-RIGHT
+    ]
+    
+    def __init__(
+        self, 
+        env: gym.Env,
+        hunger_penalty: float = -0.01,
+        food_approach_reward: float = 0.1,
+        max_hunger_steps: int = 100,
+    ):
+        """
+        Args:
+            env: The Snake environment to wrap
+            hunger_penalty: Penalty per step without eating (default: -0.01)
+            food_approach_reward: Reward for moving closer to food (default: 0.1)
+            max_hunger_steps: Steps before max hunger penalty kicks in (default: 100)
+        """
+        super().__init__(env)
+        
+        self.hunger_penalty = hunger_penalty
+        self.food_approach_reward = food_approach_reward
+        self.max_hunger_steps = max_hunger_steps
+        
+        # State tracking
+        self.steps_since_food = 0
+        self.prev_food_distance = None
+        
+        # Observation space: 28 features
+        self.observation_space = spaces.Box(
+            low=-1.0,
+            high=1.0,
+            shape=(28,),
+            dtype=np.float32
+        )
+    
+    def reset(self, **kwargs):
+        obs, info = self.env.reset(**kwargs)
+        self.steps_since_food = 0
+        self.prev_food_distance = self._calculate_food_distance(obs)
+        return self._extract_features(obs), info
+    
+    def step(self, action):
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        
+        # Calculate food distance
+        current_food_distance = self._calculate_food_distance(obs)
+        
+        # === Reward Shaping ===
+        shaped_reward = reward
+        
+        # 1. Hunger penalty (per step)
+        hunger_factor = min(self.steps_since_food / self.max_hunger_steps, 1.0)
+        shaped_reward += self.hunger_penalty * (1 + hunger_factor)  # Increases over time
+        
+        # 2. Food approach reward
+        if self.prev_food_distance is not None:
+            distance_delta = self.prev_food_distance - current_food_distance
+            if distance_delta > 0:
+                # Got closer to food
+                shaped_reward += self.food_approach_reward
+            elif distance_delta < 0:
+                # Moved away from food
+                shaped_reward -= self.food_approach_reward * 0.5
+        
+        # Update state
+        if reward > 0:  # Ate food
+            self.steps_since_food = 0
+        else:
+            self.steps_since_food += 1
+        
+        self.prev_food_distance = current_food_distance
+        
+        return self._extract_features(obs), shaped_reward, terminated, truncated, info
+    
+    def _calculate_food_distance(self, obs: Dict[str, Any]) -> float:
+        """Calculate Manhattan distance to food."""
+        head = obs["snake"][0]
+        food = obs["food"]
+        return abs(head[0] - food[0]) + abs(head[1] - food[1])
+    
+    def _extract_features(self, obs: Dict[str, Any]) -> np.ndarray:
+        """Extract 28-dimensional feature vector."""
+        snake = obs["snake"]
+        food = obs["food"]
+        grid_size = obs["grid_size"]
+        snake_length = obs["snake_length"]
+        
+        grid_w, grid_h = grid_size[0], grid_size[1]
+        max_distance = max(grid_w, grid_h)
+        head = snake[0]
+        
+        # Build snake body set (excluding head for collision check)
+        snake_body = set()
+        for i in range(1, snake_length):
+            x, y = snake[i]
+            if x >= 0:
+                snake_body.add((x, y))
+        
+        features = np.zeros(28, dtype=np.float32)
+        
+        # === LIDAR: 8 directions ===
+        for i, (dx, dy) in enumerate(self.DIRECTIONS):
+            distance, hit_wall, found_food = self._cast_ray(
+                head, dx, dy, grid_w, grid_h, snake_body, food
+            )
+            
+            # Normalize distance (0 = adjacent, 1 = far)
+            features[i] = distance / max_distance
+            
+            # Is it a wall? (vs snake body)
+            features[8 + i] = 1.0 if hit_wall else 0.0
+            
+            # Food in this direction?
+            features[16 + i] = 1.0 if found_food else 0.0
+        
+        # === Additional features ===
+        # Snake length (normalized)
+        max_possible_length = grid_w * grid_h
+        features[24] = snake_length / max_possible_length
+        
+        # Hunger (steps since food, normalized)
+        features[25] = min(self.steps_since_food / self.max_hunger_steps, 1.0)
+        
+        # Food relative position (normalized, signed)
+        features[26] = (food[0] - head[0]) / grid_w  # X: negative=left, positive=right
+        features[27] = (food[1] - head[1]) / grid_h  # Y: negative=up, positive=down
+        
+        return features
+    
+    def _cast_ray(
+        self,
+        start: Tuple[int, int],
+        dx: int,
+        dy: int,
+        grid_w: int,
+        grid_h: int,
+        snake_body: set,
+        food: np.ndarray,
+    ) -> Tuple[float, bool, bool]:
+        """
+        Cast a ray from start position in direction (dx, dy).
+        
+        Returns:
+            distance: Distance to first obstacle
+            hit_wall: True if obstacle is wall, False if snake body
+            found_food: True if food is along this ray (before obstacle)
+        """
+        x, y = start[0], start[1]
+        distance = 0
+        found_food = False
+        
+        while True:
+            x += dx
+            y += dy
+            distance += 1
+            
+            # Check if food is at this position
+            if x == food[0] and y == food[1]:
+                found_food = True
+            
+            # Check wall collision
+            if x < 0 or x >= grid_w or y < 0 or y >= grid_h:
+                return distance, True, found_food  # Hit wall
+            
+            # Check snake body collision
+            if (x, y) in snake_body:
+                return distance, False, found_food  # Hit snake
+        
+        # Should never reach here
+        return distance, True, found_food
 
 
 class Compact11Wrapper(gym.ObservationWrapper):

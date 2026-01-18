@@ -106,13 +106,18 @@ const game = new StairsGameCoreClass({
 
 ### 分步執行
 
-#### 1. 環境設置（只需一次）
+#### 1. 環境設置（使用統一虛擬環境）
 
 ```bash
-cd ml-training/stairs-rl
-python -m venv venv
+# 首次設置 - 從 ml-training 根目錄
+cd ml-training
+python3 -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+
+# 之後每次使用
+cd ml-training
+source venv/bin/activate
 ```
 
 #### 2. 編譯遊戲核心
@@ -125,8 +130,11 @@ npm run build:rl-core
 #### 3. 訓練模型
 
 ```bash
-cd ml-training/stairs-rl
-source venv/bin/activate
+# 確保已啟動統一虛擬環境
+cd ml-training && source venv/bin/activate
+
+# 進入 stairs-rl 目錄
+cd stairs-rl
 
 # 快速驗證（5K 步，約 5-10 秒）
 python train.py --timesteps 5000

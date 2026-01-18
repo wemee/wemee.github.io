@@ -15,11 +15,17 @@ register(
 
 # Re-export for convenience
 from environments.snake_env import SnakeEnv
-from environments.wrappers import Compact11Wrapper, GridFlattenWrapper, ImageWrapper
+from environments.wrappers import (
+    Compact11Wrapper,
+    GridFlattenWrapper,
+    ImageWrapper,
+    LidarHungerWrapper,
+)
 
 __all__ = [
     'SnakeEnv',
     'Compact11Wrapper',
     'GridFlattenWrapper',
     'ImageWrapper',
+    'LidarHungerWrapper',
 ]

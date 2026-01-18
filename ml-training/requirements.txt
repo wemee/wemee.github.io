@@ -1,0 +1,32 @@
+# ML Training Framework - Unified Dependencies
+# 統一的機器學習訓練依賴
+#
+# Usage:
+#   cd ml-training
+#   python3 -m venv venv
+#   source venv/bin/activate
+#   pip install -r requirements.txt
+
+# === Core RL Framework ===
+stable-baselines3>=2.2.0      # RL algorithms (DQN, PPO, etc.)
+gymnasium>=0.29.0             # RL environment standard
+
+# === Deep Learning Backend ===
+torch>=2.0.0                  # PyTorch for neural networks
+
+# === JavaScript Engine (for numerical consistency) ===
+mini-racer>=0.12.0            # V8 engine for Python (used by stairs-rl)
+
+# === Numerical & Data ===
+numpy>=1.24.0
+pandas>=2.0.0
+
+# === Visualization ===
+matplotlib>=3.7.0
+
+# === Utilities ===
+tqdm>=4.65.0                  # Progress bars
+rich>=13.0.0                  # Better terminal output
+
+# === Monitoring ===
+tensorboard>=2.14.0           # Training visualization

@@ -123,12 +123,26 @@ gameCore.step(action);
 
 ## 📦 依賴安裝
 
-### Python (訓練)
+### Python (訓練) - 統一虛擬環境
+
+**Important**: 所有 RL 訓練模組 (snake-rl, stairs-rl 等) 共用同一個虛擬環境，位於 `ml-training/venv/`。
+
 ```bash
-cd ml-training/stairs-rl
-python -m venv venv
+# 首次設置
+cd ml-training
+python3 -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+
+# 之後每次使用
+cd ml-training
+source venv/bin/activate
+
+# 訓練 Snake AI
+cd snake-rl && python train.py
+
+# 訓練 Stairs AI  
+cd stairs-rl && python train.py
 ```
 
 ### JavaScript (前端)

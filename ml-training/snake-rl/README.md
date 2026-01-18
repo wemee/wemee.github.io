@@ -5,13 +5,15 @@ Train a DQN agent to play Snake, with browser-compatible weight export.
 ## Quick Start
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+# 啟動虛擬環境 (使用 ml-training 根目錄的統一 venv)
+cd ml-training
+source venv/bin/activate
 
-# Train (stops when avg score reaches 200)
+# 進入 snake-rl 目錄並訓練
+cd snake-rl
 python train.py
 
-# Deploy weights to frontend
+# 部署權重到前端
 python deploy.py
 ```
 
