@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { SnakeGameCore, type Direction, type SnakeObservation, type SnakeAction } from '@/lib/games/SnakeGameCore';
-import { SnakeAI } from '@/lib/games/SnakeAI';
+import { SnakeAI, LidarExtractor } from '@/lib/games/SnakeAI';
 import { useGameLoop } from '@/hooks/useGameLoop';
 
 interface SnakeGameProps {
@@ -61,8 +61,8 @@ export function SnakeGame({
         setAiError(null);
 
         try {
-            aiRef.current = new SnakeAI();
-            await aiRef.current.load();
+            aiRef.current = new SnakeAI({ extractor: new LidarExtractor() });
+            await aiRef.current.load('/models/snake/snake_lidar_weights.json');
             setAiLoading(false);
             return true;
         } catch (e) {
