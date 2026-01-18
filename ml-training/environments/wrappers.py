@@ -48,25 +48,25 @@ class LidarHungerWrapper(gym.Wrapper):
     def __init__(
         self, 
         env: gym.Env,
-        hunger_penalty: float = -0.01,
-        food_approach_reward: float = 0.1,
-        max_hunger_steps: int = 100,
+        base_hunger_penalty: float = -0.01,
+        hunger_increment: float = -0.01,
+        max_hunger_penalty: float = -0.5,
     ):
         """
         Args:
             env: The Snake environment to wrap
-            hunger_penalty: Penalty per step without eating (default: -0.01)
-            food_approach_reward: Reward for moving closer to food (default: 0.1)
-            max_hunger_steps: Steps before max hunger penalty kicks in (default: 100)
+            base_hunger_penalty: Initial hunger penalty (default: -0.01)
+            hunger_increment: How much penalty increases when not approaching food (default: -0.01)
+            max_hunger_penalty: Maximum hunger penalty cap (default: -0.5)
         """
         super().__init__(env)
         
-        self.hunger_penalty = hunger_penalty
-        self.food_approach_reward = food_approach_reward
-        self.max_hunger_steps = max_hunger_steps
+        self.base_hunger_penalty = base_hunger_penalty
+        self.hunger_increment = hunger_increment
+        self.max_hunger_penalty = max_hunger_penalty
         
         # State tracking
-        self.steps_since_food = 0
+        self.current_hunger_penalty = base_hunger_penalty
         self.prev_food_distance = None
         
         # Observation space: 28 features
@@ -79,8 +79,9 @@ class LidarHungerWrapper(gym.Wrapper):
     
     def reset(self, **kwargs):
         obs, info = self.env.reset(**kwargs)
-        self.steps_since_food = 0
+        self.current_hunger_penalty = self.base_hunger_penalty
         self.prev_food_distance = self._calculate_food_distance(obs)
+        self.steps_without_progress = 0
         return self._extract_features(obs), info
     
     def step(self, action):
@@ -88,30 +89,41 @@ class LidarHungerWrapper(gym.Wrapper):
         
         # Calculate food distance
         current_food_distance = self._calculate_food_distance(obs)
+        snake_length = obs["snake_length"]
         
-        # === Reward Shaping ===
-        shaped_reward = reward
+        # === Hunger & Progress Logic ===
+        ate_food = reward > 0
         
-        # 1. Hunger penalty (per step)
-        hunger_factor = min(self.steps_since_food / self.max_hunger_steps, 1.0)
-        shaped_reward += self.hunger_penalty * (1 + hunger_factor)  # Increases over time
+        if ate_food:
+            # Reset penalty when eating
+            self.current_hunger_penalty = self.base_hunger_penalty
+        else:
+            if self.prev_food_distance is not None:
+                distance_delta = self.prev_food_distance - current_food_distance
+                if distance_delta > 0:
+                    # Got closer to food - keep penalty unchanged
+                    pass
+                else:
+                    # Not approaching - accumulate penalty
+                    # STRATEGY: Shorter snakes get hungrier faster!
+                    # Multiplier = 1 + 5 * (1 - normalized_length)
+                    # Length 3/100 -> ~6x penalty (-0.06 per step)
+                    # Length 50/100 -> ~3.5x penalty (-0.035 per step)
+                    
+                    normalized_length = snake_length / (obs["grid_size"][0] * obs["grid_size"][1])
+                    penalty_multiplier = 1.0 + 5.0 * (1.0 - normalized_length)
+                    
+                    effective_increment = self.hunger_increment * penalty_multiplier
+                    
+                    self.current_hunger_penalty = max(
+                        self.current_hunger_penalty + effective_increment,
+                        self.max_hunger_penalty
+                    )
         
-        # 2. Food approach reward
-        if self.prev_food_distance is not None:
-            distance_delta = self.prev_food_distance - current_food_distance
-            if distance_delta > 0:
-                # Got closer to food
-                shaped_reward += self.food_approach_reward
-            elif distance_delta < 0:
-                # Moved away from food
-                shaped_reward -= self.food_approach_reward * 0.5
+        # Apply hunger penalty
+        shaped_reward = reward + self.current_hunger_penalty
         
         # Update state
-        if reward > 0:  # Ate food
-            self.steps_since_food = 0
-        else:
-            self.steps_since_food += 1
-        
         self.prev_food_distance = current_food_distance
         
         return self._extract_features(obs), shaped_reward, terminated, truncated, info
@@ -162,12 +174,17 @@ class LidarHungerWrapper(gym.Wrapper):
         max_possible_length = grid_w * grid_h
         features[24] = snake_length / max_possible_length
         
-        # Hunger (steps since food, normalized)
-        features[25] = min(self.steps_since_food / self.max_hunger_steps, 1.0)
+        # Hunger (normalized penalty, 0 = no hunger, 1 = max hunger)
+        # current_hunger_penalty ranges from base_hunger_penalty to max_hunger_penalty
+        hunger_range = abs(self.max_hunger_penalty - self.base_hunger_penalty)
+        if hunger_range > 0:
+            features[25] = abs(self.current_hunger_penalty - self.base_hunger_penalty) / hunger_range
+        else:
+            features[25] = 0.0
         
         # Food relative position (normalized, signed)
-        features[26] = (food[0] - head[0]) / grid_w  # X: negative=left, positive=right
-        features[27] = (food[1] - head[1]) / grid_h  # Y: negative=up, positive=down
+        features[26] = (food[0] - head[0]) / grid_w  # X
+        features[27] = (food[1] - head[1]) / grid_h  # Y
         
         return features
     

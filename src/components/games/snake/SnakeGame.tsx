@@ -46,6 +46,7 @@ export function SnakeGame({
     const [isAIMode, setIsAIMode] = useState(false);
     const [aiLoading, setAiLoading] = useState(false);
     const [aiError, setAiError] = useState<string | null>(null);
+    const [currentHunger, setCurrentHunger] = useState(0);
 
     // 初始化遊戲
     useEffect(() => {
@@ -90,6 +91,11 @@ export function SnakeGame({
             const direction = DIRECTION_TO_ACTION[state.direction];
 
             action = aiRef.current.predict(snake, food, direction, gridWidth, gridHeight) as SnakeAction;
+
+            // Update hunger display
+            if (aiRef.current.getHunger) {
+                setCurrentHunger(aiRef.current.getHunger());
+            }
         } else {
             // 人類玩家
             if (nextDirectionRef.current) {
@@ -113,6 +119,8 @@ export function SnakeGame({
         if (aiMode) {
             const loaded = await loadAI();
             if (!loaded) return;
+            // Reset AI state (e.g. hunger tracking)
+            aiRef.current?.reset();
         }
 
         if (gameRef.current) {
@@ -302,7 +310,19 @@ export function SnakeGame({
             <div className="flex items-center gap-6 text-base-100">
                 <span className="text-lg">🏆 分數: <strong className={isAIMode ? 'text-blue-400' : 'text-green-400'}>{gameState?.score ?? 0}</strong></span>
                 <span className="text-lg">🐍 長度: <strong className={isAIMode ? 'text-blue-400' : 'text-green-400'}>{gameState?.snake.length ?? 0}</strong></span>
-                {isAIMode && isPlaying && <span className="text-blue-400 text-sm">🤖 AI 模式</span>}
+                {isAIMode && isPlaying && (
+                    <div className="flex items-center gap-2">
+                        <span className="text-blue-400 text-sm">🤖 AI 模式</span>
+                        <div className="tooltip" data-tip="AI 飢餓度 (越高越急迫)">
+                            <div className="w-16 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full transition-all duration-300 ${currentHunger > 0.8 ? 'bg-red-500' : 'bg-yellow-400'}`}
+                                    style={{ width: `${currentHunger * 100}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* 遊戲畫布 */}

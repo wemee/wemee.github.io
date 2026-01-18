@@ -43,6 +43,12 @@ export interface FeatureExtractor {
 
     /** Extract features from game state */
     extract(state: SnakeGameState): number[];
+
+    /** Optional reset for stateful extractors */
+    reset?(): void;
+
+    /** Optional hunger level for debugging */
+    getHunger?(): number;
 }
 
 // ============================================================
@@ -119,20 +125,31 @@ export class Compact11Extractor implements FeatureExtractor {
 
 /**
  * Advanced 28-dimensional LIDAR feature extractor.
- * Same logic as Python's LidarHungerWrapper (without hunger state).
+ * Same logic as Python's LidarHungerWrapper.
  *
  * Features:
  * [0-7]   Distance to obstacle in 8 directions (normalized)
  * [8-15]  Is obstacle a wall? (0 or 1)
  * [16-23] Is food visible in this direction? (0 or 1)
  * [24]    Snake length (normalized)
- * [25]    Hunger placeholder (always 0 in frontend)
+ * [25]    Hunger level (normalized, 0 = just ate, 1 = max hunger)
  * [26]    Food distance X (normalized, signed)
  * [27]    Food distance Y (normalized, signed)
+ * 
+ * NOTE: This extractor is STATEFUL - it tracks hunger between calls.
+ * Call reset() when starting a new game.
  */
 export class LidarExtractor implements FeatureExtractor {
     readonly name = 'LIDAR';
     readonly featureDim = 28;
+
+    // Hunger tracking (matches Python LidarHungerWrapper)
+    private readonly baseHungerPenalty = -0.01;
+    private readonly hungerIncrement = -0.01;
+    private readonly maxHungerPenalty = -0.5;
+    private currentHungerPenalty = -0.01;
+    private prevFoodDistance: number | null = null;
+    private prevSnakeLength = 0;
 
     // 8 directions: UP, DOWN, LEFT, RIGHT, UP-LEFT, UP-RIGHT, DOWN-LEFT, DOWN-RIGHT
     private static readonly DIRECTIONS: [number, number][] = [
@@ -146,11 +163,53 @@ export class LidarExtractor implements FeatureExtractor {
         [1, 1],    // DOWN-RIGHT
     ];
 
+    /** Reset hunger state when starting a new game */
+    reset(): void {
+        this.currentHungerPenalty = this.baseHungerPenalty;
+        this.prevFoodDistance = null;
+        this.prevSnakeLength = 0;
+    }
+
+    /** Get current normalized hunger level (0-1) */
+    getHunger(): number {
+        const hungerRange = Math.abs(this.maxHungerPenalty - this.baseHungerPenalty);
+        if (hungerRange > 0) {
+            return Math.abs(this.currentHungerPenalty - this.baseHungerPenalty) / hungerRange;
+        }
+        return 0;
+    }
+
     extract(state: SnakeGameState): number[] {
-        const { snake, food, direction, gridWidth, gridHeight } = state;
+        const { snake, food, gridWidth, gridHeight } = state;
         const features = new Array(28).fill(0);
         const head = snake[0];
         const maxDistance = Math.max(gridWidth, gridHeight);
+
+        // Calculate current food distance
+        const currentFoodDistance = Math.abs(head[0] - food[0]) + Math.abs(head[1] - food[1]);
+
+        // Update hunger state based on food approach
+        const ateFood = snake.length > this.prevSnakeLength && this.prevSnakeLength > 0;
+
+        if (ateFood) {
+            // Reset penalty when eating
+            this.currentHungerPenalty = this.baseHungerPenalty;
+        } else if (this.prevFoodDistance !== null) {
+            const distanceDelta = this.prevFoodDistance - currentFoodDistance;
+            if (distanceDelta > 0) {
+                // Got closer to food - keep penalty unchanged
+            } else {
+                // Not approaching - accumulate penalty
+                this.currentHungerPenalty = Math.max(
+                    this.currentHungerPenalty + this.hungerIncrement,
+                    this.maxHungerPenalty
+                );
+            }
+        }
+
+        // Update state for next call
+        this.prevFoodDistance = currentFoodDistance;
+        this.prevSnakeLength = snake.length;
 
         // Build snake body set (excluding head for collision check)
         const snakeBody = new Set<string>();
@@ -180,8 +239,13 @@ export class LidarExtractor implements FeatureExtractor {
         const maxPossibleLength = gridWidth * gridHeight;
         features[24] = snake.length / maxPossibleLength;
 
-        // Hunger placeholder (frontend doesn't track this)
-        features[25] = 0;
+        // Hunger (normalized, 0 = no hunger, 1 = max hunger)
+        const hungerRange = Math.abs(this.maxHungerPenalty - this.baseHungerPenalty);
+        if (hungerRange > 0) {
+            features[25] = Math.abs(this.currentHungerPenalty - this.baseHungerPenalty) / hungerRange;
+        } else {
+            features[25] = 0;
+        }
 
         // Food relative position (normalized, signed)
         features[26] = (food[0] - head[0]) / gridWidth;
@@ -324,6 +388,21 @@ export class SnakeAI {
 
     getExtractorName(): string {
         return this.extractor.name;
+    }
+
+    /** Reset AI state (e.g. for new game) */
+    reset(): void {
+        if (this.extractor.reset) {
+            this.extractor.reset();
+        }
+    }
+
+    /** Get current hunger level (for UI display) */
+    getHunger(): number {
+        if (this.extractor.getHunger) {
+            return this.extractor.getHunger();
+        }
+        return 0;
     }
 
     /**

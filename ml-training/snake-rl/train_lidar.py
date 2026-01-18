@@ -105,9 +105,9 @@ def make_env(seed: int = 0, grid_size: int = 10) -> LidarHungerWrapper:
     env = SnakeEnv(grid_width=grid_size, grid_height=grid_size, max_steps=500)
     env = LidarHungerWrapper(
         env,
-        hunger_penalty=-0.01,
-        food_approach_reward=0.1,
-        max_hunger_steps=100,
+        base_hunger_penalty=-0.01,
+        hunger_increment=-0.01,
+        max_hunger_penalty=-0.5,
     )
     env = Monitor(env)
     env.reset(seed=seed)
@@ -132,40 +132,65 @@ def train(args: argparse.Namespace) -> DQN:
     print(f"  Target Score: {args.target_score}")
     print(f"  Max Timesteps: {args.timesteps:,}")
     print(f"  Grid Size: {args.grid_size}x{args.grid_size}")
+    if args.load:
+        print(f"  Continuing from: {args.load}")
     print(f"  Output: {OUTPUT_DIR}")
     print("=" * 60)
-
-    # Create environments
-    train_env = make_env(seed=42, grid_size=args.grid_size)
-    eval_env = make_env(seed=999, grid_size=args.grid_size)
-
-    # Network architecture: slightly larger for 28-dim input
-    policy_kwargs = dict(net_arch=[256, 256])
-
-    # Create DQN agent with tuned hyperparameters
-    model = DQN(
-        "MlpPolicy",
-        train_env,
-        learning_rate=1e-4,           # Slightly lower for stability
-        buffer_size=100000,
-        learning_starts=5000,         # More exploration before learning
-        batch_size=128,
-        tau=0.005,
-        gamma=0.99,
-        train_freq=4,
-        gradient_steps=1,
-        target_update_interval=1000,
-        exploration_fraction=0.3,     # Longer exploration period
-        exploration_initial_eps=1.0,
-        exploration_final_eps=0.05,
-        policy_kwargs=policy_kwargs,
-        verbose=1,
-    )
 
     # Ensure output directory exists
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Callback for evaluation and early stopping
+    # 1. Setup Environment
+    train_env = make_env(seed=42, grid_size=args.grid_size)
+    eval_env = make_env(seed=999, grid_size=args.grid_size)
+
+    # 2. Setup Model
+    if args.load:
+        model_path = args.load
+        if not os.path.exists(model_path):
+            print(f"Error: Model not found at {model_path}")
+            return None
+
+        print(f"Loading pretrained model from {model_path}...")
+        # Load model and reset environment
+        model = DQN.load(
+            model_path,
+            env=train_env, # Set the training environment
+            tensorboard_log=str(OUTPUT_DIR / "logs"),
+            custom_objects={
+                "learning_rate": 1e-4,  # Keep low LR for fine-tuning
+                "exploration_fraction": 0.1, # Reduced exploration for fine-tuning
+                "exploration_initial_eps": 0.3,
+                "exploration_final_eps": 0.05
+            }
+        )
+    else:
+        # Network architecture: slightly larger for 28-dim input
+        policy_kwargs = dict(net_arch=[256, 256])
+
+        # Create DQN agent with tuned hyperparameters
+        model = DQN(
+            "MlpPolicy",
+            train_env,
+            learning_rate=1e-4,           # Slightly lower for stability
+            buffer_size=100000,
+            learning_starts=5000,         # More exploration before learning
+            batch_size=128,
+            tau=0.005,
+            gamma=0.99,
+            train_freq=4,
+            gradient_steps=1,
+            target_update_interval=1000,
+            exploration_fraction=0.3,     # Longer exploration period
+            exploration_initial_eps=1.0,
+            exploration_final_eps=0.05,
+            policy_kwargs=policy_kwargs,
+            verbose=1,
+            tensorboard_log=str(OUTPUT_DIR / "logs"),
+            device="auto"
+        )
+
+    # 3. Setup Callbacks
     eval_callback = MultiSeedEvalCallback(
         eval_env=eval_env,
         target_score=args.target_score,
@@ -175,27 +200,29 @@ def train(args: argparse.Namespace) -> DQN:
         verbose=1,
     )
 
-    # Train
+    # 4. Train
     print("\nStarting training...")
     print("Features: 28-dim LIDAR (8 dirs × 3 features + 4 extra)")
-    print("Reward: Food=+10, Death=-10, Approach=+0.1, Hunger=-0.01/step\n")
+    print("Reward: Food=+10, Death=-10")
+    print("Hunger: -0.01 base, accumulates when not approaching food\n")
     
     model.learn(
         total_timesteps=args.timesteps,
         callback=eval_callback,
         progress_bar=True,
+        reset_num_timesteps=not args.load, # Don't reset timesteps if loading
     )
 
-    # Save final model
+    # 5. Save Final Model
     model_path = OUTPUT_DIR / "snake_lidar.zip"
     model.save(str(model_path))
     print(f"✅ Model saved: {model_path}")
 
-    # Export weights for browser
+    # 6. Export Weights
     weights_path = OUTPUT_DIR / "snake_lidar_weights.json"
     export_weights(model, weights_path)
 
-    # Final evaluation
+    # 7. Final Evaluation
     print("\n--- Final Evaluation (50 episodes) ---")
     scores = []
     lengths = []
@@ -213,7 +240,7 @@ def train(args: argparse.Namespace) -> DQN:
     print(f"Length: {np.mean(lengths):.1f} ± {np.std(lengths):.1f}")
     print(f"Min: {min(scores)}, Max: {max(scores)}")
 
-    # Auto-deploy if requested
+    # 8. Deploy (if requested)
     if args.deploy:
         deploy_weights()
 
@@ -244,6 +271,8 @@ def main():
                         help="Maximum training timesteps (default: 1000000)")
     parser.add_argument("--grid-size", type=int, default=10,
                         help="Grid size (default: 10)")
+    parser.add_argument("--load", type=str,
+                        help="Path to pretrained model to continue training")
     parser.add_argument("--deploy", action="store_true",
                         help="Auto-deploy weights to frontend after training")
     
