@@ -117,6 +117,10 @@ export class BreakoutGame {
 
     private launchBall() {
         if (this.ballLaunched) return;
+
+        // 發球時重置 AI 預測快取，確保重新計算落點
+        this.cachedLandingX = null;
+
         this.ballLaunched = true;
         const angle = (Math.random() - 0.5) * Math.PI * 0.5; // -45 到 45 度
         this.ball.dx = this.ball.speed * Math.sin(angle);
@@ -227,36 +231,115 @@ export class BreakoutGame {
     }
 
     // === AI 邏輯 ===
+    // AI 預測相關
+    private cachedLandingX: number | null = null;
+    private targetOffset: number = 0; // AI 預計用板子的哪個部位接球 (-0.5 ~ 0.5)
+    private lastBallDy: number = 0;  // 追蹤上一幀的 dy，用於偵測反彈
+    private predictionFlashTime: number = 0;  // 預測計算特效時間戳
+    private needsRecalcAfterBounce: boolean = false;  // 反彈後需要重算的標記
+
     private predictBallX(): number {
-        // 預測球落到板子高度時的 x 位置
-        if (this.ball.dy <= 0) {
-            // 球往上，暫時無法預測，回傳目前球的 x
-            return this.ball.x;
+        // 1. 如果有快取，直接回傳 (最省資源)
+        if (this.cachedLandingX !== null) {
+            return this.cachedLandingX;
         }
 
+        // 2. 開始全路徑模擬 (Full Path Simulation)
+        // 觸發視覺特效，標記正在進行預測計算
+        this.predictionFlashTime = Date.now();
+
+        // 複製球的狀態
         let simX = this.ball.x;
         let simY = this.ball.y;
         let simDx = this.ball.dx;
-        const simDy = this.ball.dy;
+        let simDy = this.ball.dy;
+        const radius = this.ball.radius;
 
-        // 模擬球的軌跡直到到達板子高度
-        while (simY < this.paddle.y - this.ball.radius) {
+        // 追蹤每塊磚塊在模擬中被擊中的次數
+        // Key: brick index, Value: 模擬中累積的擊中次數
+        const simBrickHits = new Map<number, number>();
+
+        // 模擬步數限制 (防止死迴圈，雖然理論上球一定會掉下來)
+        let steps = 0;
+        const MAX_STEPS = 5000;
+
+        // 模擬直到球回到板子高度
+        while (simY < this.paddle.y - radius && steps < MAX_STEPS) {
+            steps++;
+
+            // 移動
             simX += simDx;
             simY += simDy;
 
-            // 牆壁反彈
-            if (simX - this.ball.radius < 0) {
-                simX = this.ball.radius;
+            // --- 牆壁碰撞模擬 ---
+            if (simX - radius < 0) {
+                simX = radius;
                 simDx = Math.abs(simDx);
             }
-            if (simX + this.ball.radius > this.canvas.width) {
-                simX = this.canvas.width - this.ball.radius;
+            if (simX + radius > this.canvas.width) {
+                simX = this.canvas.width - radius;
                 simDx = -Math.abs(simDx);
             }
+            if (simY - radius < 0) {
+                simY = radius;
+                simDy = Math.abs(simDy); // 天花板反彈
+            }
 
-            // 防止無限迴圈
-            if (simY > this.canvas.height + 100) break;
+            // --- 磚塊碰撞模擬 ---
+            // 只有當球在磚塊區域時才檢查 (優化效能)
+            if (simY < 300) {
+                for (let i = this.bricks.length - 1; i >= 0; i--) {
+                    const brick = this.bricks[i];
+
+                    // 計算這塊磚塊在模擬中的總擊中次數 (真實 + 模擬)
+                    const simHits = simBrickHits.get(i) || 0;
+                    const totalHits = brick.hits + simHits;
+
+                    // 如果磚塊在模擬中已被打爆，跳過
+                    if (totalHits >= brick.maxHits) continue;
+
+                    // AABB 碰撞檢查
+                    if (simX + radius > brick.x &&
+                        simX - radius < brick.x + brick.width &&
+                        simY + radius > brick.y &&
+                        simY - radius < brick.y + brick.height) {
+
+                        // 記錄這次擊中
+                        simBrickHits.set(i, simHits + 1);
+
+                        // 決定反彈方向 (使用與遊戲主邏輯相同的判斷)
+                        const overlapLeft = (simX + radius) - brick.x;
+                        const overlapRight = (brick.x + brick.width) - (simX - radius);
+                        const overlapTop = (simY + radius) - brick.y;
+                        const overlapBottom = (brick.y + brick.height) - (simY - radius);
+
+                        const minOverlapX = Math.min(overlapLeft, overlapRight);
+                        const minOverlapY = Math.min(overlapTop, overlapBottom);
+                        const CORNER_TOLERANCE = 4;
+
+                        if (Math.abs(minOverlapX - minOverlapY) < CORNER_TOLERANCE) {
+                            simDx *= -1;
+                            simDy *= -1;
+                        } else if (minOverlapX < minOverlapY) {
+                            simDx *= -1;
+                        } else {
+                            simDy *= -1;
+                        }
+
+                        // 在一次 step 中通常只撞一塊，撞到就跳出檢查
+                        break;
+                    }
+                }
+            }
         }
+
+        // 儲存結果並回傳
+        this.cachedLandingX = simX;
+
+        // 計算完成的同時，隨機決定這次要用板子的哪個部位接球
+        // 範圍：-45% 到 +45% (保留 5% 安全邊緣)
+        // 這樣能製造不同的反彈角度，避免死循環
+        this.targetOffset = (Math.random() - 0.5) * 0.9 * this.paddle.width;
 
         return simX;
     }
@@ -294,30 +377,29 @@ export class BreakoutGame {
         const paddleCenter = this.paddle.x + this.paddle.width / 2;
         let targetX: number;
 
-        const predictedX = this.predictBallX();
-        const urgency = this.ball.dy > 0 ? (this.paddle.y - this.ball.y) : 1000;
-
-        if (urgency < 400 && this.ball.dy > 0) {
-            // 球快落下，計算最佳接球位置
-            targetX = this.findBestPaddlePosition(predictedX);
+        // 如果球黏在板子上 (ready 或剛發球前)，目標就是球的位置
+        if (!this.ballLaunched) {
+            targetX = this.ball.x;
         } else {
-            // 球往上飛，嘗試吃道具或預先移動
-            const powerUp = this.findBestPowerUp();
-            if (powerUp) {
-                targetX = powerUp.x;
-            } else {
-                targetX = this.ball.x;
-            }
+            // 取得預測落點 (使用全路徑模擬)
+            const predictedX = this.predictBallX();
+
+            // 目標位置 = 預測落點 - 隨機偏移量
+            // (例如：如果想用板子左邊接球，板子就要往右移，所以是減號)
+            targetX = predictedX - this.targetOffset;
         }
 
         // 移動板子
         const diff = targetX - paddleCenter;
         const speed = this.AI_PADDLE_SPEED;
 
-        if (Math.abs(diff) > speed) {
-            this.paddle.x += diff > 0 ? speed : -speed;
-        } else {
-            this.paddle.x += diff;
+        // 加入 Deadzone (5px) 防止抖動
+        if (Math.abs(diff) > 5) {
+            if (Math.abs(diff) > speed) {
+                this.paddle.x += diff > 0 ? speed : -speed;
+            } else {
+                this.paddle.x += diff;
+            }
         }
 
         this.paddle.x = Math.max(0, Math.min(this.paddle.x, this.canvas.width - this.paddle.width));
@@ -391,7 +473,10 @@ export class BreakoutGame {
                     y - this.ball.radius < brick.y + brick.height) {
                     hitBricks.add(i);
                     score += brick.points;
-                    dy = -dy; // 簡化的反彈
+
+                    // 這裡的模擬僅用於評分，為了效能省略精確反彈計算，直接反轉 dy
+                    // 若要更精確，可複製上面的精確碰撞邏輯，但對評分來說影響不大
+                    dy = -dy;
                 }
             }
 
@@ -486,8 +571,10 @@ export class BreakoutGame {
         // 板子碰撞
         if (this.ball.y + this.ball.radius > this.paddle.y &&
             this.ball.y - this.ball.radius < this.paddle.y + this.paddle.height &&
-            this.ball.x > this.paddle.x &&
-            this.ball.x < this.paddle.x + this.paddle.width) {
+            this.ball.x + this.ball.radius > this.paddle.x &&
+            this.ball.x - this.ball.radius < this.paddle.x + this.paddle.width) {
+
+            // 快取清除邏輯已移到 update 最後統一處理
 
             // 每次碰到板子加速
             this.ball.speed = Math.min(this.ball.speed + this.SPEED_INCREMENT, this.MAX_SPEED);
@@ -511,7 +598,30 @@ export class BreakoutGame {
                 this.ball.y + this.ball.radius > brick.y &&
                 this.ball.y - this.ball.radius < brick.y + brick.height) {
 
-                this.ball.dy *= -1;
+                // 計算重疊量以判斷碰撞方向
+                const overlapLeft = (this.ball.x + this.ball.radius) - brick.x;
+                const overlapRight = (brick.x + brick.width) - (this.ball.x - this.ball.radius);
+                const overlapTop = (this.ball.y + this.ball.radius) - brick.y;
+                const overlapBottom = (brick.y + brick.height) - (this.ball.y - this.ball.radius);
+
+                const minOverlapX = Math.min(overlapLeft, overlapRight);
+                const minOverlapY = Math.min(overlapTop, overlapBottom);
+
+                // 角落碰撞容許值 (像素)
+                const CORNER_TOLERANCE = 4;
+
+                if (Math.abs(minOverlapX - minOverlapY) < CORNER_TOLERANCE) {
+                    // 打在角上：同時反轉
+                    this.ball.dx *= -1;
+                    this.ball.dy *= -1;
+                } else if (minOverlapX < minOverlapY) {
+                    // 側面碰撞 (左右)：反轉水平速度
+                    this.ball.dx *= -1;
+                } else {
+                    // 上下碰撞：反轉垂直速度
+                    this.ball.dy *= -1;
+                }
+
                 brick.hits++;
 
                 if (brick.hits >= brick.maxHits) {
@@ -559,6 +669,23 @@ export class BreakoutGame {
         if (this.bricks.length === 0) {
             this.win();
         }
+
+        // AI 預測快取管理（兩階段觸發）
+        // 階段 1：偵測球在下半場的反彈（dy 從正變負）
+        const BRICK_ZONE_BOTTOM = 350;
+        if (this.ball.y > BRICK_ZONE_BOTTOM && this.lastBallDy > 0 && this.ball.dy < 0) {
+            this.needsRecalcAfterBounce = true;  // 標記需要重算
+        }
+
+        // 階段 2：等球飛到安全高度後再清除快取
+        // 這樣計算時球已經穩定飛行，模擬迴圈能正常運作
+        const SAFE_HEIGHT = 450;  // 安全高度：已離開板子區域
+        if (this.needsRecalcAfterBounce && this.ball.y < SAFE_HEIGHT && this.ball.dy < 0) {
+            this.cachedLandingX = null;
+            this.needsRecalcAfterBounce = false;
+        }
+
+        this.lastBallDy = this.ball.dy;
     }
 
     private win() {
@@ -646,6 +773,50 @@ export class BreakoutGame {
         ctx.beginPath();
         ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI * 2);
         ctx.fill();
+
+        // Debug: 顯示 AI 預測落點
+        if (this.aiMode && this.cachedLandingX !== null) {
+            ctx.strokeStyle = '#ff3333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            // 畫一個 X 標記在板子高度 (顯示修正後的實際目標接球點)
+            // 因為板子中心要對齊 targetX，所以球實際上會落在 cachedLandingX
+            const markX = this.cachedLandingX; // 顯示球的落點
+            // 也可以畫出 AI 下一個目標板子中心：this.cachedLandingX - this.targetOffset
+
+            const markY = this.paddle.y + this.paddle.height / 2;
+            const size = 10;
+            ctx.moveTo(markX - size, markY - size);
+            ctx.lineTo(markX + size, markY + size);
+            ctx.moveTo(markX + size, markY - size);
+            ctx.lineTo(markX - size, markY + size);
+            ctx.stroke();
+
+            // 畫一條虛線指向上方
+            ctx.setLineDash([5, 5]);
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(255, 50, 50, 0.5)';
+            ctx.beginPath();
+            ctx.moveTo(markX, markY - size);
+            ctx.lineTo(markX, markY - 100);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // Debug: 預測計算特效（黃色閃光圈）
+        if (this.aiMode) {
+            const elapsed = Date.now() - this.predictionFlashTime;
+            const FLASH_DURATION = 200; // 持續 200ms
+            if (elapsed < FLASH_DURATION) {
+                const alpha = 1 - (elapsed / FLASH_DURATION); // 漸淡
+                const radius = 20 + (elapsed / FLASH_DURATION) * 30; // 擴散
+                ctx.strokeStyle = `rgba(255, 220, 0, ${alpha})`;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(this.paddle.x + this.paddle.width / 2, this.paddle.y, radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
     }
 
     private gameLoop = () => {
