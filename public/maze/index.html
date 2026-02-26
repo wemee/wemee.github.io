@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>迷宮產生演算法分析器</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --surface3: #2d333b;
+      --accent: #7c6aff;
+      --accent2: #ff6b81;
+      --accent3: #34d399;
+      --text: #e6edf3;
+      --text-dim: #7d8590;
+      --border: #30363d;
+      --wall-color: #c9d1d9;
+      --maze-bg: #0d1117;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 20px 16px;
+      gap: 18px;
+    }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 4px;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .logo-text h1 { font-size: 1rem; font-weight: 700; line-height: 1.2; }
+    .logo-text p { font-size: 0.7rem; color: var(--text-dim); margin-top: 1px; }
+
+    .section-title {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 0.85rem;
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237d8590' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+      transition: border-color 0.2s;
+    }
+    select:focus { border-color: var(--accent); }
+    select optgroup { color: var(--text-dim); font-style: italic; font-size: 0.75rem; }
+    select option { color: var(--text); background: var(--surface2); }
+
+    /* Growing Tree slider */
+    .growing-panel {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .growing-panel.visible { display: flex; }
+    .grow-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+    .grow-label-row span:last-child { color: var(--accent); font-weight: 600; }
+    .grow-track {
+      position: relative;
+      height: 20px;
+      display: flex;
+      align-items: center;
+    }
+    input[type=range].grow-slider {
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--surface3);
+      border: none;
+      padding: 0;
+      outline: none;
+      cursor: pointer;
+      accent-color: var(--accent);
+    }
+    .grow-desc {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+    }
+    .grow-desc span:first-child { color: #60a5fa; }
+    .grow-desc span:last-child { color: #f472b6; }
+
+    /* Size presets */
+    .presets {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+    .preset {
+      padding: 8px 4px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 0.7rem;
+      text-align: center;
+      line-height: 1.4;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .preset:hover { border-color: var(--accent); color: var(--accent); }
+    .preset.active {
+      border-color: var(--accent);
+      background: rgba(124, 106, 255, 0.12);
+      color: var(--accent);
+    }
+    .preset .ps-num { font-weight: 700; font-size: 0.8rem; }
+    .preset .ps-label { color: inherit; opacity: 0.7; }
+
+    .size-slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 2px;
+    }
+    .size-slider-row input[type=range] {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--surface3);
+      border: none;
+      padding: 0;
+      outline: none;
+      cursor: pointer;
+      accent-color: var(--accent);
+    }
+    .size-badge {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      min-width: 52px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    /* Buttons */
+    .btn-generate {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #7c6aff, #a855f7);
+      border: none;
+      color: white;
+      border-radius: 9px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+    }
+    .btn-generate:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(124, 106, 255, 0.35);
+    }
+    .btn-generate:active { transform: translateY(0); }
+    .btn-generate:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Info Card */
+    .info-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 13px;
+      flex-shrink: 0;
+    }
+    .info-card-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 7px;
+    }
+    .info-card-desc {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      line-height: 1.65;
+    }
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 9px;
+    }
+    .tag {
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 0.68rem;
+      font-weight: 500;
+    }
+    .tag-blue  { background: rgba(96,165,250,.15); color: #60a5fa; }
+    .tag-green { background: rgba(52,211,153,.15); color: #34d399; }
+    .tag-yellow{ background: rgba(251,191,36,.15); color: #fbbf24; }
+    .tag-red   { background: rgba(248,113,113,.15); color: #f87171; }
+    .tag-purple{ background: rgba(167,139,250,.15); color: #a78bfa; }
+    .tag-pink  { background: rgba(244,114,182,.15); color: #f472b6; }
+
+    /* Stats */
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 7px;
+    }
+    .stat-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 8px;
+      text-align: center;
+    }
+    .stat-val {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent3);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stat-lbl {
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+
+    /* Color themes */
+    .themes {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .theme-swatch {
+      width: 26px; height: 26px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .theme-swatch:hover, .theme-swatch.active {
+      border-color: var(--text);
+      transform: scale(1.1);
+    }
+    .theme-label { font-size: 0.7rem; color: var(--text-dim); }
+
+    /* ── Main ── */
+    .main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      background: var(--bg);
+    }
+    .canvas-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    canvas#maze {
+      display: block;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-dim);
+      pointer-events: none;
+    }
+    .empty-state svg { margin-bottom: 14px; opacity: 0.25; }
+    .empty-state p { font-size: 0.85rem; }
+    .empty-state small { font-size: 0.72rem; opacity: 0.6; }
+
+    .spinner {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(13,17,23,.7);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      border-radius: 4px;
+    }
+    .spinner.show { display: flex; }
+    .spinner-ring {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Scrollbar global */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L980F1NV6M"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'G-L980F1NV6M');
+  </script>
+</head>
+<body>
+
+<!-- ════════════════════════════ SIDEBAR ════════════════════════════ -->
+<aside class="sidebar">
+
+  <div class="logo">
+    <div class="logo-icon">🧭</div>
+    <div class="logo-text">
+      <h1>迷宮演算法分析器</h1>
+      <p>Maze Generation Visualizer</p>
+    </div>
+  </div>
+
+  <!-- Algorithm -->
+  <div>
+    <div class="section-title">演算法</div>
+    <select id="algoSel">
+      <optgroup label="─── 經典三巨頭 ───">
+        <option value="dfs">Recursive Backtracker (DFS)</option>
+        <option value="prim">Randomized Prim's</option>
+        <option value="division">Recursive Division</option>
+      </optgroup>
+      <optgroup label="─── 高階平衡型 ───">
+        <option value="kruskal">Randomized Kruskal's</option>
+        <option value="wilson">Wilson's Algorithm</option>
+        <option value="hunt-kill">Hunt-and-Kill</option>
+      </optgroup>
+      <optgroup label="─── 效能特殊型 ───">
+        <option value="eller">Eller's Algorithm</option>
+        <option value="sidewinder">Sidewinder</option>
+        <option value="aldous">Aldous-Broder</option>
+      </optgroup>
+      <optgroup label="─── 萬用變型 ───">
+        <option value="growing">Growing Tree</option>
+      </optgroup>
+    </select>
+  </div>
+
+  <!-- Growing Tree Options -->
+  <div class="growing-panel" id="growPanel">
+    <div class="section-title" style="margin-bottom:0">Growing Tree 策略調配</div>
+    <div class="grow-label-row">
+      <span>選取策略</span>
+      <span id="growValLabel">最新 50% / 隨機 50%</span>
+    </div>
+    <input type="range" class="grow-slider" id="growSlider" min="0" max="100" value="50">
+    <div class="grow-desc">
+      <span>← DFS 風格（長廊）</span>
+      <span>Prim 風格（分岔）→</span>
+    </div>
+  </div>
+
+  <!-- Maze Size -->
+  <div>
+    <div class="section-title">迷宮大小</div>
+    <div class="presets" id="presets">
+      <div class="preset" data-size="10">
+        <div class="ps-num">10</div>
+        <div class="ps-label">迷你</div>
+      </div>
+      <div class="preset active" data-size="25">
+        <div class="ps-num">25</div>
+        <div class="ps-label">小</div>
+      </div>
+      <div class="preset" data-size="50">
+        <div class="ps-num">50</div>
+        <div class="ps-label">中</div>
+      </div>
+      <div class="preset" data-size="100">
+        <div class="ps-num">100</div>
+        <div class="ps-label">大</div>
+      </div>
+    </div>
+    <div class="size-slider-row">
+      <input type="range" id="sizeSlider" min="5" max="150" value="25">
+      <span class="size-badge" id="sizeBadge">25 × 25</span>
+    </div>
+  </div>
+
+  <!-- Generate -->
+  <button class="btn-generate" id="genBtn">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5,3 19,12 5,21"/></svg>
+    產生迷宮
+  </button>
+
+  <!-- Color Theme -->
+  <div>
+    <div class="section-title">配色主題</div>
+    <div class="themes">
+      <span class="theme-label">主題：</span>
+      <div class="theme-swatch active" data-theme="dark"
+           style="background: linear-gradient(135deg,#0d1117 50%,#c9d1d9 50%)" title="暗色"></div>
+      <div class="theme-swatch" data-theme="light"
+           style="background: linear-gradient(135deg,#ffffff 50%,#1a1a2e 50%)" title="亮色"></div>
+      <div class="theme-swatch" data-theme="blueprint"
+           style="background: linear-gradient(135deg,#0a2351 50%,#7eb3ff 50%)" title="藍圖"></div>
+      <div class="theme-swatch" data-theme="matrix"
+           style="background: linear-gradient(135deg,#000 50%,#00ff41 50%)" title="Matrix"></div>
+      <div class="theme-swatch" data-theme="sepia"
+           style="background: linear-gradient(135deg,#f5ecd7 50%,#5c3a1e 50%)" title="古紙"></div>
+    </div>
+  </div>
+
+  <!-- Info Card -->
+  <div class="info-card" id="infoCard">
+    <div class="info-card-title" id="infoTitle">Recursive Backtracker</div>
+    <div class="info-card-desc" id="infoDesc">使用深度優先搜尋 (DFS) 與回溯法。從隨機起點盡可能深入，遇到死路時退回，繼續探索未訪問的分支。</div>
+    <div class="tags" id="infoTags"></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-val" id="statTime">—</div>
+      <div class="stat-lbl">生成時間<br>(ms)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="statCells">—</div>
+      <div class="stat-lbl">格子<br>數量</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="statPx">—</div>
+      <div class="stat-lbl">格子<br>像素</div>
+    </div>
+  </div>
+
+</aside>
+
+<!-- ════════════════════════════ MAIN ════════════════════════════ -->
+<main class="main" id="mainArea">
+  <div class="empty-state" id="emptyState">
+    <svg width="90" height="90" viewBox="0 0 90 90" fill="none">
+      <rect x="8" y="8" width="74" height="74" rx="6" stroke="#7c6aff" stroke-width="2"/>
+      <path d="M18 18h14M44 18h28M18 30v14M44 30h28M18 58h28M62 58v14M18 70h14M44 70h28"
+            stroke="#7c6aff" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <p>選擇演算法並點擊「產生迷宮」</p>
+    <small>支援 10 種不同的迷宮生成演算法</small>
+  </div>
+
+  <div class="canvas-wrap" id="canvasWrap" style="display:none">
+    <canvas id="maze"></canvas>
+    <div class="spinner" id="spinner">
+      <div class="spinner-ring"></div>
+      <span id="spinnerText">生成中…</span>
+    </div>
+  </div>
+</main>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+//  Constants
+// ════════════════════════════════════════════════════════════════
+const N = 1, E = 2, S = 4, W = 8;
+const OPP = { [N]: S, [S]: N, [E]: W, [W]: E };
+const DX  = { [E]: 1, [W]: -1, [N]: 0, [S]: 0 };
+const DY  = { [N]: -1, [S]: 1, [E]: 0, [W]: 0 };
+const DIRS = [N, E, S, W];
+
+// ════════════════════════════════════════════════════════════════
+//  Algorithm Info
+// ════════════════════════════════════════════════════════════════
+const ALGO_INFO = {
+  dfs: {
+    name: 'Recursive Backtracker (DFS)',
+    desc: '使用深度優先搜尋 (DFS) 與回溯法。從隨機起點盡可能深入探索，遇到死路時退回繼續。適合生成長廊深邃、挑戰性高的地牢迷宮。',
+    tags: [['長廊深', 'blue'], ['死胡同多', 'red'], ['高效', 'green'], ['經典', 'purple']]
+  },
+  prim: {
+    name: "Randomized Prim's",
+    desc: '最小生成樹 (MST) 的隨機化變體。從一個格子開始，持續從邊界集合向外擴展。結果分岔極多、走廊短，視覺上像碎冰或灌木叢。',
+    tags: [['分岔多', 'blue'], ['走廊短', 'yellow'], ['高效', 'green']]
+  },
+  division: {
+    name: 'Recursive Division',
+    desc: '從空曠的空間出發，遞迴地切割區域並開洞。與其他「移除牆壁」的演算法不同，此法是「添加牆壁」。結果牆體平直，像現代建築。',
+    tags: [['像建築', 'purple'], ['牆直', 'blue'], ['高效', 'green'], ['規則性強', 'yellow']]
+  },
+  kruskal: {
+    name: "Randomized Kruskal's",
+    desc: '使用並查集 (Union-Find) 管理連通性。將所有內部牆隨機排列，依序移除不會形成迴圈的牆。結構均勻，確保任兩點之間有唯一路徑。',
+    tags: [['結構均勻', 'green'], ['完美迷宮', 'blue'], ['高效', 'green']]
+  },
+  wilson: {
+    name: "Wilson's Algorithm",
+    desc: '擦除迴圈的隨機漫步 (Loop-Erased Random Walk)。從未訪問格子漫步直到碰到已在迷宮的格子，消除路徑中的迴圈後加入迷宮。數學上完全均勻無偏差。',
+    tags: [['完全均勻', 'purple'], ['無方向偏差', 'blue'], ['中等效率', 'yellow']]
+  },
+  'hunt-kill': {
+    name: 'Hunt-and-Kill',
+    desc: '結合 DFS 走廊與掃描模式。遇到死胡同時，掃描整個網格找到與已訪問格子相鄰的未訪問格子，繼續前進。類似 DFS 但死胡同分佈更均勻。',
+    tags: [['類DFS', 'blue'], ['均勻分佈', 'green'], ['中等效率', 'yellow']]
+  },
+  eller: {
+    name: "Eller's Algorithm",
+    desc: '逐行掃描並用集合管理連通性。可在 O(n) 時間與極低記憶體下生成無限長的迷宮。無明顯方向偏差，隨機性強，是超大型地圖的最佳選擇。',
+    tags: [['超高效', 'green'], ['省記憶體', 'blue'], ['可無限延伸', 'purple']]
+  },
+  sidewinder: {
+    name: 'Sidewinder',
+    desc: '逐行掃描的極簡演算法。每行形成「run」，隨機決定向東延伸或結束 run 並向北鑿一個通道。第一行全部向東連通。結果北方走廊極直，有強烈方向感。',
+    tags: [['速度最快', 'green'], ['偏向北方', 'pink'], ['方向感強', 'red']]
+  },
+  aldous: {
+    name: 'Aldous-Broder',
+    desc: '純粹的隨機漫步。從任意格子開始遊走，若移動到未訪問的格子則加入迷宮，否則繼續走。數學上保證均勻分佈，但效率最低，適合學術研究展示。',
+    tags: [['絕對均勻', 'purple'], ['無偏差', 'blue'], ['效率最低', 'red']]
+  },
+  growing: {
+    name: 'Growing Tree',
+    desc: '演算法的「母體」。維護一個格子列表，透過選取策略調配風格：選最新格子 = DFS 長廊風、選隨機格子 = Prim 分岔風。可用滑桿細調比例。',
+    tags: [['高度可調', 'purple'], ['萬用', 'green'], ['高效', 'green']]
+  }
+};
+
+// ════════════════════════════════════════════════════════════════
+//  Helpers
+// ════════════════════════════════════════════════════════════════
+function mkGrid(w, h) {
+  return Array.from({ length: h }, () => new Uint8Array(w));
+}
+function carve(g, x, y, dir) {
+  const nx = x + DX[dir], ny = y + DY[dir];
+  g[y][x]   |= dir;
+  g[ny][nx] |= OPP[dir];
+}
+function inB(x, y, w, h) {
+  return x >= 0 && x < w && y >= 0 && y < h;
+}
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+function rnd(n) { return Math.floor(Math.random() * n); }
+
+// ════════════════════════════════════════════════════════════════
+//  1. Recursive Backtracker (DFS)
+// ════════════════════════════════════════════════════════════════
+function genDFS(w, h) {
+  const g = mkGrid(w, h);
+  const vis = Array.from({ length: h }, () => new Uint8Array(w));
+  const stack = [[rnd(w), rnd(h)]];
+  vis[stack[0][1]][stack[0][0]] = 1;
+  while (stack.length) {
+    const [x, y] = stack[stack.length - 1];
+    const nbrs = shuffle(DIRS.filter(d => {
+      const nx = x + DX[d], ny = y + DY[d];
+      return inB(nx, ny, w, h) && !vis[ny][nx];
+    }));
+    if (nbrs.length) {
+      const dir = nbrs[0];
+      const nx = x + DX[dir], ny = y + DY[dir];
+      carve(g, x, y, dir);
+      vis[ny][nx] = 1;
+      stack.push([nx, ny]);
+    } else {
+      stack.pop();
+    }
+  }
+  return g;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  2. Randomized Prim's
+// ════════════════════════════════════════════════════════════════
+function genPrim(w, h) {
+  const g = mkGrid(w, h);
+  const inM = Array.from({ length: h }, () => new Uint8Array(w));
+  const walls = [];
+  const sx = rnd(w), sy = rnd(h);
+  inM[sy][sx] = 1;
+  DIRS.forEach(d => {
+    const nx = sx + DX[d], ny = sy + DY[d];
+    if (inB(nx, ny, w, h)) walls.push([sx, sy, d]);
+  });
+  while (walls.length) {
+    const idx = rnd(walls.length);
+    const [x, y, dir] = walls[idx];
+    walls.splice(idx, 1);
+    const nx = x + DX[dir], ny = y + DY[dir];
+    if (!inB(nx, ny, w, h) || inM[ny][nx]) continue;
+    carve(g, x, y, dir);
+    inM[ny][nx] = 1;
+    DIRS.forEach(d => {
+      const nnx = nx + DX[d], nny = ny + DY[d];
+      if (inB(nnx, nny, w, h) && !inM[nny][nnx]) walls.push([nx, ny, d]);
+    });
+  }
+  return g;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  3. Recursive Division
+// ════════════════════════════════════════════════════════════════
+function genDivision(w, h) {
+  // Open grid (no internal walls)
+  const g = Array.from({ length: h }, (_, y) =>
+    Uint8Array.from({ length: w }, (_, x) => {
+      let c = 0;
+      if (x > 0)   c |= W;
+      if (x < w-1) c |= E;
+      if (y > 0)   c |= N;
+      if (y < h-1) c |= S;
+      return c;
+    })
+  );
+
+  // Iterative divide using explicit stack
+  const stack = [[0, 0, w, h]];
+  while (stack.length) {
+    const [rx, ry, rw, rh] = stack.pop();
+    if (rw <= 1 || rh <= 1) continue;
+
+    const horiz = rw < rh ? true : rw > rh ? false : Math.random() < 0.5;
+    if (horiz) {
+      // Horizontal wall at ry + wallOff (0..rh-2)
+      const wallOff = rnd(rh - 1);
+      const wallY   = ry + wallOff;
+      const passX   = rx + rnd(rw);
+      for (let cx = rx; cx < rx + rw; cx++) {
+        if (cx === passX) continue;
+        g[wallY][cx]     &= ~S;
+        g[wallY + 1][cx] &= ~N;
+      }
+      stack.push([rx, ry, rw, wallOff + 1]);
+      stack.push([rx, wallY + 1, rw, rh - wallOff - 1]);
+    } else {
+      const wallOff = rnd(rw - 1);
+      const wallX   = rx + wallOff;
+      const passY   = ry + rnd(rh);
+      for (let cy = ry; cy < ry + rh; cy++) {
+        if (cy === passY) continue;
+        g[cy][wallX]     &= ~E;
+        g[cy][wallX + 1] &= ~W;
+      }
+      stack.push([rx, ry, wallOff + 1, rh]);
+      stack.push([wallX + 1, ry, rw - wallOff - 1, rh]);
+    }
+  }
+  return g;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  4. Randomized Kruskal's
+// ════════════════════════════════════════════════════════════════
+function genKruskal(w, h) {
+  const g = mkGrid(w, h);
+  const par = new Int32Array(w * h).map((_, i) => i);
+  const rnk = new Uint8Array(w * h);
+  function find(x) {
+    while (par[x] !== x) { par[x] = par[par[x]]; x = par[x]; }
+    return x;
+  }
+  function union(a, b) {
+    a = find(a); b = find(b);
+    if (a === b) return false;
+    if (rnk[a] < rnk[b]) [a, b] = [b, a];
+    par[b] = a;
+    if (rnk[a] === rnk[b]) rnk[a]++;
+    return true;
+  }
+  const edges = [];
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      if (x < w-1) edges.push([x, y, E]);
+      if (y < h-1) edges.push([x, y, S]);
+    }
+  shuffle(edges);
+  for (const [x, y, dir] of edges) {
+    const nx = x + DX[dir], ny = y + DY[dir];
+    if (union(y * w + x, ny * w + nx)) carve(g, x, y, dir);
+  }
+  return g;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  5. Wilson's Algorithm (Loop-Erased Random Walk)
+// ════════════════════════════════════════════════════════════════
+function genWilson(w, h) {
+  const g = mkGrid(w, h);
+  const inM = Array.from({ length: h }, () => new Uint8Array(w));
+  // Shuffled list for fast unvisited lookup
+  const order = Array.from({ length: w * h }, (_, i) => i);
+  shuffle(order);
+  const fx = rnd(w), fy = rnd(h);
+  inM[fy][fx] = 1;
+  let remaining = w * h - 1;
+  let searchPtr = 0;
+  const walkDir = new Int32Array(w * h);
+
+  while (remaining > 0) {
+    // Find next unvisited cell
+    while (searchPtr < order.length) {
+      const idx = order[searchPtr];
+      if (!inM[~~(idx / w)][idx % w]) break;
+      searchPtr++;
+    }
+    if (searchPtr >= order.length) break;
+    let sx = order[searchPtr] % w;
+    let sy = ~~(order[searchPtr] / w);
+
+    // Loop-erased walk: overwrite dir when revisiting = loop erasure
+    let cx = sx, cy = sy;
+    while (!inM[cy][cx]) {
+      const avail = DIRS.filter(d => inB(cx + DX[d], cy + DY[d], w, h));
+      const dir = avail[rnd(avail.length)];
+      walkDir[cy * w + cx] = dir;
+      cx += DX[dir]; cy += DY[dir];
+    }
+    // Carve path
+    cx = sx; cy = sy;
+    while (!inM[cy][cx]) {
+      const dir = walkDir[cy * w + cx];
+      carve(g, cx, cy, dir);
+      inM[cy][cx] = 1;
+      remaining--;
+      cx += DX[dir]; cy += DY[dir];
+    }
+  }
+  return g;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  6. Hunt-and-Kill
+// ════════════════════════════════════════════════════════════════
+function genHuntKill(w, h) {
+  const g = mkGrid(w, h);
+  const vis = Array.from({ length: h }, () => new Uint8Array(w));
+  let cx = rnd(w), cy = rnd(h);
+  vis[cy][cx] = 1;
+  let remaining = w * h - 1;
+  while (remaining > 0) {
+    const nbrs = DIRS.filter(d => inB(cx + DX[d], cy + DY[d], w, h) && !vis[cy + DY[d]][cx + DX[d]]);
+    if (nbrs.length) {
+      const dir = nbrs[rnd(nbrs.length)];
+      const nx = cx + DX[dir], ny = cy + DY[dir];
+      carve(g, cx, cy, dir);
+      vis[ny][nx] = 1;
+      remaining--;
+      cx = nx; cy = ny;
+    } else {
+      // Hunt phase
+      let found = false;
+      hunt: for (let y = 0; y < h && !found; y++) {
+        for (let x = 0; x < w; x++) {
+          if (vis[y][x]) continue;
+          const visNbr = DIRS.filter(d => inB(x + DX[d], y + DY[d], w, h) && vis[y + DY[d]][x + DX[d]]);
+          if (visNbr.length) {
+            const dir = visNbr[rnd(visNbr.length)];
+            carve(g, x, y, dir);
+            vis[y][x] = 1;
+            remaining--;
+            cx = x; cy = y;
+            found = true;
+            break hunt;
+          }
+        }
+      }
+      if (!found) break;
+    }
+  }
+  return g;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  7. Eller's Algorithm
+// ════════════════════════════════════════════════════════════════
+function genEller(w, h) {
+  const g = mkGrid(w, h);
+  let row = Array.from({ length: w }, (_, i) => i + 1);
+  let nextId = w + 1;
+
+  for (let y = 0; y < h; y++) {
+    const last = y === h - 1;
+
+    // Step 1: Merge horizontally
+    for (let x = 0; x < w - 1; x++) {
+      if (row[x] !== row[x + 1] && (last || Math.random() < 0.5)) {
+        const from = row[x + 1], to = row[x];
+        for (let i = 0; i < w; i++) if (row[i] === from) row[i] = to;
+        carve(g, x, y, E);
+      }
+    }
+    if (last) break;
+
+    // Step 2: Extend downward (at least one per set)
+    const groups = {};
+    for (let x = 0; x < w; x++) {
+      if (!groups[row[x]]) groups[row[x]] = [];
+      groups[row[x]].push(x);
+    }
+    const nextRow = new Array(w).fill(0);
+    for (const [sid, cols] of Object.entries(groups)) {
+      shuffle(cols);
+      const must = cols[0]; // Guarantee at least one
+      carve(g, must, y, S);
+      nextRow[must] = +sid;
+      for (let i = 1; i < cols.length; i++) {
+        const x = cols[i];
+        if (Math.random() < 0.5) {
+          carve(g, x, y, S);
+          nextRow[x] = +sid;
+        } else {
+          nextRow[x] = nextId++;
+        }
+      }
+    }
+    row = nextRow;
+  }
+  return g;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  8. Sidewinder
+// ════════════════════════════════════════════════════════════════
+function genSidewinder(w, h) {
+  const g = mkGrid(w, h);
+  for (let y = 0; y < h; y++) {
+    let run = [];
+    for (let x = 0; x < w; x++) {
+      run.push([x, y]);
+      const atE = x === w - 1;
+      const atN = y === 0;
+      const close = atE || (!atN && Math.random() < 0.5);
+      if (close) {
+        if (!atN) {
+          const [rx, ry] = run[rnd(run.length)];
+          carve(g, rx, ry, N);
+        }
+        run = [];
+      } else {
+        carve(g, x, y, E);
+      }
+    }
+  }
+  return g;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  9. Aldous-Broder
+// ════════════════════════════════════════════════════════════════
+function genAldousBroder(w, h) {
+  const g = mkGrid(w, h);
+  const vis = Array.from({ length: h }, () => new Uint8Array(w));
+  let cx = rnd(w), cy = rnd(h);
+  vis[cy][cx] = 1;
+  let remaining = w * h - 1;
+  const limit = w * h * 80; // Safety cap
+  let steps = 0;
+  while (remaining > 0 && steps < limit) {
+    steps++;
+    const avail = DIRS.filter(d => inB(cx + DX[d], cy + DY[d], w, h));
+    const dir = avail[rnd(avail.length)];
+    const nx = cx + DX[dir], ny = cy + DY[dir];
+    if (!vis[ny][nx]) {
+      carve(g, cx, cy, dir);
+      vis[ny][nx] = 1;
+      remaining--;
+    }
+    cx = nx; cy = ny;
+  }
+  return g;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  10. Growing Tree
+// ════════════════════════════════════════════════════════════════
+function genGrowingTree(w, h, newestRatio = 0.5) {
+  const g = mkGrid(w, h);
+  const vis = Array.from({ length: h }, () => new Uint8Array(w));
+  const list = [];
+  const sx = rnd(w), sy = rnd(h);
+  vis[sy][sx] = 1;
+  list.push([sx, sy]);
+  while (list.length) {
+    const idx = Math.random() < newestRatio ? list.length - 1 : rnd(list.length);
+    const [x, y] = list[idx];
+    const nbrs = shuffle(DIRS.filter(d => inB(x + DX[d], y + DY[d], w, h) && !vis[y + DY[d]][x + DX[d]]));
+    if (nbrs.length) {
+      const dir = nbrs[0];
+      const nx = x + DX[dir], ny = y + DY[dir];
+      carve(g, x, y, dir);
+      vis[ny][nx] = 1;
+      list.push([nx, ny]);
+    } else {
+      list.splice(idx, 1);
+    }
+  }
+  return g;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  Render
+// ════════════════════════════════════════════════════════════════
+const THEMES = {
+  dark:      { bg: '#0d1117', wall: '#c9d1d9', start: '#34d399', end: '#f87171' },
+  light:     { bg: '#f8fafc', wall: '#1e293b', start: '#059669', end: '#dc2626' },
+  blueprint: { bg: '#0a2351', wall: '#7eb3ff', start: '#34d399', end: '#fbbf24' },
+  matrix:    { bg: '#000000', wall: '#00ff41', start: '#00ffaa', end: '#ff0040' },
+  sepia:     { bg: '#f5ecd7', wall: '#5c3a1e', start: '#2d7a3a', end: '#c0392b' },
+};
+let currentTheme = 'dark';
+let lastGrid = null;
+
+function renderMaze(grid, canvas) {
+  const h = grid.length, w = grid[0].length;
+  const theme = THEMES[currentTheme];
+
+  const availW = canvas.parentElement.parentElement.clientWidth - 40;
+  const availH = canvas.parentElement.parentElement.clientHeight - 40;
+  const cs = Math.max(2, Math.floor(Math.min(availW, availH) / Math.max(w, h)));
+
+  const cw = w * cs + 1, ch = h * cs + 1;
+  canvas.width  = cw;
+  canvas.height = ch;
+
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = theme.bg;
+  ctx.fillRect(0, 0, cw, ch);
+
+  const lw = Math.max(1, cs >= 8 ? 1.5 : 1);
+  ctx.strokeStyle = theme.wall;
+  ctx.lineWidth   = lw;
+  ctx.lineCap     = 'square';
+
+  ctx.beginPath();
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const px = x * cs, py = y * cs;
+      const c  = grid[y][x];
+      if (!(c & N)) { ctx.moveTo(px,      py);       ctx.lineTo(px + cs, py); }
+      if (!(c & E)) { ctx.moveTo(px + cs, py);       ctx.lineTo(px + cs, py + cs); }
+      if (!(c & S)) { ctx.moveTo(px,      py + cs);  ctx.lineTo(px + cs, py + cs); }
+      if (!(c & W)) { ctx.moveTo(px,      py);       ctx.lineTo(px,      py + cs); }
+    }
+  }
+  ctx.stroke();
+
+  // Start / End markers
+  if (cs >= 5) {
+    const m = Math.max(1, cs - (cs >= 10 ? 3 : 2));
+    const o = cs >= 10 ? 1 : 1;
+    // Start (top-left, green)
+    ctx.fillStyle = theme.start;
+    ctx.beginPath();
+    ctx.roundRect(o, o, m, m, cs >= 10 ? 2 : 1);
+    ctx.fill();
+    // End (bottom-right, red)
+    ctx.fillStyle = theme.end;
+    ctx.beginPath();
+    ctx.roundRect((w-1)*cs + o, (h-1)*cs + o, m, m, cs >= 10 ? 2 : 1);
+    ctx.fill();
+  }
+
+  return cs;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  UI Logic
+// ════════════════════════════════════════════════════════════════
+const algoSel    = document.getElementById('algoSel');
+const growPanel  = document.getElementById('growPanel');
+const growSlider = document.getElementById('growSlider');
+const growLabel  = document.getElementById('growValLabel');
+const sizeSlider = document.getElementById('sizeSlider');
+const sizeBadge  = document.getElementById('sizeBadge');
+const presetBtns = document.querySelectorAll('.preset');
+const genBtn     = document.getElementById('genBtn');
+const canvas     = document.getElementById('maze');
+const canvasWrap = document.getElementById('canvasWrap');
+const emptyState = document.getElementById('emptyState');
+const spinner    = document.getElementById('spinner');
+const spinnerTxt = document.getElementById('spinnerText');
+const statTime   = document.getElementById('statTime');
+const statCells  = document.getElementById('statCells');
+const statPx     = document.getElementById('statPx');
+const infoTitle  = document.getElementById('infoTitle');
+const infoDesc   = document.getElementById('infoDesc');
+const infoTags   = document.getElementById('infoTags');
+
+function setAlgoInfo(key) {
+  const info = ALGO_INFO[key];
+  if (!info) return;
+  infoTitle.textContent = info.name;
+  infoDesc.textContent  = info.desc;
+  infoTags.innerHTML    = info.tags.map(([t, c]) =>
+    `<span class="tag tag-${c}">${t}</span>`).join('');
+  growPanel.classList.toggle('visible', key === 'growing');
+}
+
+function setSize(s) {
+  sizeSlider.value   = s;
+  sizeBadge.textContent = `${s} × ${s}`;
+  presetBtns.forEach(b => b.classList.toggle('active', +b.dataset.size === s));
+}
+
+algoSel.addEventListener('change', () => setAlgoInfo(algoSel.value));
+
+growSlider.addEventListener('input', () => {
+  const v = +growSlider.value;
+  growLabel.textContent = `最新 ${v}% / 隨機 ${100 - v}%`;
+});
+
+sizeSlider.addEventListener('input', () => setSize(+sizeSlider.value));
+
+presetBtns.forEach(b => b.addEventListener('click', () => setSize(+b.dataset.size)));
+
+document.querySelectorAll('.theme-swatch').forEach(sw => {
+  sw.addEventListener('click', () => {
+    document.querySelectorAll('.theme-swatch').forEach(s => s.classList.remove('active'));
+    sw.classList.add('active');
+    currentTheme = sw.dataset.theme;
+    if (lastGrid) renderMaze(lastGrid, canvas);
+  });
+});
+
+genBtn.addEventListener('click', () => {
+  const algo = algoSel.value;
+  const size = +sizeSlider.value;
+
+  genBtn.disabled  = true;
+  emptyState.style.display = 'none';
+  canvasWrap.style.display = 'inline-block';
+  spinner.classList.add('show');
+  spinnerTxt.textContent = '生成中…';
+
+  setTimeout(() => {
+    const t0 = performance.now();
+    let grid;
+    try {
+      switch (algo) {
+        case 'dfs':       grid = genDFS(size, size); break;
+        case 'prim':      grid = genPrim(size, size); break;
+        case 'division':  grid = genDivision(size, size); break;
+        case 'kruskal':   grid = genKruskal(size, size); break;
+        case 'wilson':    grid = genWilson(size, size); break;
+        case 'hunt-kill': grid = genHuntKill(size, size); break;
+        case 'eller':     grid = genEller(size, size); break;
+        case 'sidewinder':grid = genSidewinder(size, size); break;
+        case 'aldous':    grid = genAldousBroder(size, size); break;
+        case 'growing':   grid = genGrowingTree(size, size, +growSlider.value / 100); break;
+        default:          grid = genDFS(size, size);
+      }
+    } catch (e) {
+      console.error(e);
+      spinner.classList.remove('show');
+      genBtn.disabled = false;
+      return;
+    }
+    const elapsed = (performance.now() - t0).toFixed(1);
+    lastGrid = grid;
+    const cs = renderMaze(grid, canvas);
+    spinner.classList.remove('show');
+    statTime.textContent  = elapsed;
+    statCells.textContent = (size * size).toLocaleString();
+    statPx.textContent    = `${cs}px`;
+    genBtn.disabled = false;
+  }, 30);
+});
+
+window.addEventListener('resize', () => {
+  if (lastGrid) renderMaze(lastGrid, canvas);
+});
+
+// Init
+setAlgoInfo('dfs');
+setSize(25);
+// Auto-generate on load
+genBtn.click();
+</script>
+</body>
+</html>
