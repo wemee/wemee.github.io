@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Tabs } from '@/components/ui/Tabs';
 import { cardStyles, buttonStyles, inputStyles, alertStyles } from '@/components/ui';
 
@@ -68,6 +68,22 @@ function DecodePanel() {
         }
     }, [handleFile]);
 
+    const handlePaste = useCallback((e: React.ClipboardEvent | ClipboardEvent) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        const item = Array.from(items).find(i => i.type.startsWith('image/'));
+        if (item) {
+            const file = item.getAsFile();
+            if (file) handleFile(file);
+        }
+    }, [handleFile]);
+
+    useEffect(() => {
+        const onPaste = (e: ClipboardEvent) => handlePaste(e);
+        window.addEventListener('paste', onPaste);
+        return () => window.removeEventListener('paste', onPaste);
+    }, [handlePaste]);
+
     const copyToClipboard = useCallback((text: string) => {
         navigator.clipboard.writeText(text);
     }, []);
@@ -92,14 +108,16 @@ function DecodePanel() {
                         <div
                             className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition ${isDragging ? 'border-accent-green bg-accent-green/10' : 'border-accent-blue hover:bg-accent-blue/10'
                                 }`}
+                            tabIndex={0}
                             onClick={() => fileInputRef.current?.click()}
                             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                             onDragLeave={() => setIsDragging(false)}
                             onDrop={handleDrop}
+                            onPaste={handlePaste}
                         >
                             <div className="text-5xl mb-2">📁</div>
-                            <p className="text-base-400 mb-1">拖拉圖片到這裡，或點擊選擇</p>
-                            <p className="text-base-600 text-sm">支援 JPG、PNG、截圖</p>
+                            <p className="text-base-400 mb-1">拖拉、點擊選擇，或貼上圖片</p>
+                            <p className="text-base-600 text-sm">支援 JPG、PNG、截圖（Ctrl+V / ⌘V）</p>
                             <input
                                 ref={fileInputRef}
                                 type="file"
