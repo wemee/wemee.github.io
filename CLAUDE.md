@@ -13,35 +13,42 @@ npm run preview      # Preview production build locally
 
 ## Project Architecture
 
-This is an Astro 5 static site (wemee.github.io) using Bootswatch Solar theme with Bootstrap 5.
+This is an Astro 5 static site (wemee.github.io) using **Tailwind CSS 4** (with `preflight: false` to avoid conflicts with existing styles) and React 19 for interactive components.
 
 ### Directory Structure
 - `src/pages/` - File-based routing (game/, math/, tools/, blog/)
-- `src/layouts/BaseLayout.astro` - Single layout with SEO meta tags, OG tags, and JSON-LD structured data
+- `src/layouts/BaseLayout.astro` - Main layout with SEO meta tags, OG tags, and JSON-LD structured data. `SudokuAppLayout.astro` is a specialized layout for the Sudoku game.
 - `src/components/Navbar.astro` - Navigation with dropdowns for each section
 - `src/content/blog/` - Markdown blog posts with frontmatter schema defined in `src/content/config.ts`
 - `src/lib/` - TypeScript logic separated from UI
+- `src/hooks/` - React hooks (`useGameLoop.ts`, `useKeyboardInput.ts`)
+- `src/store/` - Zustand stores (`gameStore.ts` for game state, selection, undo/redo, timer)
+- `src/utils.ts` - Global utilities (e.g. `formatDate` for Traditional Chinese dates)
 - `public/` - Static assets served directly
 
 ### TypeScript Library Structure (`src/lib/`)
-- `games/` - Game logic classes (BreakoutGame, StairsGame) with shared types and utilities
+- `games/` - Game logic classes with shared types and utilities
   - `core/GameCore.ts` - Abstract base class for all games (Gymnasium-compatible interface)
+  - `core/ScoringStrategy.ts` - Strategy pattern for scoring: `FrontendScoringStrategy` (player-friendly) vs `TrainingScoringStrategy` (RL-optimized with penalties)
   - `types.ts` - Shared interfaces (Particle, GameState, KeyState)
   - `GameUtils.ts` - Shared functions (overlay, particles, drawing helpers)
   - `{GameName}Core.ts` - Pure game logic (no DOM/Canvas), extends GameCore
   - `{GameName}Game.ts` - Browser version with rendering, uses Core
+  - `phaser/` - Phaser 3 game wrappers (`core/PhaserBase.ts`, `games/collision/`, `games/demo/`)
 - `ai/` - AI agent architecture for game playing
-  - `core/Agent.ts` - Abstract base class for all AI agents
-  - `core/TFJSAgent.ts` - TensorFlow.js specialized base class
+  - `core/Agent.ts` - Abstract base class; `AlgorithmAgent` subclass for rule-based/heuristic AI (no ML)
+  - `core/TFJSAgent.ts` - TensorFlow.js specialized base class (dynamic loading, model warmup, localStorage cache)
   - `agents/{GameName}Agent.ts` - Concrete AI implementations (RL, rule-based, etc.)
+- `sudoku/` - Sudoku engine (`SudokuEngine.ts`, `BacktrackingGenerator.ts`, `BacktrackingSolver.ts`)
 - `math/` - Math visualization classes (VectorVisualizer, TrafficSimulator)
 - `image.ts` - Image processing utilities for tools
 
 ### Key Patterns
-- **BaseLayout Props**: All pages use `<BaseLayout title="..." description="...">` wrapper. For blog posts, pass `articleDate`, `articleAuthor`, and `articleTags` for proper SEO metadata
+- **BaseLayout Props**: All pages use `<BaseLayout title="..." description="..." currentPage="...">` wrapper. Pass `currentPage` (e.g. `"game"`, `"math"`, `"tools"`) for nav highlighting. For blog posts, also pass `articleDate`, `articleAuthor`, and `articleTags` for proper SEO metadata.
 - **Path aliases**: Use `@/*` to reference `src/*` (configured in tsconfig.json)
 - **Blog schema**: Posts require `title`, `pubDate`, `description` in frontmatter; `author`, `tags`, `image` optional
 - **Canvas Apps**: Use class-based pattern with constructor taking canvasId and callbacks, handle devicePixelRatio for Retina displays, use requestAnimationFrame for game loops
+- **Component naming**: Underscore-prefixed components (e.g. `_NotepadApp.tsx`, `_MemoTool.tsx`) are internal/private React components not meant for direct import outside their page
 
 ### Canvas/Visualization Class Pattern
 ```typescript
