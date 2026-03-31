@@ -1,0 +1,17 @@
+---
+// 這個頁面保留舊的 URL /html-css-/ 並重新導向到部落格文章
+// 舊 URL 曾被 https://ithelp.ithome.com.tw/m/articles/10281277 引用
+const TARGET = '/blog/html-css-viewport-units/';
+---
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="refresh" content={`0; url=${TARGET}`} />
+    <link rel="canonical" href={TARGET} />
+    <title>重新導向中...</title>
+  </head>
+  <body>
+    <p>頁面已移動，正在重新導向到 <a href={TARGET}>新網址</a>...</p>
+  </body>
+</html>
