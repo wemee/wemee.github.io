@@ -30,5 +30,8 @@
   },
   "devDependencies": {
     "esbuild": "^0.24.0"
+  },
+  "overrides": {
+    "defu": ">=6.1.5"
   }
 }
