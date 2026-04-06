@@ -29,7 +29,7 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
-    "esbuild": "^0.24.0"
+    "esbuild": "^0.28.0"
   },
   "overrides": {
     "defu": ">=6.1.5"
