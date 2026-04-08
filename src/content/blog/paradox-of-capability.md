@@ -6,8 +6,6 @@ tags: ["security", "privacy", "AI", "game-theory"]
 image: "/images/blog/paradox-of-capability.webp"
 ---
 
-![能力即嫌疑：Tor 與 Zero-Day 的視覺隱喻](/images/blog/paradox-of-capability.webp)
-
 ## 一個情報機構的尷尬
 
 2000 年代初，美國海軍研究實驗室（NRL）完成了一項精巧的工程：**洋蔥路由（Onion Routing）**。多層加密、隨機中繼、流量混淆——一切設計都是為了讓情報人員在網路上無法被追蹤。
