@@ -343,10 +343,10 @@
           <div class="time-row"><span class="label">T3</span><span class="value t3-val">--:--:--</span></div>
         `;
         div.querySelector('.t1-input').addEventListener('keydown', e => {
-          if (e.key === 'Enter') onEnter(i, e.target.value);
+          if (e.key === 'Enter') onEnter(+div.dataset.group, e.target.value);
         });
         div.querySelectorAll('.adj-btn').forEach(btn => {
-          btn.addEventListener('click', () => adjust(i, +btn.dataset.delta));
+          btn.addEventListener('click', () => adjust(+div.dataset.group, +btn.dataset.delta));
         });
         // save title whenever it changes
         div.querySelector('.title-input').addEventListener('input', saveState);
