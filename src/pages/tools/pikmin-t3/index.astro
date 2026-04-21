@@ -1,0 +1,316 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+<BaseLayout
+  currentPage="tools"
+  title="皮克敏搶菇計時器 | T3 Calculator"
+  description="皮克敏 4 多人搶菇計時小工具，輸入 T1 自動推算 T3（T1 + T2 + 5 分鐘），支援最多 12 組同時計時、排序與瀏覽器通知。"
+>
+  <div id="pikmin-tool">
+    <div class="header">
+      <h1>T3 = T1 + T2 + 5min</h1>
+      <button class="sort-btn" id="sort-btn">&#8597; 依 T3 排序</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+</BaseLayout>
+
+<style>
+  #pikmin-tool {
+    font-family: monospace;
+    background: #111;
+    color: #eee;
+    padding: 24px;
+    min-height: calc(100vh - 60px);
+  }
+
+  #pikmin-tool .header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  #pikmin-tool .header h1 { font-size: 0.9rem; color: #555; letter-spacing: 1px; }
+
+  #pikmin-tool .sort-btn {
+    font-family: monospace;
+    font-size: 0.9rem;
+    background: #2a2a2a;
+    border: 1px solid #4a4a4a;
+    color: #fa6;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #pikmin-tool .sort-btn:hover  { background: #333; }
+  #pikmin-tool .sort-btn:active { background: #444; }
+
+  #pikmin-tool .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 900px) {
+    #pikmin-tool .grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 500px) {
+    #pikmin-tool .grid { grid-template-columns: 1fr; }
+  }
+
+  #pikmin-tool .group {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  #pikmin-tool .title-input {
+    font-family: monospace;
+    font-size: 1rem;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #333;
+    color: #ccc;
+    padding: 4px 0;
+    width: 100%;
+    outline: none;
+  }
+  #pikmin-tool .title-input::placeholder { color: #3a3a3a; }
+  #pikmin-tool .title-input:focus { border-bottom-color: #666; }
+
+  #pikmin-tool .input-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  #pikmin-tool .t1-input {
+    font-family: monospace;
+    font-size: 1.2rem;
+    background: #222;
+    border: 1px solid #444;
+    color: #fff;
+    padding: 5px 8px;
+    width: 90px;
+    border-radius: 4px;
+    outline: none;
+  }
+  #pikmin-tool .t1-input:focus { border-color: #6af; }
+
+  #pikmin-tool .adj-btn {
+    font-family: monospace;
+    font-size: 0.9rem;
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    color: #aaa;
+    padding: 5px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  #pikmin-tool .adj-btn:hover  { background: #333; color: #fff; }
+  #pikmin-tool .adj-btn:active { background: #444; }
+
+  #pikmin-tool .time-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  #pikmin-tool .label { color: #555; font-size: 0.8rem; width: 22px; }
+  #pikmin-tool .value { font-size: 1.9rem; letter-spacing: 1px; }
+  #pikmin-tool .t1-val { color: #6af; }
+  #pikmin-tool .t2-val { color: #8f8; }
+  #pikmin-tool .t3-val { color: #fa6; font-size: 2.4rem; font-weight: bold; }
+  #pikmin-tool .hint { color: #3a3a3a; font-size: 0.7rem; }
+</style>
+
+<script>
+  const GROUP_COUNT      = 12;
+  const EXTRA_SECONDS    = 5 * 60;
+  const NOTIFY_THRESHOLD = 60;
+  const STORAGE_KEY      = 't3calc';
+
+  const states: (null | { t1: number; t2: number; t3: number; pressedAt: number; notified: boolean })[] =
+    Array.from({ length: GROUP_COUNT }, () => null);
+
+  function parseInput(raw: string): number | null {
+    const d = raw.trim();
+    if (d.length === 0 || d.length > 5 || !/^\d+$/.test(d)) return null;
+    let h = 0, m = 0, s = 0;
+    if      (d.length === 5) { h = +d[0]; m = +d.slice(1,3); s = +d.slice(3,5); }
+    else if (d.length === 4) {             m = +d.slice(0,2); s = +d.slice(2,4); }
+    else if (d.length === 3) {             m = +d[0];         s = +d.slice(1,3); }
+    else                     {                                 s = +d;            }
+    return h * 3600 + m * 60 + s;
+  }
+
+  function fmt(totalSec: number): string {
+    const neg = totalSec < 0;
+    const abs = Math.abs(totalSec);
+    const h   = Math.floor(abs / 3600);
+    const m   = Math.floor((abs % 3600) / 60);
+    const s   = abs % 60;
+    const str = [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
+    return neg ? '-' + str : str;
+  }
+
+  function nowSeconds(): number {
+    const d = new Date();
+    return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+  }
+
+  function saveState() {
+    const grid  = document.getElementById('grid')!;
+    const data  = Array.from(grid.children).map(el => {
+      const idx = +(el as HTMLElement).dataset.group!;
+      return {
+        title: (el.querySelector('.title-input') as HTMLInputElement).value,
+        t3:    states[idx] ? states[idx]!.t3 : null,
+      };
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  function loadState() {
+    let data: any[];
+    try { data = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? ''); } catch { return; }
+    if (!Array.isArray(data)) return;
+
+    const grid  = document.getElementById('grid')!;
+    const items = Array.from(grid.children) as HTMLElement[];
+
+    data.forEach((item, slot) => {
+      const el = items[slot];
+      if (!el) return;
+      const idx = +el.dataset.group!;
+      if (item.title) (el.querySelector('.title-input') as HTMLInputElement).value = item.title;
+      if (item.t3 !== null) {
+        const t2 = nowSeconds();
+        const t1 = item.t3 - EXTRA_SECONDS - t2;
+        if (t1 > 0) {
+          states[idx] = { t1, t2, t3: item.t3, pressedAt: Date.now(), notified: t1 < NOTIFY_THRESHOLD };
+        }
+      }
+    });
+  }
+
+  function requestNotifyPermission() {
+    if (Notification.permission === 'default') Notification.requestPermission();
+  }
+
+  function sendNotify(i: number) {
+    if (Notification.permission !== 'granted') return;
+    const label = (getEl(i, 'title-input') as HTMLInputElement)?.value.trim() || `第 ${i + 1} 組`;
+    new Notification(`⚠️ ${label} — T3 剩不到 1 分鐘`, {
+      body: `T3 = ${fmt(states[i]!.t3)}`,
+      silent: false,
+    });
+  }
+
+  function onEnter(i: number, raw: string) {
+    const t1 = parseInput(raw);
+    if (t1 === null) { alert('格式錯誤，請輸入最多 5 位數字'); return; }
+    const t2 = nowSeconds();
+    states[i] = { t1, t2, t3: t1 + t2 + EXTRA_SECONDS, pressedAt: Date.now(), notified: false };
+    saveState();
+  }
+
+  function adjust(i: number, delta: number) {
+    const s = states[i];
+    if (!s) return;
+    s.t1 += delta;
+    s.t3 += delta;
+    const elapsed = Math.floor((Date.now() - s.pressedAt) / 1000);
+    if (s.t1 - elapsed >= NOTIFY_THRESHOLD) s.notified = false;
+    saveState();
+  }
+
+  function clearGroup(i: number) {
+    states[i] = null;
+    (getEl(i, 't1-val') as HTMLElement).textContent = '--:--:--';
+    (getEl(i, 't2-val') as HTMLElement).textContent = '--:--:--';
+    (getEl(i, 't3-val') as HTMLElement).textContent = '--:--:--';
+    saveState();
+  }
+
+  function sortByT3() {
+    const grid  = document.getElementById('grid')!;
+    const items = Array.from(grid.children) as HTMLElement[];
+    const pairs = items.map(el => ({ el, state: states[+el.dataset.group!] }));
+
+    pairs.sort((a, b) => {
+      if (!a.state && !b.state) return 0;
+      if (!a.state) return 1;
+      if (!b.state) return -1;
+      return a.state.t3 - b.state.t3;
+    });
+
+    pairs.forEach(({ el, state }, newIdx) => {
+      states[newIdx] = state;
+      el.dataset.group = String(newIdx);
+      grid.appendChild(el);
+    });
+  }
+
+  function tick() {
+    for (let i = 0; i < GROUP_COUNT; i++) {
+      const s = states[i];
+      if (!s) continue;
+      const elapsed  = Math.floor((Date.now() - s.pressedAt) / 1000);
+      const t1remain = s.t1 - elapsed;
+
+      if (t1remain <= 0) { clearGroup(i); continue; }
+
+      if (t1remain < NOTIFY_THRESHOLD && !s.notified) {
+        s.notified = true;
+        sendNotify(i);
+      }
+
+      (getEl(i, 't1-val') as HTMLElement).textContent = fmt(t1remain);
+      (getEl(i, 't2-val') as HTMLElement).textContent = fmt(s.t2 + elapsed);
+      (getEl(i, 't3-val') as HTMLElement).textContent = fmt(s.t3);
+    }
+  }
+
+  function getEl(i: number, cls: string): Element | null {
+    return document.querySelector(`[data-group="${i}"] .${cls}`);
+  }
+
+  function renderGroups() {
+    const grid = document.getElementById('grid')!;
+    for (let i = 0; i < GROUP_COUNT; i++) {
+      const div = document.createElement('div');
+      div.className = 'group';
+      div.dataset.group = String(i);
+      div.innerHTML = `
+        <input class="title-input" type="text" placeholder="標題 ${i + 1}">
+        <div class="input-row">
+          <input class="t1-input" type="text" maxlength="5" placeholder="hmmss">
+          <button class="adj-btn" data-delta="-1">-1s</button>
+          <button class="adj-btn" data-delta="1">+1s</button>
+        </div>
+        <div class="hint">hmmss / mss / ss，按 Enter</div>
+        <div class="time-row"><span class="label">T1</span><span class="value t1-val">--:--:--</span></div>
+        <div class="time-row"><span class="label">T2</span><span class="value t2-val">--:--:--</span></div>
+        <div class="time-row"><span class="label">T3</span><span class="value t3-val">--:--:--</span></div>
+      `;
+      div.querySelector('.t1-input')!.addEventListener('keydown', (e: Event) => {
+        if ((e as KeyboardEvent).key === 'Enter') onEnter(i, (e.target as HTMLInputElement).value);
+      });
+      div.querySelectorAll('.adj-btn').forEach(btn => {
+        btn.addEventListener('click', () => adjust(i, +(btn as HTMLElement).dataset.delta!));
+      });
+      div.querySelector('.title-input')!.addEventListener('input', saveState);
+      grid.appendChild(div);
+    }
+  }
+
+  document.getElementById('sort-btn')!.addEventListener('click', sortByT3);
+  renderGroups();
+  loadState();
+  requestNotifyPermission();
+  setInterval(tick, 1000);
+</script>
