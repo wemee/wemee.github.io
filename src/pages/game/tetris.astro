@@ -1,0 +1,529 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="俄羅斯方塊 | 挫屎勇的遊戲間"
+  description="絢麗光影、強烈打擊感的俄羅斯方塊（Tetris）。可自訂板面大小、起始等級與主題色，支援 Hold、Ghost、Hard Drop 等現代規則。"
+  currentPage="game"
+>
+  <div class="tetris-page">
+    <!-- 開始前設定面板 -->
+    <div id="setupScreen" class="tetris-setup">
+      <div class="setup-card">
+        <h1 class="setup-title">🟦 俄羅斯方塊</h1>
+        <p class="setup-sub">絢麗光影 × 強烈打擊感</p>
+
+        <div class="setup-row">
+          <label class="setup-label">
+            <span>板寬</span>
+            <span class="setup-value" id="colsValue">10</span>
+          </label>
+          <input type="range" id="settingCols" min="6" max="14" value="10" />
+          <div class="setup-hint">6 ~ 14（預設 10）</div>
+        </div>
+
+        <div class="setup-row">
+          <label class="setup-label">
+            <span>板高</span>
+            <span class="setup-value" id="rowsValue">20</span>
+          </label>
+          <input type="range" id="settingRows" min="15" max="30" value="20" />
+          <div class="setup-hint">15 ~ 30（預設 20）</div>
+        </div>
+
+        <div class="setup-row">
+          <label class="setup-label">
+            <span>起始等級</span>
+            <span class="setup-value" id="levelValue">1</span>
+          </label>
+          <input type="range" id="settingLevel" min="1" max="10" value="1" />
+          <div class="setup-hint">1 ~ 10（預設 1，越高掉落越快）</div>
+        </div>
+
+        <div class="setup-row">
+          <label class="setup-label"><span>主題</span></label>
+          <div class="theme-picker">
+            <button type="button" class="theme-btn active" data-theme="cyberpunk">
+              <span class="theme-swatch theme-swatch-cyberpunk"></span>
+              賽博龐克
+            </button>
+            <button type="button" class="theme-btn" data-theme="aurora">
+              <span class="theme-swatch theme-swatch-aurora"></span>
+              極光
+            </button>
+            <button type="button" class="theme-btn" data-theme="fire">
+              <span class="theme-swatch theme-swatch-fire"></span>
+              火焰
+            </button>
+          </div>
+        </div>
+
+        <button id="startBtn" class="start-btn">開始遊戲</button>
+
+        <div class="controls-hint">
+          <div><kbd>←</kbd><kbd>→</kbd> 左右　<kbd>↓</kbd> 軟降　<kbd>↑</kbd> 旋轉</div>
+          <div><kbd>Space</kbd> 硬降　<kbd>C</kbd> Hold　<kbd>P</kbd> 暫停</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 遊戲畫面 -->
+    <div id="gameScreen" class="tetris-game hidden">
+      <div class="game-layout">
+        <!-- 左側：Hold + 控制提示 -->
+        <aside class="side-panel side-left">
+          <div class="panel-card">
+            <div class="panel-title">HOLD</div>
+            <canvas id="holdCanvas" class="preview-canvas"></canvas>
+          </div>
+          <div class="panel-card controls-card">
+            <div class="panel-title">控制</div>
+            <ul>
+              <li><kbd>←</kbd><kbd>→</kbd> 左右</li>
+              <li><kbd>↓</kbd> 軟降</li>
+              <li><kbd>↑</kbd> 旋轉</li>
+              <li><kbd>Space</kbd> 硬降</li>
+              <li><kbd>C</kbd> Hold</li>
+              <li><kbd>P</kbd> 暫停</li>
+            </ul>
+          </div>
+        </aside>
+
+        <!-- 中央：主遊戲畫布 -->
+        <div class="board-wrap">
+          <canvas id="tetrisCanvas"></canvas>
+        </div>
+
+        <!-- 右側：Next + 分數 -->
+        <aside class="side-panel side-right">
+          <div class="panel-card">
+            <div class="panel-title">NEXT</div>
+            <canvas class="preview-canvas next-canvas" id="nextCanvas0"></canvas>
+            <canvas class="preview-canvas next-canvas" id="nextCanvas1"></canvas>
+            <canvas class="preview-canvas next-canvas" id="nextCanvas2"></canvas>
+          </div>
+          <div class="panel-card stats-card">
+            <div class="stat-row"><span>分數</span><span id="scoreValue" class="stat-num">0</span></div>
+            <div class="stat-row"><span>等級</span><span id="levelStat" class="stat-num">1</span></div>
+            <div class="stat-row"><span>消行</span><span id="linesValue" class="stat-num">0</span></div>
+            <div class="stat-row"><span>連消</span><span id="comboValue" class="stat-num">0</span></div>
+          </div>
+          <div class="panel-card">
+            <button id="restartBtn" class="ghost-btn">🔁 重新開始</button>
+            <button id="backBtn" class="ghost-btn">⚙ 重新設定</button>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Game Over 操作面板 -->
+      <div id="gameOverPanel" class="game-over-panel hidden">
+        <h2>💀 GAME OVER</h2>
+        <p>最終分數 <strong id="finalScore">0</strong></p>
+        <p>最高分 <strong id="highScore">0</strong></p>
+        <div class="game-over-buttons">
+          <button id="gameOverRestartBtn" class="start-btn">🔁 再玩一次</button>
+          <button id="gameOverBackBtn" class="ghost-btn">⚙ 重新設定</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .tetris-page {
+    min-height: calc(100vh - 80px);
+    padding: 24px 16px 60px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    background:
+      radial-gradient(ellipse at top, rgba(60, 30, 120, 0.25), transparent 60%),
+      radial-gradient(ellipse at bottom, rgba(0, 80, 120, 0.2), transparent 60%);
+  }
+
+  /* ---- 設定面板 ---- */
+  .tetris-setup {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 0;
+    width: 100%;
+  }
+  .tetris-setup.hidden { display: none; }
+
+  .setup-card {
+    width: min(440px, 100%);
+    padding: 32px 28px;
+    background: linear-gradient(160deg, rgba(20, 25, 50, 0.92), rgba(10, 15, 35, 0.92));
+    border: 1px solid rgba(120, 220, 255, 0.18);
+    border-radius: 16px;
+    box-shadow:
+      0 0 60px rgba(0, 240, 255, 0.12),
+      0 12px 32px rgba(0, 0, 0, 0.45);
+    color: #e6e6f0;
+  }
+  .setup-title {
+    margin: 0 0 4px;
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(90deg, #00f0ff, #ff3df0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .setup-sub {
+    margin: 0 0 22px;
+    color: #a8b0c8;
+    font-size: 14px;
+  }
+  .setup-row { margin-bottom: 18px; }
+  .setup-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #d8d8e8;
+  }
+  .setup-value {
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    color: #00f0ff;
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+  }
+  .setup-hint {
+    color: #7a83a0;
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  input[type="range"] {
+    width: 100%;
+    accent-color: #00f0ff;
+  }
+
+  .theme-picker {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .theme-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    color: #cfd2e0;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .theme-btn:hover { background: rgba(255, 255, 255, 0.08); }
+  .theme-btn.active {
+    border-color: rgba(0, 240, 255, 0.6);
+    box-shadow: 0 0 18px rgba(0, 240, 255, 0.25);
+    background: rgba(0, 240, 255, 0.08);
+    color: #fff;
+  }
+  .theme-swatch {
+    width: 28px;
+    height: 14px;
+    border-radius: 4px;
+    box-shadow: 0 0 12px currentColor;
+  }
+  .theme-swatch-cyberpunk { background: linear-gradient(90deg, #00f0ff, #ff3df0); color: #00f0ff; }
+  .theme-swatch-aurora    { background: linear-gradient(90deg, #7afff0, #bb95ff); color: #7afff0; }
+  .theme-swatch-fire      { background: linear-gradient(90deg, #fff066, #ff2a4d); color: #ff8a00; }
+
+  .start-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 800;
+    color: #04111c;
+    background: linear-gradient(90deg, #00f0ff, #ff3df0);
+    box-shadow:
+      0 0 24px rgba(0, 240, 255, 0.45),
+      0 8px 16px rgba(255, 61, 240, 0.25);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .start-btn:hover { transform: translateY(-1px); }
+  .start-btn:active { transform: translateY(0); }
+
+  .controls-hint {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    color: #8d96b3;
+    font-size: 13px;
+    line-height: 1.8;
+    text-align: center;
+  }
+  kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    margin: 0 2px;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 12px;
+    color: #e6e6f0;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+  }
+
+  /* ---- 遊戲畫面 ---- */
+  .tetris-game.hidden { display: none; }
+  .game-layout {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  .side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 150px;
+  }
+  .panel-card {
+    background: linear-gradient(160deg, rgba(20, 25, 50, 0.85), rgba(10, 15, 35, 0.85));
+    border: 1px solid rgba(120, 220, 255, 0.15);
+    border-radius: 12px;
+    padding: 12px;
+    color: #e6e6f0;
+    box-shadow: 0 0 24px rgba(0, 240, 255, 0.06);
+  }
+  .panel-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #7afff0;
+    text-shadow: 0 0 8px rgba(122, 255, 240, 0.5);
+    margin-bottom: 8px;
+  }
+  .preview-canvas {
+    display: block;
+    width: 100%;
+    height: 90px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.35);
+  }
+  .next-canvas { height: 70px; margin-bottom: 6px; }
+  .next-canvas:last-child { margin-bottom: 0; }
+  .controls-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.9;
+    color: #b8bdd0;
+  }
+  .stats-card .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.07);
+    font-size: 13px;
+    color: #a8b0c8;
+  }
+  .stats-card .stat-row:last-child { border-bottom: none; }
+  .stat-num {
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    font-size: 18px;
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  }
+  .ghost-btn {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    color: #d8d8e8;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .ghost-btn:last-child { margin-bottom: 0; }
+  .ghost-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(0, 240, 255, 0.4);
+  }
+
+  .board-wrap {
+    position: relative;
+  }
+  #tetrisCanvas {
+    display: block;
+    border-radius: 12px;
+    box-shadow:
+      0 0 40px rgba(0, 240, 255, 0.18),
+      0 12px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  .game-over-panel {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    z-index: 50;
+    text-align: center;
+    padding: 24px;
+  }
+  .game-over-panel.hidden { display: none; }
+  .game-over-panel h2 {
+    font-size: 36px;
+    font-weight: 900;
+    margin: 0 0 14px;
+    background: linear-gradient(90deg, #ff3df0, #ff3a6d);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .game-over-panel p { margin: 4px 0; font-size: 16px; color: #d6d6e8; }
+  .game-over-panel strong {
+    color: #00f0ff;
+    text-shadow: 0 0 12px rgba(0, 240, 255, 0.7);
+    font-size: 22px;
+    margin-left: 6px;
+  }
+  .game-over-buttons {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 240px;
+  }
+
+  @media (max-width: 760px) {
+    .game-layout { flex-direction: column; align-items: center; }
+    .side-panel { width: min(360px, 100%); flex-direction: row; }
+    .side-left .controls-card { display: none; }
+    .panel-card { flex: 1; }
+  }
+</style>
+
+<script>
+  import { TetrisGame, type ThemeName } from '@/lib/games/TetrisGame';
+  import type { TetrisObservation } from '@/lib/games/TetrisCore';
+
+  let currentGame: TetrisGame | null = null;
+  let selectedTheme: ThemeName = 'cyberpunk';
+
+  const setupScreen = document.getElementById('setupScreen')!;
+  const gameScreen = document.getElementById('gameScreen')!;
+  const gameOverPanel = document.getElementById('gameOverPanel')!;
+
+  const settingCols = document.getElementById('settingCols') as HTMLInputElement;
+  const settingRows = document.getElementById('settingRows') as HTMLInputElement;
+  const settingLevel = document.getElementById('settingLevel') as HTMLInputElement;
+  const colsValue = document.getElementById('colsValue')!;
+  const rowsValue = document.getElementById('rowsValue')!;
+  const levelValue = document.getElementById('levelValue')!;
+
+  settingCols.addEventListener('input', () => colsValue.textContent = settingCols.value);
+  settingRows.addEventListener('input', () => rowsValue.textContent = settingRows.value);
+  settingLevel.addEventListener('input', () => levelValue.textContent = settingLevel.value);
+
+  document.querySelectorAll<HTMLButtonElement>('.theme-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.theme-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedTheme = btn.dataset.theme as ThemeName;
+    });
+  });
+
+  function getHighScore(): number {
+    return parseInt(localStorage.getItem('tetrisHighScore') || '0', 10);
+  }
+  function setHighScore(score: number) {
+    localStorage.setItem('tetrisHighScore', String(score));
+  }
+
+  function updateHud(state: TetrisObservation) {
+    document.getElementById('scoreValue')!.textContent = state.score.toLocaleString();
+    document.getElementById('levelStat')!.textContent = String(state.level);
+    document.getElementById('linesValue')!.textContent = String(state.lines);
+    document.getElementById('comboValue')!.textContent = String(state.combo);
+  }
+
+  function showGameOver(state: TetrisObservation) {
+    const finalScore = state.score;
+    const high = Math.max(getHighScore(), finalScore);
+    setHighScore(high);
+    document.getElementById('finalScore')!.textContent = finalScore.toLocaleString();
+    document.getElementById('highScore')!.textContent = high.toLocaleString();
+    gameOverPanel.classList.remove('hidden');
+  }
+
+  function startGame() {
+    const cols = parseInt(settingCols.value, 10);
+    const rows = parseInt(settingRows.value, 10);
+    const startLevel = parseInt(settingLevel.value, 10);
+
+    setupScreen.classList.add('hidden');
+    gameScreen.classList.remove('hidden');
+    gameOverPanel.classList.add('hidden');
+
+    if (currentGame) {
+      currentGame.destroy();
+      currentGame = null;
+    }
+
+    const canvas = document.getElementById('tetrisCanvas') as HTMLCanvasElement;
+    const holdCanvas = document.getElementById('holdCanvas') as HTMLCanvasElement;
+    const nextCanvases = [
+      document.getElementById('nextCanvas0') as HTMLCanvasElement,
+      document.getElementById('nextCanvas1') as HTMLCanvasElement,
+      document.getElementById('nextCanvas2') as HTMLCanvasElement,
+    ];
+
+    currentGame = new TetrisGame(
+      canvas,
+      holdCanvas,
+      nextCanvases,
+      { cols, rows, startLevel, theme: selectedTheme },
+      {
+        onUpdate: updateHud,
+        onGameOver: showGameOver,
+      },
+    );
+  }
+
+  function backToSetup() {
+    if (currentGame) {
+      currentGame.destroy();
+      currentGame = null;
+    }
+    gameScreen.classList.add('hidden');
+    gameOverPanel.classList.add('hidden');
+    setupScreen.classList.remove('hidden');
+  }
+
+  document.getElementById('startBtn')!.addEventListener('click', startGame);
+  document.getElementById('restartBtn')!.addEventListener('click', () => {
+    gameOverPanel.classList.add('hidden');
+    currentGame?.restart();
+  });
+  document.getElementById('backBtn')!.addEventListener('click', backToSetup);
+  document.getElementById('gameOverRestartBtn')!.addEventListener('click', () => {
+    gameOverPanel.classList.add('hidden');
+    currentGame?.restart();
+  });
+  document.getElementById('gameOverBackBtn')!.addEventListener('click', backToSetup);
+</script>
