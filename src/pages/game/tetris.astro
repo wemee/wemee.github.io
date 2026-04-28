@@ -482,6 +482,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   let currentGame: TetrisGame | null = null;
   let selectedTheme: ThemeName = 'cyberpunk';
   let aiAgent: TetrisAgent | null = null;
+  let gameOverAutoRestartTimer: number | null = null;
+  const GAME_OVER_RESTART_LABEL = '🔁 再玩一次';
 
   const setupScreen = document.getElementById('setupScreen')!;
   const gameScreen = document.getElementById('gameScreen')!;
@@ -527,6 +529,35 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     document.getElementById('finalScore')!.textContent = finalScore.toLocaleString();
     document.getElementById('highScore')!.textContent = high.toLocaleString();
     gameOverPanel.classList.remove('hidden');
+    if (currentGame?.hasAI()) {
+      startGameOverAutoRestart();
+    }
+  }
+
+  function cancelGameOverAutoRestart() {
+    if (gameOverAutoRestartTimer !== null) {
+      clearInterval(gameOverAutoRestartTimer);
+      gameOverAutoRestartTimer = null;
+    }
+    const btn = document.getElementById('gameOverRestartBtn');
+    if (btn) btn.textContent = GAME_OVER_RESTART_LABEL;
+  }
+
+  function startGameOverAutoRestart() {
+    cancelGameOverAutoRestart();
+    let countdown = 3;
+    const btn = document.getElementById('gameOverRestartBtn')!;
+    btn.textContent = `🤖 自動再玩 (${countdown})`;
+    gameOverAutoRestartTimer = window.setInterval(() => {
+      countdown -= 1;
+      if (countdown <= 0) {
+        cancelGameOverAutoRestart();
+        gameOverPanel.classList.add('hidden');
+        currentGame?.restart();
+      } else {
+        btn.textContent = `🤖 自動再玩 (${countdown})`;
+      }
+    }, 1000);
   }
 
   function isLikelyNoKeyboard(): boolean {
@@ -577,6 +608,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   function backToSetup() {
+    cancelGameOverAutoRestart();
     if (currentGame) {
       currentGame.destroy();
       currentGame = null;
@@ -608,6 +640,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       currentGame.setAIController(null);
       aiToggleBtn.textContent = '🤖 啟用 AI';
       aiToggleBtn.classList.remove('active');
+      cancelGameOverAutoRestart();
     }
   }
 
@@ -618,11 +651,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   document.getElementById('startBtn')!.addEventListener('click', startGame);
   document.getElementById('restartBtn')!.addEventListener('click', () => {
+    cancelGameOverAutoRestart();
     gameOverPanel.classList.add('hidden');
     currentGame?.restart();
   });
   document.getElementById('backBtn')!.addEventListener('click', backToSetup);
   document.getElementById('gameOverRestartBtn')!.addEventListener('click', () => {
+    cancelGameOverAutoRestart();
     gameOverPanel.classList.add('hidden');
     currentGame?.restart();
   });
