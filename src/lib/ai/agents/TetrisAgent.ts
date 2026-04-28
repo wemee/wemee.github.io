@@ -1,14 +1,15 @@
 /**
- * Tetris AI Agent — 1-ply 啟發式（El-Tetris 風格權重）
+ * Tetris AI Agent — 2-ply 啟發式 + Hold 搜尋（El-Tetris 風格權重）
  *
- * 不需訓練模型；對每個落點進行純函式模擬，計算 4 個特徵打分，挑最高者執行。
- * 一塊約評估 10×4 = 40 個落點，每個 O(rows × cols)，整體 < 1ms。
+ * 對「現用塊 + 下一塊」做兩層完整列舉；同時評估「是否使用 Hold」兩種分支。
+ * 葉節點以 4 個特徵打分，挑分數最高者執行。
  *
- * 權重來源：El-Tetris (Yiyuan Lee, 2013)，公認在 1-ply 中表現極佳的固定權重。
- *   aggregateHeight = -0.510066
- *   completeLines   = +0.760666
- *   holes           = -0.35663
- *   bumpiness       = -0.184483
+ * 分支量：
+ *   1-ply ≈ 40 落點
+ *   2-ply ≈ 1,600 落點
+ *   2-ply + Hold ≈ 3,200 落點（< 10ms）
+ *
+ * 權重：El-Tetris (Yiyuan Lee, 2013)。
  */
 
 import { AlgorithmAgent, type PredictionResult } from '../core/Agent';
@@ -73,7 +74,6 @@ function simulatePlace(
 ): SimResult | null {
   const shape = getRotatedShape(type, rotation);
 
-  // x 越界檢查
   for (let py = 0; py < shape.length; py++) {
     for (let px = 0; px < shape[0].length; px++) {
       if (!shape[py][px]) continue;
@@ -82,7 +82,6 @@ function simulatePlace(
     }
   }
 
-  // 從盤面上方往下落，直到再下移一格會碰撞
   let y = -shape.length;
   while (true) {
     let collide = false;
@@ -99,7 +98,6 @@ function simulatePlace(
     y++;
   }
 
-  // 鎖定到盤面拷貝
   const newBoard = board.map((r) => [...r]);
   let topOut = false;
   for (let py = 0; py < shape.length; py++) {
@@ -115,7 +113,6 @@ function simulatePlace(
     }
   }
 
-  // 消行
   const cleared: number[] = [];
   for (let r = 0; r < rows; r++) {
     if (newBoard[r].every((c) => c !== 0)) cleared.push(r);
@@ -153,20 +150,71 @@ function countHoles(board: Cell[][], cols: number, rows: number): number {
   return holes;
 }
 
-function evaluateBoard(result: SimResult, cols: number, rows: number): number {
-  if (result.topOut) return -Infinity;
-  const heights = computeColumnHeights(result.board, cols, rows);
+function evaluateBoard(
+  board: Cell[][],
+  totalLines: number,
+  cols: number,
+  rows: number,
+): number {
+  const heights = computeColumnHeights(board, cols, rows);
   let aggregateHeight = 0;
   let bumpiness = 0;
   for (let i = 0; i < cols; i++) aggregateHeight += heights[i];
   for (let i = 0; i < cols - 1; i++) bumpiness += Math.abs(heights[i] - heights[i + 1]);
-  const holes = countHoles(result.board, cols, rows);
+  const holes = countHoles(board, cols, rows);
   return (
     WEIGHTS.aggregateHeight * aggregateHeight +
-    WEIGHTS.completeLines * result.linesCleared +
+    WEIGHTS.completeLines * totalLines +
     WEIGHTS.holes * holes +
     WEIGHTS.bumpiness * bumpiness
   );
+}
+
+interface PlacementRange {
+  rotation: number;
+  xLo: number;
+  xHi: number;
+}
+
+/** 列出某塊型所有可行的 (rotation, x 範圍) */
+function enumeratePlacements(type: TetrominoType, cols: number): PlacementRange[] {
+  const ranges: PlacementRange[] = [];
+  const uniq = uniqueRotations(type);
+  for (let rot = 0; rot < uniq; rot++) {
+    const shape = getRotatedShape(type, rot);
+    let minPx = shape[0].length;
+    let maxPx = -1;
+    for (let py = 0; py < shape.length; py++) {
+      for (let px = 0; px < shape[0].length; px++) {
+        if (shape[py][px]) {
+          if (px < minPx) minPx = px;
+          if (px > maxPx) maxPx = px;
+        }
+      }
+    }
+    ranges.push({ rotation: rot, xLo: -minPx, xHi: cols - 1 - maxPx });
+  }
+  return ranges;
+}
+
+/** 給定盤面和塊型，回傳所有合法落點裡的最高評分（用於 2-ply 葉節點） */
+function bestSecondPlyScore(
+  board: Cell[][],
+  type: TetrominoType,
+  prevLines: number,
+  cols: number,
+  rows: number,
+): number {
+  let best = -Infinity;
+  for (const range of enumeratePlacements(type, cols)) {
+    for (let x = range.xLo; x <= range.xHi; x++) {
+      const r = simulatePlace(board, type, range.rotation, x, cols, rows);
+      if (!r || r.topOut) continue;
+      const s = evaluateBoard(r.board, prevLines + r.linesCleared, cols, rows);
+      if (s > best) best = s;
+    }
+  }
+  return best;
 }
 
 export interface BestPlacement {
@@ -175,32 +223,77 @@ export interface BestPlacement {
   score: number;
 }
 
-export class TetrisAgent extends AlgorithmAgent<TetrisObservation, TetrisAction> {
-  constructor() {
-    super({ cacheKey: 'tetris-ai-heuristic-v1' });
+interface SequenceResult {
+  placement: BestPlacement;
+  score: number;
+}
+
+/**
+ * 對 firstType 列舉所有落點；若 secondType 存在，再向下展開一層取最大值作為葉節點分數。
+ * 回傳第一層的最佳落點（含累計分數）。
+ */
+function findBestSequence(
+  board: Cell[][],
+  firstType: TetrominoType,
+  secondType: TetrominoType | null,
+  cols: number,
+  rows: number,
+): SequenceResult | null {
+  let best: SequenceResult | null = null;
+
+  for (const range of enumeratePlacements(firstType, cols)) {
+    for (let x = range.xLo; x <= range.xHi; x++) {
+      const sim1 = simulatePlace(board, firstType, range.rotation, x, cols, rows);
+      if (!sim1 || sim1.topOut) continue;
+
+      let leafScore: number;
+      if (secondType) {
+        const second = bestSecondPlyScore(sim1.board, secondType, sim1.linesCleared, cols, rows);
+        if (second === -Infinity) continue;
+        leafScore = second;
+      } else {
+        leafScore = evaluateBoard(sim1.board, sim1.linesCleared, cols, rows);
+      }
+
+      if (!best || leafScore > best.score) {
+        best = {
+          placement: { rotation: range.rotation, x, score: leafScore },
+          score: leafScore,
+        };
+      }
+    }
   }
 
-  /**
-   * 同步版：每呼叫一次回傳「朝目標落點走的下一個動作」。
-   * 因為演算法極快，直接每次重新評估，也避免 wall kick 造成 plan 過時的麻煩。
-   */
+  return best;
+}
+
+export interface BestPlan {
+  useHold: boolean;
+  placement: BestPlacement;
+}
+
+export class TetrisAgent extends AlgorithmAgent<TetrisObservation, TetrisAction> {
+  constructor() {
+    super({ cacheKey: 'tetris-ai-2ply-hold-v1' });
+  }
+
   step(obs: TetrisObservation): TetrisAction {
     if (obs.gameOver || !obs.current) return 'tick';
-    const best = this.findBestPlacement(obs);
-    if (!best) return 'hardDrop';
+    const plan = this.findBestPlan(obs);
+    if (!plan) return 'hardDrop';
+    if (plan.useHold) return 'hold';
 
     const cur = obs.current;
     const uniq = uniqueRotations(cur.type);
     const curRotMod = ((cur.rotation % uniq) + uniq) % uniq;
 
-    if (curRotMod !== best.rotation) {
-      const delta = (best.rotation - curRotMod + uniq) % uniq;
-      // 4-rotation 件中，差 3 步用 CCW 較快；其餘 CW
+    if (curRotMod !== plan.placement.rotation) {
+      const delta = (plan.placement.rotation - curRotMod + uniq) % uniq;
       if (uniq === 4 && delta === 3) return 'rotateCCW';
       return 'rotateCW';
     }
-    if (cur.x < best.x) return 'right';
-    if (cur.x > best.x) return 'left';
+    if (cur.x < plan.placement.x) return 'right';
+    if (cur.x > plan.placement.x) return 'left';
     return 'hardDrop';
   }
 
@@ -209,38 +302,46 @@ export class TetrisAgent extends AlgorithmAgent<TetrisObservation, TetrisAction>
   }
 
   /**
-   * 列舉所有 (rotation, x) 落點，回傳得分最高者。
+   * 同時評估「不 Hold」與「Hold」兩條路徑的 2-ply 最佳值，回傳較高者。
+   * 同分時偏好不 Hold（避免不必要的動作）。
    */
-  findBestPlacement(obs: TetrisObservation): BestPlacement | null {
+  findBestPlan(obs: TetrisObservation): BestPlan | null {
     if (!obs.current) return null;
-    const type = obs.current.type;
-    const uniq = uniqueRotations(type);
-    let best: BestPlacement | null = null;
+    const { cols, rows } = obs;
 
-    for (let rot = 0; rot < uniq; rot++) {
-      const shape = getRotatedShape(type, rot);
+    // 路徑 A：直接打現用塊；第二層 = next[0]
+    const planA = findBestSequence(
+      obs.board,
+      obs.current.type,
+      obs.next[0] ?? null,
+      cols,
+      rows,
+    );
 
-      // 找出 shape 裡實際佔據格的 x 範圍，決定合法 x 範圍
-      let minPx = shape[0].length;
-      let maxPx = -1;
-      for (let py = 0; py < shape.length; py++) {
-        for (let px = 0; px < shape[0].length; px++) {
-          if (shape[py][px]) {
-            if (px < minPx) minPx = px;
-            if (px > maxPx) maxPx = px;
-          }
-        }
+    // 路徑 B：先 Hold，這回合改打交換出來的塊
+    let planB: SequenceResult | null = null;
+    if (obs.canHold) {
+      let playType: TetrominoType | null;
+      let secondType: TetrominoType | null;
+      if (obs.hold !== null) {
+        // 與已暫存的塊交換 → 這回合打 hold；隊列不變，下一塊仍為 next[0]
+        playType = obs.hold;
+        secondType = obs.next[0] ?? null;
+      } else {
+        // 暫存槽空 → 暫存現用塊並彈出 next[0] 來打；下一塊變成 next[1]
+        playType = obs.next[0] ?? null;
+        secondType = obs.next[1] ?? null;
       }
-      const xLo = -minPx;
-      const xHi = obs.cols - 1 - maxPx;
-
-      for (let x = xLo; x <= xHi; x++) {
-        const result = simulatePlace(obs.board, type, rot, x, obs.cols, obs.rows);
-        if (!result) continue;
-        const s = evaluateBoard(result, obs.cols, obs.rows);
-        if (!best || s > best.score) best = { rotation: rot, x, score: s };
+      if (playType) {
+        planB = findBestSequence(obs.board, playType, secondType, cols, rows);
       }
     }
-    return best;
+
+    if (!planA && !planB) return null;
+    if (!planA) return { useHold: true, placement: planB!.placement };
+    if (!planB) return { useHold: false, placement: planA.placement };
+    return planB.score > planA.score
+      ? { useHold: true, placement: planB.placement }
+      : { useHold: false, placement: planA.placement };
   }
 }
