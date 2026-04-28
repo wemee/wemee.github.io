@@ -529,6 +529,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     gameOverPanel.classList.remove('hidden');
   }
 
+  function isLikelyNoKeyboard(): boolean {
+    // pointer: coarse 表示主要指向裝置為觸控（手機/平板），通常沒有實體鍵盤
+    if (typeof window === 'undefined' || !window.matchMedia) return false;
+    return window.matchMedia('(pointer: coarse)').matches;
+  }
+
   function startGame() {
     const cols = parseInt(settingCols.value, 10);
     const rows = parseInt(settingRows.value, 10);
@@ -564,6 +570,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     // 新遊戲開始時 AI 預設關閉，按鈕回到非啟用狀態
     aiToggleBtn.textContent = '🤖 啟用 AI';
     aiToggleBtn.classList.remove('active');
+    // 若偵測為觸控為主、無實體鍵盤的裝置，自動啟用 AI 讓使用者也能觀看
+    if (isLikelyNoKeyboard()) {
+      setAIActive(true);
+    }
   }
 
   function backToSetup() {
