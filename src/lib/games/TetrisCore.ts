@@ -54,6 +54,8 @@ export interface TetrisObservation extends GameObservation {
   hardDrop: HardDropEvent | null;
   locked: boolean;
   isTetris: boolean;
+  // 鎖定後、消行前的盤面快照（僅在 clearCount > 0 時提供）
+  boardBeforeClear: Cell[][] | null;
 }
 
 export interface TetrisConfig extends GameCoreConfig {
@@ -171,6 +173,7 @@ export class TetrisCore extends GameCore<TetrisObservation, TetrisAction> {
   private evtClearCount = 0;
   private evtHardDrop: HardDropEvent | null = null;
   private evtLocked = false;
+  private evtBoardBeforeClear: Cell[][] | null = null;
 
   constructor(config: TetrisConfig = {}) {
     super(config);
@@ -258,6 +261,7 @@ export class TetrisCore extends GameCore<TetrisObservation, TetrisAction> {
     this.evtClearCount = 0;
     this.evtHardDrop = null;
     this.evtLocked = false;
+    this.evtBoardBeforeClear = null;
   }
 
   private lockPiece() {
@@ -288,6 +292,8 @@ export class TetrisCore extends GameCore<TetrisObservation, TetrisAction> {
     }
 
     if (cleared.length > 0) {
+      // 快照：鎖定後、消除前的盤面（讓 UI 動畫能呈現「上方方塊往下塌」的物理感）
+      this.evtBoardBeforeClear = this.board.map((r) => [...r]);
       // 由下往上移除（保持索引穩定）
       for (let i = cleared.length - 1; i >= 0; i--) {
         this.board.splice(cleared[i], 1);
@@ -445,6 +451,9 @@ export class TetrisCore extends GameCore<TetrisObservation, TetrisAction> {
       hardDrop: this.evtHardDrop,
       locked: this.evtLocked,
       isTetris: this.evtClearCount === 4,
+      boardBeforeClear: this.evtBoardBeforeClear
+        ? this.evtBoardBeforeClear.map((r) => [...r])
+        : null,
     };
   }
 

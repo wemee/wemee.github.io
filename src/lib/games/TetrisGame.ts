@@ -16,6 +16,11 @@ export interface TetrisGameOptions {
   theme: ThemeName;
 }
 
+/** Duck-typed AI 控制器，避免 lib/games 對 lib/ai 的反向依賴 */
+export interface TetrisAIController {
+  step(obs: TetrisObservation): TetrisAction;
+}
+
 interface Particle {
   x: number;
   y: number;
@@ -39,8 +44,18 @@ interface FloatingText {
 }
 
 interface ClearAnimation {
+  // 鎖定後、消除前的盤面快照（用來畫舊位置 + 演算落下）
+  boardBefore: number[][];
+  // 被消除的列（OLD 盤面索引）
   rows: number[];
+  // 對 boardBefore 中的每一非消除列，計算它應該下移幾格
+  shifts: number[];
   age: number;
+  // Phase 1：白光閃爍 + 被消除列爆破
+  flashDuration: number;
+  // Phase 2：上方方塊塌下來
+  dropDuration: number;
+  // 總長 = flashDuration + dropDuration
   duration: number;
   count: number;
 }
@@ -174,6 +189,11 @@ export class TetrisGame {
   private dasDelay = 140;
   private dasInterval = 35;
 
+  // AI 控制器
+  private aiController: TetrisAIController | null = null;
+  private aiAccum = 0;
+  private aiInterval = 60;
+
   private lastFrame = 0;
   private rafId: number | null = null;
 
@@ -274,6 +294,10 @@ export class TetrisGame {
     }
   }
 
+  private isClearPaused(): boolean {
+    return this.clearAnim !== null;
+  }
+
   private onKeyDown(e: KeyboardEvent) {
     if (this.uiState === 'gameover') return;
 
@@ -283,6 +307,11 @@ export class TetrisGame {
       return;
     }
     if (this.uiState !== 'playing') return;
+    // 消行動畫期間吞掉所有遊戲輸入，讓動畫完整呈現
+    if (this.isClearPaused()) {
+      e.preventDefault();
+      return;
+    }
 
     switch (e.key) {
       case 'ArrowLeft':
@@ -384,13 +413,41 @@ export class TetrisGame {
       this.spawnLockSparks();
     }
 
-    if (obs.clearCount > 0) {
+    if (obs.clearCount > 0 && obs.boardBeforeClear) {
+      // 計算每一列在動畫結束後該下移幾格（自身被消除則為 -1）
+      const cleared = obs.clearedRows;
+      const shifts = new Array(this.boardRows).fill(0);
+      for (let r = 0; r < this.boardRows; r++) {
+        if (cleared.includes(r)) {
+          shifts[r] = -1;
+          continue;
+        }
+        let s = 0;
+        for (const cr of cleared) {
+          if (cr > r) s++;
+        }
+        shifts[r] = s;
+      }
+      // 行數越多、總時長越長：Single ~250ms、Tetris ~520ms
+      const flashDuration = 110 + obs.clearCount * 35;
+      const dropDuration = 140 + obs.clearCount * 45;
       this.clearAnim = {
+        boardBefore: obs.boardBeforeClear.map((r) => [...r]),
         rows: [...obs.clearedRows],
+        shifts,
         age: 0,
-        duration: 380,
+        flashDuration,
+        dropDuration,
+        duration: flashDuration + dropDuration,
         count: obs.clearCount,
       };
+      // 進入消行動畫時，重置輸入殘留狀態，避免暫停期間累積
+      this.dasState = { dir: 0, held: 0 };
+      this.softDropHold = false;
+      this.softDropAccum = 0;
+      this.fallAccum = 0;
+      this.softLockTimer = 0;
+
       this.shake = Math.max(this.shake, 6 + obs.clearCount * 3);
       this.flash = Math.max(this.flash, 0.3 + obs.clearCount * 0.15);
       this.spawnClearParticles(obs.clearedRows);
@@ -573,7 +630,7 @@ export class TetrisGame {
     this.lastFrame = now;
     this.timeMs += dt;
 
-    if (this.uiState === 'playing') {
+    if (this.uiState === 'playing' && !this.isClearPaused()) {
       // 重力
       const fallInterval = this.core.getFallInterval();
       if (this.core.isGrounded()) {
@@ -607,6 +664,17 @@ export class TetrisGame {
         if (this.dasState.held > this.dasDelay) {
           this.dasState.held -= this.dasInterval;
           this.applyAction(this.dasState.dir === -1 ? 'left' : 'right');
+        }
+      }
+
+      // AI tick：依固定節奏要 controller 給下一個動作
+      if (this.aiController) {
+        this.aiAccum += dt;
+        if (this.aiAccum >= this.aiInterval) {
+          this.aiAccum = 0;
+          const obs = this.core.getState();
+          const action = this.aiController.step(obs);
+          this.applyAction(action);
         }
       }
     }
@@ -690,17 +758,14 @@ export class TetrisGame {
     this.drawStars(ctx);
     this.drawGrid(ctx, w, h);
 
-    // 板上方塊
-    this.drawBoard(ctx);
-
-    // 幽靈方塊
-    this.drawGhost(ctx);
-
-    // 當前方塊
-    this.drawCurrentPiece(ctx);
-
-    // 消行動畫
-    this.drawClearAnim(ctx, w);
+    // 板上方塊（消行動畫期間走另一條路徑）
+    if (this.clearAnim) {
+      this.drawClearingScene(ctx, w);
+    } else {
+      this.drawBoard(ctx);
+      this.drawGhost(ctx);
+      this.drawCurrentPiece(ctx);
+    }
 
     // 粒子
     this.drawParticles(ctx);
@@ -792,10 +857,6 @@ export class TetrisGame {
         const v = state.board[y][x];
         if (v === 0) continue;
         const type = types[v - 1];
-        if (this.clearAnim && this.clearAnim.rows.includes(y)) {
-          // 此行正在被消除，由 drawClearAnim 負責
-          continue;
-        }
         const color = this.theme.pieceColors[type];
         this.drawBlock(ctx, x, y, color, 1);
       }
@@ -917,31 +978,64 @@ export class TetrisGame {
     ctx.restore();
   }
 
-  private drawClearAnim(ctx: CanvasRenderingContext2D, w: number) {
-    if (!this.clearAnim) return;
-    const t = this.clearAnim.age / this.clearAnim.duration;
+  private drawClearingScene(ctx: CanvasRenderingContext2D, w: number) {
+    const ca = this.clearAnim!;
     const cs = this.cellSize;
-    ctx.save();
-    for (const row of this.clearAnim.rows) {
-      const y = row * cs;
-      // 白光擴散 + 收縮
-      const expand = t * cs * 0.6;
-      const alpha = Math.max(0, 1 - t);
-      const grad = ctx.createLinearGradient(0, y, w, y);
-      grad.addColorStop(0, `rgba(255,255,255,0)`);
-      grad.addColorStop(0.5, `rgba(255,255,255,${alpha})`);
-      grad.addColorStop(1, `rgba(255,255,255,0)`);
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, y - expand * 0.2, w, cs + expand * 0.4);
+    const types = TYPE_ORDER;
+    const isFlash = ca.age < ca.flashDuration;
+    const clearedSet = new Set(ca.rows);
 
-      // 中心強光
-      ctx.shadowColor = '#ffffff';
-      ctx.shadowBlur = 30;
-      ctx.fillStyle = `rgba(255,255,255,${alpha * 0.8})`;
-      const halfW = (w / 2) * (1 - t);
-      ctx.fillRect(w / 2 - halfW, y + cs * 0.3, halfW * 2, cs * 0.4);
+    if (isFlash) {
+      // === Phase 1：盤面定格在 boardBefore，被消除列強光 + 漸漸淡出 ===
+      const flashT = ca.age / ca.flashDuration;
+      // 1) 畫所有方塊（包含消除列），消除列以淡出 + 高光呈現
+      for (let y = 0; y < this.boardRows; y++) {
+        const isClearRow = clearedSet.has(y);
+        const fade = isClearRow ? Math.max(0, 1 - flashT * 0.85) : 1;
+        for (let x = 0; x < this.boardCols; x++) {
+          const v = ca.boardBefore[y][x];
+          if (v === 0) continue;
+          const type = types[v - 1];
+          const color = this.theme.pieceColors[type];
+          this.drawBlock(ctx, x, y, color, fade, isClearRow);
+        }
+      }
+      // 2) 白光帶疊在消除列上（中心強 + 上下漸層擴散）
+      ctx.save();
+      const peak = Math.sin(flashT * Math.PI); // 0 → 1 → 0
+      for (const row of ca.rows) {
+        const y = row * cs;
+        ctx.fillStyle = `rgba(255,255,255,${peak * 0.85})`;
+        ctx.fillRect(0, y, w, cs);
+        const grad = ctx.createLinearGradient(0, y - cs, 0, y + cs * 2);
+        grad.addColorStop(0, 'rgba(255,255,255,0)');
+        grad.addColorStop(0.5, `rgba(255,255,255,${peak * 0.55})`);
+        grad.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, y - cs, w, cs * 3);
+      }
+      ctx.restore();
+      // Phase 1 不畫 ghost / 新生成的 active piece，避免出戲
+    } else {
+      // === Phase 2：消除列已消失，上方未消除列從舊位置 → 新位置塌下 ===
+      const dropT = (ca.age - ca.flashDuration) / ca.dropDuration;
+      const t = Math.min(1, dropT * dropT); // easeInQuad，模擬重力加速
+      for (let y = 0; y < this.boardRows; y++) {
+        if (clearedSet.has(y)) continue;
+        const shift = ca.shifts[y];
+        const interpY = shift > 0 ? y + shift * t : y;
+        for (let x = 0; x < this.boardCols; x++) {
+          const v = ca.boardBefore[y][x];
+          if (v === 0) continue;
+          const type = types[v - 1];
+          const color = this.theme.pieceColors[type];
+          this.drawBlock(ctx, x, interpY, color, 1);
+        }
+      }
+      // Phase 2 開始顯示 ghost + 新方塊（玩家視覺上接得回來）
+      this.drawGhost(ctx);
+      this.drawCurrentPiece(ctx);
     }
-    ctx.restore();
   }
 
   private drawFloatingTexts(ctx: CanvasRenderingContext2D) {
@@ -1083,6 +1177,19 @@ export class TetrisGame {
     ctx.restore();
   }
 
+  setAIController(controller: TetrisAIController | null) {
+    this.aiController = controller;
+    this.aiAccum = 0;
+  }
+
+  setAIInterval(ms: number) {
+    this.aiInterval = Math.max(20, Math.min(1000, ms));
+  }
+
+  hasAI(): boolean {
+    return this.aiController !== null;
+  }
+
   destroy() {
     if (this.rafId !== null) cancelAnimationFrame(this.rafId);
     document.removeEventListener('keydown', this.keyDownBound);
@@ -1098,6 +1205,7 @@ export class TetrisGame {
     this.flash = 0;
     this.softLockTimer = 0;
     this.fallAccum = 0;
+    this.aiAccum = 0;
     this.uiState = 'playing';
     this.notifyUpdate();
   }

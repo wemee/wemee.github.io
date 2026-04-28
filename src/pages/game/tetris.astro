@@ -70,11 +70,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     <!-- 遊戲畫面 -->
     <div id="gameScreen" class="tetris-game hidden">
       <div class="game-layout">
-        <!-- 左側：Hold + 控制提示 -->
+        <!-- 左側：Hold + AI + 控制提示 -->
         <aside class="side-panel side-left">
           <div class="panel-card">
             <div class="panel-title">HOLD</div>
             <canvas id="holdCanvas" class="preview-canvas"></canvas>
+          </div>
+          <div class="panel-card ai-card">
+            <div class="panel-title">AI</div>
+            <button id="aiToggleBtn" class="ai-btn">🤖 啟用 AI</button>
+            <div class="ai-speed">
+              <span>速度</span>
+              <span id="aiSpeedValue" class="ai-speed-value">60ms</span>
+            </div>
+            <input type="range" id="aiSpeed" min="20" max="300" value="60" step="10" />
+            <div class="ai-hint">1-ply + 啟發式權重</div>
           </div>
           <div class="panel-card controls-card">
             <div class="panel-title">控制</div>
@@ -360,6 +370,52 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     border-color: rgba(0, 240, 255, 0.4);
   }
 
+  /* ---- AI 控制卡 ---- */
+  .ai-btn {
+    width: 100%;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    color: #d8d8e8;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ai-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(0, 240, 255, 0.4);
+  }
+  .ai-btn.active {
+    background: linear-gradient(90deg, rgba(0, 240, 255, 0.18), rgba(255, 61, 240, 0.18));
+    border-color: rgba(0, 240, 255, 0.6);
+    color: #fff;
+    box-shadow: 0 0 16px rgba(0, 240, 255, 0.3);
+  }
+  .ai-speed {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    font-size: 11px;
+    color: #8d96b3;
+  }
+  .ai-speed-value {
+    color: #00f0ff;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 6px rgba(0, 240, 255, 0.5);
+  }
+  .ai-card input[type="range"] { margin-top: 4px; }
+  .ai-hint {
+    margin-top: 8px;
+    font-size: 10px;
+    color: #6a7390;
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+
   .board-wrap {
     position: relative;
   }
@@ -421,9 +477,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 <script>
   import { TetrisGame, type ThemeName } from '@/lib/games/TetrisGame';
   import type { TetrisObservation } from '@/lib/games/TetrisCore';
+  import { TetrisAgent } from '@/lib/ai/agents/TetrisAgent';
 
   let currentGame: TetrisGame | null = null;
   let selectedTheme: ThemeName = 'cyberpunk';
+  let aiAgent: TetrisAgent | null = null;
 
   const setupScreen = document.getElementById('setupScreen')!;
   const gameScreen = document.getElementById('gameScreen')!;
@@ -503,6 +561,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         onGameOver: showGameOver,
       },
     );
+    // 新遊戲開始時 AI 預設關閉，按鈕回到非啟用狀態
+    aiToggleBtn.textContent = '🤖 啟用 AI';
+    aiToggleBtn.classList.remove('active');
   }
 
   function backToSetup() {
@@ -514,6 +575,36 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     gameOverPanel.classList.add('hidden');
     setupScreen.classList.remove('hidden');
   }
+
+  // ---- AI 控制 ----
+  const aiToggleBtn = document.getElementById('aiToggleBtn') as HTMLButtonElement;
+  const aiSpeed = document.getElementById('aiSpeed') as HTMLInputElement;
+  const aiSpeedValue = document.getElementById('aiSpeedValue')!;
+
+  aiSpeed.addEventListener('input', () => {
+    aiSpeedValue.textContent = `${aiSpeed.value}ms`;
+    if (currentGame) currentGame.setAIInterval(parseInt(aiSpeed.value, 10));
+  });
+
+  function setAIActive(active: boolean) {
+    if (!currentGame) return;
+    if (active) {
+      if (!aiAgent) aiAgent = new TetrisAgent();
+      currentGame.setAIController(aiAgent);
+      currentGame.setAIInterval(parseInt(aiSpeed.value, 10));
+      aiToggleBtn.textContent = '🛑 停止 AI';
+      aiToggleBtn.classList.add('active');
+    } else {
+      currentGame.setAIController(null);
+      aiToggleBtn.textContent = '🤖 啟用 AI';
+      aiToggleBtn.classList.remove('active');
+    }
+  }
+
+  aiToggleBtn.addEventListener('click', () => {
+    if (!currentGame) return;
+    setAIActive(!currentGame.hasAI());
+  });
 
   document.getElementById('startBtn')!.addEventListener('click', startGame);
   document.getElementById('restartBtn')!.addEventListener('click', () => {
