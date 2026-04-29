@@ -62,7 +62,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
         <div class="controls-hint">
           <div><kbd>←</kbd><kbd>→</kbd> 左右　<kbd>↓</kbd> 軟降　<kbd>↑</kbd> 旋轉</div>
-          <div><kbd>Space</kbd> 硬降　<kbd>C</kbd> Hold　<kbd>P</kbd> 暫停</div>
+          <div><kbd>Space</kbd> 硬降　<kbd>C</kbd>/<kbd>Shift</kbd> Hold　<kbd>P</kbd> 暫停</div>
         </div>
       </div>
     </div>
@@ -93,7 +93,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <li><kbd>↓</kbd> 軟降</li>
               <li><kbd>↑</kbd> 旋轉</li>
               <li><kbd>Space</kbd> 硬降</li>
-              <li><kbd>C</kbd> Hold</li>
+              <li><kbd>C</kbd>/<kbd>Shift</kbd> Hold</li>
               <li><kbd>P</kbd> 暫停</li>
             </ul>
           </div>
@@ -121,6 +121,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <div class="panel-card">
             <button id="restartBtn" class="ghost-btn">🔁 重新開始</button>
             <button id="backBtn" class="ghost-btn">⚙ 重新設定</button>
+            <button id="soundBtn" class="ghost-btn">🔊 音效開</button>
           </div>
         </aside>
       </div>
@@ -515,6 +516,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     localStorage.setItem('tetrisHighScore', String(score));
   }
 
+  function getMutedPref(): boolean {
+    return localStorage.getItem('tetrisMuted') === '1';
+  }
+  function setMutedPref(muted: boolean) {
+    localStorage.setItem('tetrisMuted', muted ? '1' : '0');
+  }
+  function updateSoundBtnLabel(muted: boolean) {
+    soundBtn.textContent = muted ? '🔇 音效關' : '🔊 音效開';
+  }
+
   function updateHud(state: TetrisObservation) {
     document.getElementById('scoreValue')!.textContent = state.score.toLocaleString();
     document.getElementById('levelStat')!.textContent = String(state.level);
@@ -598,6 +609,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         onGameOver: showGameOver,
       },
     );
+    // 套用靜音偏好（在使用者手勢回呼鏈內，AudioContext 已可正常初始化）
+    const initialMuted = getMutedPref();
+    currentGame.setAudioMuted(initialMuted);
+    updateSoundBtnLabel(initialMuted);
     // 新遊戲開始時 AI 預設關閉，按鈕回到非啟用狀態
     aiToggleBtn.textContent = '🤖 啟用 AI';
     aiToggleBtn.classList.remove('active');
@@ -622,6 +637,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   const aiToggleBtn = document.getElementById('aiToggleBtn') as HTMLButtonElement;
   const aiSpeed = document.getElementById('aiSpeed') as HTMLInputElement;
   const aiSpeedValue = document.getElementById('aiSpeedValue')!;
+  const soundBtn = document.getElementById('soundBtn') as HTMLButtonElement;
+  // 設定畫面就先反映偏好，避免進入遊戲前按鈕標籤跟記憶不一致
+  updateSoundBtnLabel(getMutedPref());
+
+  soundBtn.addEventListener('click', () => {
+    const next = !getMutedPref();
+    setMutedPref(next);
+    updateSoundBtnLabel(next);
+    if (currentGame) currentGame.setAudioMuted(next);
+  });
 
   aiSpeed.addEventListener('input', () => {
     aiSpeedValue.textContent = `${aiSpeed.value}ms`;

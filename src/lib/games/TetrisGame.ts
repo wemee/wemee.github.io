@@ -6,6 +6,7 @@ import {
   type TetrisObservation,
   type HardDropEvent,
 } from './TetrisCore';
+import { TetrisAudio } from './TetrisAudio';
 
 export type ThemeName = 'cyberpunk' | 'aurora' | 'fire';
 
@@ -194,6 +195,9 @@ export class TetrisGame {
   private aiAccum = 0;
   private aiInterval = 60;
 
+  // 音效
+  private audio: TetrisAudio;
+
   private lastFrame = 0;
   private rafId: number | null = null;
 
@@ -259,6 +263,10 @@ export class TetrisGame {
     this.core.reset();
 
     this.initStars();
+
+    // 在使用者手勢回呼鏈內初始化音效（避免 autoplay 阻擋）
+    this.audio = new TetrisAudio();
+    this.audio.init();
 
     this.keyDownBound = this.onKeyDown.bind(this);
     this.keyUpBound = this.onKeyUp.bind(this);
@@ -408,6 +416,7 @@ export class TetrisGame {
       this.spawnHardDropImpact(obs.hardDrop);
       this.shake = Math.max(this.shake, 14);
       this.flash = Math.max(this.flash, 0.45);
+      this.audio.playHardDrop();
     } else if (obs.locked) {
       this.shake = Math.max(this.shake, 3);
       this.spawnLockSparks();
@@ -451,6 +460,7 @@ export class TetrisGame {
       this.shake = Math.max(this.shake, 6 + obs.clearCount * 3);
       this.flash = Math.max(this.flash, 0.3 + obs.clearCount * 0.15);
       this.spawnClearParticles(obs.clearedRows);
+      this.audio.playLineClear(obs.clearCount);
 
       const labels = ['', 'SINGLE', 'DOUBLE', 'TRIPLE', 'TETRIS'];
       const colors = ['', '#ffffff', '#ffe066', '#ff9a3c', '#ff3df0'];
@@ -482,6 +492,7 @@ export class TetrisGame {
       this.shake = 18;
       this.flash = 0.7;
       this.spawnGameOverBurst();
+      this.audio.playGameOver();
       this.onGameOver?.(obs);
     }
 
@@ -531,7 +542,7 @@ export class TetrisGame {
           gravity: 0.25,
         });
       }
-      // 衝擊白光
+      // 衝擊高光：沿用方塊本色（不再使用刺眼純白）
       for (let i = 0; i < 5; i++) {
         this.particles.push({
           x: px + (Math.random() - 0.5) * cs,
@@ -541,7 +552,7 @@ export class TetrisGame {
           life: 0.5,
           maxLife: 0.5,
           size: Math.random() * 2 + 1.5,
-          color: '#ffffff',
+          color,
           gravity: 0.1,
         });
       }
@@ -778,10 +789,27 @@ export class TetrisGame {
 
     ctx.restore();
 
-    // 全螢幕白光（不受震動影響）
+    // 邊框脈衝 + 周圍 vignette（取代全螢幕白光，保留打擊感但不刺眼）
     if (this.flash > 0) {
-      ctx.fillStyle = `rgba(255,255,255,${Math.min(0.85, this.flash)})`;
+      const pulse = Math.min(1, this.flash);
+      const accentRgb = hexToRgb(this.theme.accent);
+      // 1) 周圍 vignette：邊緣染主題色、中央清晰，視野中心無干擾
+      const vignette = ctx.createRadialGradient(
+        w / 2, h / 2, Math.min(w, h) * 0.25,
+        w / 2, h / 2, Math.max(w, h) * 0.7,
+      );
+      vignette.addColorStop(0, 'rgba(0,0,0,0)');
+      vignette.addColorStop(1, rgba(accentRgb, pulse * 0.42));
+      ctx.fillStyle = vignette;
       ctx.fillRect(0, 0, w, h);
+      // 2) 邊框強光脈衝
+      ctx.save();
+      ctx.shadowColor = this.theme.accent;
+      ctx.shadowBlur = 22 + pulse * 32;
+      ctx.strokeStyle = rgba(accentRgb, 0.35 + pulse * 0.5);
+      ctx.lineWidth = 2 + pulse * 4;
+      ctx.strokeRect(2, 2, w - 4, h - 4);
+      ctx.restore();
     }
 
     // 暫停 / Game Over 遮罩
@@ -1000,19 +1028,29 @@ export class TetrisGame {
           this.drawBlock(ctx, x, y, color, fade, isClearRow);
         }
       }
-      // 2) 白光帶疊在消除列上（中心強 + 上下漸層擴散）
+      // 2) 徑向光環疊在消除列上：用主題色橢圓向外擴散，取代刺眼白光帶
       ctx.save();
       const peak = Math.sin(flashT * Math.PI); // 0 → 1 → 0
+      const accentRgb = hexToRgb(this.theme.accent);
+      // 衝擊波半徑隨 flashT 從中心向兩側擴張
+      const ringRadius = cs * 4 + flashT * w * 0.85;
       for (const row of ca.rows) {
-        const y = row * cs;
-        ctx.fillStyle = `rgba(255,255,255,${peak * 0.85})`;
-        ctx.fillRect(0, y, w, cs);
-        const grad = ctx.createLinearGradient(0, y - cs, 0, y + cs * 2);
-        grad.addColorStop(0, 'rgba(255,255,255,0)');
-        grad.addColorStop(0.5, `rgba(255,255,255,${peak * 0.55})`);
-        grad.addColorStop(1, 'rgba(255,255,255,0)');
+        const cy = row * cs + cs / 2;
+        const cx = w / 2;
+        ctx.save();
+        // 壓扁成橫向橢圓，貼合單列高度
+        ctx.translate(cx, cy);
+        ctx.scale(1, 0.32);
+        const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, ringRadius);
+        grad.addColorStop(0, rgba(accentRgb, peak * 0.55));
+        grad.addColorStop(0.45, rgba(accentRgb, peak * 0.28));
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = grad;
-        ctx.fillRect(0, y - cs, w, cs * 3);
+        ctx.fillRect(-ringRadius, -ringRadius, ringRadius * 2, ringRadius * 2);
+        ctx.restore();
+        // 細亮線標記消除位置（短促、僅在 peak 附近可見）
+        ctx.fillStyle = rgba(accentRgb, peak * 0.4);
+        ctx.fillRect(0, cy - 1, w, 2);
       }
       ctx.restore();
       // Phase 1 不畫 ghost / 新生成的 active piece，避免出戲
@@ -1190,10 +1228,19 @@ export class TetrisGame {
     return this.aiController !== null;
   }
 
+  setAudioMuted(muted: boolean) {
+    this.audio.setMuted(muted);
+  }
+
+  isAudioMuted(): boolean {
+    return this.audio.isMuted();
+  }
+
   destroy() {
     if (this.rafId !== null) cancelAnimationFrame(this.rafId);
     document.removeEventListener('keydown', this.keyDownBound);
     document.removeEventListener('keyup', this.keyUpBound);
+    this.audio.destroy();
   }
 
   restart() {
