@@ -61,6 +61,11 @@ interface ClearAnimation {
   count: number;
 }
 
+interface PerfectClearBurst {
+  age: number;
+  duration: number;
+}
+
 type RGB = [number, number, number];
 
 interface ThemeColors {
@@ -174,6 +179,7 @@ export class TetrisGame {
   private stars: Array<{ x: number; y: number; size: number; speed: number; phase: number }> = [];
   private floatingTexts: FloatingText[] = [];
   private clearAnim: ClearAnimation | null = null;
+  private perfectClearBurst: PerfectClearBurst | null = null;
   private shake = 0;
   private flash = 0;
   private fadeFlash = 0;
@@ -485,6 +491,29 @@ export class TetrisGame {
           size: 18,
         });
       }
+      if (obs.perfectClear) {
+        this.perfectClearBurst = { age: 0, duration: 900 };
+        this.shake = Math.max(this.shake, 22);
+        this.flash = Math.max(this.flash, 0.95);
+        this.floatingTexts.push({
+          text: 'PERFECT CLEAR',
+          x: (this.boardCols * this.cellSize) / 2,
+          y: (this.boardRows * this.cellSize) / 2 - 58,
+          age: 0,
+          duration: 1500,
+          color: '#ffffff',
+          size: 42,
+        });
+        this.floatingTexts.push({
+          text: `+${(4000 * obs.level).toLocaleString()}`,
+          x: (this.boardCols * this.cellSize) / 2,
+          y: (this.boardRows * this.cellSize) / 2 - 12,
+          age: 0,
+          duration: 1350,
+          color: '#ffe066',
+          size: 28,
+        });
+      }
     }
 
     if (result.terminated) {
@@ -736,6 +765,13 @@ export class TetrisGame {
         this.clearAnim = null;
       }
     }
+    // perfect clear burst
+    if (this.perfectClearBurst) {
+      this.perfectClearBurst.age += dt;
+      if (this.perfectClearBurst.age >= this.perfectClearBurst.duration) {
+        this.perfectClearBurst = null;
+      }
+    }
     // 星星
     const h = this.boardRows * this.cellSize;
     for (const s of this.stars) {
@@ -780,6 +816,9 @@ export class TetrisGame {
 
     // 粒子
     this.drawParticles(ctx);
+
+    // Perfect Clear 衝擊波
+    this.drawPerfectClearBurst(ctx, w, h);
 
     // 浮動文字
     this.drawFloatingTexts(ctx);
@@ -1091,6 +1130,52 @@ export class TetrisGame {
       ctx.font = `900 ${t.size * scale}px "Inter", "Noto Sans TC", sans-serif`;
       ctx.fillText(t.text, t.x, t.y);
     }
+    ctx.restore();
+  }
+
+  private drawPerfectClearBurst(ctx: CanvasRenderingContext2D, w: number, h: number) {
+    if (!this.perfectClearBurst) return;
+
+    const p = this.perfectClearBurst.age / this.perfectClearBurst.duration;
+    const alpha = Math.max(0, 1 - p);
+    const cx = w / 2;
+    const cy = h / 2;
+    const maxRadius = Math.hypot(w, h) * 0.62;
+    const radius = maxRadius * (0.12 + p * 0.88);
+    const accentRgb = hexToRgb(this.theme.accent);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+
+    if (p < 0.28) {
+      ctx.fillStyle = `rgba(255,255,255,${(1 - p / 0.28) * 0.55})`;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    const glow = ctx.createRadialGradient(cx, cy, radius * 0.2, cx, cy, radius);
+    glow.addColorStop(0, 'rgba(255,255,255,0)');
+    glow.addColorStop(0.62, rgba(accentRgb, alpha * 0.02));
+    glow.addColorStop(0.82, rgba(accentRgb, alpha * 0.3));
+    glow.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.lineWidth = 2 + (1 - p) * 8;
+    ctx.shadowColor = this.theme.accent;
+    ctx.shadowBlur = 28 + alpha * 34;
+    ctx.strokeStyle = rgba(accentRgb, alpha * 0.85);
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.lineWidth = 1 + (1 - p) * 4;
+    ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.65})`;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * 0.74, 0, Math.PI * 2);
+    ctx.stroke();
+
     ctx.restore();
   }
 

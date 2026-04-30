@@ -51,6 +51,7 @@ export interface TetrisObservation extends GameObservation {
   // event signals (per-step)
   clearedRows: number[];
   clearCount: number;
+  perfectClear: boolean;
   hardDrop: HardDropEvent | null;
   locked: boolean;
   isTetris: boolean;
@@ -107,6 +108,7 @@ export const SHAPES: Record<TetrominoType, number[][]> = {
 };
 
 const TYPES: TetrominoType[] = ['I', 'O', 'T', 'S', 'Z', 'J', 'L'];
+const LEVEL_POINTS_BY_CLEAR_COUNT = [0, 1, 3, 5, 8];
 
 // 簡化版 wall kick：依序嘗試這些位移
 const KICK_OFFSETS: Array<[number, number]> = [
@@ -163,6 +165,8 @@ export class TetrisCore extends GameCore<TetrisObservation, TetrisAction> {
 
   private score = 0;
   private lines = 0;
+  private level: number;
+  private levelPoints = 0;
   private combo = -1;
   private gameOver = false;
 
@@ -171,6 +175,7 @@ export class TetrisCore extends GameCore<TetrisObservation, TetrisAction> {
 
   private evtClearedRows: number[] = [];
   private evtClearCount = 0;
+  private evtPerfectClear = false;
   private evtHardDrop: HardDropEvent | null = null;
   private evtLocked = false;
   private evtBoardBeforeClear: Cell[][] | null = null;
@@ -180,6 +185,7 @@ export class TetrisCore extends GameCore<TetrisObservation, TetrisAction> {
     this.cols = Math.max(4, Math.min(40, config.cols ?? 10));
     this.rows = Math.max(8, Math.min(40, config.rows ?? 20));
     this.startLevel = Math.max(1, Math.min(20, config.startLevel ?? 1));
+    this.level = this.startLevel;
     this.rng = new LCG(config.seed ?? Date.now());
   }
 
@@ -196,6 +202,8 @@ export class TetrisCore extends GameCore<TetrisObservation, TetrisAction> {
     this.canHold = true;
     this.score = 0;
     this.lines = 0;
+    this.level = this.startLevel;
+    this.levelPoints = 0;
     this.combo = -1;
     this.gameOver = false;
     this.clearEvents();
@@ -259,6 +267,7 @@ export class TetrisCore extends GameCore<TetrisObservation, TetrisAction> {
   private clearEvents() {
     this.evtClearedRows = [];
     this.evtClearCount = 0;
+    this.evtPerfectClear = false;
     this.evtHardDrop = null;
     this.evtLocked = false;
     this.evtBoardBeforeClear = null;
@@ -304,9 +313,14 @@ export class TetrisCore extends GameCore<TetrisObservation, TetrisAction> {
       this.evtClearedRows = cleared;
       this.evtClearCount = cleared.length;
       this.lines += cleared.length;
+      this.addLevelPoints(cleared.length);
       const lvl = this.getLevel();
       const base = [0, 100, 300, 500, 800][cleared.length] ?? 0;
       this.score += base * lvl;
+      if (this.isPerfectClear()) {
+        this.evtPerfectClear = true;
+        this.score += 4000 * lvl;
+      }
       this.combo += 1;
       if (this.combo > 0) {
         this.score += 50 * this.combo * lvl;
@@ -322,7 +336,23 @@ export class TetrisCore extends GameCore<TetrisObservation, TetrisAction> {
   }
 
   private getLevel(): number {
-    return this.startLevel + Math.floor(this.lines / 10);
+    return this.level;
+  }
+
+  private getLevelUpThreshold(): number {
+    return Math.floor(Math.pow(this.level, 1.5)) * 5;
+  }
+
+  private isPerfectClear(): boolean {
+    return this.board.every((row) => row.every((cell) => cell === 0));
+  }
+
+  private addLevelPoints(clearCount: number) {
+    this.levelPoints += LEVEL_POINTS_BY_CLEAR_COUNT[clearCount] ?? 0;
+    while (this.levelPoints >= this.getLevelUpThreshold()) {
+      this.levelPoints -= this.getLevelUpThreshold();
+      this.level += 1;
+    }
   }
 
   private getGhostY(): number {
@@ -448,6 +478,7 @@ export class TetrisCore extends GameCore<TetrisObservation, TetrisAction> {
       gameOver: this.gameOver,
       clearedRows: this.evtClearedRows,
       clearCount: this.evtClearCount,
+      perfectClear: this.evtPerfectClear,
       hardDrop: this.evtHardDrop,
       locked: this.evtLocked,
       isTetris: this.evtClearCount === 4,
