@@ -53,12 +53,146 @@ document.addEventListener('focusin', function (e) {
 	}
 });
 
-// Handle the page load event for decisions.html
-function handleLoad() {
-	var i;
-	var the_form = document.DecisionsFrm;
+// Called by the router after tpl-decisions is cloned into #app. Builds
+// the dynamic per-team rows (D1-D15) into placeholder <tr> elements,
+// populates the static single-input rows (D16-D19, RevokeShipDols,
+// ContinuousForYear), then runs the cascade of update*Total() helpers
+// so the right-hand totals column reflects the initial values.
+function init_decisions() {
+	var f = document.DecisionsFrm;
 	var teams = parent.getTeams();
+	var t, i;
 
+	document.getElementById('decisions-year').textContent = parent.getGameYear();
+
+	var headerHTML = '';
+	for (t = 1; t <= teams; t++) {
+		headerHTML += '<td>' + t + '</td>';
+	}
+	headerHTML += '<td>合計</td>';
+	for (i = teams; i < 6; i++) { headerHTML += '<td>&nbsp;</td>'; }
+	document.getElementById('dec-row-header').insertAdjacentHTML('beforeend', headerHTML);
+
+	// Helper that builds and appends per-team input cells + total cell + spacers.
+	// opts: { tabBase, value(t), onblur, onchange(t), disabled, totalName }
+	function appendDecRow(rowId, name, opts) {
+		var html = '';
+		for (var t = 1; t <= teams; t++) {
+			var val = opts.value ? opts.value(t) : 0;
+			html += '<td><input type="text" name="' + name + t + 'Fld" size="5"';
+			html += ' value="' + val + '"';
+			if (opts.disabled) {
+				html += ' tabindex="0" disabled="disabled"';
+			} else {
+				html += ' tabindex="' + (t * 20 + opts.tabBase) + '"';
+				if (opts.onblur) { html += ' onblur="' + opts.onblur + '"'; }
+				if (opts.onchange) { html += ' onchange="' + opts.onchange(t) + '"'; }
+			}
+			html += ' /></td>';
+		}
+		var totalName = opts.totalName || (name + 'Total');
+		html += '<td><input type="text" name="' + totalName + 'Fld" size="5" value="0" tabindex="0" disabled="disabled" /></td>';
+		for (var i = teams; i < 6; i++) { html += '<td>&nbsp;</td>'; }
+		document.getElementById(rowId).insertAdjacentHTML('beforeend', html);
+	}
+
+	appendDecRow('dec-row-d1', 'AuctionShips', {
+		tabBase: 1,
+		value: function(t) { return parent.resumeFlag ? parent.auctionShips[t] : 0; },
+		onblur: 'return validateDec(this,true);',
+		onchange: function(t) { return 'changeShips(' + t + ')'; }
+	});
+	appendDecRow('dec-row-d2', 'AuctionDols', {
+		tabBase: 2,
+		value: function(t) { return parent.resumeFlag ? parent.auctionDols[t] : 0; },
+		onblur: 'return validateDec(this,true);',
+		onchange: function() { return 'updateAuctionDolsTotal()'; }
+	});
+	appendDecRow('dec-row-d3', 'ShipPurch', {
+		tabBase: 3,
+		value: function(t) { return parent.resumeFlag ? parent.shipPurch[t] : 0; },
+		onblur: 'return validateDec(this,false);',
+		onchange: function(t) { return 'changeShips(' + t + ')'; }
+	});
+	appendDecRow('dec-row-d4', 'ShipPurchDols', {
+		tabBase: 4,
+		value: function(t) { return parent.resumeFlag ? parent.shipPurchDols[t] : 0; },
+		onblur: 'return validateDec(this,false);',
+		onchange: function() { return 'updateShipPurchDolsTotal()'; }
+	});
+	appendDecRow('dec-row-d5', 'ShipSales', {
+		tabBase: 5,
+		value: function(t) { return parent.resumeFlag ? parent.shipSales[t] : 0; },
+		onblur: 'return validateDec(this,false);',
+		onchange: function(t) { return 'changeShips(' + t + ')'; }
+	});
+	appendDecRow('dec-row-d6', 'ShipSalesDols', {
+		tabBase: 6,
+		value: function(t) { return parent.resumeFlag ? parent.shipSalesDols[t] : 0; },
+		onblur: 'return validateDec(this,false);',
+		onchange: function() { return 'updateShipSalesDolsTotal()'; }
+	});
+	appendDecRow('dec-row-d7', 'ShipOrders', {
+		tabBase: 7,
+		value: function(t) { return parent.resumeFlag ? parent.shipOrders[t] : 0; },
+		onblur: 'return validateDec(this,false);',
+		onchange: function() { return 'updateShipOrdersTotal()'; }
+	});
+	appendDecRow('dec-row-d8', 'ShipsAvail', {
+		value: function(t) { return parent.getShipsAvail(t); },
+		disabled: true
+	});
+	appendDecRow('dec-row-d9', 'ShipsToDeep', {
+		tabBase: 8,
+		value: function(t) { return parent.resumeFlag ? parent.shipsToDeep[t] : 0; },
+		onblur: 'return validateDec(this,false);',
+		onchange: function(t) { return 'updateShipsToDeepTotal();updateShipsToHarbor(' + t + ');'; }
+	});
+	appendDecRow('dec-row-d10', 'ShipsToCoast', {
+		tabBase: 9,
+		value: function(t) { return parent.resumeFlag ? parent.shipsToCoast[t] : 0; },
+		onblur: 'return validateDec(this,false);',
+		onchange: function(t) { return 'updateShipsToCoastTotal();updateShipsToHarbor(' + t + ');'; }
+	});
+	appendDecRow('dec-row-d11', 'ShipsToHarbor', {
+		value: function() { return 0; },
+		disabled: true
+	});
+	appendDecRow('dec-row-d12', 'GivenDols', {
+		tabBase: 10,
+		value: function(t) { return parent.resumeFlag ? parent.givenDols[t] : 0; },
+		onblur: 'return validateDec(this,true);',
+		onchange: function() { return 'updateGivenDolsTotal()'; }
+	});
+	appendDecRow('dec-row-d13', 'ReceiveDols', {
+		tabBase: 11,
+		value: function(t) { return parent.resumeFlag ? parent.receiveDols[t] : 0; },
+		onblur: 'return validateDec(this,true);',
+		onchange: function() { return 'updateReceiveDolsTotal()'; }
+	});
+	appendDecRow('dec-row-d14', 'ReceiveDolsFromFishery', {
+		tabBase: 12,
+		value: function(t) { return parent.resumeFlag ? parent.receiveDolsFromFishery[t] : 0; },
+		onblur: 'return validateDec(this,true);',
+		onchange: function() { return 'updateReceiveDolsFromFisheryTotal()'; }
+	});
+	appendDecRow('dec-row-d15', 'RevokeShips', {
+		tabBase: 13,
+		totalName: 'RevokeShipTotal',  // irregular (no trailing 's')
+		value: function() { return 0; },
+		onblur: 'return validateRevokeShips(this,false);',
+		onchange: function(t) { return 'changeShips(' + t + ')'; }
+	});
+
+	// Static single-input fields
+	f.FishDeepSalesPriceFld.value  = parent.getFishDeepSalesPrice();
+	f.FishCoastSalesPriceFld.value = parent.getFishCoastSalesPrice();
+	f.FishPopDeepFld.value         = parent.getFishPopDeep();
+	f.FishPopCoastFld.value        = parent.getFishPopCoast();
+	f.RevokeShipDolsFld.value      = parent.getRevokeShipDols();
+	f.ContinuousForYearFld.value   = parent.resumeFlag ? parent.getContinuousForYear() : 1;
+
+	// Compute initial totals (now that all input rows exist)
 	updateAuctionShipsTotal();
 	updateAuctionDolsTotal();
 	updateShipPurchTotal();
@@ -66,23 +200,26 @@ function handleLoad() {
 	updateShipSalesTotal();
 	updateShipSalesDolsTotal();
 	updateShipOrdersTotal();
-
 	updateShipsAvailTotal();
 	updateShipsToDeepTotal();
 	updateShipsToCoastTotal();
+	updateGivenDolsTotal();
+	updateReceiveDolsTotal();
+	updateReceiveDolsFromFisheryTotal();
+	updateRevokeShipTotal();
 
-	for (var t = 1; t <= teams; t++) {
+	for (t = 1; t <= teams; t++) {
 		updateShipsToHarbor(t);
 	}
 
-	if(parent.resumeFlag){
-		for (var t = 1; t <= teams; t++) {
+	if (parent.resumeFlag) {
+		for (t = 1; t <= teams; t++) {
 			changeShips(t);
 		}
 	}
 
-	the_form.AuctionShips1Fld.focus();
-	the_form.AuctionShips1Fld.select();
+	f.AuctionShips1Fld.focus();
+	f.AuctionShips1Fld.select();
 
 	setupNavInputWithArrowKeys();
 }
@@ -505,7 +642,7 @@ function processDecisions() {
 		parent.saveGame();
 	}
 
-	location.replace('reports.html');
+	goto('reports');
 
 	return true;
 }
@@ -517,7 +654,7 @@ function skipToFld(fld) {
 }
 
 function returnToReports() {
-	location.replace('reports.html');
+	goto('reports');
 }
 
 // validateFishDeepSalesPrice / validateFishCoastSalesPrice live in

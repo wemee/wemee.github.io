@@ -218,10 +218,81 @@
 </template>
 
 <template id="tpl-decisions">
-	<div style="padding:2rem; text-align:center;">
-		<h2>🚧 小組決策頁尚未遷移</h2>
-		<p><a href="javascript:goto('teams')">回到開新遊戲</a></p>
-	</div>
+	<table style="width:600px; margin: 0 auto;">
+	<tr>
+	<td width="560"><img src="images/5.jpg" width="560" height="120" alt="漁人的榮耀" /></td>
+	</tr>
+	<tr>
+	<td>
+		<h1>小組決策 - 年 <span id="decisions-year"></span></h1>
+		<form name="DecisionsFrm" id="DecisionsFrm">
+			<table width="100%" border="0" cellspacing="0" cellpadding="5">
+				<tr id="dec-row-header"><td>組別</td></tr>
+				<tr id="dec-row-d1"><td>D1 拍賣-購船數</td></tr>
+				<tr id="dec-row-d2"><td>D2 拍賣-花費</td></tr>
+				<tr id="dec-row-d3"><td>D3 購入總船數</td></tr>
+				<tr id="dec-row-d4"><td>D4 購入總花費</td></tr>
+				<tr id="dec-row-d5"><td>D5 售出總船數</td></tr>
+				<tr id="dec-row-d6"><td>D6 售船總收入</td></tr>
+				<tr id="dec-row-d7"><td>D7 訂購新船數</td></tr>
+				<tr><td colspan="8">&nbsp;</td></tr>
+				<tr id="dec-row-d8"><td>D8 船隊總船數</td></tr>
+				<tr id="dec-row-d9"><td>D9 遠洋派船數</td></tr>
+				<tr id="dec-row-d10"><td>D10 近海派船數</td></tr>
+				<tr id="dec-row-d11"><td>D11 港口停船數</td></tr>
+				<tr>
+					<td colspan="8">
+						<input type="button" name="ProceedBtn" id="ProceedBtn" value="出海捕魚" tabindex="101" onclick="processDecisions()" />
+						<input type="button" name="ReturnToReportsBtn" id="ReturnToReportsBtn" value="返回看報告" tabindex="100" onclick="returnToReports()" />
+					</td>
+				</tr>
+				<tr><td colspan="8">&nbsp;</td></tr>
+				<tr id="dec-row-d12"><td>D12 給錢</td></tr>
+				<tr id="dec-row-d13"><td>D13 收錢</td></tr>
+				<tr id="dec-row-d14"><td>D14 漁會發錢</td></tr>
+				<tr id="dec-row-d15"><td>D15 報廢船隻</td></tr>
+				<tr><td colspan="8">&nbsp;</td></tr>
+				<tr><td colspan="8"><strong>強制修改漁價</strong></td></tr>
+				<tr>
+					<td>D16 遠洋魚:</td>
+					<td><input type="text" name="FishDeepSalesPriceFld" size="7" tabindex="0" onchange="return validateFishDeepSalesPrice(this);" /></td>
+					<td colspan="6">&nbsp;</td>
+				</tr>
+				<tr>
+					<td>D17 近海魚:</td>
+					<td><input type="text" name="FishCoastSalesPriceFld" size="7" tabindex="0" onchange="return validateFishCoastSalesPrice(this);" /></td>
+					<td colspan="6">&nbsp;</td>
+				</tr>
+				<tr><td colspan="8">&nbsp;</td></tr>
+				<tr><td colspan="8"><strong>強制修改魚量</strong></td></tr>
+				<tr>
+					<td>D18 遠洋魚:</td>
+					<td><input type="text" name="FishPopDeepFld" size="7" tabindex="0" onblur="return validateDec(this,true);" /></td>
+					<td colspan="6">&nbsp;</td>
+				</tr>
+				<tr>
+					<td>D19 近海魚:</td>
+					<td><input type="text" name="FishPopCoastFld" size="7" tabindex="0" onblur="return validateDec(this,false);" /></td>
+					<td colspan="6">&nbsp;</td>
+				</tr>
+				<tr><td colspan="8">&nbsp;</td></tr>
+				<tr>
+					<td>強制修改報廢漁船價格:</td>
+					<td><input type="text" name="RevokeShipDolsFld" size="7" tabindex="0" onblur="return validateDecNoneZero(this);" /></td>
+					<td colspan="6">&nbsp;</td>
+				</tr>
+				<tr><td colspan="8">&nbsp;</td></tr>
+				<tr>
+					<td>連續休魚幾年:</td>
+					<td><input type="text" name="ContinuousForYearFld" size="7" tabindex="0" onblur="return validateDecNoneZero(this);" /></td>
+					<td colspan="6">&nbsp;</td>
+				</tr>
+				<tr><td colspan="8">&nbsp;</td></tr>
+			</table>
+		</form>
+	</td>
+	</tr>
+	</table>
 </template>
 
 <template id="tpl-reports">
