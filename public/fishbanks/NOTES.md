@@ -93,4 +93,9 @@ jQuery → vanilla DOM：
   - 刪除 6 個舊子頁 HTML、`UntitledFrame-1.html` stub
   - 全鏈端對端驗證：27/27 playwright PASS（teams → setup → startTurn → reports → decisions → processDecisions → year 2 → graphs → back）
 - [ ] 行動裝置支援（固定寬度、無 viewport meta — Phase 1 已加 viewport，但版面還是 desktop-only）
-- [ ] Chart.js 1.0.2 → 4.x（breaking change，工程量大）
+- [x] Chart.js 1.0.2 → 4.4.0 — `a35bccb`
+  - 機械式 rename 6 個 palette / dataset 屬性（fillColor → backgroundColor 等）
+  - 7 個 constructor 改成 `new Chart(ctx, {type:"line", data, options})`
+  - `datasetFill: false` 換成 `scales: { y: { beginAtZero: true } }` — Y 軸從 0 起，比舊版 auto-scale 更誠實
+  - v4 預設出現 legend、千分位 axis label、字體加大 — 視覺較現代但功能等價
+  - 28/28 playwright 仍 PASS；視覺與 v1 截圖比對通過
