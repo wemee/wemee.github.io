@@ -1799,15 +1799,14 @@ function resumeGameToYear(year, the_form) {
 }
 
 function resumeGame(the_form) {
-  console.log(gameYear);
   if(resumeGameToYear(1, the_form)){
-    MainFrame.location.replace('setup.html');
+    goto('setup');
   }
 }
 
 function resumePreviousYear() {
 	if(resumeGameToYear(gameYear-1)){
-    MainFrame.location.replace('decisions.html');
+    goto('decisions');
   }
 }
 

@@ -614,6 +614,10 @@ function drawAllGraphs(){
   drawFishDensity();
 }
 
-document.addEventListener("DOMContentLoaded", function(event) {
-  drawAllGraphs();
-});
+// Note: in the frameset era graphslib.js was loaded only inside the graphs
+// page, so a top-level DOMContentLoaded handler that called drawAllGraphs()
+// fired exactly once when the user reached the graphs view. Under the SPA
+// shell every lib is loaded up-front, so that handler would fire on every
+// first paint regardless of the active route — and drawAllGraphs() reads
+// from myStorage, which is empty until a game has been played. The router
+// will call drawAllGraphs() from init_graphs() instead (Phase 6).

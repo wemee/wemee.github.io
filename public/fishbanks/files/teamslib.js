@@ -3,22 +3,24 @@
 // Copyright 2004, Dennis L. Meadows
 //
 // Overview:
-// The support module for the Create New Game screen of the Fishbanks program.
-// It contains the code that is specific to this single screen.
-//
-// Revision History:
-//   8/22/2004   Version 8.0
-//     Initial release
+// The support module for the Create New Game screen. Populates the
+// StartGameFrm fields from global state (was done inline via document.write
+// in the frameset era) and handles the About / Begin Game buttons.
 
-// Handle the page load event for teams.html
-function handleLoad() {
-	document.StartGameFrm.TeamsSel.selectedIndex = parent.getTeams() - 1;
+// Called by the router after tpl-teams is cloned into #app.
+function init_teams() {
+	var f = document.StartGameFrm;
+	f.OrganizationFld.value = parent.getOrganization();
+	f.DateFld.value         = parent.getTodayString();
+	f.AttendanceFld.value   = parent.getAttendance();
+	f.SessionFld.value      = parent.getSession();
+	f.TeamsSel.selectedIndex = parent.getTeams() - 1;
 	parent.resetGameYear();
 	parent.resetInitFish();
 }
 
-function aboutGame () {
-	location.replace('about.html');
+function aboutGame() {
+	goto('about');
 }
 
 function beginGame() {
@@ -44,5 +46,5 @@ function beginGame() {
 		}
 	}
 
-	location.replace('setup.html')
+	goto('setup');
 }
