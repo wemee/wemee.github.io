@@ -536,7 +536,7 @@ function initializeGame() {
 	var i = 0;
 
 	// Initialize globals for a new game
-	totalCatchDeep, totalCatchCoast = 0;
+	totalCatchDeep = totalCatchCoast = 0;
 	opFleetDeep = 0;
 	opFleetCoast = 0;
 	opFleetHarbor = 0;
