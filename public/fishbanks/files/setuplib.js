@@ -10,16 +10,65 @@
 //   8/22/2004   Version 8.0
 //     Initial release
 
-// Handle the page load event for setup.html
-function handleLoad() {
-	document.SetupYearFrm.InitFishDeepFld.focus();
-	document.SetupYearFrm.InitFishDeepFld.select();
+// Called by the router after tpl-setup is cloned into #app. Populates the
+// year, the dynamic per-team rows, and every static-field value from the
+// mainlib globals (these used to be inline document.write blocks), then
+// focuses the initial-fish field.
+function init_setup() {
+	var f = document.SetupYearFrm;
+	var teams = parent.getTeams();
+	var t, i, html;
+
+	f.YearFld.value = parent.getGameYear();
+
+	html = '';
+	for (t = 1; t <= teams; t++) {
+		html += '<td class="team">' + t + '</td>';
+	}
+	for (i = teams; i < 6; i++) { html += '<td>&nbsp;</td>'; }
+	document.getElementById('setup-row-team-labels').insertAdjacentHTML('beforeend', html);
+
+	html = '';
+	for (t = 1; t <= teams; t++) {
+		html += '<td class="team"><input type="text" name="Ships' + t + 'Fld" value="' + parent.getShipsAvail(t) + '" size="7" tabindex="' + (5 + t) + '" /></td>';
+	}
+	for (i = teams; i < 6; i++) { html += '<td>&nbsp;</td>'; }
+	document.getElementById('setup-row-team-ships').insertAdjacentHTML('beforeend', html);
+
+	html = '';
+	for (t = 1; t <= teams; t++) {
+		html += '<td class="team"><input type="text" name="Balance' + t + 'Fld" value="' + parent.getBankBal(t) + '" size="7" tabindex="' + (15 + t) + '" /></td>';
+	}
+	for (i = teams; i < 6; i++) { html += '<td>&nbsp;</td>'; }
+	document.getElementById('setup-row-team-balance').insertAdjacentHTML('beforeend', html);
+
+	f.MaxFishDeepFld.value           = parent.getMaxFishDeep();
+	f.MaxFishCoastFld.value          = parent.getMaxFishCoast();
+	f.InitFishDeepFld.value          = parent.getInitFishDeep();
+	f.InitFishCoastFld.value         = parent.getInitFishCoast();
+	f.OpCostDeepFld.value            = parent.getOpCostDeep();
+	f.OpCostCoastFld.value           = parent.getOpCostCoast();
+	f.OpCostHarborFld.value          = parent.getOpCostHarbor();
+	f.NewShipPriceFld.value          = parent.getNewShipPrice();
+	f.SalValBaseFld.value            = parent.getSalValBase();
+	f.RevokeShipDolsFld.value        = parent.getRevokeShipDols();
+	f.RevokeShipFishDeepFld.value    = parent.getRevokeShipFishDeep();
+	f.RevokeShipFishCoastFld.value   = parent.getRevokeShipFishCoast();
+	f.FishDeepSalesPriceFld.value    = parent.getFishDeepSalesPrice();
+	f.FishCoastSalesPriceFld.value   = parent.getFishCoastSalesPrice();
+	f.FisheryfundFld.value           = parent.getFisheryfund();
+	f.FishSalesPriceFunctionFld.value = parent.getFishSalesPriceFunction();
+
+	f.StartTurnBtn.value = '進入遊戲 第 ' + parent.getGameYear() + ' 年報表 ';
+
+	f.InitFishDeepFld.focus();
+	f.InitFishDeepFld.select();
 }
 
 // 翻譯：revise -> 修正的意思
 function reviseTeams() {
-	if (confirm('This will erase your\ninitial conditions. Proceed?')) {
-		location.replace('teams.html');
+	if (confirm('此操作會清除起始設定。\n確定要繼續嗎？')) {
+		goto('teams');
 	}
 }
 
@@ -43,7 +92,7 @@ function startTurn() {
 		// Save current game state
 		parent.saveGame();
 
-		location.replace('reports.html');
+		goto('reports');
 	}
 }
 
@@ -52,8 +101,8 @@ function validateAllFld() {
 	var teams = parent.getTeams();
 
 	for (var t = 1; t <= teams; t++) {
-		if ( !validateShips(eval("the_form.Ships"+t+"Fld"), t) ) return false;
-		if ( !validateBalance(eval("the_form.Balance"+t+"Fld"), t) ) return false;
+		if ( !validateShips(the_form["Ships"+t+"Fld"], t) ) return false;
+		if ( !validateBalance(the_form["Balance"+t+"Fld"], t) ) return false;
 	}
 
 	var fishSalesPriceFunction = the_form.FishSalesPriceFunctionFld.value;

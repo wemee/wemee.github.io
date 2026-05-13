@@ -93,11 +93,128 @@
 </template>
 
 <template id="tpl-setup">
-	<div style="padding:2rem; text-align:center;">
-		<h2>🚧 起始設定頁尚未遷移</h2>
-		<p>Phase 1 範圍只完成 teams + router。</p>
-		<p><a href="javascript:goto('teams')">回到開新遊戲</a></p>
-	</div>
+	<table style="width:600px; margin: 0 auto;">
+	<tr>
+	<td width="560"><img src="images/5.jpg" width="560" height="120" alt="漁人的榮耀" /></td>
+	</tr>
+	<tr>
+	<td>
+		<h1>起始設定</h1>
+		<form name="SetupYearFrm" id="SetupYearFrm">
+			<table name="SetupLayoutTbl" id="SetupLayoutTbl" width="100%" border="0" cellspacing="0" cellpadding="3">
+			<tr>
+				<td>年:</td>
+				<td class="col2"><input type="text" name="YearFld" size="7" tabindex="0" disabled /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr><td colspan="7">&nbsp;</td></tr>
+			<tr id="setup-row-team-labels">
+				<td>&nbsp;&nbsp;&nbsp;&nbsp;組別:</td>
+			</tr>
+			<tr id="setup-row-team-ships">
+				<td>&nbsp;&nbsp;&nbsp;&nbsp;船數:</td>
+			</tr>
+			<tr id="setup-row-team-balance">
+				<td>&nbsp;&nbsp;&nbsp;&nbsp;銀行結餘:</td>
+			</tr>
+			<tr><td colspan="7">&nbsp;</td></tr>
+			<tr>
+				<td>&nbsp;</td>
+				<td class="col2">遠洋</td>
+				<td class="col3">近海</td>
+				<td class="col4">港口</td>
+				<td></td><td></td><td></td>
+			</tr>
+			<tr>
+				<td>魚群生態負荷量:</td>
+				<td class="col2"><input type="text" name="MaxFishDeepFld" size="7" tabindex="0" onchange="return validateMaxFishDeepFld(this);" /></td>
+				<td class="col3"><input type="text" name="MaxFishCoastFld" size="7" tabindex="0" onchange="return validateMaxFishCoastFld(this);" /></td>
+				<td class="col4">&nbsp;</td>
+				<td></td><td></td><td></td>
+			</tr>
+			<tr>
+				<td>魚群起始族群量:</td>
+				<td class="col2"><input type="text" name="InitFishDeepFld" size="7" tabindex="25" onchange="return validateInitFishDeep(this);" /></td>
+				<td class="col3"><input type="text" name="InitFishCoastFld" size="7" tabindex="26" onchange="return validateInitFishCoast(this);" /></td>
+				<td class="col4">&nbsp;</td>
+				<td></td><td></td><td></td>
+			</tr>
+			<tr>
+				<td>操作成本:</td>
+				<td class="col2"><input type="text" name="OpCostDeepFld" size="7" tabindex="0" /></td>
+				<td class="col3"><input type="text" name="OpCostCoastFld" size="7" tabindex="0" /></td>
+				<td class="col4"><input type="text" name="OpCostHarborFld" size="7" tabindex="0" /></td>
+				<td></td><td></td><td></td>
+			</tr>
+			<tr><td colspan="7">&nbsp;</td></tr>
+			<tr>
+				<td>訂購新船費:</td>
+				<td class="col2"><input type="text" name="NewShipPriceFld" size="7" tabindex="0" /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr>
+				<td>漁船淨殘值(折現價):</td>
+				<td class="col2"><input type="text" name="SalValBaseFld" size="7" tabindex="0" /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr><td colspan="7">&nbsp;</td></tr>
+			<tr>
+				<td>報廢船隻處理費:</td>
+				<td class="col2"><input type="text" name="RevokeShipDolsFld" size="7" tabindex="0" onblur="return validateRevokeShipDols(this,true);" /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr>
+				<td>報廢船減少魚-遠洋:</td>
+				<td class="col2"><input type="text" name="RevokeShipFishDeepFld" size="7" tabindex="0" onblur="return validateRevokeShipFishDeep(this,true);" /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr>
+				<td>報廢船減少魚-近海:</td>
+				<td class="col2"><input type="text" name="RevokeShipFishCoastFld" size="7" tabindex="0" onblur="return validateRevokeShipFishCoast(this,true);" /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr><td colspan="7">&nbsp;</td></tr>
+			<tr>
+				<td>遠洋漁賣價:</td>
+				<td class="col2"><input type="text" name="FishDeepSalesPriceFld" size="7" tabindex="0" onchange="return validateFishDeepSalesPrice(this);" /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr>
+				<td>近海魚賣價:</td>
+				<td class="col2"><input type="text" name="FishCoastSalesPriceFld" size="7" tabindex="0" onchange="return validateFishCoastSalesPrice(this);" /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr><td colspan="7">&nbsp;</td></tr>
+			<tr>
+				<td>漁會資金:</td>
+				<td class="col2"><input type="text" name="FisheryfundFld" size="7" tabindex="0" onchange="return validateFisheryFund(this);" /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr><td colspan="7">&nbsp;</td></tr>
+			<tr>
+				<td>魚價變化公式:</td>
+				<td class="col2">
+					<select name="FishSalesPriceFunctionFld">
+						<option value="0">不變</option>
+						<option value="1">公式一(請告訴我公式)</option>
+						<option value="2">公式二(請告訴我公式)</option>
+						<option value="3">公式三(請告訴我公式)</option>
+						<option value="3">公式四(and so on...)</option>
+					</select>
+				</td>
+				<td colspan="5"></td>
+			</tr>
+			<tr><td colspan="7">&nbsp;</td></tr>
+			<tr>
+				<td colspan="7">
+					<input type="button" name="StartTurnBtn" id="StartTurnBtn" tabindex="30" onclick="startTurn()" />&nbsp;
+				</td>
+			</tr>
+			</table>
+		</form>
+	</td>
+	</tr>
+	</table>
 </template>
 
 <template id="tpl-decisions">
