@@ -57,11 +57,22 @@ chore: remove dead registration key validation
 
 ### 🟢 體質改善
 
-- [ ] 刪 `mainlib.js:1149-1197` `original_calcSalvageValue`（dead code）
+- [x] 刪 `mainlib.js:1141-1191` `original_calcSalvageValue`（dead code）— `c60e767`（−52 行）
 - [ ] 清理 `// Deprecated` 註解的舊變數
 - [ ] 補上 `UntitledFrame-1.html`（避免 console 404）
-- [ ] 英文 alert 訊息中文化（`mainlib.js:5, 161, 164` 等）
+- [x] 英文 alert 訊息中文化（mainlib / decisionslib / setuplib / graphslib 共 35+ 處）— `18afcf1`，順便修正兩處 "mast" → "must" 的 typo
 - [ ] 評估移除 jQuery 1.7.1 依賴（只在 `decisionslib.js` 用 keyup/focus）
+
+### 🧪 Playwright 驗證
+
+`/tmp/fb-pw/verify.js`（headless chromium，需要 `npm run dev` + `npm i -D playwright` + `npx playwright install chromium`）
+
+跑過 18 個檢查全 PASS，含三個關鍵熱區：
+- `changeShips()` — 5 處 eval → bracket 後 ShipsAvail 即時更新正確
+- `updateShipsToHarbor()` — `value = total` assign 路徑正確
+- `updateAuctionShipsTotal()` — 4 隊 sum 迴圈正確
+
+回歸面：`validateKey` / `keyError` / `writeCookie` / `readCookie` 全部 `typeof === 'undefined'`，沒有 pageerror，唯一 404 是刻意保留的 `UntitledFrame-1.html`。
 
 ### 🔵 大重構（暫不動）
 
