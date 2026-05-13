@@ -1269,11 +1269,11 @@ function readCookie(name)
   var search = name + "=";
   if(document.cookie.length > 0)
   {
-    offset = document.cookie.indexOf(search);
+    var offset = document.cookie.indexOf(search);
     if (offset != -1)
     {
       offset += search.length;
-      end = document.cookie.indexOf(";", offset);
+      var end = document.cookie.indexOf(";", offset);
       if (end == -1) end = document.cookie.length;
       cookieValue = unescape(document.cookie.substring(offset, end))
     }
@@ -1443,7 +1443,7 @@ function saveGame() {
   var teamBankBalData = JSON.parse(myStorage.getItem("teamBankBalData"));
   var teamShipsData = JSON.parse(myStorage.getItem("teamShipsData"));
   var teamAssetsData = JSON.parse(myStorage.getItem("teamAssetsData"));
-  for (t = 1; t<=teams; t++) {
+  for (var t = 1; t<=teams; t++) {
     teamBankBalData[t][gameYear] = bankBal[t];
     teamShipsData[t][gameYear] = ships[t];
     teamAssetsData[t][gameYear] = getTeamAssets(t);
@@ -1627,6 +1627,7 @@ function generateCSVReportInfo() {
 }
 
 function generateTeamCSVReport() {
+  var y, t;
   var teamCatchDeepData = JSON.parse(myStorage.getItem("teamCatchDeepData"));
   var teamCatchCoastData = JSON.parse(myStorage.getItem("teamCatchCoastData"));
   var teamFishDeepPriceData = JSON.parse(myStorage.getItem("teamFishDeepPriceData"));
@@ -1728,6 +1729,7 @@ function generateTeamCSVReport() {
 }
 
 function generateOperatorCSVReport() {
+  var y;
   var operatorOpFleetDeepData = JSON.parse(myStorage.getItem("operatorOpFleetDeepData"));
   var operatorOpFleetCoastData = JSON.parse(myStorage.getItem("operatorOpFleetCoastData"));
   var operatorCatchPerShipDeepData = JSON.parse(myStorage.getItem("operatorCatchPerShipDeepData"));
@@ -1782,7 +1784,7 @@ function resumeGameToYear(year, the_form) {
 	var qDeep, qCoast;
 	var expenseDeep, expenseCoast, expenseHarbor;
 	var orderMoney, minBankBal, interestEarned;
-	var i;
+	var i, t;
 	var gameDataJSON = myStorage.getItem("allData");
 
 	if (gameDataJSON == "") {
