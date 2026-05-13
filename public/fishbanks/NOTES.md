@@ -100,6 +100,17 @@ jQuery → vanilla DOM：
 - 0 個 pageerror，0 個 404（UntitledFrame-1.html stub 補上後）
 - 0 個非預期 console error
 
+Fuzz harness 在同目錄 `/tmp/fb-pw/fuzz.js`：
+
+```bash
+FUZZ_DURATION_MS=300000 node fuzz.js   # 5 分鐘隨機操作（預設）
+FUZZ_SEED=12345 node fuzz.js           # 用指定 seed reproduce
+```
+
+每個 error 依 stack 分類為 NEW / CHART / EXISTING / UNKNOWN，輸出統計與每個 signature 的觸發次數。
+
+⚠️ `/tmp/` 是暫存目錄，重開機會清空。若要保留 harness，請從 `/tmp/fb-pw/` 複製到永久位置。
+
 ### 🔵 大重構
 
 - [x] HTML5 `<frameset>` → SPA + `history.pushState` — Phase 1-7（commits `9a2bd54` → `Phase 7`）
