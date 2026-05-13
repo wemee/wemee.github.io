@@ -82,12 +82,12 @@ function changeShips(t) {
 	updateRevokeShipTotal();
 
 	shipsAvailable = parseInt(parent.getShipsAvail(t));
-	auctionShips = parseInt(eval("the_form.AuctionShips" + t + "Fld.value"));
-	purchShips = parseInt(eval("the_form.ShipPurch" + t + "Fld.value"));
-	salesShips = parseInt(eval("the_form.ShipSales" + t + "Fld.value"));
-	revokeShips = parseInt(eval("the_form.RevokeShips" + t + "Fld.value"));
+	auctionShips = parseInt(the_form["AuctionShips" + t + "Fld"].value);
+	purchShips = parseInt(the_form["ShipPurch" + t + "Fld"].value);
+	salesShips = parseInt(the_form["ShipSales" + t + "Fld"].value);
+	revokeShips = parseInt(the_form["RevokeShips" + t + "Fld"].value);
 	shipsAvailable += (auctionShips + purchShips - salesShips - revokeShips);
-	eval("the_form.ShipsAvail" + t + "Fld.value = shipsAvailable");
+	the_form["ShipsAvail" + t + "Fld"].value = shipsAvailable;
 	updateShipsToHarbor(t);
 
 	updateShipsAvailTotal();
@@ -99,7 +99,7 @@ function updateAuctionShipsTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.AuctionShips" + t + "Fld.value"));
+		total += parseInt(the_form["AuctionShips" + t + "Fld"].value);
 	}
 
 	the_form.AuctionShipsTotalFld.value = total;
@@ -111,7 +111,7 @@ function updateAuctionDolsTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.AuctionDols" + t + "Fld.value"));
+		total += parseInt(the_form["AuctionDols" + t + "Fld"].value);
 	}
 
 	the_form.AuctionDolsTotalFld.value = total;
@@ -123,7 +123,7 @@ function updateShipPurchTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipPurch" + t + "Fld.value"));
+		total += parseInt(the_form["ShipPurch" + t + "Fld"].value);
 	}
 
 	the_form.ShipPurchTotalFld.value = total;
@@ -135,7 +135,7 @@ function updateShipPurchDolsTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipPurchDols" + t + "Fld.value"));
+		total += parseInt(the_form["ShipPurchDols" + t + "Fld"].value);
 	}
 
 	the_form.ShipPurchDolsTotalFld.value = total;
@@ -147,7 +147,7 @@ function updateShipSalesTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipSales" + t + "Fld.value"));
+		total += parseInt(the_form["ShipSales" + t + "Fld"].value);
 	}
 
 	the_form.ShipSalesTotalFld.value = total;
@@ -159,7 +159,7 @@ function updateShipSalesDolsTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipSalesDols" + t + "Fld.value"));
+		total += parseInt(the_form["ShipSalesDols" + t + "Fld"].value);
 	}
 
 	the_form.ShipSalesDolsTotalFld.value = total;
@@ -171,7 +171,7 @@ function updateShipOrdersTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipOrders" + t + "Fld.value"));
+		total += parseInt(the_form["ShipOrders" + t + "Fld"].value);
 	}
 
 	the_form.ShipOrdersTotalFld.value = total;
@@ -183,7 +183,7 @@ function updateShipsAvailTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipsAvail" + t + "Fld.value"));
+		total += parseInt(the_form["ShipsAvail" + t + "Fld"].value);
 	}
 
 	the_form.ShipsAvailTotalFld.value = total;
@@ -195,7 +195,7 @@ function updateShipsToDeepTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipsToDeep" + t + "Fld.value"));
+		total += parseInt(the_form["ShipsToDeep" + t + "Fld"].value);
 	}
 
 	the_form.ShipsToDeepTotalFld.value = total;
@@ -207,7 +207,7 @@ function updateShipsToCoastTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipsToCoast" + t + "Fld.value"));
+		total += parseInt(the_form["ShipsToCoast" + t + "Fld"].value);
 	}
 
 	the_form.ShipsToCoastTotalFld.value = total;
@@ -219,7 +219,7 @@ function updateShipsToHarborTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipsToHarbor" + t + "Fld.value"));
+		total += parseInt(the_form["ShipsToHarbor" + t + "Fld"].value);
 	}
 
 	the_form.ShipsToHarborTotalFld.value = total;
@@ -231,7 +231,7 @@ function updateGivenDolsTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.GivenDols" + t + "Fld.value"));
+		total += parseInt(the_form["GivenDols" + t + "Fld"].value);
 	}
 
 	the_form.GivenDolsTotalFld.value = total;
@@ -243,7 +243,7 @@ function updateReceiveDolsTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ReceiveDols" + t + "Fld.value"));
+		total += parseInt(the_form["ReceiveDols" + t + "Fld"].value);
 	}
 
 	the_form.ReceiveDolsTotalFld.value = total;
@@ -255,7 +255,7 @@ function updateReceiveDolsFromFisheryTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ReceiveDolsFromFishery" + t + "Fld.value"));
+		total += parseInt(the_form["ReceiveDolsFromFishery" + t + "Fld"].value);
 	}
 
 	the_form.ReceiveDolsFromFisheryTotalFld.value = total;
@@ -268,7 +268,7 @@ function updateRevokeShipTotal(){
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.RevokeShips" + t + "Fld.value"));
+		total += parseInt(the_form["RevokeShips" + t + "Fld"].value);
 	}
 
 	the_form.RevokeShipTotalFld.value = total;
@@ -278,10 +278,10 @@ function updateShipsToHarbor(team) {
 	var the_form = document.DecisionsFrm;
 	var total = 0;
 
-	total = parseInt(eval("the_form.ShipsAvail" + team + "Fld.value"));
-	total -= parseInt(eval("the_form.ShipsToDeep" + team + "Fld.value"));
-	total -= parseInt(eval("the_form.ShipsToCoast" + team + "Fld.value"));
-	eval("the_form.ShipsToHarbor" + team + "Fld.value = total");
+	total = parseInt(the_form["ShipsAvail" + team + "Fld"].value);
+	total -= parseInt(the_form["ShipsToDeep" + team + "Fld"].value);
+	total -= parseInt(the_form["ShipsToCoast" + team + "Fld"].value);
+	the_form["ShipsToHarbor" + team + "Fld"].value = total;
 
 	updateShipsToHarborTotal();
 }
@@ -388,26 +388,26 @@ function processDecisions() {
 	var shipsToHarbor;
 
 	for (var t = 1; t <= teams; t++) {
-		shipsAvail = parseInt(eval('the_form.ShipsAvail' + t + 'Fld.value'));
+		shipsAvail = parseInt(the_form["ShipsAvail" + t + "Fld"].value);
 		if (shipsAvail < 0) {
 			alert('Available Ships for Team ' + t + '\nmay not be less than 0');
-			eval('the_form.ShipPurch' + t + 'Fld.focus()');
-			eval('the_form.ShipPurch' + t + 'Fld.select()');
+			the_form["ShipPurch" + t + "Fld"].focus();
+			the_form["ShipPurch" + t + "Fld"].select();
 			return false;
 		}
-		shipsOrdered = parseInt(eval('the_form.ShipOrders' + t + 'Fld.value'));
+		shipsOrdered = parseInt(the_form["ShipOrders" + t + "Fld"].value);
 		if (shipsOrdered > Math.round(shipsAvail/2)) {
 			alert('No team may order in one year more\nships than half their existing fleet');
-			eval('the_form.ShipOrders' + t + 'Fld.focus()');
-			eval('the_form.ShipOrders' + t + 'Fld.select()');
+			the_form["ShipOrders" + t + "Fld"].focus();
+			the_form["ShipOrders" + t + "Fld"].select();
 			return false;
 		}
 
-		shipsToHarbor = parseInt(eval('the_form.ShipsToHarbor' + t + 'Fld.value'));
+		shipsToHarbor = parseInt(the_form["ShipsToHarbor" + t + "Fld"].value);
 		if (shipsToHarbor < 0) {
 			alert('The sum of ships sent to the Deep Sea and\nto the Coast fisheries for each team must be less\nthan or equal to the Ships Available');
-			eval('the_form.ShipsToDeep' + t + 'Fld.focus()');
-			eval('the_form.ShipsToDeep' + t + 'Fld.select()');
+			the_form["ShipsToDeep" + t + "Fld"].focus();
+			the_form["ShipsToDeep" + t + "Fld"].select();
 			return false;
 		}
 	}
@@ -416,29 +416,29 @@ function processDecisions() {
 	parent.setRevokeShipDols(parseInt(the_form.RevokeShipDolsFld.value));
 
 	for (var t = 1; t <= teams; t++) {
-		parent.auctionShips[t]  = parseInt(eval("the_form.AuctionShips"  + t + "Fld.value"));
-		parent.auctionDols[t]   = parseInt(eval("the_form.AuctionDols" 	 + t + "Fld.value"));
-		parent.shipPurch[t]     = parseInt(eval("the_form.ShipPurch" 		 + t + "Fld.value"));
-		parent.shipPurchDols[t] = parseInt(eval("the_form.ShipPurchDols" + t + "Fld.value"));
-		parent.shipSales[t]     = parseInt(eval("the_form.ShipSales" 		 + t + "Fld.value"));
-		parent.shipSalesDols[t] = parseInt(eval("the_form.ShipSalesDols" + t + "Fld.value"));
-		parent.shipOrders[t]    = parseInt(eval("the_form.ShipOrders" 	 + t + "Fld.value"));
-		parent.setShipsAvail(t, 	parseInt(eval("the_form.ShipsAvail" 	 + t + "Fld.value")));
-		parent.shipsToDeep[t]   = parseInt(eval("the_form.ShipsToDeep"   + t + "Fld.value"));
-		parent.shipsToCoast[t]  = parseInt(eval("the_form.ShipsToCoast"  + t + "Fld.value"));
-		parent.shipsToHarbor[t] = parseInt(eval("the_form.ShipsToHarbor" + t + "Fld.value"));
+		parent.auctionShips[t]  = parseInt(the_form["AuctionShips" + t + "Fld"].value);
+		parent.auctionDols[t]   = parseInt(the_form["AuctionDols" + t + "Fld"].value);
+		parent.shipPurch[t]     = parseInt(the_form["ShipPurch" + t + "Fld"].value);
+		parent.shipPurchDols[t] = parseInt(the_form["ShipPurchDols" + t + "Fld"].value);
+		parent.shipSales[t]     = parseInt(the_form["ShipSales" + t + "Fld"].value);
+		parent.shipSalesDols[t] = parseInt(the_form["ShipSalesDols" + t + "Fld"].value);
+		parent.shipOrders[t]    = parseInt(the_form["ShipOrders" + t + "Fld"].value);
+		parent.setShipsAvail(t, 	parseInt(the_form["ShipsAvail" + t + "Fld"].value));
+		parent.shipsToDeep[t]   = parseInt(the_form["ShipsToDeep" + t + "Fld"].value);
+		parent.shipsToCoast[t]  = parseInt(the_form["ShipsToCoast" + t + "Fld"].value);
+		parent.shipsToHarbor[t] = parseInt(the_form["ShipsToHarbor" + t + "Fld"].value);
 
 		// 報廢漁船 // 已經在 changeShips 處理過了
-		// var rShips = parseInt(eval("the_form.RevokeShips" + t + "Fld.value"));
+		// var rShips = parseInt(the_form["RevokeShips" + t + "Fld"].value);
 		// if(parent.getShipsAvail(t) < rShips) {
 		// 	alert('組別:' + t + ' ,沒那麼多漁船可以報廢');
 		// 	return false;
 		// }
 		// parent.setRevokeShips(t, rShips);
 
-		var gMoney = parseInt(eval("the_form.GivenDols" + t + "Fld.value"));
-		var rMoney = parseInt(eval("the_form.ReceiveDols" + t + "Fld.value"));
-		var rMoneyFromFishery = parseInt(eval("the_form.ReceiveDolsFromFishery" + t + "Fld.value"));
+		var gMoney = parseInt(the_form["GivenDols" + t + "Fld"].value);
+		var rMoney = parseInt(the_form["ReceiveDols" + t + "Fld"].value);
+		var rMoneyFromFishery = parseInt(the_form["ReceiveDolsFromFishery" + t + "Fld"].value);
 
 		if (gMoney) {
 			var cMoney = parent.getBankBal(t);
