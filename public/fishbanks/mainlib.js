@@ -82,8 +82,6 @@ var reportType = 9; 				// Used to determine which reports will be displayed
 									// 1 - 8    specified team report only
 									//     9    all team reports
 
-var keyError = "None";				// Indicator of key error
-
 // Team-specific global arrays have one element for each team
 // Note: Since the original program was written in BASIC, where arrays are 1-based
 //       by default, the first item (at index 0) in these arrays is ignored
@@ -1202,83 +1200,6 @@ function padLeft(txt, padTo) {
 	}
 
 	return result;
-}
-
-function validateKey(key) {
-	var i;
-	var testsum;
-	var teststr;
-	var testArr = new Array(3,5,4,7);
-	var testexp = /^(\w\w[BRQT]\w)-(\w[AJL]\w\w)-(\w\w\w[3679])-([DGKPX]\w\w\w)$/;
-	key = key.toUpperCase();
-	var result = key.match(testexp);
-
-	if (result != null) {
-		testsum = 0;
-		teststr = result[1];
-		for (i = 0; i < teststr.length; i++) {
-			testsum += teststr.charCodeAt(i);
-		}
-		if (testsum % testArr[0] == 0) {
-			testsum = 0;
-			teststr = result[2];
-			for (i = 0; i < teststr.length; i++) {
-				testsum += teststr.charCodeAt(i);
-			}
-			if (testsum % testArr[1] == 0) {
-				testsum = 0;
-				teststr = result[3];
-				for (i = 0; i < teststr.length; i++) {
-					testsum += teststr.charCodeAt(i);
-				}
-				if (testsum % testArr[2] == 0) {
-					testsum = 0;
-					teststr = result[4];
-					for (i = 0; i < teststr.length; i++) {
-						testsum += teststr.charCodeAt(i);
-					}
-					if (testsum % testArr[3] == 0) {
-						return true;
-					}
-				}
-			}
-		}
-	}
-	return false;
-}
-
-// Example:
-// writeCookie("myCookie", "my name", 31);
-// Stores the string "my name" in the cookie "myCookie" which expires after 31 days.
-function writeCookie(name, value, days)
-{
-  var expire = "";
-  if (days != null)
-  {
-    expire = new Date((new Date()).getTime() + days * 86400000);
-    expire = "; expires=" + expire.toGMTString();
-  }
-  document.cookie = name + "=" + escape(value) + expire;
-}
-
-// Example:
-// alert( readCookie("myCookie") );
-function readCookie(name)
-{
-  var cookieValue = "";
-  var search = name + "=";
-  if(document.cookie.length > 0)
-  {
-    var offset = document.cookie.indexOf(search);
-    if (offset != -1)
-    {
-      offset += search.length;
-      var end = document.cookie.indexOf(";", offset);
-      if (end == -1) end = document.cookie.length;
-      cookieValue = unescape(document.cookie.substring(offset, end))
-    }
-  }
-  return cookieValue;
 }
 
 function resetAllData() {

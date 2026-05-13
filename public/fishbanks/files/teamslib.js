@@ -10,33 +10,8 @@
 //   8/22/2004   Version 8.0
 //     Initial release
 
-// Handle the page load event for teams.html, making sure the game has been
-// properly registered with a key
+// Handle the page load event for teams.html
 function handleLoad() {
-	// var key = parent.readCookie("FBkey");
-	// parent.writeCookie("FBkey","18QN-6JJX-1JH9-K0VN",3650);
-	var key = "18QN-6JJX-1JH9-K0VN"
-	if (key == "") {	// If key not yet defined, ask for it
-		key = prompt("Please enter your registration key (including dashes):", "");
-		if (key) {
-			if (parent.validateKey(key)) {
-				alert("Thank you, your registration\nkey has been recorded");
-				parent.writeCookie("FBkey",key,3650);
-			} else {
-				parent.keyError = "BadEntry";
-				location.replace('badkey.html');
-			}
-		} else {
-			parent.keyError = "CancelEntry";
-			location.replace('badkey.html');
-		}
-	} else {
-		if (!parent.validateKey(key)) {
-			parent.keyError = "BadCookie";
-			location.replace('badkey.html');
-		}
-	}
-
 	document.StartGameFrm.TeamsSel.selectedIndex = parent.getTeams() - 1;
 	parent.resetGameYear();
 	parent.resetInitFish();
