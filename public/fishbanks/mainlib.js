@@ -1138,58 +1138,6 @@ function calcSalvageValue(yr) {
 	return salvageVal;
 }
 
-// Calculate the salvage value for a given year. Use variable salvage value
-// process.
-function original_calcSalvageValue(yr) {
-	// Local variables
-	var harborCost;
-	var deepSeaProfit;
-	var coastalProfit;
-	var totalProfit;
-	var totalShips;
-	var averageProfit;
-
-	// Initialize the base value for the first year's salvage value at 250
-	var salvageVal = 250;
-
-	// Calculate subsequent years' values off this basis
-	for (var y = 2; y <= yr; y++) {
-		harborCost = opCostHarbor * opFleetHarbor;
-
-		if (opFleetDeep == 0) {
-			deepSeaProfit = 0;
-		} else {
-			// Note: We just use the price for team #1 here. Right now, all
-			//       teams get the same price. If this fact changes, however,
-			//       we'll need to change the next line to use an average
-			//       price across all teams.
-			deepSeaProfit = (fishDeepPrice[1] * (totalCatchDeep/opFleetDeep) - opCostDeep) * opFleetDeep;
-		}
-
-		if (opFleetCoast == 0) {
-			coastalProfit = 0;
-		} else {
-			// Note: We just use the price for team #1 here. Right now, all
-			//       teams get the same price. If this fact changes, however,
-			//       we'll need to change the next line to use an average
-			//       price across all teams.
-			coastalProfit = (fishCoastPrice[1] * (totalCatchCoast/opFleetCoast) - opCostCoast) * opFleetCoast;
-		}
-
-		totalProfit = deepSeaProfit + coastalProfit - harborCost;
-
-		totalShips = opFleetDeep + opFleetCoast + opFleetHarbor;
-
-		averageProfit = totalProfit/totalShips;
-
-		salvageVal = Math.floor(salvageVal + ((averageProfit - salvageVal)/salValDelay));
-	}
-
-	if (salvageVal < 0) { salvageVal = 0; }
-
-	return salvageVal;
-}
-
 // Pad txt to a length of padTo by adding spaces to the left
 function padLeft(txt, padTo) {
 	var i;
