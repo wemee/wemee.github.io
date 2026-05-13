@@ -53,7 +53,6 @@ var opCostCoast        = 150;		//                   coast areas
 var opCostHarbor       = 50;		//                   harbor
 var newShipPrice       = 300;		// Price of new ships
 
-// var fishSalesPrice     = 20;		// Price of deep fish
 var fishDeepSalesPrice = 20;		// Price of coast fish
 var fishCoastSalesPrice= 20;		// Price of fish
 
@@ -99,8 +98,6 @@ var shipsToHarbor = new Array();		// Ships remaining in harbor
 var catchDeep = new Array();			// Catch in deep sea
 var catchCoast = new Array();			// Catch in coastal areas
 
-// Deprecated // Fish price
-// var fishPrice = new Array();
 // 使用近遠海分開 為陣列，表示各隊魚價可不同
 var fishDeepPrice = new Array();	// 遠洋魚價
 var fishCoastPrice = new Array();	// 近海魚價
@@ -137,16 +134,6 @@ var weather = new Array(1.00, 1.03, 0.87, 1.14, 1.05, 0.94, 0.90, 1.02, 1.08, 0.
 
 // 魚價變化計算公式
 var fishSalesPriceFunction = 0; // 預設不變
-// Fish Price - set here as a function of time, could also be converted to a function
-//              of harvest
-// Note: This array was originally 0-based, so the 0-indexed element is used
-// Deprecated
-// var price = new Array(20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20);
-// Deprecated // 遠洋魚價
-// var priceDeep = new Array(20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20);
-// Deprecated // 近海魚價
-// var priceCoast = new Array(20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20);
-
 var continuousForYear = 1; // 連續進行幾年
 var fisheryFund = 2000; //漁會資金
 
@@ -394,11 +381,6 @@ function getOpCostHarbor() {
 function setFishSalesPrice(n) {
 	if (isNaN(n)) {n = parseInt(n)};	// record a numeric value
 	fishSalesPrice = n;
-}
-
-// Deprecated
-function getFishSalesPrice() {
-	return fishSalesPrice;
 }
 
 function setFishDeepSalesPrice(n) {
