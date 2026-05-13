@@ -624,6 +624,20 @@ function processDecisions() {
 
 	// 連續進行幾年
 	var continuousForYear = parseInt(the_form.ContinuousForYearFld.value);
+	// Clamp: NaN or huge values would loop executeTurn forever (fuzz found a
+	// 7-hour hang triggered by pasting an 8-digit number into 連續休魚幾年).
+	if (isNaN(continuousForYear) || continuousForYear < 1) {
+		alert('連續休魚幾年必須是 1 到 100 之間的整數');
+		the_form.ContinuousForYearFld.focus();
+		the_form.ContinuousForYearFld.select();
+		return false;
+	}
+	if (continuousForYear > 100) {
+		alert('連續休魚幾年最多 100 年');
+		the_form.ContinuousForYearFld.focus();
+		the_form.ContinuousForYearFld.select();
+		return false;
+	}
 	parent.setContinuousForYear(continuousForYear);
 	for(var i=1; i<=continuousForYear; i++) {
 		// 計算新魚價

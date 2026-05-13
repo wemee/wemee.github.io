@@ -111,7 +111,7 @@ var colors = {
 
 function drawIndices() {
   var shipIndicesJSON = parent.myStorage.getItem("shipIndices");
-	if (shipIndicesJSON == "") {
+	if (!shipIndicesJSON) {
 		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
     return false;
 	}
@@ -119,7 +119,7 @@ function drawIndices() {
   shipIndices = shipIndices.slice(1);
 
   var catchIndicesJSON = parent.myStorage.getItem("catchIndices");
-	if (catchIndicesJSON == "") {
+	if (!catchIndicesJSON) {
 		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
     return false;
 	}
@@ -127,7 +127,7 @@ function drawIndices() {
   catchIndices = catchIndices.slice(1);
 
   var fishIndicesJSON = parent.myStorage.getItem("fishIndices");
-	if (fishIndicesJSON == "") {
+	if (!fishIndicesJSON) {
 		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
     return false;
 	}
@@ -214,7 +214,7 @@ function drawBanBals() {
   var teamBankBalDataJSON = parent.myStorage.getItem("teamBankBalData");
   var teamShipsDataJSON = parent.myStorage.getItem("teamShipsData");
   var teamAssetsDataJSON = parent.myStorage.getItem("teamAssetsData");
-	if (teamBankBalDataJSON == "" || teamShipsDataJSON == "" || teamAssetsDataJSON == "") {
+	if (!teamBankBalDataJSON || !teamShipsDataJSON || !teamAssetsDataJSON) {
 		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
     return false;
 	}
@@ -376,7 +376,7 @@ function drawBanBals() {
 function drawFishPop() {
   var fishPopDeepDataJSON = parent.myStorage.getItem("fishPopDeepData");
   var fishPopCoastDataJSON = parent.myStorage.getItem("fishPopCoastData");
-	if (fishPopDeepDataJSON == "" || fishPopCoastDataJSON == "") {
+	if (!fishPopDeepDataJSON || !fishPopCoastDataJSON) {
 		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
     return false;
 	}
@@ -461,7 +461,7 @@ function drawFishPop() {
 function drawFishDensity() {
   var fishDensityDeepDataJSON = parent.myStorage.getItem("fishDensityDeepData");
   var fishDensityCoastDataJSON = parent.myStorage.getItem("fishDensityCoastData");
-	if (fishDensityDeepDataJSON == "" || fishDensityCoastDataJSON == "") {
+	if (!fishDensityDeepDataJSON || !fishDensityCoastDataJSON) {
 		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
     return false;
 	}
@@ -546,7 +546,7 @@ function drawFishDensity() {
 // salvageValueTable
 function drawSalvageValue() {
   var salvageValuesJSON = parent.myStorage.getItem("salvageValues");
-	if (salvageValuesJSON == "") {
+	if (!salvageValuesJSON) {
 		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
     return false;
 	}
@@ -625,7 +625,20 @@ function addEvent(evnt, elem, func) {
   // drawFishDensity();
 // });
 
+// Chart.js v4 forbids attaching a new Chart to a canvas that still has one.
+// Under the SPA we re-enter the graphs page (or click 繪圖) repeatedly, so
+// destroy every Chart bound to the seven graph canvases before redrawing.
+function destroyAllCharts() {
+  var ids = ['indicesChart', 'shipsChart', 'banBalsChart', 'assetsChart',
+             'fishPopChart', 'fishDensityChart', 'salvageValueChart'];
+  for (var i = 0; i < ids.length; i++) {
+    var existing = Chart.getChart(ids[i]);
+    if (existing) { existing.destroy(); }
+  }
+}
+
 function drawAllGraphs(){
+  destroyAllCharts();
   drawIndices();
   drawBanBals();
   drawSalvageValue();

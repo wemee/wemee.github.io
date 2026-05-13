@@ -64,14 +64,14 @@ var salvageValue	   = salValBase;// Most recently calculated salvage value
 var fishPopDeep;          			// Fish population in deep sea
 var fishPopCoast;     				//                    coast areas
 var regenerationDeep;               // Fish regeneration in deep sea
-var regenerationCoastal;			//                      coastal areas
+var regenerationCoast;			//                      coastal areas (was `regenerationCoastal` — typo never read; 16 other sites use `regenerationCoast`)
 var totalCatchDeep     = 0;			// Total fish caught in deep sea
 var totalCatchCoast    = 0;			//                      coastal areas
 var opFleetDeep        = 0;			// Operating fleet in deep sea
 var opFleetCoast       = 0;			//                    coastal areas
 var opFleetHarbor      = 0;			//                    harbor
 var fishDensityDeep;				// Fish density in deep sea
-var fishDensityCoastal;				//                 coastal areas
+var fishDensityCoast;				//                 coastal areas (was `fishDensityCoastal` — typo never read; 6 other sites use `fishDensityCoast`)
 
 var resumeFlag = false;				// Set to true when resuming a game
 
@@ -1233,6 +1233,15 @@ function resetAllData() {
 // Save the current game state. Must be called BEFORE calculating
 // salvage value for current year!
 function saveGame() {
+  // saveGame() reads 30+ keys via JSON.parse(myStorage.getItem(k)). If the
+  // storage was never bootstrapped (user reached processDecisions without
+  // going through startTurn → initializeGame → resetAllData), every parse
+  // throws SyntaxError on undefined. Bootstrap defensively here so the
+  // function is callable from any state.
+  if (!myStorage.getItem("allData")) {
+    resetAllData();
+  }
+
   // 資本資料
   var data  = {
     session : getSession(),
@@ -1638,15 +1647,22 @@ function resumeGameToYear(year, the_form) {
 	var i, t;
 	var gameDataJSON = myStorage.getItem("allData");
 
-	if (gameDataJSON == "") {
+	// Falsy catches both "" and undefined (myStorage.getItem returns undefined
+	// for missing keys, not ""). Same pattern as graphslib.js Bug B fix.
+	if (!gameDataJSON) {
 		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
     return false;
-	}// else {
-		// var msg = 'Restore game data for session ' + data[0] + '\nat year ' + data[yrIndex] + '?';
-		// if (confirm(msg)) {
+	}
   var allData = JSON.parse(gameDataJSON);
   if(year<0) year = (allData.length)-1; // 回到最近的一年
   var data = allData[year];
+
+  // Guard against out-of-range year (e.g. resumePreviousYear() called at
+  // gameYear=1 → year=0, which is the 1-based-array "ignored" slot)
+  if (!data) {
+    alert('抱歉，沒有第 ' + year + ' 年的存檔資料。');
+    return false;
+  }
 
   var sessionName = data["session"];
   if(typeof(the_form) !== 'undefined') {
