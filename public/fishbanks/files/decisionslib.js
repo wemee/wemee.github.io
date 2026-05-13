@@ -520,10 +520,6 @@ function returnToReports() {
 	location.replace('reports.html');
 }
 
-function validateFishDeepSalesPrice(fld) {
-	return parent.validateFishDeepSalesPrice(fld);
-}
-
-function validateFishCoastSalesPrice(fld) {
-	return parent.validateFishCoastSalesPrice(fld);
-}
+// validateFishDeepSalesPrice / validateFishCoastSalesPrice live in
+// mainlib.js. The old frameset child shadow wrappers were removed —
+// under the SPA shell they recurse into themselves because parent === window.

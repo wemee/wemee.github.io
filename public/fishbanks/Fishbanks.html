@@ -225,10 +225,39 @@
 </template>
 
 <template id="tpl-reports">
-	<div style="padding:2rem; text-align:center;">
-		<h2>🚧 報表頁尚未遷移</h2>
-		<p><a href="javascript:goto('teams')">回到開新遊戲</a></p>
-	</div>
+	<table style="width:768px; margin: 0 auto;">
+	<tr>
+	<td width="560"><img src="images/5.jpg" width="560" height="120" alt="漁人的榮耀" /></td>
+	</tr>
+	<tr>
+	<td>
+		<h1 id="report-title"></h1>
+		<table name="ReportLayoutTbl" id="ReportLayoutTbl">
+		<tr>
+		<td name="ReportContentCell" id="ReportContentCell">
+			<blockquote id="report-body"></blockquote>
+		</td>
+		<td name="ReportNavCell" id="ReportNavCell">
+			<form name="ReportNavFrm" id="ReportNavFrm">
+				<br />
+				<div><input type="button" name="OperReportBtn" value="操作報表" onclick="showReport(0)" /></div>
+				<div><input type="button" name="TeamReportsBtn" value="組別報表" onclick="showReport(9)" /></div>
+				<br /><div><input type="button" name="DecisionsBtn" value="小組決策" onclick="gotoDecisions()" style="font-size: large;background-color: #FF9797"/></div><br/>
+				<div id="report-year-actions" style="display:none;">
+					<div><input type="button" name="PreviousYearBtn" value="回到上一年" onclick="gotoPreviousYear()" /></div>
+					<div><input type="button" name="TeamGraphReportsBtn" value="圖表分析" onclick="teamGraphReports()" /></div>
+					<div><input type="button" name="CSVReportBtn" value="CSV報表" onclick="generateCSVReport()" /></div>
+				</div>
+			</form>
+		</td>
+		</tr>
+		</table>
+	</td>
+	</tr>
+	<tr>
+		<td id="csv"></td>
+	</tr>
+	</table>
 </template>
 
 <template id="tpl-graphs">
