@@ -50,9 +50,9 @@ chore: remove dead registration key validation
 
 ### 🟡 已淘汰 API / 風險中等
 
-- [ ] `escape()` / `unescape()` / `toGMTString()` 換成 `encodeURIComponent` / `decodeURIComponent` / `toUTCString`
+- [x] `escape()` / `unescape()` / `toGMTString()` — 隨 cookie helpers 一起刪除（這些 API 只在 `writeCookie`/`readCookie` 用到，而那兩個函式在拔掉註冊碼後變成死代碼）— `4a23031`
 - [x] `decisionslib.js` 48 處 `eval("the_form.XxxFld" + t + "Fld.value")` → `the_form["XxxFld" + t + "Fld"].value` — `d609da6`（原預估 60 處，實際 48）
-- [ ] 拔掉註冊碼機制（`teamslib.js` 寫死 + `mainlib.js:1211` 的 `validateKey` + `badkey.html` 流程）
+- [x] 拔掉註冊碼機制（`teamslib.js` 寫死 + `mainlib.js:1207` `validateKey` + `badkey.html` + `key.txt` 全部移除）— `4a23031`
 - [ ] 每個 .js 加 `'use strict';`
 
 ### 🟢 體質改善
