@@ -298,10 +298,6 @@ function getGameYear() {
 	return gameYear;
 }
 
-function resetGameYear() {
-	gameYear = 1;
-}
-
 function advanceGameYear() {
 	gameYear++;
 }
