@@ -30,7 +30,7 @@ function goback() {
 }
 
 var colors = {
-  fillColor: [
+  backgroundColor: [
     null,
     "rgba(255,192,203,0.2)",
     "rgba(190,190,190,0.2)",
@@ -41,7 +41,7 @@ var colors = {
     "rgba(165,42,42,0.2)",
     "rgba(0,255,0,0.2)",
   ],
-  strokeColor: [
+  borderColor: [
     null,
     "rgba(255,192,203,1)",
     "rgba(190,190,190,1)",
@@ -52,7 +52,7 @@ var colors = {
     "rgba(165,42,42,1)",
     "rgba(0,255,0,1)",
   ],
-  pointColor: [
+  pointBackgroundColor: [
     null,
     "rgba(255,192,203,1)",
     "rgba(190,190,190,1)",
@@ -63,7 +63,7 @@ var colors = {
     "rgba(165,42,42,1)",
     "rgba(0,255,0,1)",
   ],
-  pointStrokeColor: [
+  pointBorderColor: [
     null,
     "#fff",
     "#fff",
@@ -74,7 +74,7 @@ var colors = {
     "#fff",
     "#fff",
   ],
-  pointHighlightFill: [
+  pointHoverBackgroundColor: [
     null,
     "#fff",
     "#fff",
@@ -85,7 +85,7 @@ var colors = {
     "#fff",
     "#fff",
   ],
-  pointHighlightStroke: [
+  pointHoverBorderColor: [
     null,
     "rgba(255,192,203,1)",
     "rgba(190,190,190,1)",
@@ -146,32 +146,32 @@ function drawIndices() {
       datasets: [
           {
               label: "船指數",
-              fillColor: colors['fillColor'][1],
-              strokeColor: colors['strokeColor'][1],
-              pointColor: colors['pointColor'][1],
-              pointStrokeColor: colors['pointStrokeColor'][1],
-              pointHighlightFill: colors['pointHighlightFill'][1],
-              pointHighlightStroke: colors['pointHighlightStroke'][1],
+              backgroundColor: colors['backgroundColor'][1],
+              borderColor: colors['borderColor'][1],
+              pointBackgroundColor: colors['pointBackgroundColor'][1],
+              pointBorderColor: colors['pointBorderColor'][1],
+              pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][1],
+              pointHoverBorderColor: colors['pointHoverBorderColor'][1],
               data: shipIndices
           },
           {
               label: "​捕獲指數",
-              fillColor: colors['fillColor'][2],
-              strokeColor: colors['strokeColor'][2],
-              pointColor: colors['pointColor'][2],
-              pointStrokeColor: colors['pointStrokeColor'][2],
-              pointHighlightFill: colors['pointHighlightFill'][2],
-              pointHighlightStroke: colors['pointHighlightStroke'][2],
+              backgroundColor: colors['backgroundColor'][2],
+              borderColor: colors['borderColor'][2],
+              pointBackgroundColor: colors['pointBackgroundColor'][2],
+              pointBorderColor: colors['pointBorderColor'][2],
+              pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][2],
+              pointHoverBorderColor: colors['pointHoverBorderColor'][2],
               data: fishIndices
           },
           {
               label: "​魚群指數",
-              fillColor: colors['fillColor'][3],
-              strokeColor: colors['strokeColor'][3],
-              pointColor: colors['pointColor'][3],
-              pointStrokeColor: colors['pointStrokeColor'][3],
-              pointHighlightFill: colors['pointHighlightFill'][3],
-              pointHighlightStroke: colors['pointHighlightStroke'][3],
+              backgroundColor: colors['backgroundColor'][3],
+              borderColor: colors['borderColor'][3],
+              pointBackgroundColor: colors['pointBackgroundColor'][3],
+              pointBorderColor: colors['pointBorderColor'][3],
+              pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][3],
+              pointHoverBorderColor: colors['pointHoverBorderColor'][3],
               data: catchIndices
           }
       ]
@@ -179,12 +179,11 @@ function drawIndices() {
 
   var options = {
       //Boolean - Whether to fill the dataset with a colour
-      datasetFill : false,
-      // legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].strokeColor%>\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>"
+      scales: { y: { beginAtZero: true } },      // legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].borderColor%>\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>"
       // legendTemplate : '<p>TEST</p>'
   };
-  // document.getElementById('indicesChart-legend').innerHTML = (new Chart(ctx).Line(data, options)).generateLegend();
-  new Chart(ctx).Line(data, options);
+  // document.getElementById('indicesChart-legend').innerHTML = (new Chart(ctx, {type:"line", data:data, options:options})).generateLegend();
+  new Chart(ctx, {type:"line", data:data, options:options});
 
   // Draw Table
   var tableHtmlHeaderStr = "<table border='1'><tr><td align='center'>年</td>";
@@ -244,12 +243,12 @@ function drawBanBals() {
       for(var t=1, teams=parent.getTeams(); t<=teams; t++){
         result.push({
           label: t,
-          fillColor: colors['fillColor'][t],
-          strokeColor: colors['strokeColor'][t],
-          pointColor: colors['pointColor'][t],
-          pointStrokeColor: colors['pointStrokeColor'][t],
-          pointHighlightFill: colors['pointHighlightFill'][t],
-          pointHighlightStroke: colors['pointHighlightStroke'][t],
+          backgroundColor: colors['backgroundColor'][t],
+          borderColor: colors['borderColor'][t],
+          pointBackgroundColor: colors['pointBackgroundColor'][t],
+          pointBorderColor: colors['pointBorderColor'][t],
+          pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][t],
+          pointHoverBorderColor: colors['pointHoverBorderColor'][t],
           data: teamShipsData[t].slice(1)
         });
       }
@@ -264,12 +263,12 @@ function drawBanBals() {
       for(var t=1, teams=parent.getTeams(); t<=teams; t++){
         result.push({
           label: t,
-          fillColor: colors['fillColor'][t],
-          strokeColor: colors['strokeColor'][t],
-          pointColor: colors['pointColor'][t],
-          pointStrokeColor: colors['pointStrokeColor'][t],
-          pointHighlightFill: colors['pointHighlightFill'][t],
-          pointHighlightStroke: colors['pointHighlightStroke'][t],
+          backgroundColor: colors['backgroundColor'][t],
+          borderColor: colors['borderColor'][t],
+          pointBackgroundColor: colors['pointBackgroundColor'][t],
+          pointBorderColor: colors['pointBorderColor'][t],
+          pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][t],
+          pointHoverBorderColor: colors['pointHoverBorderColor'][t],
           data: teamBankBalData[t].slice(1)
         });
       }
@@ -283,12 +282,12 @@ function drawBanBals() {
       for(var t=1, teams=parent.getTeams(); t<=teams; t++){
         result.push({
           label: t,
-          fillColor: colors['fillColor'][t],
-          strokeColor: colors['strokeColor'][t],
-          pointColor: colors['pointColor'][t],
-          pointStrokeColor: colors['pointStrokeColor'][t],
-          pointHighlightFill: colors['pointHighlightFill'][t],
-          pointHighlightStroke: colors['pointHighlightStroke'][t],
+          backgroundColor: colors['backgroundColor'][t],
+          borderColor: colors['borderColor'][t],
+          pointBackgroundColor: colors['pointBackgroundColor'][t],
+          pointBorderColor: colors['pointBorderColor'][t],
+          pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][t],
+          pointHoverBorderColor: colors['pointHoverBorderColor'][t],
           data: teamAssetsData[t].slice(1)
         });
       }
@@ -296,13 +295,13 @@ function drawBanBals() {
     })()
   };
 
-  var options = {datasetFill : false};
-  // document.getElementById('shipsChart-legend').innerHTML = (new Chart(shipsCtx).Line(shipsCtxData, options)).generateLegend();
-  new Chart(shipsCtx).Line(shipsCtxData, options);
-  // document.getElementById('banBalsChart-legend').innerHTML = (new Chart(banBalCtx).Line(banBalCtxData, options)).generateLegend();
-  new Chart(banBalCtx).Line(banBalCtxData, options);
-  // document.getElementById('assetsChart-legend').innerHTML = (new Chart(assetsCtx).Line(assetsCtxData, options)).generateLegend();
-  new Chart(assetsCtx).Line(assetsCtxData, options);
+  var options = {scales:{y:{beginAtZero:true}}};
+  // document.getElementById('shipsChart-legend').innerHTML = (new Chart(shipsCtx, {type:"line", data:shipsCtxData, options:options})).generateLegend();
+  new Chart(shipsCtx, {type:"line", data:shipsCtxData, options:options});
+  // document.getElementById('banBalsChart-legend').innerHTML = (new Chart(banBalCtx, {type:"line", data:banBalCtxData, options:options})).generateLegend();
+  new Chart(banBalCtx, {type:"line", data:banBalCtxData, options:options});
+  // document.getElementById('assetsChart-legend').innerHTML = (new Chart(assetsCtx, {type:"line", data:assetsCtxData, options:options})).generateLegend();
+  new Chart(assetsCtx, {type:"line", data:assetsCtxData, options:options});
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   // csv comment 8871231 // Draw Table And CSV
@@ -399,29 +398,29 @@ function drawFishPop() {
     datasets: [
       {
         label: "遠洋",
-        fillColor: colors['fillColor'][1],
-        strokeColor: colors['strokeColor'][1],
-        pointColor: colors['pointColor'][1],
-        pointStrokeColor: colors['pointStrokeColor'][1],
-        pointHighlightFill: colors['pointHighlightFill'][1],
-        pointHighlightStroke: colors['pointHighlightStroke'][1],
+        backgroundColor: colors['backgroundColor'][1],
+        borderColor: colors['borderColor'][1],
+        pointBackgroundColor: colors['pointBackgroundColor'][1],
+        pointBorderColor: colors['pointBorderColor'][1],
+        pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][1],
+        pointHoverBorderColor: colors['pointHoverBorderColor'][1],
         data: fishPopDeepData
       },{
         label: "近海",
-        fillColor: colors['fillColor'][2],
-        strokeColor: colors['strokeColor'][2],
-        pointColor: colors['pointColor'][2],
-        pointStrokeColor: colors['pointStrokeColor'][2],
-        pointHighlightFill: colors['pointHighlightFill'][2],
-        pointHighlightStroke: colors['pointHighlightStroke'][2],
+        backgroundColor: colors['backgroundColor'][2],
+        borderColor: colors['borderColor'][2],
+        pointBackgroundColor: colors['pointBackgroundColor'][2],
+        pointBorderColor: colors['pointBorderColor'][2],
+        pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][2],
+        pointHoverBorderColor: colors['pointHoverBorderColor'][2],
         data: fishPopCoastData
       }
     ]
   };
 
-  var options = {datasetFill : false};
-  // document.getElementById('fishPopChart-legend').innerHTML = (new Chart(ctx).Line(data, options)).generateLegend();
-  new Chart(ctx).Line(data, options);
+  var options = {scales:{y:{beginAtZero:true}}};
+  // document.getElementById('fishPopChart-legend').innerHTML = (new Chart(ctx, {type:"line", data:data, options:options})).generateLegend();
+  new Chart(ctx, {type:"line", data:data, options:options});
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   // Draw Table
@@ -484,29 +483,29 @@ function drawFishDensity() {
     datasets: [
       {
         label: "遠洋",
-        fillColor: colors['fillColor'][1],
-        strokeColor: colors['strokeColor'][1],
-        pointColor: colors['pointColor'][1],
-        pointStrokeColor: colors['pointStrokeColor'][1],
-        pointHighlightFill: colors['pointHighlightFill'][1],
-        pointHighlightStroke: colors['pointHighlightStroke'][1],
+        backgroundColor: colors['backgroundColor'][1],
+        borderColor: colors['borderColor'][1],
+        pointBackgroundColor: colors['pointBackgroundColor'][1],
+        pointBorderColor: colors['pointBorderColor'][1],
+        pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][1],
+        pointHoverBorderColor: colors['pointHoverBorderColor'][1],
         data: fishDensityDeepData
       },{
         label: "近海",
-        fillColor: colors['fillColor'][2],
-        strokeColor: colors['strokeColor'][2],
-        pointColor: colors['pointColor'][2],
-        pointStrokeColor: colors['pointStrokeColor'][2],
-        pointHighlightFill: colors['pointHighlightFill'][2],
-        pointHighlightStroke: colors['pointHighlightStroke'][2],
+        backgroundColor: colors['backgroundColor'][2],
+        borderColor: colors['borderColor'][2],
+        pointBackgroundColor: colors['pointBackgroundColor'][2],
+        pointBorderColor: colors['pointBorderColor'][2],
+        pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][2],
+        pointHoverBorderColor: colors['pointHoverBorderColor'][2],
         data: fishDensityCoastData
       }
     ]
   };
 
-  var options = {datasetFill : false};
-  // document.getElementById('fishDensityChart-legend').innerHTML = (new Chart(ctx).Line(data, options)).generateLegend();
-  new Chart(ctx).Line(data, options);
+  var options = {scales:{y:{beginAtZero:true}}};
+  // document.getElementById('fishDensityChart-legend').innerHTML = (new Chart(ctx, {type:"line", data:data, options:options})).generateLegend();
+  new Chart(ctx, {type:"line", data:data, options:options});
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   // Draw Table
@@ -566,20 +565,20 @@ function drawSalvageValue() {
     datasets: [
       {
         label: "魚船殘值",
-        fillColor: colors['fillColor'][1],
-        strokeColor: colors['strokeColor'][1],
-        pointColor: colors['pointColor'][1],
-        pointStrokeColor: colors['pointStrokeColor'][1],
-        pointHighlightFill: colors['pointHighlightFill'][1],
-        pointHighlightStroke: colors['pointHighlightStroke'][1],
+        backgroundColor: colors['backgroundColor'][1],
+        borderColor: colors['borderColor'][1],
+        pointBackgroundColor: colors['pointBackgroundColor'][1],
+        pointBorderColor: colors['pointBorderColor'][1],
+        pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][1],
+        pointHoverBorderColor: colors['pointHoverBorderColor'][1],
         data: salvageValues
       }
     ]
   };
 
-  var options = {datasetFill : false};
-  // document.getElementById('salvageValueChart-legend').innerHTML = (new Chart(ctx).Line(data, options)).generateLegend();
-  new Chart(ctx).Line(data, options);
+  var options = {scales:{y:{beginAtZero:true}}};
+  // document.getElementById('salvageValueChart-legend').innerHTML = (new Chart(ctx, {type:"line", data:data, options:options})).generateLegend();
+  new Chart(ctx, {type:"line", data:data, options:options});
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   // Draw Table
