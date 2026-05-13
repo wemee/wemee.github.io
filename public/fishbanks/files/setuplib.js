@@ -101,7 +101,7 @@ function validateAllFld() {
 function validateShips(fld, t){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('You mast enter a numeric value more than 1!');
+		alert('請輸入大於 1 的數字！');
 		fld.focus();
 		fld.select();
 		return false;
@@ -115,7 +115,7 @@ function validateShips(fld, t){
 function validateBalance(fld, t){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('You mast enter a numeric value more than 1!');
+		alert('請輸入大於 1 的數字！');
 		fld.focus();
 		fld.select();
 		return false;
@@ -129,7 +129,7 @@ function validateBalance(fld, t){
 function validateMaxFishDeepFld(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('You mast enter a numeric value more than 1!');
+		alert('請輸入大於 1 的數字！');
 		fld.focus();
 		fld.select();
 		return false;
@@ -143,7 +143,7 @@ function validateMaxFishDeepFld(fld){
 function validateMaxFishCoastFld(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('You mast enter a numeric value more than 1!');
+		alert('請輸入大於 1 的數字！');
 		fld.focus();
 		fld.select();
 		return false;
@@ -159,7 +159,7 @@ function validateInitFishDeep(fld) {
 	var maxFishDeep = parent.getMaxFishDeep();
 
 	if (isNaN(entry) || entry > maxFishDeep || entry < 1) {
-		alert('You must enter a numeric value between 1\nand the Maximum Fish in the Deep Sea area!');
+		alert('請輸入 1 到遠洋最大魚量\n之間的數字！');
 		fld.focus();
 		fld.select();
 		return false;
@@ -175,7 +175,7 @@ function validateInitFishCoast(fld) {
 	var maxFishCoast = parent.getMaxFishCoast();
 
 	if (isNaN(entry) || entry > maxFishCoast || entry < 1) {
-		alert('You must enter a numeric value between 1\nand the Maximum Fish in the Coast area!');
+		alert('請輸入 1 到近海最大魚量\n之間的數字！');
 		fld.focus();
 		fld.select();
 		return false;
@@ -189,7 +189,7 @@ function validateInitFishCoast(fld) {
 function validateOpCostDeepFld(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('You mast enter a numeric value more than 1!');
+		alert('請輸入大於 1 的數字！');
 		fld.focus();
 		fld.select();
 		return false;
@@ -202,7 +202,7 @@ function validateOpCostDeepFld(fld){
 function validateOpCostCoastFld(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('You mast enter a numeric value more than 1!');
+		alert('請輸入大於 1 的數字！');
 		fld.focus();
 		fld.select();
 		return false;
@@ -215,7 +215,7 @@ function validateOpCostCoastFld(fld){
 function validateOpCostHarborFld(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('You mast enter a numeric value more than 1!');
+		alert('請輸入大於 1 的數字！');
 		fld.focus();
 		fld.select();
 		return false;
@@ -228,7 +228,7 @@ function validateOpCostHarborFld(fld){
 function validateNewShipPriceFld(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('You mast enter a numeric value more than 1!');
+		alert('請輸入大於 1 的數字！');
 		fld.focus();
 		fld.select();
 		return false;
@@ -241,7 +241,7 @@ function validateNewShipPriceFld(fld){
 function validateSalValBaseFld(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('You mast enter a numeric value more than 1!');
+		alert('請輸入大於 1 的數字！');
 		fld.focus();
 		fld.select();
 		return false;
@@ -255,7 +255,7 @@ function validateSalValBaseFld(fld){
 function validateFisheryFund(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('You mast enter a numeric value more than 1!');
+		alert('請輸入大於 1 的數字！');
 		fld.focus();
 		fld.select();
 		return false;
@@ -270,7 +270,7 @@ function validateFisheryFund(fld){
 function validateFishSalesPriceFld(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('You mast enter a numeric value more than 1!');
+		alert('請輸入大於 1 的數字！');
 		fld.focus();
 		fld.select();
 		return false;
@@ -292,12 +292,12 @@ function validateFishCoastSalesPrice(fld) {
 function validateRevokeShipDols(field,negallow) {
 	var entry = parseInt(field.value)
 	if (isNaN(entry) || field.value == "") {
-		alert('You must use a numeric\nvalue in this field');
+		alert('此欄位必須輸入數字');
 		field.focus();
 		field.select();
 		return false;
 	} else if (!negallow && entry < 0) {
-		alert('You must use a non-negative\nvalue in this field');
+		alert('此欄位必須輸入非負數');
 		field.focus();
 		field.select();
 		return false;
@@ -311,12 +311,12 @@ function validateRevokeShipDols(field,negallow) {
 function validateRevokeShipFishDeep(field,negallow) {
 	var entry = parseInt(field.value)
 	if (isNaN(entry) || field.value == "") {
-		alert('You must use a numeric\nvalue in this field');
+		alert('此欄位必須輸入數字');
 		field.focus();
 		field.select();
 		return false;
 	} else if (!negallow && entry < 0) {
-		alert('You must use a non-negative\nvalue in this field');
+		alert('此欄位必須輸入非負數');
 		field.focus();
 		field.select();
 		return false;
@@ -330,12 +330,12 @@ function validateRevokeShipFishDeep(field,negallow) {
 function validateRevokeShipFishCoast(field,negallow) {
 	var entry = parseInt(field.value)
 	if (isNaN(entry) || field.value == "") {
-		alert('You must use a numeric\nvalue in this field');
+		alert('此欄位必須輸入數字');
 		field.focus();
 		field.select();
 		return false;
 	} else if (!negallow && entry < 0) {
-		alert('You must use a non-negative\nvalue in this field');
+		alert('此欄位必須輸入非負數');
 		field.focus();
 		field.select();
 		return false;

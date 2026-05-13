@@ -159,7 +159,7 @@ function setTeams(t) {
 	if (isNaN(t)) {t = parseInt(t)};	// record a numeric value
 
 	if (t < 1 || t > 8) {
-		alert("Attempt to set invalid number of teams (" + t + ") ignored.");
+		alert("組數設定無效（" + t + "），已忽略。");
 	} else {
 		teams = t;
 	}
@@ -485,7 +485,7 @@ function calcInitShipsPerTeam(numOfTeams) {
 			initShipsPerTeam = 3;
 			break;
 		default:
-			alert("Invalid number of teams passed to calcInitShipsPerTeam: " + numOfTeams);
+			alert("calcInitShipsPerTeam 收到無效的組數:" + numOfTeams);
 			initShipsPerTeam = 0;
 			break;
 	}
@@ -1657,7 +1657,7 @@ function resumeGameToYear(year, the_form) {
 	var gameDataJSON = myStorage.getItem("allData");
 
 	if (gameDataJSON == "") {
-		alert('Sorry, there are no data\nsaved on this browser.');
+		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
     return false;
 	}// else {
 		// var msg = 'Restore game data for session ' + data[0] + '\nat year ' + data[yrIndex] + '?';
@@ -1834,7 +1834,7 @@ function validateFishDeepSalesPrice(fld) {
 	var entry = parseInt(fld.value);
 
 	if (isNaN(entry) || entry < 1) {
-		alert('You mast enter a numeric value more than 1!');
+		alert('請輸入大於 1 的數字！');
 		fld.focus();
 		fld.select();
 		return false;
@@ -1849,7 +1849,7 @@ function validateFishCoastSalesPrice(fld) {
 	var entry = parseInt(fld.value);
 
 	if (isNaN(entry) || entry < 1) {
-		alert('You mast enter a numeric value more than 1!');
+		alert('請輸入大於 1 的數字！');
 		fld.focus();
 		fld.select();
 		return false;

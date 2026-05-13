@@ -293,12 +293,12 @@ function updateShipsToHarbor(team) {
 function validateDec(field,negallow) {
 	var entry = parseInt(field.value)
 	if (isNaN(entry) || field.value == "") {
-		alert('You must use a numeric\nvalue in this field');
+		alert('此欄位必須輸入數字');
 		field.focus();
 		field.select();
 		return false;
 	} else if (!negallow && entry < 0) {
-		alert('You must use a non-negative\nvalue in this field');
+		alert('此欄位必須輸入非負數');
 		field.focus();
 		field.select();
 		return false;
@@ -311,12 +311,12 @@ function validateDec(field,negallow) {
 function validateDecNoneZero(field,negallow) {
 	var entry = parseInt(field.value)
 	if (isNaN(entry) || field.value == "") {
-		alert('You must use a numeric\nvalue in this field');
+		alert('此欄位必須輸入數字');
 		field.focus();
 		field.select();
 		return false;
 	} else if (entry < 1) {
-		// alert('You must use a non-negative\nvalue in this field');
+		// alert('此欄位必須輸入非負數');
 		alert('連續進行幾年欄位，數值需大於1');
 		field.focus();
 		field.select();
@@ -330,12 +330,12 @@ function validateDecNoneZero(field,negallow) {
 function validateRevokeShips(field,negallow) {
 	var entry = parseInt(field.value)
 	if (isNaN(entry) || field.value == "") {
-		alert('You must use a numeric\nvalue in this field');
+		alert('此欄位必須輸入數字');
 		field.focus();
 		field.select();
 		return false;
 	} else if (!negallow && entry < 0) {
-		alert('You must use a non-negative\nvalue in this field');
+		alert('此欄位必須輸入非負數');
 		field.focus();
 		field.select();
 		return false;
@@ -358,7 +358,7 @@ function processDecisions() {
 	var totalShipPurch = parseInt(the_form.ShipPurchTotalFld.value);
 	var totalShipSales = parseInt(the_form.ShipSalesTotalFld.value);
 	if (totalShipPurch != totalShipSales) {
-		alert('Total of D3, Ship Purchases, must\nequal the Total of D5, Ship Sales');
+		alert('D3 購入總船數合計，必須等於\nD5 售出總船數合計');
 		the_form.ShipPurch1Fld.focus();
 		the_form.ShipPurch1Fld.select();
 		return false;
@@ -367,7 +367,7 @@ function processDecisions() {
 	var totalShipPurchDols = parseInt(the_form.ShipPurchDolsTotalFld.value);
 	var totalShipSalesDols = parseInt(the_form.ShipSalesDolsTotalFld.value);
 	if (totalShipPurchDols != totalShipSalesDols) {
-		alert('Total of D4, Ship Purchases $, must\nequal the Total of D6, Ship Sales $');
+		alert('D4 購入總花費合計，必須等於\nD6 售船總收入合計');
 		the_form.ShipPurchDols1Fld.focus();
 		the_form.ShipPurchDols1Fld.select();
 		return false;
@@ -376,7 +376,7 @@ function processDecisions() {
 	var totalGivenDols = parseInt(the_form.GivenDolsTotalFld.value);
 	var totalReceiveDols = parseInt(the_form.ReceiveDolsTotalFld.value);
 	if (totalGivenDols != totalReceiveDols) {
-		alert('Total of D12, 給出去的錢,\n跟收到的錢 Total of D13, 不相等');
+		alert('D12 給出去的錢合計，必須等於\nD13 收到的錢合計');
 		the_form.GivenDols1Fld.focus();
 		the_form.GivenDols1Fld.select();
 		return false;
@@ -390,14 +390,14 @@ function processDecisions() {
 	for (var t = 1; t <= teams; t++) {
 		shipsAvail = parseInt(the_form["ShipsAvail" + t + "Fld"].value);
 		if (shipsAvail < 0) {
-			alert('Available Ships for Team ' + t + '\nmay not be less than 0');
+			alert('第 ' + t + ' 組的可派船數\n不能小於 0');
 			the_form["ShipPurch" + t + "Fld"].focus();
 			the_form["ShipPurch" + t + "Fld"].select();
 			return false;
 		}
 		shipsOrdered = parseInt(the_form["ShipOrders" + t + "Fld"].value);
 		if (shipsOrdered > Math.round(shipsAvail/2)) {
-			alert('No team may order in one year more\nships than half their existing fleet');
+			alert('每年訂購的新船數，不能超過\n現有船隊的一半');
 			the_form["ShipOrders" + t + "Fld"].focus();
 			the_form["ShipOrders" + t + "Fld"].select();
 			return false;
@@ -405,7 +405,7 @@ function processDecisions() {
 
 		shipsToHarbor = parseInt(the_form["ShipsToHarbor" + t + "Fld"].value);
 		if (shipsToHarbor < 0) {
-			alert('The sum of ships sent to the Deep Sea and\nto the Coast fisheries for each team must be less\nthan or equal to the Ships Available');
+			alert('每組派往遠洋與近海的船數合計，\n不能超過該組的船隊總船數');
 			the_form["ShipsToDeep" + t + "Fld"].focus();
 			the_form["ShipsToDeep" + t + "Fld"].select();
 			return false;

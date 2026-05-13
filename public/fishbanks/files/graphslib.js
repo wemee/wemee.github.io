@@ -92,7 +92,7 @@ var colors = {
 function drawIndices() {
   var shipIndicesJSON = parent.myStorage.getItem("shipIndices");
 	if (shipIndicesJSON == "") {
-		alert('Sorry, there are no data\nsaved on this browser.');
+		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
     return false;
 	}
   var shipIndices = JSON.parse(shipIndicesJSON);
@@ -100,7 +100,7 @@ function drawIndices() {
 
   var catchIndicesJSON = parent.myStorage.getItem("catchIndices");
 	if (catchIndicesJSON == "") {
-		alert('Sorry, there are no data\nsaved on this browser.');
+		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
     return false;
 	}
   var catchIndices = JSON.parse(catchIndicesJSON);
@@ -108,7 +108,7 @@ function drawIndices() {
 
   var fishIndicesJSON = parent.myStorage.getItem("fishIndices");
 	if (fishIndicesJSON == "") {
-		alert('Sorry, there are no data\nsaved on this browser.');
+		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
     return false;
 	}
   var fishIndices = JSON.parse(fishIndicesJSON);
@@ -196,7 +196,7 @@ function drawBanBals() {
   var teamShipsDataJSON = parent.myStorage.getItem("teamShipsData");
   var teamAssetsDataJSON = parent.myStorage.getItem("teamAssetsData");
 	if (teamBankBalDataJSON == "" || teamShipsDataJSON == "" || teamAssetsDataJSON == "") {
-		alert('Sorry, there are no data\nsaved on this browser.');
+		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
     return false;
 	}
   var teamBankBalData = JSON.parse(teamBankBalDataJSON);
@@ -358,7 +358,7 @@ function drawFishPop() {
   var fishPopDeepDataJSON = parent.myStorage.getItem("fishPopDeepData");
   var fishPopCoastDataJSON = parent.myStorage.getItem("fishPopCoastData");
 	if (fishPopDeepDataJSON == "" || fishPopCoastDataJSON == "") {
-		alert('Sorry, there are no data\nsaved on this browser.');
+		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
     return false;
 	}
   var fishPopDeepData = JSON.parse(fishPopDeepDataJSON);
@@ -443,7 +443,7 @@ function drawFishDensity() {
   var fishDensityDeepDataJSON = parent.myStorage.getItem("fishDensityDeepData");
   var fishDensityCoastDataJSON = parent.myStorage.getItem("fishDensityCoastData");
 	if (fishDensityDeepDataJSON == "" || fishDensityCoastDataJSON == "") {
-		alert('Sorry, there are no data\nsaved on this browser.');
+		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
     return false;
 	}
   var fishDensityDeepData = JSON.parse(fishDensityDeepDataJSON);
@@ -528,7 +528,7 @@ function drawFishDensity() {
 function drawSalvageValue() {
   var salvageValuesJSON = parent.myStorage.getItem("salvageValues");
 	if (salvageValuesJSON == "") {
-		alert('Sorry, there are no data\nsaved on this browser.');
+		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
     return false;
 	}
   var salvageValues = JSON.parse(salvageValuesJSON);
