@@ -58,21 +58,31 @@ chore: remove dead registration key validation
 ### 🟢 體質改善
 
 - [x] 刪 `mainlib.js:1141-1191` `original_calcSalvageValue`（dead code）— `c60e767`（−52 行）
-- [ ] 清理 `// Deprecated` 註解的舊變數
-- [ ] 補上 `UntitledFrame-1.html`（避免 console 404）
+- [x] 清理 `// Deprecated` 註解的舊變數 — `639f4ea`（commented-out fishPrice/price/priceDeep/priceCoast/fishSalesPrice 全刪、`getFishSalesPrice` 無 caller 刪；`setFishSalesPrice` 仍被 setuplib.js 呼叫故保留並維持 Deprecated 標籤）
+- [x] 補上 `UntitledFrame-1.html`（避免 console 404）— `b0eaa3f`
 - [x] 英文 alert 訊息中文化（mainlib / decisionslib / setuplib / graphslib 共 35+ 處）— `18afcf1`，順便修正兩處 "mast" → "must" 的 typo
-- [ ] 評估移除 jQuery 1.7.1 依賴（只在 `decisionslib.js` 用 keyup/focus）
+- [x] 移除 jQuery 1.7.1 依賴 — `d7ac1be`（`decisionslib.js` 兩個 jQuery 用法改成 `Element.closest/nextElementSibling/querySelector` + `focusin` 事件；連同 setup.html / decisions.html 的 `<script>` tag 與 `files/jquery-1.7.1.min.js` 全刪。setuplib.js 也順手把 commented-out 的 jQuery 死代碼清掉）
 
 ### 🧪 Playwright 驗證
 
 `/tmp/fb-pw/verify.js`（headless chromium，需要 `npm run dev` + `npm i -D playwright` + `npx playwright install chromium`）
 
-跑過 18 個檢查全 PASS，含三個關鍵熱區：
-- `changeShips()` — 5 處 eval → bracket 後 ShipsAvail 即時更新正確
+跑過 21 個檢查全 PASS：
+
+決策表單熱區（eval → bracket）：
+- `changeShips()` 5 處 eval — ShipsAvail 即時更新正確
 - `updateShipsToHarbor()` — `value = total` assign 路徑正確
 - `updateAuctionShipsTotal()` — 4 隊 sum 迴圈正確
 
-回歸面：`validateKey` / `keyError` / `writeCookie` / `readCookie` 全部 `typeof === 'undefined'`，沒有 pageerror，唯一 404 是刻意保留的 `UntitledFrame-1.html`。
+jQuery → vanilla DOM：
+- 右箭頭從 `AuctionShips1Fld` → `AuctionShips2Fld`（`closest/nextElementSibling/querySelector` 替換正確）
+- focusin 自動選取 input 文字（focusin 事件替換 `$(doc).on('focus', ...)`）
+- `typeof window.$` 和 `typeof window.jQuery` 都是 `undefined`
+
+回歸面：
+- `validateKey` / `keyError` / `writeCookie` / `readCookie` 全部 `typeof === 'undefined'`
+- 0 個 pageerror，0 個 404（UntitledFrame-1.html stub 補上後）
+- 0 個非預期 console error
 
 ### 🔵 大重構（暫不動）
 
