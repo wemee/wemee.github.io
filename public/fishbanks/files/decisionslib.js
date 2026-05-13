@@ -12,26 +12,45 @@
 
 // Navigate HTML text input fields with arrow keys
 function setupNavInputWithArrowKeys(){
-	$('input').keyup(function (e) {
-    if (e.which == 39) { // right arrow
-      $(this).closest('td').next().find('input').focus();
-    } else if (e.which == 37) { // left arrow
-      $(this).closest('td').prev().find('input').focus();
-    } else if (e.which == 40) { // down arrow
-      $(this).closest('tr').next().find('td:eq(' + $(this).closest('td').index() + ')').prev().find('input').focus();
-    } else if (e.which == 38) { // up arrow
-      $(this).closest('tr').prev().find('td:eq(' + $(this).closest('td').index() + ')').prev().find('input').focus();
-    }
-  });
+	var inputs = document.querySelectorAll('input');
+	for (var i = 0; i < inputs.length; i++) {
+		inputs[i].addEventListener('keyup', function (e) {
+			var td = this.closest('td');
+			if (!td) return;
+			var tr = td.parentNode;
+			var idx = Array.prototype.indexOf.call(tr.children, td);
+			var targetTd = null;
+			if (e.which == 39) { // right arrow
+				targetTd = td.nextElementSibling;
+			} else if (e.which == 37) { // left arrow
+				targetTd = td.previousElementSibling;
+			} else if (e.which == 40) { // down arrow
+				if (tr.nextElementSibling && tr.nextElementSibling.children[idx]) {
+					targetTd = tr.nextElementSibling.children[idx].previousElementSibling;
+				}
+			} else if (e.which == 38) { // up arrow
+				if (tr.previousElementSibling && tr.previousElementSibling.children[idx]) {
+					targetTd = tr.previousElementSibling.children[idx].previousElementSibling;
+				}
+			}
+			if (targetTd) {
+				var input = targetTd.querySelector('input');
+				if (input) input.focus();
+			}
+		});
+	}
 
-  // un-comment to display key code
-  // $("input").keydown(function (e) {
-  //   alert(e.which);
-  // });
+	// un-comment to display key code
+	// for (var j = 0; j < inputs.length; j++) {
+	//   inputs[j].addEventListener('keydown', function (e) { alert(e.which); });
+	// }
 }
 
-$(document).on('focus', 'input[type="text"]', function() {
-  this.select();
+// Select text on focus for all text inputs (focusin bubbles, unlike focus)
+document.addEventListener('focusin', function (e) {
+	if (e.target && e.target.matches && e.target.matches('input[type="text"]')) {
+		e.target.select();
+	}
 });
 
 // Handle the page load event for decisions.html

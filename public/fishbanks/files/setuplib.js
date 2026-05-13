@@ -10,35 +10,10 @@
 //   8/22/2004   Version 8.0
 //     Initial release
 
-// // Navigate HTML text input fields with arrow keys
-// function setupNavInputWithArrowKeys(){
-// 	$('input').keyup(function (e) {
-// 		if (e.which == 39) { // right arrow
-//       $(this).closest('td').next().find('input').focus();
-//
-//     } else if (e.which == 37) { // left arrow
-//       $(this).closest('td').prev().find('input').focus();
-//
-//     } else if (e.which == 40) { // down arrow
-//       $(this).closest('tr').next().find('td:eq(' + $(this).closest('td').index() + ')').prev().find('input').focus();
-//
-//     } else if (e.which == 38) { // up arrow
-//       $(this).closest('tr').prev().find('td:eq(' + $(this).closest('td').index() + ')').prev().find('input').focus();
-//     }
-//
-//   });
-//
-//   // un-comment to display key code
-//   // $("input").keydown(function (e) {
-//   //   alert(e.which);
-//   // });
-// }
-
 // Handle the page load event for setup.html
 function handleLoad() {
 	document.SetupYearFrm.InitFishDeepFld.focus();
 	document.SetupYearFrm.InitFishDeepFld.select();
-	// setupNavInputWithArrowKeys();
 }
 
 // 翻譯：revise -> 修正的意思
