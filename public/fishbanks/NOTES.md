@@ -63,6 +63,22 @@ chore: remove dead registration key validation
 - [x] 英文 alert 訊息中文化（mainlib / decisionslib / setuplib / graphslib 共 35+ 處）— `18afcf1`，順便修正兩處 "mast" → "must" 的 typo
 - [x] 移除 jQuery 1.7.1 依賴 — `d7ac1be`（`decisionslib.js` 兩個 jQuery 用法改成 `Element.closest/nextElementSibling/querySelector` + `focusin` 事件；連同 setup.html / decisions.html 的 `<script>` tag 與 `files/jquery-1.7.1.min.js` 全刪。setuplib.js 也順手把 commented-out 的 jQuery 死代碼清掉）
 
+### 🐛 Fuzz Harness 抓到的 7 個 bug — `de4295b`
+
+5 分鐘 headless Playwright fuzz（隨機 fill / click / goto / back / refresh / forward），第一輪跑 6591 iterations 抓到 6 個 unique signatures，分析得 3 個獨立根因（A、B、C）。修完再跑找到 2 個（D、E）；修完再跑找到 1 個（G）；過程中還意外撞到 1 個讓 Chromium hang 7 小時的 hang-bug（F）。
+
+| ID | Bug | 既有 / 新增 | 修法 |
+|---|---|---|---|
+| A | `var regenerationCoastal;` 宣告但全程用 `regenerationCoast`（無 al）| 既有，refactor 暴露 | 改宣告為 `regenerationCoast` |
+| B | `graphslib.js` 7 處 `if (xxxJSON == "")` 抓不到 undefined | 既有，refactor 放大 | 改 `if (!xxxJSON)` |
+| C | Chart.js v4 strict canvas reuse | **新增**（Chart.js 升級副作用） | 加 `destroyAllCharts()` |
+| D | `var fishDensityCoastal;` 同 A pattern | 既有，refactor 暴露 | 改宣告為 `fishDensityCoast` |
+| E | `saveGame` 30+ 個 `JSON.parse(myStorage.getItem(k))` 沒 guard | 既有，refactor 暴露 | 開頭 `resetAllData()` bootstrap |
+| F | `processDecisions` 內 ContinuousForYear 無上界，貼 8 位數會跑 1 億年 | 既有，與 SPA 無關 | clamp 至 1-100 年 |
+| G | `resumeGameToYear` 同 B + `data = allData[year]` 可能 null | 既有，refactor 暴露 | 兩個 guard |
+
+驗證：修完後 5 分鐘 fuzz 6579 iterations / 0 errors / 0 unique signatures，happy-path 28/28 verify 仍 PASS。
+
 ### 🧪 Playwright 驗證
 
 `/tmp/fb-pw/verify.js`（headless chromium，需要 `npm run dev` + `npm i -D playwright` + `npx playwright install chromium`）
