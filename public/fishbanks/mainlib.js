@@ -180,7 +180,7 @@ function setReceiveDolsFromFishery(t, b){
   receiveDolsFromFishery[t] = b;
 }
 
-function getRevokeShips(){
+function getRevokeShips(t){
   return revokeShips[t];
 }
 function setRevokeShips(t,b){
