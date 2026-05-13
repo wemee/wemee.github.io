@@ -1,12 +1,32 @@
 // File: graphslib.js
 // Author: 蔡至勇
 
-function handleLoad() {
-
+// Called by the router after tpl-graphs is cloned into #app. Sets the
+// dynamic title (mirrors the original switch on parent.reportType) then
+// runs drawAllGraphs() to populate the 7 charts and their data tables.
+function init_graphs() {
+	var yr = parent.getGameYear();
+	var titleText;
+	switch (parent.reportType) {
+		case 0:
+			titleText = '圖表分析 - 共 ' + yr + ' 年';
+			break;
+		case 1: case 2: case 3: case 4: case 5: case 6: case 7: case 8:
+			titleText = 'Team Report - Year ' + yr;
+			break;
+		case 9:
+			titleText = '圖表分析 - 共 ' + yr + ' 年';
+			break;
+		default:
+			titleText = 'Reports - Year ' + yr;
+			break;
+	}
+	document.getElementById('graphs-title').textContent = titleText;
+	drawAllGraphs();
 }
 
 function goback() {
-  location.replace("reports.html")
+	goto('reports');
 }
 
 var colors = {

@@ -332,10 +332,98 @@
 </template>
 
 <template id="tpl-graphs">
-	<div style="padding:2rem; text-align:center;">
-		<h2>🚧 圖表頁尚未遷移</h2>
-		<p><a href="javascript:goto('teams')">回到開新遊戲</a></p>
-	</div>
+	<table style="width:1080px; margin: 0 auto;">
+	<tr>
+	<td width="560"><img src="images/5.jpg" width="560" height="120" alt="漁人的榮耀" /></td>
+	</tr>
+	<tr>
+	<td>
+		<h1 id="graphs-title"></h1>
+		<table name="ReportLayoutTbl" id="ReportLayoutTbl">
+		<tr>
+		<td name="ReportContentCell" id="ReportContentCell">
+			<br /><h2>總資產(萬)</h2>
+			<table>
+				<tr>
+					<td><canvas id="assetsChart" width="400" height="400"></canvas>
+						<div id="assetsChart-legend" class="chart-legend"></div></td>
+					<td valign="bottom">年</td>
+				</tr>
+				<tr><td id="assetsTable"></td></tr>
+			</table>
+			<hr /><br />
+			<h2>漁船數(隻)</h2>
+			<table>
+				<tr>
+					<td><canvas id="shipsChart" width="400" height="400"></canvas>
+						<div id="shipsChart-legend" class="chart-legend"></div></td>
+					<td valign="bottom">年</td>
+				</tr>
+				<tr><td id="shipsTable"></td></tr>
+			</table>
+			<hr /><br />
+			<h2>銀行結餘(萬)</h2>
+			<table>
+				<tr>
+					<td><canvas id="banBalsChart" width="400" height="400"></canvas>
+						<div id="banBalsChart-legend" class="chart-legend"></div></td>
+					<td valign="bottom">年</td>
+				</tr>
+				<tr><td id="banBalsTable"></td></tr>
+			</table>
+			<hr /><br />
+			<h2>魚船折現價(萬)</h2>
+			<table>
+				<tr>
+					<td><canvas id="salvageValueChart" width="400" height="400"></canvas>
+						<div id="salvageValueChart-legend" class="chart-legend"></div></td>
+					<td valign="bottom">年</td>
+				</tr>
+				<tr><td id="salvageValueTable"></td></tr>
+			</table>
+			<hr /><br />
+			<h2>魚群數量(隻)</h2>
+			<table>
+				<tr>
+					<td><canvas id="fishPopChart" width="400" height="400"></canvas>
+						<div id="fishPopChart-legend" class="chart-legend"></div></td>
+					<td valign="bottom">年</td>
+				</tr>
+				<tr><td id="fishPopTable"></td></tr>
+			</table>
+			<hr /><br />
+			<h2>魚群密度</h2>
+			<table>
+				<tr>
+					<td><canvas id="fishDensityChart" width="400" height="400"></canvas>
+						<div id="fishDensityChart-legend" class="chart-legend"></div></td>
+					<td valign="bottom">年</td>
+				</tr>
+				<tr><td id="fishDensityTable"></td></tr>
+			</table>
+			<hr /><br />
+			<h2>指數</h2>
+			<table>
+				<tr>
+					<td><canvas id="indicesChart" width="400" height="400"></canvas>
+						<div id="indicesChart-legend" class="chart-legend"></div></td>
+					<td valign="bottom">年</td>
+				</tr>
+				<tr><td id="indicesTable"></td></tr>
+			</table>
+		</td>
+		<td name="ReportNavCell" id="ReportNavCell">
+			<form name="ReportNavFrm" id="ReportNavFrm">
+				<br />
+				<div><input type="button" name="DrawBtn" value="繪圖" onclick="drawAllGraphs()" /></div>
+				<div><input type="button" name="BackBtn" value="返回" onclick="goback()" /></div>
+			</form>
+		</td>
+		</tr>
+		</table>
+	</td>
+	</tr>
+	</table>
 </template>
 
 <template id="tpl-about">
