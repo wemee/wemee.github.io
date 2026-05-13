@@ -16,49 +16,58 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **沒有 build / lint / test 系統。** 純靜態 HTML + JavaScript。直接打開 `index.html`（會 redirect 到 `Fishbanks.html`）即可執行。
 - 依賴：
-  - `files/jquery-1.7.1.min.js`（已 vendored）
-  - `files/Chart.js`（已 vendored，用於 graphs.html）
+  - `files/Chart.js`（已 vendored，用於 graphs 頁的 7 張圖表）
   - 無 npm / package.json / node_modules。修改即生效，不需要編譯。
-- 本地開發：任意靜態 server（如 `python3 -m http.server` 或 VSCode Live Server）開到 `index.html`。直接 `file://` 也能跑，但部分瀏覽器對 frameset/cookie 處理可能受限。
+- 本地開發：任意靜態 server（如 `python3 -m http.server` 或 VSCode Live Server）開到 `index.html`。`file://` 也能跑。
 
 ## Architecture (重要 — 必讀)
 
-### Frameset 架構
+### SPA shell + history.pushState（2026 重構）
 
-`Fishbanks.html` 是一個 **XHTML frameset**，這是整個應用的進入點：
-
-```
-Fishbanks.html (frameset, 載入 mainlib.js — 所有 global state 都掛在這層)
-├── UntitledFrame-1.html  (1px 寬的空 frame；這個檔案實際不存在於 repo，瀏覽器會顯示 404，但不影響功能 — 是原作者刻意的設計遺跡)
-└── MainFrame             (循環切換 teams/setup/decisions/reports/graphs/about/badkey.html)
-```
-
-**這帶來幾個關鍵後果：**
-
-1. **所有遊戲狀態都是 frameset 父視窗的全域變數**（在 `mainlib.js` 中宣告）。子頁面透過 `parent.xxx()` 存取，例如 `parent.getTeams()`、`parent.setBankBal(t, b)`。**不要把狀態移到子頁面**，會在切頁時被銷毀。
-2. 子頁面之間切換用 `location.replace('xxx.html')`（保留 frame、清掉子頁本身的 history）。
-3. 重新整理 frameset 父頁會清空全部 state；只有透過子頁的 `location.replace` 切頁才會保留 state。
-
-### 遊戲流程（子頁面切換圖）
+`Fishbanks.html` 是一個 **HTML5 SPA shell**，整個應用的唯一進入點：
 
 ```
-teams.html (開新遊戲、設定組數)
-   │  beginGame() → setup.html
-   ▼
-setup.html (起始條件設定)
-   │  startTurn() → reports.html (or initializeGame)
-   ▼
-reports.html ⇆ decisions.html   (主循環，每年一回合)
-   │             gotoDecisions() / executeTurn()
-   ├─ graphs.html  (各隊圖表)
-   └─ about.html   (遊戲簡介)
+Fishbanks.html
+├── <head>                        ← mainlib.js / files/Chart.js / 六個 *lib.js / files/router.js
+├── <body>
+│   ├── <div id="app">…</div>     ← 路由把 template 內容塞進這裡
+│   └── <template id="tpl-teams">       ← 六個 inline template
+│       <template id="tpl-setup">
+│       <template id="tpl-decisions">
+│       <template id="tpl-reports">
+│       <template id="tpl-graphs">
+│       <template id="tpl-about">
 ```
 
-關鍵入口函式（全部在 `mainlib.js`）：
-- `initializeGame()` — 新局初始化（line 532）
-- `executeTurn()` — 推進一回合，原作叫 `calculate()`（line 616）
-- `resumeGame()` / `resumeGameToYear()` — 從中途恢復（line 1952 / 1785）
-- `validateKey()` — 註冊碼驗證（line 1211）
+**路由策略**：URL 形如 `?page=decisions`（query string，避開 GitHub Pages 對 clean path 的 404 fallback 需求）。`goto(page)` 用 `history.pushState` 更新 URL，再 `render(page)` 把對應的 template clone 進 `#app`，最後呼叫 `window['init_' + page]()`（如果有定義）。`popstate` listener 處理上一頁/下一頁。
+
+**這帶來幾個關鍵後果**：
+
+1. **所有 lib 載入一次、永久常駐**。各頁的全域函式（`changeShips`、`validateAllFld`、`drawAllGraphs` 等）都在 window scope，跨頁可直接呼叫。
+2. **`parent === window`**。原 frameset 時代的 `parent.getTeams()` 等寫法**運行時仍正確**（parent 解析為 window），所以多數既有程式碼不需要動。**但** 同名函式如果同時定義在 mainlib 與 lib 裡會無限遞迴；目前已清掉所有這類 wrapper。
+3. **頁面切換不會 reload**。回到一個頁面時，template 重新 clone，`init_<page>()` 重跑、表單欄位從 mainlib globals 重新填值，等於「state 永久、UI 重畫」。
+4. **重新整理 SPA shell 會清空 state**（mainlib 內存 + myStorage 都是 in-memory）。
+
+### 遊戲流程
+
+```
+teams (開新遊戲、設定組數)
+  │ beginGame() → goto('setup')
+  ▼
+setup (起始條件設定)
+  │ startTurn() → goto('reports')
+  ▼
+reports ⇆ decisions    (主循環，每年一回合)
+  │   gotoDecisions() / processDecisions() → executeTurn()
+  ├─ graphs   (Chart.js 各隊圖表，年 > 1 時才出按鈕)
+  └─ about    (遊戲簡介)
+```
+
+關鍵入口函式（皆在 `mainlib.js`）：
+- `initializeGame()` — 新局初始化
+- `executeTurn()` — 推進一回合，原作叫 `calculate()`
+- `resumeGame()` / `resumeGameToYear()` — 從中途恢復
+- `saveGame()` — 把當回合狀態寫入 myStorage
 
 ### State storage
 
@@ -67,15 +76,13 @@ reports.html ⇆ decisions.html   (主循環，每年一回合)
 ### 1-based arrays（BASIC 遺風）
 
 從 BASIC 移植而來，**所有 team-indexed 陣列的 index 0 都是棄用的**，team 編號從 1 開始：
+
 ```js
 shipsToDeep[1]   // team 1 的遠洋船數
 shipsToDeep[0]   // 永遠忽略
 ```
+
 新增 team-indexed 陣列時請維持這個慣例，否則計算迴圈（`for (t = 1; t <= teams; t++)`）會錯位。
-
-### 註冊碼
-
-teamslib.js line 18 **硬編碼**了註冊碼 `18QN-6JJX-1JH9-K0VN`（同 `key.txt`）。這顆 key 通過 `validateKey()` 的 regex + 字元 checksum 驗證（mainlib.js line 1211），實質上已經把驗證流程繞過。改動驗證邏輯前先確認這顆 key 仍能通過。
 
 ### 魚價計算的三處對應
 
@@ -85,23 +92,47 @@ teamslib.js line 18 **硬編碼**了註冊碼 `18QN-6JJX-1JH9-K0VN`（同 `key.t
 
 修改魚價公式或加新規則時，**這三個函式必須一起改**，否則新局、推進、恢復三種路徑會出現不一致的價格。
 
+## Template / init_<page> 模式
+
+每頁的 `<template id="tpl-X">` 只放靜態 HTML（不能放 `<script>`，因為 clone 不會執行）。動態欄位用兩種方式處理：
+
+- **單一輸入**：直接寫 `<input name="...">` 在 template；`init_<page>()` 用 `document.FormName.FieldName.value = ...` 填初值。
+- **per-team 重複的 row**：給 `<tr id="...">` 一個 placeholder，`init_<page>()` 用 `insertAdjacentHTML('beforeend', ...)` 把 N 隊的 cell 接上去。
+
+跨頁 navigation 一律用 `goto('xxx')`，**不要**用 `location.replace('xxx.html')`（會 404）。
+
 ## File responsibilities
 
 | 檔案 | 用途 |
 |---|---|
-| `mainlib.js` (~2000 行) | Frameset parent 載入；所有 global state、getter/setter、`initializeGame`/`executeTurn`/`resume*`/`validateKey`/CSV report 產生器都在這裡 |
-| `files/teamslib.js` | 開新遊戲頁，key 驗證 |
-| `files/setuplib.js` | 起始條件編輯 |
-| `files/decisionslib.js` | 主要的回合決策表單；方向鍵在 input 間導航；觸發 `executeTurn` |
+| `Fishbanks.html` | SPA shell：六個 inline template + script 載入順序 |
+| `mainlib.js` (~1900 行) | 所有 global state、getter/setter、`initializeGame`/`executeTurn`/`resume*`、CSV report 產生器、Chart 顏色表 |
+| `files/router.js` | `goto(page)` / `render(page)` / popstate / DOMContentLoaded 初始路由 |
+| `files/teamslib.js` | 開新遊戲頁；`init_teams` + `beginGame` + `aboutGame` |
+| `files/setuplib.js` | 起始條件編輯；`init_setup` + 各欄位 validator + `startTurn` |
+| `files/decisionslib.js` | 主要的回合決策表單；`init_decisions` 用 `appendDecRow` helper 建 D1-D15 row；方向鍵在 input 間導航（vanilla DOM）；`processDecisions` 觸發 `executeTurn` |
 | `files/reportslib.js` | 報表頁切換（個別隊伍、operator、全部、CSV） |
-| `files/graphslib.js` | Chart.js 圖表 |
-| `files/aboutlib.js` | 遊戲簡介 |
+| `files/graphslib.js` | Chart.js 七張圖表 + 對應資料表 |
+| `files/aboutlib.js` | 遊戲簡介（只有 `proceed()` 一個 navigation 函式） |
 | `files/main.css` / `mainprt.css` / `print.css` | 螢幕 / 列印 樣式 |
+| `files/Chart.js` | Chart.js 1.0.2，vendored |
 | `images/5.jpg`, `banner*.gif` | 頁面 banner |
 
 ## Coding conventions in this codebase
 
-- **jQuery 1.7.1** 是現役工具，不要假設可以用較新的 jQuery API 或現代 ES（避免 `let` / `const` / 箭頭函式 / template literals 以保留風格一致；但若新增獨立模組可以放寬）。
+- **不使用 jQuery / ES6+**。保留 BASIC 移植風格：`var`、`function` 宣告、字串拼接（避免 `let` / `const` / 箭頭函式 / template literals）。**新增獨立模組**（如 router.js）可以放寬。
 - 註解和變數名混用英文 + 繁體中文（原始英文註解保留、新增功能用繁中註解）。**請延續這個風格**，不要把現有的中文註解翻成英文。
-- 函式以 `getXxx` / `setXxx` 大量包裝全域變數 — 這是 frameset 跨頁存取的必要包裝，新增 global state 時也請補上 getter/setter。
-- 部分檔案有以 `// Deprecated` 標註的舊邏輯（例如單一魚價 → 近遠海分開後的舊 `fishPrice` 陣列），保留以利對照原作；要清就一次清乾淨，不要半改半留。
+- 函式以 `getXxx` / `setXxx` 大量包裝全域變數 — 雖然 SPA 後不再有跨 frame 存取的需要，但這個 convention 保留以利程式碼一致與未來工具支援。
+- 部分檔案有以 `// Deprecated` 標註的舊邏輯（例如 `setFishSalesPrice` 是被 `fishSalesPriceFunction` 取代但仍被 setuplib 呼叫的半淘汰 API）。要清就一次清乾淨，不要半改半留。
+
+## 驗證
+
+`/tmp/fb-pw/verify.js` 是 headless Playwright 端對端 suite（27 個檢查），覆蓋從開新遊戲到推進兩年的完整流程，包括：
+
+- shell + 路由（title 切換、popstate、deep link）
+- 每頁 template 渲染與動態填值
+- `changeShips` / `updateAuctionShipsTotal` 等決策表單邏輯
+- ArrowRight 鍵盤導航（vanilla DOM，無 jQuery）
+- `processDecisions` → `executeTurn` → `advanceGameYear` → graphs 全鏈
+
+要跑：本機 `npm run dev`（外層 Astro 專案）開到 `http://localhost:4321/fishbanks/Fishbanks.html`，然後 `cd /tmp/fb-pw && node verify.js`。

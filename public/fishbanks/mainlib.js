@@ -10,10 +10,10 @@
 // Copyright 2004, 2008 Dennis L. Meadows
 //
 // Overview:
-// The central module of JavaScript for the Fishbanks program. As the external
-// JavaScript file for the frameset, the globals and functions contained within
-// are available as needed to any of the Fishbanks pages. As such, it acts as a
-// centralized repository of common data and shared code.
+// The central module of JavaScript for the Fishbanks program. Loaded once
+// by the SPA shell (Fishbanks.html), its globals and functions back every
+// route in the application. As such, it acts as a centralized repository
+// of common data and shared code.
 //
 // Revision History:
 //   8/22/2004   Version 8.0
@@ -1793,9 +1793,6 @@ function resumeGameToYear(year, the_form) {
 	advanceGameYear();
 
   return true;
-	// MainFrame.location.replace('setup.html');
-		// }
-	// }
 }
 
 function resumeGame(the_form) {
