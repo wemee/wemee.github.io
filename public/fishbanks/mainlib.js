@@ -1654,7 +1654,7 @@ function generateTeamCSVReport() {
   var csvReport = "各組別報表\n年,";
   for(y = 1; y<=gameYear; y++){
     csvReport += y+",";
-    for (t = 1; t<teams; t++)
+    for (t = 1; t<=teams; t++)
       csvReport += ",";
   }
   csvReport += "\n";
