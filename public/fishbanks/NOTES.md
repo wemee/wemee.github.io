@@ -63,6 +63,14 @@ chore: remove dead registration key validation
 - [x] 英文 alert 訊息中文化（mainlib / decisionslib / setuplib / graphslib 共 35+ 處）— `18afcf1`，順便修正兩處 "mast" → "must" 的 typo
 - [x] 移除 jQuery 1.7.1 依賴 — `d7ac1be`（`decisionslib.js` 兩個 jQuery 用法改成 `Element.closest/nextElementSibling/querySelector` + `focusin` 事件；連同 setup.html / decisions.html 的 `<script>` tag 與 `files/jquery-1.7.1.min.js` 全刪。setuplib.js 也順手把 commented-out 的 jQuery 死代碼清掉）
 
+### 🛡 防誤觸 unload guard
+
+`myStorage` 是 in-memory JS 物件（非 localStorage），所以 F5 / 關分頁 / 投影機線拔到 / 瀏覽器當 = 整局 N 年快照一起丟。`router.js` 加 `beforeunload` listener：當 `?page=reports|decisions|graphs` 時攔下 unload 跳瀏覽器原生「離開此頁面？」提示。pre-game 頁面（teams/setup/about）正常 refresh，in-app `goto()` 走 pushState 不觸發。
+
+驗證：6 個頁面 × refresh + 1 個 in-app goto 串切 = 7/7 PASS（prompt 行為符合預期）；happy-path 28/28 仍 PASS。
+
+⚠️ 這只擋誤觸，不是持久化。要真正續局（隔天接著上、跨 session）得另開議題上 localStorage（會牽動存檔格式 + 清檔入口 + 28 個 verify 重驗）。
+
 ### 🐛 Fuzz Harness 抓到的 7 個 bug — `de4295b`
 
 5 分鐘 headless Playwright fuzz（隨機 fill / click / goto / back / refresh / forward），第一輪跑 6591 iterations 抓到 6 個 unique signatures，分析得 3 個獨立根因（A、B、C）。修完再跑找到 2 個（D、E）；修完再跑找到 1 個（G）；過程中還意外撞到 1 個讓 Chromium hang 7 小時的 hang-bug（F）。

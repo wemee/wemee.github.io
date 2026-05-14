@@ -68,3 +68,13 @@ window.addEventListener('DOMContentLoaded', function() {
 	history.replaceState({page: page}, '', '?page=' + page);
 	render(page);
 });
+
+// 遊戲狀態只活在記憶體（myStorage 是 in-memory JS 物件，非 localStorage），
+// F5 / 關分頁 / 投影機線拔到都會整局失。在遊戲中頁面攔下意外 unload，
+// 跳瀏覽器原生「離開此頁面？」提示。in-app goto() 走 pushState 不觸發此事件。
+var GUARDED_PAGES = ['reports', 'decisions', 'graphs'];
+window.addEventListener('beforeunload', function(e) {
+	if (GUARDED_PAGES.indexOf(getRouteFromURL()) === -1) return;
+	e.preventDefault();
+	e.returnValue = '';
+});
