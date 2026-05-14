@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/transitional.dtd">
+<html xmlns="http://www.w3.org/TR/xhtml1" xml:lang="en" lang="en"><!-- InstanceBegin template="/Templates/main.dwt" codeOutsideHTMLIsLocked="false" -->
+<!-- Fishbanks, Version 8.02    7/13/2008
+     Copyright 2004, 2008 Dennis L. Meadows. All rights reserved.
+	 Programmed by Michael Gildersleeve
+-->
+<head>
+<!-- InstanceBeginEditable name="doctitle" -->
+   <title>FishBanks - Registering the Game</title>
+<!-- InstanceEndEditable --><!-- InstanceBeginEditable name="head" -->
+<script language="JavaScript" type="text/javascript" src="aboutlib.js"></script>
+<!-- InstanceEndEditable --><!-- InstanceParam name="onloadattr" type="text" value="handleLoad();" -->
+<link rel="stylesheet" type="text/css" href="main.css" />
+<link rel="stylesheet" type="text/css" href="print.css" media="print" />
+</head>
+<body onload="handleLoad();">
+<table>
+<tr>
+<td width="560"><!-- InstanceBeginEditable name="Banner" --><img src="../images/banner-nofish.gif" width="560" height="60" /><!-- InstanceEndEditable --></td>
+</tr>
+<tr>
+<td>
+  <!-- InstanceBeginEditable name="MainContent" -->
+  <h1>Registering Fishbanks </h1>
+  <form name="BadKeyFrm" id="BadKeyFrm">
+  	 <table width="560">
+	 <tr>
+	 <td>
+		<p>FishBanks is not free software. If you wish to use it, you must first purchase a valid
+		registration key.</p>
+	 	<script language="javascript" type="text/javascript">
+			if (parent.keyError = "BadEntry") {
+				document.write('<p>The registration key that you entered is not valid. ');
+				document.write('You must type the registration key exactly as it was ');
+				document.write('provided to you upon your purchase of FishBanks, including the dashes. ');
+				document.write('Please use the button below to restart FishBanks and try again.</p>');
+			} else if (parent.keyError = "BadCookie") {
+				parent.writeCookie("FBkey","",-1);
+				document.write('<p>The registration key stored on your system was not valid. ');
+				document.write('The invalid key has been deleted from your system. Use the button below to ');
+				document.write('restart FishBanks and re-enter the registration key exactly as it was ');
+				document.write('provided to you upon your purchase of FishBanks, including the dashes.</p>');
+			} else if (parent.keyError = "CancelEntry") {
+				document.write('<p>You must enter your registration key in order to use FishBanks. ');
+				document.write('Use the button below to ');
+				document.write('restart FishBanks and enter the registration key exactly as it was ');
+				document.write('provided to you upon your purchase of FishBanks, including the dashes.</p>');
+			}
+		</script>
+	 </td>
+	 </tr>
+	 <tr>
+	 <td>&nbsp;</td>
+	 </tr>
+	 <tr>
+	 <td>
+       <input type="button" name="RestartBtn" id="RestartBtn" value="Restart Game"
+			onclick="location.replace('teams.html')" />
+	 </td>
+	 </tr>
+	 </table>
+  </form>
+  <!-- InstanceEndEditable --></td>
+</tr>
+<tr>
+  <td name="footer" id="footer">FishBanks 8.02 &copy; 2004, Dennis L.
+    Meadows. All rights reserved.</td>
+</tr>
+</table>
+</body>
+<!-- InstanceEnd --></html>
+

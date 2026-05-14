@@ -63,6 +63,20 @@ chore: remove dead registration key validation
 - [x] 英文 alert 訊息中文化（mainlib / decisionslib / setuplib / graphslib 共 35+ 處）— `18afcf1`，順便修正兩處 "mast" → "must" 的 typo
 - [x] 移除 jQuery 1.7.1 依賴 — `d7ac1be`（`decisionslib.js` 兩個 jQuery 用法改成 `Element.closest/nextElementSibling/querySelector` + `focusin` 事件；連同 setup.html / decisions.html 的 `<script>` tag 與 `files/jquery-1.7.1.min.js` 全刪。setuplib.js 也順手把 commented-out 的 jQuery 死代碼清掉）
 
+### 🕰 v1 中文化原版並存
+
+從 tag `fishbanks-v1-original` (commit `c6f2367`) 用 `git archive | tar` 倒進 `public/fishbanks/v1/`（~780KB，完整自包含 jQuery 1.7.1 / key.txt / badkey.html / 舊 frameset 6 子頁）。新版改動不會碰到，v1 永久凍結。
+
+URL：
+- 新版 SPA：`/fishbanks/Fishbanks.html`（首頁）
+- v1 原版 frameset：`/fishbanks/v1/Fishbanks.html`（顯式 path 因為 Astro dev 不 auto-serve directory index；GitHub Pages 通常會但寫死最保險）
+
+切換連結放在 teams + about 兩個 pre-game 頁面的頁尾（淺灰小字 + 點線下底，不搶 CTA）。**setup 故意跳過**因為使用者可能已調整起始參數，誤觸會丟掉。**in-game 頁面也沒有**因為這個切換等於整局放棄，beforeunload guard 也擋不住 cross-document 連結。
+
+未對稱：v1 那邊沒有「回新版」連結（不改舊版的承諾）；想回新版改 URL 即可。
+
+驗證：6 個檢查 (v1 entry redirect / teams 有連結 / setup 無 / about 有 / reports 無 / 同分頁點擊跳轉) 全 PASS；happy-path 28/28 仍 PASS。
+
 ### 🛡 防誤觸 unload guard
 
 `myStorage` 是 in-memory JS 物件（非 localStorage），所以 F5 / 關分頁 / 投影機線拔到 / 瀏覽器當 = 整局 N 年快照一起丟。`router.js` 加 `beforeunload` listener：當 `?page=reports|decisions|graphs` 時攔下 unload 跳瀏覽器原生「離開此頁面？」提示。pre-game 頁面（teams/setup/about）正常 refresh，in-app `goto()` 走 pushState 不觸發。

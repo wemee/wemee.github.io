@@ -1,0 +1,294 @@
+/*
+File: main.css
+Author: Mike Gildersleeve
+Copyright 2004, Dennis L. Meadows
+
+Overview:
+The CSS that determines the format of all the screens of the Fishbanks program.
+It contains the style rules that determine the appearance of the various elements
+of each screen.
+
+Revision History:
+   8/22/2004   Version 8.0
+     Initial release
+   7/11/2006
+     Remove logo masthead from report printouts
+*/
+
+img#logo {
+    display: none;
+}
+
+body {
+	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+}
+
+h1 {
+	margin-top: 0.3em;
+	margin-bottom: 0em;
+}
+
+h2 {
+	margin-top: 0em;
+	margin-bottom: 0em;
+	margin-left: 1em;
+}
+
+/* Footer at bottom of each page */
+td#footer {
+	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 9px;
+}
+
+td {
+	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+}
+
+th {
+	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+}
+
+form {
+	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	}
+
+input {
+	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+}
+
+textarea {
+	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+}
+
+select {
+	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+}
+
+ul {
+	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	list-style-type: disc;
+	list-style-position: outside;
+}
+
+li {
+	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+}
+
+ol {
+	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	list-style-type: upper-roman;
+	list-style-position: outside;
+}
+
+.small {
+	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 9px;
+}
+
+.big {
+	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 18px;
+}
+
+.bodystyle {
+	font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 12px;
+}
+
+.box1 {
+	padding: 3px;
+	border-width: thin;
+	border-style: solid;
+	border-color: #CCCCCC #666666 #666666 #CCCCCC;
+}
+
+.box2 {
+	border-width: 3px;
+	border-style: solid;
+	padding: 5px;
+}
+
+table#StartGameTbl td {
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
+/* Setup - team labels */
+table#SetupLayoutTbl td.team {
+	text-align: center;
+}
+
+/* Setup - max fish, init fish, op cost */
+table#SetupLayoutTbl td.col2 {  /* Deep */
+	text-align: center;
+}
+table#SetupLayoutTbl td.col3 {  /* Coast */
+	text-align: center;
+}
+table#SetupLayoutTbl td.col4 {  /* Harbor */
+	text-align: center;
+}
+
+/* Non-report navigation buttons */
+form#StartGameFrm input#AboutBtn {
+	padding: 0.3em;
+	width: 150px;
+}
+form#StartGameFrm input#BeginBtn {
+	padding: 0.3em;
+	width: 150px;
+}
+form#StartGameFrm input#ResumeBtn {
+	padding: 0.3em;
+	width: 150px;
+}
+form#AboutGameFrm input#ReturnBtn {
+	margin-top: 10px;
+	padding: 0.3em;
+	width: 150px;
+}
+form#SetupYearFrm input#StartTurnBtn {
+	padding: 0.3em;
+	width: 150px;
+}
+form#SetupYearFrm input#ReviseTeamsBtn {
+	padding: 0.3em;
+	width: 150px;
+}
+form#DecisionsFrm input#ProceedBtn {
+	padding: 0.3em;
+	width: 150px;
+}
+form#DecisionsFrm input#ClearAllBtn {
+	padding: 0.3em;
+	width: 150px;
+}
+form#BadKeyFrm input#RestartBtn {
+	padding: 0.3em;
+	width: 150px;
+}
+
+/* Heading for report sections */
+div.reporthead span.title {
+	display: block;
+	margin-top: 1em;
+	font-weight: bold;
+}
+
+/* Year label in operator and team reports */
+div.reporthead span.yearlabel {
+	margin-left: 2em;
+}
+
+/* Session label in operator and team reports */
+div.reporthead span.sessionlabel {
+	margin-left: 2em;
+}
+
+/* Team report - Code column */
+table.reporttable td.code {
+	padding-right: 1em;
+}
+
+/* Team report - Label column */
+table.reporttable td.label {
+	padding-right: 1em;
+}
+
+/* Team and Operator's report - body of each section */
+table.reporttable {
+	margin-left: 2em;
+}
+
+/* Operator's report - Cell containing report navigation buttons */
+table#ReportLayoutTbl td#ReportNavCell {
+	vertical-align: top;
+}
+
+/* Operator's report - Report navigation buttons */
+table#ReportLayoutTbl td#ReportNavCell div {
+	padding-bottom: 0.5em;
+}
+table#ReportLayoutTbl td#ReportNavCell input {
+	padding: 0.5em;
+	width: 150px;
+}
+
+/* Operator's report - Primary label column of main report */
+table.reporttable td.label1 {
+	vertical-align: top;
+	margin-top: 0.5em;
+}
+
+/* Operator's report - Secondary label column of main report */
+table.reporttable td.label2 {
+	padding-right: 0.5em;
+	text-align: right;
+}
+
+/* Operator's and Team report - Value column of main report */
+table.reporttable td.value {
+	text-align: right;
+}
+
+/* Operator's report - company column of Company Performance section */
+table.reporttable td.col1 {
+	padding-right: 1em;
+	text-align: right;
+}
+table.reporttable th.col1 {
+	padding-right: 1em;
+	text-align: right;
+	vertical-align: bottom;
+}
+
+/* Operator's report - ships column of Company Performance section */
+table.reporttable td.col2 {
+	padding-right: 1em;
+	text-align: right;
+}
+table.reporttable th.col2 {
+	padding-right: 1em;
+	text-align: right;
+	vertical-align: bottom;
+}
+
+/* Operator's report - bank balance column of Company Performance section */
+table.reporttable td.col3 {
+	padding-right: 1em;
+	text-align: right;
+}
+table.reporttable th.col3 {
+	padding-right: 1em;
+}
+
+/* Operator's report - total assets column of Company Performance section */
+table.reporttable td.col4 {
+	text-align: right;
+}
+
+/* Operator's report - total row of Company Performance section */
+table.reporttable tr.total td, table.reporttable tr.total th {
+	padding-top: 0.35em;
+}
+
+/* Labels for worksheet indices on operator report */
+div.reporthead span.shipindexlabel, div.reporthead span.catchindexlabel, div.reporthead span.fishindexlabel {
+	margin-left: 2em;
+}
+
+/* Values for worksheet indices on operator report
+div.reporthead span.shipindexvalue, div.reporthead span.catchindexvalue, div.reporthead span.fishindexvalue {
+	font-weight: bold;
+}
+*/
