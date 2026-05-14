@@ -25,6 +25,12 @@
 	margin-right: 5px;
 	list-style-type: none;
 }
+
+/* 平板/投影機友善：外層 table 用 max-width，banner 圖跟著縮 */
+body { margin: 0; padding: 8px; box-sizing: border-box; }
+img { max-width: 100%; height: auto; }
+.chart-wrap { max-width: 400px; width: 100%; margin: 0 auto; }
+.chart-wrap canvas { max-width: 100%; height: auto; }
 </style>
 </head>
 <body>
@@ -36,7 +42,7 @@
 <!-- ============================================================ -->
 
 <template id="tpl-teams">
-	<table style="width:600px; margin: 0 auto;">
+	<table style="max-width:600px; width:100%; margin: 0 auto;">
 	<tr>
 	<td width="560"><img src="images/5.jpg" width="560" height="120" alt="漁人的榮耀" /></td>
 	</tr>
@@ -93,7 +99,7 @@
 </template>
 
 <template id="tpl-setup">
-	<table style="width:600px; margin: 0 auto;">
+	<table style="max-width:600px; width:100%; margin: 0 auto;">
 	<tr>
 	<td width="560"><img src="images/5.jpg" width="560" height="120" alt="漁人的榮耀" /></td>
 	</tr>
@@ -218,7 +224,7 @@
 </template>
 
 <template id="tpl-decisions">
-	<table style="width:600px; margin: 0 auto;">
+	<table style="max-width:600px; width:100%; margin: 0 auto;">
 	<tr>
 	<td width="560"><img src="images/5.jpg" width="560" height="120" alt="漁人的榮耀" /></td>
 	</tr>
@@ -296,7 +302,7 @@
 </template>
 
 <template id="tpl-reports">
-	<table style="width:768px; margin: 0 auto;">
+	<table style="max-width:768px; width:100%; margin: 0 auto;">
 	<tr>
 	<td width="560"><img src="images/5.jpg" width="560" height="120" alt="漁人的榮耀" /></td>
 	</tr>
@@ -332,7 +338,7 @@
 </template>
 
 <template id="tpl-graphs">
-	<table style="width:1080px; margin: 0 auto;">
+	<table style="max-width:1080px; width:100%; margin: 0 auto;">
 	<tr>
 	<td width="560"><img src="images/5.jpg" width="560" height="120" alt="漁人的榮耀" /></td>
 	</tr>
@@ -345,7 +351,7 @@
 			<br /><h2>總資產(萬)</h2>
 			<table>
 				<tr>
-					<td><canvas id="assetsChart" width="400" height="400"></canvas>
+					<td><div class="chart-wrap"><canvas id="assetsChart" width="400" height="400"></canvas></div>
 						<div id="assetsChart-legend" class="chart-legend"></div></td>
 					<td valign="bottom">年</td>
 				</tr>
@@ -355,7 +361,7 @@
 			<h2>漁船數(隻)</h2>
 			<table>
 				<tr>
-					<td><canvas id="shipsChart" width="400" height="400"></canvas>
+					<td><div class="chart-wrap"><canvas id="shipsChart" width="400" height="400"></canvas></div>
 						<div id="shipsChart-legend" class="chart-legend"></div></td>
 					<td valign="bottom">年</td>
 				</tr>
@@ -365,7 +371,7 @@
 			<h2>銀行結餘(萬)</h2>
 			<table>
 				<tr>
-					<td><canvas id="banBalsChart" width="400" height="400"></canvas>
+					<td><div class="chart-wrap"><canvas id="banBalsChart" width="400" height="400"></canvas></div>
 						<div id="banBalsChart-legend" class="chart-legend"></div></td>
 					<td valign="bottom">年</td>
 				</tr>
@@ -375,7 +381,7 @@
 			<h2>魚船折現價(萬)</h2>
 			<table>
 				<tr>
-					<td><canvas id="salvageValueChart" width="400" height="400"></canvas>
+					<td><div class="chart-wrap"><canvas id="salvageValueChart" width="400" height="400"></canvas></div>
 						<div id="salvageValueChart-legend" class="chart-legend"></div></td>
 					<td valign="bottom">年</td>
 				</tr>
@@ -385,7 +391,7 @@
 			<h2>魚群數量(隻)</h2>
 			<table>
 				<tr>
-					<td><canvas id="fishPopChart" width="400" height="400"></canvas>
+					<td><div class="chart-wrap"><canvas id="fishPopChart" width="400" height="400"></canvas></div>
 						<div id="fishPopChart-legend" class="chart-legend"></div></td>
 					<td valign="bottom">年</td>
 				</tr>
@@ -395,7 +401,7 @@
 			<h2>魚群密度</h2>
 			<table>
 				<tr>
-					<td><canvas id="fishDensityChart" width="400" height="400"></canvas>
+					<td><div class="chart-wrap"><canvas id="fishDensityChart" width="400" height="400"></canvas></div>
 						<div id="fishDensityChart-legend" class="chart-legend"></div></td>
 					<td valign="bottom">年</td>
 				</tr>
@@ -405,7 +411,7 @@
 			<h2>指數</h2>
 			<table>
 				<tr>
-					<td><canvas id="indicesChart" width="400" height="400"></canvas>
+					<td><div class="chart-wrap"><canvas id="indicesChart" width="400" height="400"></canvas></div>
 						<div id="indicesChart-legend" class="chart-legend"></div></td>
 					<td valign="bottom">年</td>
 				</tr>

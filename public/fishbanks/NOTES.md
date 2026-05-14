@@ -119,7 +119,13 @@ FUZZ_SEED=12345 node fuzz.js           # 用指定 seed reproduce
   - 全部 `parent.xxx` 仍可運作（`parent === window`），不需要逐處改寫；只清掉會引起遞迴的 wrapper（mainlib 已定義同名函式時）
   - 刪除 6 個舊子頁 HTML、`UntitledFrame-1.html` stub
   - 全鏈端對端驗證：27/27 playwright PASS（teams → setup → startTurn → reports → decisions → processDecisions → year 2 → graphs → back）
-- [ ] 行動裝置支援（固定寬度、無 viewport meta — Phase 1 已加 viewport，但版面還是 desktop-only）
+- [x] 投影/平板友善（Plan A：固定 px → max-width，圖表包 chart-wrap div 等比縮放）
+  - 主要使用情境是「講師投影 + 全班分組」，學生不在自己裝置編輯，所以只做「不會被切掉」而非完整 mobile rebuild
+  - 5 個外層 wrapper（teams/setup/decisions/about 的 600px、reports 的 768px、graphs 的 1080px）改成 `max-width:Npx; width:100%`
+  - 7 個 chart canvas 包進 `<div class="chart-wrap">`（max-width:400px, width:100%），Chart.js v4 自動 responsive 跟著縮
+  - 加 `body { padding:8px; box-sizing:border-box }` + `img { max-width:100%; height:auto }` 兩條全域規則讓 banner 跟著縮
+  - 驗證：3 viewport (iPad 直 768 / 橫 1024 / 投影機 1280) × 6 頁 = 18 個組合 0 overflow；happy-path 28/28 verify 仍 PASS
+- [ ] 完整 mobile rebuild（手機編輯）— 暫不做，需要把 N 隊 × D1-D18 的 table 改成 per-team 卡片/accordion 才能塞進手機，目前使用情境不需要
 - [x] Chart.js 1.0.2 → 4.4.0 — `a35bccb`
   - 機械式 rename 6 個 palette / dataset 屬性（fillColor → backgroundColor 等）
   - 7 個 constructor 改成 `new Chart(ctx, {type:"line", data, options})`
