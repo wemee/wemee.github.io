@@ -10,65 +10,41 @@
 //   8/22/2004   Version 8.0
 //     Initial release
 
-// Called by the router after tpl-setup is cloned into #app. Populates the
-// year, the dynamic per-team rows, and every static-field value from the
-// mainlib globals (these used to be inline document.write blocks), then
-// focuses the initial-fish field.
-function init_setup() {
-	var f = document.SetupYearFrm;
-	var teams = parent.getTeams();
-	var t, i, html;
+// // Navigate HTML text input fields with arrow keys
+// function setupNavInputWithArrowKeys(){
+// 	$('input').keyup(function (e) {
+// 		if (e.which == 39) { // right arrow
+//       $(this).closest('td').next().find('input').focus();
+//
+//     } else if (e.which == 37) { // left arrow
+//       $(this).closest('td').prev().find('input').focus();
+//
+//     } else if (e.which == 40) { // down arrow
+//       $(this).closest('tr').next().find('td:eq(' + $(this).closest('td').index() + ')').prev().find('input').focus();
+//
+//     } else if (e.which == 38) { // up arrow
+//       $(this).closest('tr').prev().find('td:eq(' + $(this).closest('td').index() + ')').prev().find('input').focus();
+//     }
+//
+//   });
+//
+//   // un-comment to display key code
+//   // $("input").keydown(function (e) {
+//   //   alert(e.which);
+//   // });
+// }
 
-	f.YearFld.value = parent.getGameYear();
-
-	html = '';
-	for (t = 1; t <= teams; t++) {
-		html += '<td class="team">' + t + '</td>';
-	}
-	for (i = teams; i < 6; i++) { html += '<td>&nbsp;</td>'; }
-	document.getElementById('setup-row-team-labels').insertAdjacentHTML('beforeend', html);
-
-	html = '';
-	for (t = 1; t <= teams; t++) {
-		html += '<td class="team"><input type="text" name="Ships' + t + 'Fld" value="' + parent.getShipsAvail(t) + '" size="7" tabindex="' + (5 + t) + '" /></td>';
-	}
-	for (i = teams; i < 6; i++) { html += '<td>&nbsp;</td>'; }
-	document.getElementById('setup-row-team-ships').insertAdjacentHTML('beforeend', html);
-
-	html = '';
-	for (t = 1; t <= teams; t++) {
-		html += '<td class="team"><input type="text" name="Balance' + t + 'Fld" value="' + parent.getBankBal(t) + '" size="7" tabindex="' + (15 + t) + '" /></td>';
-	}
-	for (i = teams; i < 6; i++) { html += '<td>&nbsp;</td>'; }
-	document.getElementById('setup-row-team-balance').insertAdjacentHTML('beforeend', html);
-
-	f.MaxFishDeepFld.value           = parent.getMaxFishDeep();
-	f.MaxFishCoastFld.value          = parent.getMaxFishCoast();
-	f.InitFishDeepFld.value          = parent.getInitFishDeep();
-	f.InitFishCoastFld.value         = parent.getInitFishCoast();
-	f.OpCostDeepFld.value            = parent.getOpCostDeep();
-	f.OpCostCoastFld.value           = parent.getOpCostCoast();
-	f.OpCostHarborFld.value          = parent.getOpCostHarbor();
-	f.NewShipPriceFld.value          = parent.getNewShipPrice();
-	f.SalValBaseFld.value            = parent.getSalValBase();
-	f.RevokeShipDolsFld.value        = parent.getRevokeShipDols();
-	f.RevokeShipFishDeepFld.value    = parent.getRevokeShipFishDeep();
-	f.RevokeShipFishCoastFld.value   = parent.getRevokeShipFishCoast();
-	f.FishDeepSalesPriceFld.value    = parent.getFishDeepSalesPrice();
-	f.FishCoastSalesPriceFld.value   = parent.getFishCoastSalesPrice();
-	f.FisheryfundFld.value           = parent.getFisheryfund();
-	f.FishSalesPriceFunctionFld.value = parent.getFishSalesPriceFunction();
-
-	f.StartTurnBtn.value = '進入遊戲 第 ' + parent.getGameYear() + ' 年報表 ';
-
-	f.InitFishDeepFld.focus();
-	f.InitFishDeepFld.select();
+// Handle the page load event for setup.html
+function handleLoad() {
+	document.SetupYearFrm.InitFishDeepFld.focus();
+	document.SetupYearFrm.InitFishDeepFld.select();
+	// setupNavInputWithArrowKeys();
 }
 
 // 翻譯：revise -> 修正的意思
 function reviseTeams() {
-	if (confirm('此操作會清除起始設定。\n確定要繼續嗎？')) {
-		goto('teams');
+	if (confirm('This will erase your\ninitial conditions. Proceed?')) {
+		location.replace('teams.html');
 	}
 }
 
@@ -92,7 +68,7 @@ function startTurn() {
 		// Save current game state
 		parent.saveGame();
 
-		goto('reports');
+		location.replace('reports.html');
 	}
 }
 
@@ -101,8 +77,8 @@ function validateAllFld() {
 	var teams = parent.getTeams();
 
 	for (var t = 1; t <= teams; t++) {
-		if ( !validateShips(the_form["Ships"+t+"Fld"], t) ) return false;
-		if ( !validateBalance(the_form["Balance"+t+"Fld"], t) ) return false;
+		if ( !validateShips(eval("the_form.Ships"+t+"Fld"), t) ) return false;
+		if ( !validateBalance(eval("the_form.Balance"+t+"Fld"), t) ) return false;
 	}
 
 	var fishSalesPriceFunction = the_form.FishSalesPriceFunctionFld.value;
@@ -125,7 +101,7 @@ function validateAllFld() {
 function validateShips(fld, t){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('請輸入大於 1 的數字！');
+		alert('You mast enter a numeric value more than 1!');
 		fld.focus();
 		fld.select();
 		return false;
@@ -139,7 +115,7 @@ function validateShips(fld, t){
 function validateBalance(fld, t){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('請輸入大於 1 的數字！');
+		alert('You mast enter a numeric value more than 1!');
 		fld.focus();
 		fld.select();
 		return false;
@@ -153,7 +129,7 @@ function validateBalance(fld, t){
 function validateMaxFishDeepFld(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('請輸入大於 1 的數字！');
+		alert('You mast enter a numeric value more than 1!');
 		fld.focus();
 		fld.select();
 		return false;
@@ -167,7 +143,7 @@ function validateMaxFishDeepFld(fld){
 function validateMaxFishCoastFld(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('請輸入大於 1 的數字！');
+		alert('You mast enter a numeric value more than 1!');
 		fld.focus();
 		fld.select();
 		return false;
@@ -183,7 +159,7 @@ function validateInitFishDeep(fld) {
 	var maxFishDeep = parent.getMaxFishDeep();
 
 	if (isNaN(entry) || entry > maxFishDeep || entry < 1) {
-		alert('請輸入 1 到遠洋最大魚量\n之間的數字！');
+		alert('You must enter a numeric value between 1\nand the Maximum Fish in the Deep Sea area!');
 		fld.focus();
 		fld.select();
 		return false;
@@ -199,7 +175,7 @@ function validateInitFishCoast(fld) {
 	var maxFishCoast = parent.getMaxFishCoast();
 
 	if (isNaN(entry) || entry > maxFishCoast || entry < 1) {
-		alert('請輸入 1 到近海最大魚量\n之間的數字！');
+		alert('You must enter a numeric value between 1\nand the Maximum Fish in the Coast area!');
 		fld.focus();
 		fld.select();
 		return false;
@@ -213,7 +189,7 @@ function validateInitFishCoast(fld) {
 function validateOpCostDeepFld(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('請輸入大於 1 的數字！');
+		alert('You mast enter a numeric value more than 1!');
 		fld.focus();
 		fld.select();
 		return false;
@@ -226,7 +202,7 @@ function validateOpCostDeepFld(fld){
 function validateOpCostCoastFld(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('請輸入大於 1 的數字！');
+		alert('You mast enter a numeric value more than 1!');
 		fld.focus();
 		fld.select();
 		return false;
@@ -239,7 +215,7 @@ function validateOpCostCoastFld(fld){
 function validateOpCostHarborFld(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('請輸入大於 1 的數字！');
+		alert('You mast enter a numeric value more than 1!');
 		fld.focus();
 		fld.select();
 		return false;
@@ -252,7 +228,7 @@ function validateOpCostHarborFld(fld){
 function validateNewShipPriceFld(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('請輸入大於 1 的數字！');
+		alert('You mast enter a numeric value more than 1!');
 		fld.focus();
 		fld.select();
 		return false;
@@ -265,7 +241,7 @@ function validateNewShipPriceFld(fld){
 function validateSalValBaseFld(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('請輸入大於 1 的數字！');
+		alert('You mast enter a numeric value more than 1!');
 		fld.focus();
 		fld.select();
 		return false;
@@ -279,7 +255,7 @@ function validateSalValBaseFld(fld){
 function validateFisheryFund(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('請輸入大於 1 的數字！');
+		alert('You mast enter a numeric value more than 1!');
 		fld.focus();
 		fld.select();
 		return false;
@@ -294,7 +270,7 @@ function validateFisheryFund(fld){
 function validateFishSalesPriceFld(fld){
 	var entry = parseInt(fld.value);
 	if (isNaN(entry) || entry < 1) {
-		alert('請輸入大於 1 的數字！');
+		alert('You mast enter a numeric value more than 1!');
 		fld.focus();
 		fld.select();
 		return false;
@@ -305,19 +281,23 @@ function validateFishSalesPriceFld(fld){
 	}
 }
 
-// validateFishDeepSalesPrice / validateFishCoastSalesPrice live in
-// mainlib.js. The old frameset child shadow wrappers were removed —
-// under the SPA shell they recurse into themselves because parent === window.
+function validateFishDeepSalesPrice(fld) {
+	return parent.validateFishDeepSalesPrice(fld);
+}
+
+function validateFishCoastSalesPrice(fld) {
+	return parent.validateFishCoastSalesPrice(fld);
+}
 
 function validateRevokeShipDols(field,negallow) {
 	var entry = parseInt(field.value)
 	if (isNaN(entry) || field.value == "") {
-		alert('此欄位必須輸入數字');
+		alert('You must use a numeric\nvalue in this field');
 		field.focus();
 		field.select();
 		return false;
 	} else if (!negallow && entry < 0) {
-		alert('此欄位必須輸入非負數');
+		alert('You must use a non-negative\nvalue in this field');
 		field.focus();
 		field.select();
 		return false;
@@ -331,12 +311,12 @@ function validateRevokeShipDols(field,negallow) {
 function validateRevokeShipFishDeep(field,negallow) {
 	var entry = parseInt(field.value)
 	if (isNaN(entry) || field.value == "") {
-		alert('此欄位必須輸入數字');
+		alert('You must use a numeric\nvalue in this field');
 		field.focus();
 		field.select();
 		return false;
 	} else if (!negallow && entry < 0) {
-		alert('此欄位必須輸入非負數');
+		alert('You must use a non-negative\nvalue in this field');
 		field.focus();
 		field.select();
 		return false;
@@ -350,12 +330,12 @@ function validateRevokeShipFishDeep(field,negallow) {
 function validateRevokeShipFishCoast(field,negallow) {
 	var entry = parseInt(field.value)
 	if (isNaN(entry) || field.value == "") {
-		alert('此欄位必須輸入數字');
+		alert('You must use a numeric\nvalue in this field');
 		field.focus();
 		field.select();
 		return false;
 	} else if (!negallow && entry < 0) {
-		alert('此欄位必須輸入非負數');
+		alert('You must use a non-negative\nvalue in this field');
 		field.focus();
 		field.select();
 		return false;

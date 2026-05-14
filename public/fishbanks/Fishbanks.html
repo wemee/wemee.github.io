@@ -1,26 +1,537 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/frameset.dtd">
-<html xmlns="http://www.w3.org/TR/xhtml1" xml:lang="en" lang="en">
+<!DOCTYPE html>
+<html lang="zh-Hant">
 <head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>漁人的榮耀 - Version 1.0</title>
-<meta charset="UTF-8">
-<script language="JavaScript" type="text/javascript" src="mainlib.js">
-</script>
+<link rel="stylesheet" type="text/css" href="files/main.css" />
+<link rel="stylesheet" type="text/css" href="files/print.css" media="print" />
 
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-L980F1NV6M"></script>
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-L980F1NV6M');
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-L980F1NV6M');
 </script>
 
+<style>
+.chart-legend ul { list-style-type: none; }
+.chart-legend li span {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	margin-right: 5px;
+	list-style-type: none;
+}
+
+/* 平板/投影機友善：外層 table 用 max-width，banner 圖跟著縮 */
+body { margin: 0; padding: 8px; box-sizing: border-box; }
+img { max-width: 100%; height: auto; }
+.chart-wrap { max-width: 400px; width: 100%; margin: 0 auto; }
+.chart-wrap canvas { max-width: 100%; height: auto; }
+
+/* 切換到 2017 中文化原版 (v1) 的頁尾連結，僅出現在 teams / about */
+.v1-link { text-align: center; margin-top: 2em; font-size: 0.85em; color: #888; }
+.v1-link a { color: #888; text-decoration: none; border-bottom: 1px dotted #aaa; }
+.v1-link a:hover { color: #333; border-bottom-color: #333; }
+</style>
 </head>
-<frameset cols="1,*" border="0">
-  <frame src="UntitledFrame-1.html" frameborder="no" noresize="noresize" bordercolor="#FFFFFF" />
-  <frame src="files/teams.html" name="MainFrame" frameborder="no" bordercolor="#FFFFFF" />
-</frameset><noframes></noframes>
+<body>
+<div id="app"></div>
+
+<!-- ============================================================ -->
+<!-- Page templates. The router clones one of these into #app and -->
+<!-- then calls window['init_' + name]() if defined.              -->
+<!-- ============================================================ -->
+
+<template id="tpl-teams">
+	<table style="max-width:600px; width:100%; margin: 0 auto;">
+	<tr>
+	<td width="560"><img src="images/5.jpg" width="560" height="120" alt="漁人的榮耀" /></td>
+	</tr>
+	<tr>
+	<td>
+		<h1>開新遊戲</h1>
+		<form name="StartGameFrm" id="StartGameFrm">
+			<table width="100%" name="StartGameTbl" id="StartGameTbl">
+			<tr>
+				<td>參與單位:
+					<input type="text" name="OrganizationFld" size="30" maxlength="20" tabindex="1" />
+				</td>
+			</tr>
+			<tr>
+				<td>日期:
+					<input type="date" name="DateFld" size="30" maxlength="20" tabindex="1" />
+				</td>
+			</tr>
+			<tr>
+				<td>參與人數:
+					<input type="number" name="AttendanceFld" size="30" maxlength="20" tabindex="1" />
+				</td>
+			</tr>
+			<tr>
+				<td>備註:
+					<input type="text" name="SessionFld" size="30" maxlength="20" tabindex="1" />
+				</td>
+			</tr>
+			<tr>
+				<td>分成幾組:
+					<select name="TeamsSel" onchange="setTeams(this.selectedIndex + 1)">
+						<option>1</option>
+						<option>2</option>
+						<option>3</option>
+						<option selected="selected">4</option>
+						<option>5</option>
+						<option>6</option>
+						<option>7</option>
+						<option>8</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<input type="button" name="AboutBtn" value="關於漁人的榮耀" onclick="aboutGame()" />&nbsp;
+					<input type="button" name="BeginBtn" value="進入起始設定" onclick="beginGame()" />&nbsp;
+				</td>
+			</tr>
+			</table>
+		</form>
+		<p class="v1-link">→ <a href="v1/Fishbanks.html">查看 2017 年中文化原版 (v1)</a></p>
+	</td>
+	</tr>
+	</table>
+</template>
+
+<template id="tpl-setup">
+	<table style="max-width:600px; width:100%; margin: 0 auto;">
+	<tr>
+	<td width="560"><img src="images/5.jpg" width="560" height="120" alt="漁人的榮耀" /></td>
+	</tr>
+	<tr>
+	<td>
+		<h1>起始設定</h1>
+		<form name="SetupYearFrm" id="SetupYearFrm">
+			<table name="SetupLayoutTbl" id="SetupLayoutTbl" width="100%" border="0" cellspacing="0" cellpadding="3">
+			<tr>
+				<td>年:</td>
+				<td class="col2"><input type="text" name="YearFld" size="7" tabindex="0" disabled /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr><td colspan="7">&nbsp;</td></tr>
+			<tr id="setup-row-team-labels">
+				<td>&nbsp;&nbsp;&nbsp;&nbsp;組別:</td>
+			</tr>
+			<tr id="setup-row-team-ships">
+				<td>&nbsp;&nbsp;&nbsp;&nbsp;船數:</td>
+			</tr>
+			<tr id="setup-row-team-balance">
+				<td>&nbsp;&nbsp;&nbsp;&nbsp;銀行結餘:</td>
+			</tr>
+			<tr><td colspan="7">&nbsp;</td></tr>
+			<tr>
+				<td>&nbsp;</td>
+				<td class="col2">遠洋</td>
+				<td class="col3">近海</td>
+				<td class="col4">港口</td>
+				<td></td><td></td><td></td>
+			</tr>
+			<tr>
+				<td>魚群生態負荷量:</td>
+				<td class="col2"><input type="text" name="MaxFishDeepFld" size="7" tabindex="0" onchange="return validateMaxFishDeepFld(this);" /></td>
+				<td class="col3"><input type="text" name="MaxFishCoastFld" size="7" tabindex="0" onchange="return validateMaxFishCoastFld(this);" /></td>
+				<td class="col4">&nbsp;</td>
+				<td></td><td></td><td></td>
+			</tr>
+			<tr>
+				<td>魚群起始族群量:</td>
+				<td class="col2"><input type="text" name="InitFishDeepFld" size="7" tabindex="25" onchange="return validateInitFishDeep(this);" /></td>
+				<td class="col3"><input type="text" name="InitFishCoastFld" size="7" tabindex="26" onchange="return validateInitFishCoast(this);" /></td>
+				<td class="col4">&nbsp;</td>
+				<td></td><td></td><td></td>
+			</tr>
+			<tr>
+				<td>操作成本:</td>
+				<td class="col2"><input type="text" name="OpCostDeepFld" size="7" tabindex="0" /></td>
+				<td class="col3"><input type="text" name="OpCostCoastFld" size="7" tabindex="0" /></td>
+				<td class="col4"><input type="text" name="OpCostHarborFld" size="7" tabindex="0" /></td>
+				<td></td><td></td><td></td>
+			</tr>
+			<tr><td colspan="7">&nbsp;</td></tr>
+			<tr>
+				<td>訂購新船費:</td>
+				<td class="col2"><input type="text" name="NewShipPriceFld" size="7" tabindex="0" /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr>
+				<td>漁船淨殘值(折現價):</td>
+				<td class="col2"><input type="text" name="SalValBaseFld" size="7" tabindex="0" /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr><td colspan="7">&nbsp;</td></tr>
+			<tr>
+				<td>報廢船隻處理費:</td>
+				<td class="col2"><input type="text" name="RevokeShipDolsFld" size="7" tabindex="0" onblur="return validateRevokeShipDols(this,true);" /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr>
+				<td>報廢船減少魚-遠洋:</td>
+				<td class="col2"><input type="text" name="RevokeShipFishDeepFld" size="7" tabindex="0" onblur="return validateRevokeShipFishDeep(this,true);" /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr>
+				<td>報廢船減少魚-近海:</td>
+				<td class="col2"><input type="text" name="RevokeShipFishCoastFld" size="7" tabindex="0" onblur="return validateRevokeShipFishCoast(this,true);" /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr><td colspan="7">&nbsp;</td></tr>
+			<tr>
+				<td>遠洋漁賣價:</td>
+				<td class="col2"><input type="text" name="FishDeepSalesPriceFld" size="7" tabindex="0" onchange="return validateFishDeepSalesPrice(this);" /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr>
+				<td>近海魚賣價:</td>
+				<td class="col2"><input type="text" name="FishCoastSalesPriceFld" size="7" tabindex="0" onchange="return validateFishCoastSalesPrice(this);" /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr><td colspan="7">&nbsp;</td></tr>
+			<tr>
+				<td>漁會資金:</td>
+				<td class="col2"><input type="text" name="FisheryfundFld" size="7" tabindex="0" onchange="return validateFisheryFund(this);" /></td>
+				<td colspan="5"></td>
+			</tr>
+			<tr><td colspan="7">&nbsp;</td></tr>
+			<tr>
+				<td>魚價變化公式:</td>
+				<td class="col2">
+					<select name="FishSalesPriceFunctionFld">
+						<option value="0">不變</option>
+						<option value="1">公式一(請告訴我公式)</option>
+						<option value="2">公式二(請告訴我公式)</option>
+						<option value="3">公式三(請告訴我公式)</option>
+						<option value="3">公式四(and so on...)</option>
+					</select>
+				</td>
+				<td colspan="5"></td>
+			</tr>
+			<tr><td colspan="7">&nbsp;</td></tr>
+			<tr>
+				<td colspan="7">
+					<input type="button" name="StartTurnBtn" id="StartTurnBtn" tabindex="30" onclick="startTurn()" />&nbsp;
+				</td>
+			</tr>
+			</table>
+		</form>
+	</td>
+	</tr>
+	</table>
+</template>
+
+<template id="tpl-decisions">
+	<table style="max-width:600px; width:100%; margin: 0 auto;">
+	<tr>
+	<td width="560"><img src="images/5.jpg" width="560" height="120" alt="漁人的榮耀" /></td>
+	</tr>
+	<tr>
+	<td>
+		<h1>小組決策 - 年 <span id="decisions-year"></span></h1>
+		<form name="DecisionsFrm" id="DecisionsFrm">
+			<table width="100%" border="0" cellspacing="0" cellpadding="5">
+				<tr id="dec-row-header"><td>組別</td></tr>
+				<tr id="dec-row-d1"><td>D1 拍賣-購船數</td></tr>
+				<tr id="dec-row-d2"><td>D2 拍賣-花費</td></tr>
+				<tr id="dec-row-d3"><td>D3 購入總船數</td></tr>
+				<tr id="dec-row-d4"><td>D4 購入總花費</td></tr>
+				<tr id="dec-row-d5"><td>D5 售出總船數</td></tr>
+				<tr id="dec-row-d6"><td>D6 售船總收入</td></tr>
+				<tr id="dec-row-d7"><td>D7 訂購新船數</td></tr>
+				<tr><td colspan="8">&nbsp;</td></tr>
+				<tr id="dec-row-d8"><td>D8 船隊總船數</td></tr>
+				<tr id="dec-row-d9"><td>D9 遠洋派船數</td></tr>
+				<tr id="dec-row-d10"><td>D10 近海派船數</td></tr>
+				<tr id="dec-row-d11"><td>D11 港口停船數</td></tr>
+				<tr>
+					<td colspan="8">
+						<input type="button" name="ProceedBtn" id="ProceedBtn" value="出海捕魚" tabindex="101" onclick="processDecisions()" />
+						<input type="button" name="ReturnToReportsBtn" id="ReturnToReportsBtn" value="返回看報告" tabindex="100" onclick="returnToReports()" />
+					</td>
+				</tr>
+				<tr><td colspan="8">&nbsp;</td></tr>
+				<tr id="dec-row-d12"><td>D12 給錢</td></tr>
+				<tr id="dec-row-d13"><td>D13 收錢</td></tr>
+				<tr id="dec-row-d14"><td>D14 漁會發錢</td></tr>
+				<tr id="dec-row-d15"><td>D15 報廢船隻</td></tr>
+				<tr><td colspan="8">&nbsp;</td></tr>
+				<tr><td colspan="8"><strong>強制修改漁價</strong></td></tr>
+				<tr>
+					<td>D16 遠洋魚:</td>
+					<td><input type="text" name="FishDeepSalesPriceFld" size="7" tabindex="0" onchange="return validateFishDeepSalesPrice(this);" /></td>
+					<td colspan="6">&nbsp;</td>
+				</tr>
+				<tr>
+					<td>D17 近海魚:</td>
+					<td><input type="text" name="FishCoastSalesPriceFld" size="7" tabindex="0" onchange="return validateFishCoastSalesPrice(this);" /></td>
+					<td colspan="6">&nbsp;</td>
+				</tr>
+				<tr><td colspan="8">&nbsp;</td></tr>
+				<tr><td colspan="8"><strong>強制修改魚量</strong></td></tr>
+				<tr>
+					<td>D18 遠洋魚:</td>
+					<td><input type="text" name="FishPopDeepFld" size="7" tabindex="0" onblur="return validateDec(this,true);" /></td>
+					<td colspan="6">&nbsp;</td>
+				</tr>
+				<tr>
+					<td>D19 近海魚:</td>
+					<td><input type="text" name="FishPopCoastFld" size="7" tabindex="0" onblur="return validateDec(this,false);" /></td>
+					<td colspan="6">&nbsp;</td>
+				</tr>
+				<tr><td colspan="8">&nbsp;</td></tr>
+				<tr>
+					<td>強制修改報廢漁船價格:</td>
+					<td><input type="text" name="RevokeShipDolsFld" size="7" tabindex="0" onblur="return validateDecNoneZero(this);" /></td>
+					<td colspan="6">&nbsp;</td>
+				</tr>
+				<tr><td colspan="8">&nbsp;</td></tr>
+				<tr>
+					<td>連續休魚幾年:</td>
+					<td><input type="text" name="ContinuousForYearFld" size="7" tabindex="0" onblur="return validateDecNoneZero(this);" /></td>
+					<td colspan="6">&nbsp;</td>
+				</tr>
+				<tr><td colspan="8">&nbsp;</td></tr>
+			</table>
+		</form>
+	</td>
+	</tr>
+	</table>
+</template>
+
+<template id="tpl-reports">
+	<table style="max-width:768px; width:100%; margin: 0 auto;">
+	<tr>
+	<td width="560"><img src="images/5.jpg" width="560" height="120" alt="漁人的榮耀" /></td>
+	</tr>
+	<tr>
+	<td>
+		<h1 id="report-title"></h1>
+		<table name="ReportLayoutTbl" id="ReportLayoutTbl">
+		<tr>
+		<td name="ReportContentCell" id="ReportContentCell">
+			<blockquote id="report-body"></blockquote>
+		</td>
+		<td name="ReportNavCell" id="ReportNavCell">
+			<form name="ReportNavFrm" id="ReportNavFrm">
+				<br />
+				<div><input type="button" name="OperReportBtn" value="操作報表" onclick="showReport(0)" /></div>
+				<div><input type="button" name="TeamReportsBtn" value="組別報表" onclick="showReport(9)" /></div>
+				<br /><div><input type="button" name="DecisionsBtn" value="小組決策" onclick="gotoDecisions()" style="font-size: large;background-color: #FF9797"/></div><br/>
+				<div id="report-year-actions" style="display:none;">
+					<div><input type="button" name="PreviousYearBtn" value="回到上一年" onclick="gotoPreviousYear()" /></div>
+					<div><input type="button" name="TeamGraphReportsBtn" value="圖表分析" onclick="teamGraphReports()" /></div>
+					<div><input type="button" name="CSVReportBtn" value="CSV報表" onclick="generateCSVReport()" /></div>
+				</div>
+			</form>
+		</td>
+		</tr>
+		</table>
+	</td>
+	</tr>
+	<tr>
+		<td id="csv"></td>
+	</tr>
+	</table>
+</template>
+
+<template id="tpl-graphs">
+	<table style="max-width:1080px; width:100%; margin: 0 auto;">
+	<tr>
+	<td width="560"><img src="images/5.jpg" width="560" height="120" alt="漁人的榮耀" /></td>
+	</tr>
+	<tr>
+	<td>
+		<h1 id="graphs-title"></h1>
+		<table name="ReportLayoutTbl" id="ReportLayoutTbl">
+		<tr>
+		<td name="ReportContentCell" id="ReportContentCell">
+			<br /><h2>總資產(萬)</h2>
+			<table>
+				<tr>
+					<td><div class="chart-wrap"><canvas id="assetsChart" width="400" height="400"></canvas></div>
+						<div id="assetsChart-legend" class="chart-legend"></div></td>
+					<td valign="bottom">年</td>
+				</tr>
+				<tr><td id="assetsTable"></td></tr>
+			</table>
+			<hr /><br />
+			<h2>漁船數(隻)</h2>
+			<table>
+				<tr>
+					<td><div class="chart-wrap"><canvas id="shipsChart" width="400" height="400"></canvas></div>
+						<div id="shipsChart-legend" class="chart-legend"></div></td>
+					<td valign="bottom">年</td>
+				</tr>
+				<tr><td id="shipsTable"></td></tr>
+			</table>
+			<hr /><br />
+			<h2>銀行結餘(萬)</h2>
+			<table>
+				<tr>
+					<td><div class="chart-wrap"><canvas id="banBalsChart" width="400" height="400"></canvas></div>
+						<div id="banBalsChart-legend" class="chart-legend"></div></td>
+					<td valign="bottom">年</td>
+				</tr>
+				<tr><td id="banBalsTable"></td></tr>
+			</table>
+			<hr /><br />
+			<h2>魚船折現價(萬)</h2>
+			<table>
+				<tr>
+					<td><div class="chart-wrap"><canvas id="salvageValueChart" width="400" height="400"></canvas></div>
+						<div id="salvageValueChart-legend" class="chart-legend"></div></td>
+					<td valign="bottom">年</td>
+				</tr>
+				<tr><td id="salvageValueTable"></td></tr>
+			</table>
+			<hr /><br />
+			<h2>魚群數量(隻)</h2>
+			<table>
+				<tr>
+					<td><div class="chart-wrap"><canvas id="fishPopChart" width="400" height="400"></canvas></div>
+						<div id="fishPopChart-legend" class="chart-legend"></div></td>
+					<td valign="bottom">年</td>
+				</tr>
+				<tr><td id="fishPopTable"></td></tr>
+			</table>
+			<hr /><br />
+			<h2>魚群密度</h2>
+			<table>
+				<tr>
+					<td><div class="chart-wrap"><canvas id="fishDensityChart" width="400" height="400"></canvas></div>
+						<div id="fishDensityChart-legend" class="chart-legend"></div></td>
+					<td valign="bottom">年</td>
+				</tr>
+				<tr><td id="fishDensityTable"></td></tr>
+			</table>
+			<hr /><br />
+			<h2>指數</h2>
+			<table>
+				<tr>
+					<td><div class="chart-wrap"><canvas id="indicesChart" width="400" height="400"></canvas></div>
+						<div id="indicesChart-legend" class="chart-legend"></div></td>
+					<td valign="bottom">年</td>
+				</tr>
+				<tr><td id="indicesTable"></td></tr>
+			</table>
+		</td>
+		<td name="ReportNavCell" id="ReportNavCell">
+			<form name="ReportNavFrm" id="ReportNavFrm">
+				<br />
+				<div><input type="button" name="DrawBtn" value="繪圖" onclick="drawAllGraphs()" /></div>
+				<div><input type="button" name="BackBtn" value="返回" onclick="goback()" /></div>
+			</form>
+		</td>
+		</tr>
+		</table>
+	</td>
+	</tr>
+	</table>
+</template>
+
+<template id="tpl-about">
+	<table>
+	<tr>
+	<td width="560"><img src="images/5.jpg" width="560" height="120" alt="漁人的榮耀" /></td>
+	</tr>
+	<tr>
+	<td>
+		<h2>【漁人的榮耀】遊戲簡介</h2>
+		<form name="AboutGameFrm" id="AboutGameFrm">
+			<table width="560">
+			<tr>
+			<td>
+				<p>
+					漁人，捕魚的人，靠海維生的人，
+
+接受著大海的賜與，也承受著大海的洗鍊。
+
+過去，漁人的榮耀來自於滿載而歸，
+
+來自於買更大更先進的船、捕回更多的魚，
+
+賺了大錢，給家人更好的生活品質與社經地位。
+
+然後，有一天，魚不來了。
+
+曾經的榮耀光環，褪色了。
+
+當海洋即將要背棄自己的時候，
+
+漁人審回首檢視過去的榮景，
+
+思考著：是榮耀離我而去，還是我誤解了榮耀的真實義？
+				</p>
+				【漁人的榮耀】是一個由多位玩家共同參與的互動式角色扮演模擬遊戲。它提供玩家一個貼近真實的情境，令其經歷從｢製造問題｣到｢深入看見問題｣、甚至｢嘗試解決問題｣的完整過程，來認識海洋資源的重重困境與難題，進而反思在資源共享的環境中，可以如何永續性地利用或管理自然資源。
+				<p>
+				</p>
+				遊戲中，玩家扮演漁船公司出海捕魚，相互買賣船隻，參與競標，決定前往哪個海域捕魚，在欲求、壓力、決策、妥協、抵制等力量的交織之下，相互競爭著海洋裏的資源，以滿足遊戲中「贏」的條件。各家漁船公司也將共同創造極需磋商討論的情勢，考驗著公司之間在溝通與協調上的技能、洞悉問題的眼界，以及解決問題的膽識。透過親身經歷體會「共有財的悲劇」（the tragedy of the commons），以及看見人類如何屈就於慾望而快速掠奪共同卻也是唯一的地球資源，引發個人更深更廣的覺察。
+				<p>
+					【漁人的榮耀】以感同身受的方式取代標語式的推廣口號，讓遊戲中的體驗和感受化為行動力；它讓關心海洋資源問題的人們進一步驗證可能的解決方式，也讓那些對海洋資源感到陌生的人們，開始感受、思考、關懷這些我們片刻仰賴的天賜珍寶；它讓玩家們重新發掘「漁人的榮耀」，除了能夠獲得短期利益，也在於追求長久共好。
+				</p>
+				<p>
+					在複雜卻充滿生態規律的情境中，漁人的榮耀彰顯，操之在己。
+				</p>
+
+				<h2>【漁人的榮耀】緣起</h2>
+
+				<p>
+					本遊戲之遊戲程式改版自互動式角色扮演模擬遊戲FishBanks Ltd. 8.02 © 2004（簡稱Fishbanks）。Fishbanks是由美國麻省理工學院史隆管理研究室Dennis L. Meadows教授及其團隊所創發。講師林思吟於國際場合參與該遊戲數次，並決定購買軟體引進台灣，自2008年起由社團法人台灣海洋環境教育推廣協會（TAMEE）開始在全台推廣該遊戲至今。至2014年底為止，已辦理135場次，帶領超過5,400位民眾體驗遊戲場景，藉此認識海洋資源匱乏的現實，並反思自身責任與對應之道。
+				</p>
+				<p>
+					原軟體為英文版，對多數國內教育推廣者而言使用相對不易，加上為使得遊戲情境更能貼近現實狀況，在與原作者Meadows教授連略並取得其同意之下，TAMEE將Fishbanks改版為中文並增加其他功能，並命名為【漁人的榮耀】。除了介面清晰且可以同時容納更多參與者之外，【漁人的榮耀】包含更多對應社會現況的新設計，可在短時間內模擬地球環境資源遭濫用、匱乏的長期過程，且可衍伸闡述海洋永續、環境管理、公平正義、全球暖化、氣候變遷、生物多樣性、全球化與資本主義等多元主題，是海洋、環境、永續教育等中的良好媒介。
+				</p>
+				<p>
+					【漁人的榮耀】得以誕生，TAMEE要特別感謝Dennis L. Meadows教授的慷慨與支持，以及工程師蔡至勇先生的精闢巧思、講師洪鈴雅的悉心統籌和其他所有講師的參與討論及測試。祈願這款遊戲將利益更多人群，以及我們所共享的海洋資源與環境。
+				</p>
+				<p>
+					程式改版工程師：蔡至勇<br/>
+					版權擁有：社團法人台灣海洋環境教育推廣協會<br/>
+					講師群：黃宗舜、郭兆偉、林思吟、洪鈴雅、蕭人瑄、陳人平、洪博彥、楊智堯、馮加伶<br/>
+				</p>
+				<p>
+					016年2月29日（漁人的榮耀 1.0 版）<br/>
+					本遊戲軟體僅供教育推廣使用，嚴禁營利販售。<br/>
+					若欲參與教學推廣，請與本協會聯絡。<br/>
+					聯絡方式：<br/>
+					社團法人台灣海洋環境教育推廣協會<br/>
+					E-mail：tamee@tamee.org<br/>
+					電話：02-2821-1097<br/>
+					～致力創造人與海洋更友善的關係～2<br/>
+				</p>
+			</td>
+			</tr>
+			<tr>
+			<td>
+				<input type="button" name="ReturnBtn" id="ReturnBtn" value="返回" onclick="proceed()" />
+			</td>
+			</tr>
+			</table>
+		</form>
+		<p class="v1-link">→ <a href="v1/Fishbanks.html">查看 2017 年中文化原版 (v1)</a></p>
+	</td>
+	</tr>
+	<tr><td name="footer" id="footer"></td></tr>
+	</table>
+</template>
+
+<script src="mainlib.js"></script>
+<script src="files/Chart.js"></script>
+<script src="files/teamslib.js"></script>
+<script src="files/setuplib.js"></script>
+<script src="files/decisionslib.js"></script>
+<script src="files/reportslib.js"></script>
+<script src="files/graphslib.js"></script>
+<script src="files/aboutlib.js"></script>
+<script src="files/router.js"></script>
+</body>
 </html>

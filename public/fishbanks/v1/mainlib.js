@@ -10,10 +10,10 @@
 // Copyright 2004, 2008 Dennis L. Meadows
 //
 // Overview:
-// The central module of JavaScript for the Fishbanks program. Loaded once
-// by the SPA shell (Fishbanks.html), its globals and functions back every
-// route in the application. As such, it acts as a centralized repository
-// of common data and shared code.
+// The central module of JavaScript for the Fishbanks program. As the external
+// JavaScript file for the frameset, the globals and functions contained within
+// are available as needed to any of the Fishbanks pages. As such, it acts as a
+// centralized repository of common data and shared code.
 //
 // Revision History:
 //   8/22/2004   Version 8.0
@@ -53,6 +53,7 @@ var opCostCoast        = 150;		//                   coast areas
 var opCostHarbor       = 50;		//                   harbor
 var newShipPrice       = 300;		// Price of new ships
 
+// var fishSalesPrice     = 20;		// Price of deep fish
 var fishDeepSalesPrice = 20;		// Price of coast fish
 var fishCoastSalesPrice= 20;		// Price of fish
 
@@ -64,14 +65,14 @@ var salvageValue	   = salValBase;// Most recently calculated salvage value
 var fishPopDeep;          			// Fish population in deep sea
 var fishPopCoast;     				//                    coast areas
 var regenerationDeep;               // Fish regeneration in deep sea
-var regenerationCoast;			//                      coastal areas (was `regenerationCoastal` — typo never read; 16 other sites use `regenerationCoast`)
+var regenerationCoastal;			//                      coastal areas
 var totalCatchDeep     = 0;			// Total fish caught in deep sea
 var totalCatchCoast    = 0;			//                      coastal areas
 var opFleetDeep        = 0;			// Operating fleet in deep sea
 var opFleetCoast       = 0;			//                    coastal areas
 var opFleetHarbor      = 0;			//                    harbor
 var fishDensityDeep;				// Fish density in deep sea
-var fishDensityCoast;				//                 coastal areas (was `fishDensityCoastal` — typo never read; 6 other sites use `fishDensityCoast`)
+var fishDensityCoastal;				//                 coastal areas
 
 var resumeFlag = false;				// Set to true when resuming a game
 
@@ -80,6 +81,8 @@ var reportType = 9; 				// Used to determine which reports will be displayed
 									//     0	operator report only
 									// 1 - 8    specified team report only
 									//     9    all team reports
+
+var keyError = "None";				// Indicator of key error
 
 // Team-specific global arrays have one element for each team
 // Note: Since the original program was written in BASIC, where arrays are 1-based
@@ -98,6 +101,8 @@ var shipsToHarbor = new Array();		// Ships remaining in harbor
 var catchDeep = new Array();			// Catch in deep sea
 var catchCoast = new Array();			// Catch in coastal areas
 
+// Deprecated // Fish price
+// var fishPrice = new Array();
 // 使用近遠海分開 為陣列，表示各隊魚價可不同
 var fishDeepPrice = new Array();	// 遠洋魚價
 var fishCoastPrice = new Array();	// 近海魚價
@@ -134,6 +139,16 @@ var weather = new Array(1.00, 1.03, 0.87, 1.14, 1.05, 0.94, 0.90, 1.02, 1.08, 0.
 
 // 魚價變化計算公式
 var fishSalesPriceFunction = 0; // 預設不變
+// Fish Price - set here as a function of time, could also be converted to a function
+//              of harvest
+// Note: This array was originally 0-based, so the 0-indexed element is used
+// Deprecated
+// var price = new Array(20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20);
+// Deprecated // 遠洋魚價
+// var priceDeep = new Array(20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20);
+// Deprecated // 近海魚價
+// var priceCoast = new Array(20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20);
+
 var continuousForYear = 1; // 連續進行幾年
 var fisheryFund = 2000; //漁會資金
 
@@ -146,7 +161,7 @@ function setTeams(t) {
 	if (isNaN(t)) {t = parseInt(t)};	// record a numeric value
 
 	if (t < 1 || t > 8) {
-		alert("組數設定無效（" + t + "），已忽略。");
+		alert("Attempt to set invalid number of teams (" + t + ") ignored.");
 	} else {
 		teams = t;
 	}
@@ -165,7 +180,7 @@ function setReceiveDolsFromFishery(t, b){
   receiveDolsFromFishery[t] = b;
 }
 
-function getRevokeShips(t){
+function getRevokeShips(){
   return revokeShips[t];
 }
 function setRevokeShips(t,b){
@@ -283,6 +298,10 @@ function getGameYear() {
 	return gameYear;
 }
 
+function resetGameYear() {
+	gameYear = 1;
+}
+
 function advanceGameYear() {
 	gameYear++;
 }
@@ -383,6 +402,11 @@ function setFishSalesPrice(n) {
 	fishSalesPrice = n;
 }
 
+// Deprecated
+function getFishSalesPrice() {
+	return fishSalesPrice;
+}
+
 function setFishDeepSalesPrice(n) {
 	if (isNaN(n)) {n = parseInt(n)};	// record a numeric value
 	fishDeepSalesPrice = n;
@@ -467,7 +491,7 @@ function calcInitShipsPerTeam(numOfTeams) {
 			initShipsPerTeam = 3;
 			break;
 		default:
-			alert("calcInitShipsPerTeam 收到無效的組數:" + numOfTeams);
+			alert("Invalid number of teams passed to calcInitShipsPerTeam: " + numOfTeams);
 			initShipsPerTeam = 0;
 			break;
 	}
@@ -512,7 +536,7 @@ function initializeGame() {
 	var i = 0;
 
 	// Initialize globals for a new game
-	totalCatchDeep = totalCatchCoast = 0;
+	totalCatchDeep, totalCatchCoast = 0;
 	opFleetDeep = 0;
 	opFleetCoast = 0;
 	opFleetHarbor = 0;
@@ -1120,6 +1144,58 @@ function calcSalvageValue(yr) {
 	return salvageVal;
 }
 
+// Calculate the salvage value for a given year. Use variable salvage value
+// process.
+function original_calcSalvageValue(yr) {
+	// Local variables
+	var harborCost;
+	var deepSeaProfit;
+	var coastalProfit;
+	var totalProfit;
+	var totalShips;
+	var averageProfit;
+
+	// Initialize the base value for the first year's salvage value at 250
+	var salvageVal = 250;
+
+	// Calculate subsequent years' values off this basis
+	for (var y = 2; y <= yr; y++) {
+		harborCost = opCostHarbor * opFleetHarbor;
+
+		if (opFleetDeep == 0) {
+			deepSeaProfit = 0;
+		} else {
+			// Note: We just use the price for team #1 here. Right now, all
+			//       teams get the same price. If this fact changes, however,
+			//       we'll need to change the next line to use an average
+			//       price across all teams.
+			deepSeaProfit = (fishDeepPrice[1] * (totalCatchDeep/opFleetDeep) - opCostDeep) * opFleetDeep;
+		}
+
+		if (opFleetCoast == 0) {
+			coastalProfit = 0;
+		} else {
+			// Note: We just use the price for team #1 here. Right now, all
+			//       teams get the same price. If this fact changes, however,
+			//       we'll need to change the next line to use an average
+			//       price across all teams.
+			coastalProfit = (fishCoastPrice[1] * (totalCatchCoast/opFleetCoast) - opCostCoast) * opFleetCoast;
+		}
+
+		totalProfit = deepSeaProfit + coastalProfit - harborCost;
+
+		totalShips = opFleetDeep + opFleetCoast + opFleetHarbor;
+
+		averageProfit = totalProfit/totalShips;
+
+		salvageVal = Math.floor(salvageVal + ((averageProfit - salvageVal)/salValDelay));
+	}
+
+	if (salvageVal < 0) { salvageVal = 0; }
+
+	return salvageVal;
+}
+
 // Pad txt to a length of padTo by adding spaces to the left
 function padLeft(txt, padTo) {
 	var i;
@@ -1130,6 +1206,83 @@ function padLeft(txt, padTo) {
 	}
 
 	return result;
+}
+
+function validateKey(key) {
+	var i;
+	var testsum;
+	var teststr;
+	var testArr = new Array(3,5,4,7);
+	var testexp = /^(\w\w[BRQT]\w)-(\w[AJL]\w\w)-(\w\w\w[3679])-([DGKPX]\w\w\w)$/;
+	key = key.toUpperCase();
+	var result = key.match(testexp);
+
+	if (result != null) {
+		testsum = 0;
+		teststr = result[1];
+		for (i = 0; i < teststr.length; i++) {
+			testsum += teststr.charCodeAt(i);
+		}
+		if (testsum % testArr[0] == 0) {
+			testsum = 0;
+			teststr = result[2];
+			for (i = 0; i < teststr.length; i++) {
+				testsum += teststr.charCodeAt(i);
+			}
+			if (testsum % testArr[1] == 0) {
+				testsum = 0;
+				teststr = result[3];
+				for (i = 0; i < teststr.length; i++) {
+					testsum += teststr.charCodeAt(i);
+				}
+				if (testsum % testArr[2] == 0) {
+					testsum = 0;
+					teststr = result[4];
+					for (i = 0; i < teststr.length; i++) {
+						testsum += teststr.charCodeAt(i);
+					}
+					if (testsum % testArr[3] == 0) {
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+// Example:
+// writeCookie("myCookie", "my name", 31);
+// Stores the string "my name" in the cookie "myCookie" which expires after 31 days.
+function writeCookie(name, value, days)
+{
+  var expire = "";
+  if (days != null)
+  {
+    expire = new Date((new Date()).getTime() + days * 86400000);
+    expire = "; expires=" + expire.toGMTString();
+  }
+  document.cookie = name + "=" + escape(value) + expire;
+}
+
+// Example:
+// alert( readCookie("myCookie") );
+function readCookie(name)
+{
+  var cookieValue = "";
+  var search = name + "=";
+  if(document.cookie.length > 0)
+  {
+    offset = document.cookie.indexOf(search);
+    if (offset != -1)
+    {
+      offset += search.length;
+      end = document.cookie.indexOf(";", offset);
+      if (end == -1) end = document.cookie.length;
+      cookieValue = unescape(document.cookie.substring(offset, end))
+    }
+  }
+  return cookieValue;
 }
 
 function resetAllData() {
@@ -1233,15 +1386,6 @@ function resetAllData() {
 // Save the current game state. Must be called BEFORE calculating
 // salvage value for current year!
 function saveGame() {
-  // saveGame() reads 30+ keys via JSON.parse(myStorage.getItem(k)). If the
-  // storage was never bootstrapped (user reached processDecisions without
-  // going through startTurn → initializeGame → resetAllData), every parse
-  // throws SyntaxError on undefined. Bootstrap defensively here so the
-  // function is callable from any state.
-  if (!myStorage.getItem("allData")) {
-    resetAllData();
-  }
-
   // 資本資料
   var data  = {
     session : getSession(),
@@ -1303,7 +1447,7 @@ function saveGame() {
   var teamBankBalData = JSON.parse(myStorage.getItem("teamBankBalData"));
   var teamShipsData = JSON.parse(myStorage.getItem("teamShipsData"));
   var teamAssetsData = JSON.parse(myStorage.getItem("teamAssetsData"));
-  for (var t = 1; t<=teams; t++) {
+  for (t = 1; t<=teams; t++) {
     teamBankBalData[t][gameYear] = bankBal[t];
     teamShipsData[t][gameYear] = ships[t];
     teamAssetsData[t][gameYear] = getTeamAssets(t);
@@ -1487,7 +1631,6 @@ function generateCSVReportInfo() {
 }
 
 function generateTeamCSVReport() {
-  var y, t;
   var teamCatchDeepData = JSON.parse(myStorage.getItem("teamCatchDeepData"));
   var teamCatchCoastData = JSON.parse(myStorage.getItem("teamCatchCoastData"));
   var teamFishDeepPriceData = JSON.parse(myStorage.getItem("teamFishDeepPriceData"));
@@ -1511,7 +1654,7 @@ function generateTeamCSVReport() {
   var csvReport = "各組別報表\n年,";
   for(y = 1; y<=gameYear; y++){
     csvReport += y+",";
-    for (t = 1; t<=teams; t++)
+    for (t = 1; t<teams; t++)
       csvReport += ",";
   }
   csvReport += "\n";
@@ -1589,7 +1732,6 @@ function generateTeamCSVReport() {
 }
 
 function generateOperatorCSVReport() {
-  var y;
   var operatorOpFleetDeepData = JSON.parse(myStorage.getItem("operatorOpFleetDeepData"));
   var operatorOpFleetCoastData = JSON.parse(myStorage.getItem("operatorOpFleetCoastData"));
   var operatorCatchPerShipDeepData = JSON.parse(myStorage.getItem("operatorCatchPerShipDeepData"));
@@ -1644,25 +1786,18 @@ function resumeGameToYear(year, the_form) {
 	var qDeep, qCoast;
 	var expenseDeep, expenseCoast, expenseHarbor;
 	var orderMoney, minBankBal, interestEarned;
-	var i, t;
+	var i;
 	var gameDataJSON = myStorage.getItem("allData");
 
-	// Falsy catches both "" and undefined (myStorage.getItem returns undefined
-	// for missing keys, not ""). Same pattern as graphslib.js Bug B fix.
-	if (!gameDataJSON) {
-		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
+	if (gameDataJSON == "") {
+		alert('Sorry, there are no data\nsaved on this browser.');
     return false;
-	}
+	}// else {
+		// var msg = 'Restore game data for session ' + data[0] + '\nat year ' + data[yrIndex] + '?';
+		// if (confirm(msg)) {
   var allData = JSON.parse(gameDataJSON);
   if(year<0) year = (allData.length)-1; // 回到最近的一年
   var data = allData[year];
-
-  // Guard against out-of-range year (e.g. resumePreviousYear() called at
-  // gameYear=1 → year=0, which is the 1-based-array "ignored" slot)
-  if (!data) {
-    alert('抱歉，沒有第 ' + year + ' 年的存檔資料。');
-    return false;
-  }
 
   var sessionName = data["session"];
   if(typeof(the_form) !== 'undefined') {
@@ -1809,17 +1944,21 @@ function resumeGameToYear(year, the_form) {
 	advanceGameYear();
 
   return true;
+	// MainFrame.location.replace('setup.html');
+		// }
+	// }
 }
 
 function resumeGame(the_form) {
+  console.log(gameYear);
   if(resumeGameToYear(1, the_form)){
-    goto('setup');
+    MainFrame.location.replace('setup.html');
   }
 }
 
 function resumePreviousYear() {
 	if(resumeGameToYear(gameYear-1)){
-    goto('decisions');
+    MainFrame.location.replace('decisions.html');
   }
 }
 
@@ -1828,7 +1967,7 @@ function validateFishDeepSalesPrice(fld) {
 	var entry = parseInt(fld.value);
 
 	if (isNaN(entry) || entry < 1) {
-		alert('請輸入大於 1 的數字！');
+		alert('You mast enter a numeric value more than 1!');
 		fld.focus();
 		fld.select();
 		return false;
@@ -1843,7 +1982,7 @@ function validateFishCoastSalesPrice(fld) {
 	var entry = parseInt(fld.value);
 
 	if (isNaN(entry) || entry < 1) {
-		alert('請輸入大於 1 的數字！');
+		alert('You mast enter a numeric value more than 1!');
 		fld.focus();
 		fld.select();
 		return false;

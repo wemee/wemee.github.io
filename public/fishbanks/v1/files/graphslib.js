@@ -1,36 +1,16 @@
 // File: graphslib.js
 // Author: 蔡至勇
 
-// Called by the router after tpl-graphs is cloned into #app. Sets the
-// dynamic title (mirrors the original switch on parent.reportType) then
-// runs drawAllGraphs() to populate the 7 charts and their data tables.
-function init_graphs() {
-	var yr = parent.getGameYear();
-	var titleText;
-	switch (parent.reportType) {
-		case 0:
-			titleText = '圖表分析 - 共 ' + yr + ' 年';
-			break;
-		case 1: case 2: case 3: case 4: case 5: case 6: case 7: case 8:
-			titleText = 'Team Report - Year ' + yr;
-			break;
-		case 9:
-			titleText = '圖表分析 - 共 ' + yr + ' 年';
-			break;
-		default:
-			titleText = 'Reports - Year ' + yr;
-			break;
-	}
-	document.getElementById('graphs-title').textContent = titleText;
-	drawAllGraphs();
+function handleLoad() {
+
 }
 
 function goback() {
-	goto('reports');
+  location.replace("reports.html")
 }
 
 var colors = {
-  backgroundColor: [
+  fillColor: [
     null,
     "rgba(255,192,203,0.2)",
     "rgba(190,190,190,0.2)",
@@ -41,7 +21,7 @@ var colors = {
     "rgba(165,42,42,0.2)",
     "rgba(0,255,0,0.2)",
   ],
-  borderColor: [
+  strokeColor: [
     null,
     "rgba(255,192,203,1)",
     "rgba(190,190,190,1)",
@@ -52,7 +32,7 @@ var colors = {
     "rgba(165,42,42,1)",
     "rgba(0,255,0,1)",
   ],
-  pointBackgroundColor: [
+  pointColor: [
     null,
     "rgba(255,192,203,1)",
     "rgba(190,190,190,1)",
@@ -63,7 +43,7 @@ var colors = {
     "rgba(165,42,42,1)",
     "rgba(0,255,0,1)",
   ],
-  pointBorderColor: [
+  pointStrokeColor: [
     null,
     "#fff",
     "#fff",
@@ -74,7 +54,7 @@ var colors = {
     "#fff",
     "#fff",
   ],
-  pointHoverBackgroundColor: [
+  pointHighlightFill: [
     null,
     "#fff",
     "#fff",
@@ -85,7 +65,7 @@ var colors = {
     "#fff",
     "#fff",
   ],
-  pointHoverBorderColor: [
+  pointHighlightStroke: [
     null,
     "rgba(255,192,203,1)",
     "rgba(190,190,190,1)",
@@ -111,24 +91,24 @@ var colors = {
 
 function drawIndices() {
   var shipIndicesJSON = parent.myStorage.getItem("shipIndices");
-	if (!shipIndicesJSON) {
-		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
+	if (shipIndicesJSON == "") {
+		alert('Sorry, there are no data\nsaved on this browser.');
     return false;
 	}
   var shipIndices = JSON.parse(shipIndicesJSON);
   shipIndices = shipIndices.slice(1);
 
   var catchIndicesJSON = parent.myStorage.getItem("catchIndices");
-	if (!catchIndicesJSON) {
-		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
+	if (catchIndicesJSON == "") {
+		alert('Sorry, there are no data\nsaved on this browser.');
     return false;
 	}
   var catchIndices = JSON.parse(catchIndicesJSON);
   catchIndices = catchIndices.slice(1);
 
   var fishIndicesJSON = parent.myStorage.getItem("fishIndices");
-	if (!fishIndicesJSON) {
-		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
+	if (fishIndicesJSON == "") {
+		alert('Sorry, there are no data\nsaved on this browser.');
     return false;
 	}
   var fishIndices = JSON.parse(fishIndicesJSON);
@@ -146,32 +126,32 @@ function drawIndices() {
       datasets: [
           {
               label: "船指數",
-              backgroundColor: colors['backgroundColor'][1],
-              borderColor: colors['borderColor'][1],
-              pointBackgroundColor: colors['pointBackgroundColor'][1],
-              pointBorderColor: colors['pointBorderColor'][1],
-              pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][1],
-              pointHoverBorderColor: colors['pointHoverBorderColor'][1],
+              fillColor: colors['fillColor'][1],
+              strokeColor: colors['strokeColor'][1],
+              pointColor: colors['pointColor'][1],
+              pointStrokeColor: colors['pointStrokeColor'][1],
+              pointHighlightFill: colors['pointHighlightFill'][1],
+              pointHighlightStroke: colors['pointHighlightStroke'][1],
               data: shipIndices
           },
           {
               label: "​捕獲指數",
-              backgroundColor: colors['backgroundColor'][2],
-              borderColor: colors['borderColor'][2],
-              pointBackgroundColor: colors['pointBackgroundColor'][2],
-              pointBorderColor: colors['pointBorderColor'][2],
-              pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][2],
-              pointHoverBorderColor: colors['pointHoverBorderColor'][2],
+              fillColor: colors['fillColor'][2],
+              strokeColor: colors['strokeColor'][2],
+              pointColor: colors['pointColor'][2],
+              pointStrokeColor: colors['pointStrokeColor'][2],
+              pointHighlightFill: colors['pointHighlightFill'][2],
+              pointHighlightStroke: colors['pointHighlightStroke'][2],
               data: fishIndices
           },
           {
               label: "​魚群指數",
-              backgroundColor: colors['backgroundColor'][3],
-              borderColor: colors['borderColor'][3],
-              pointBackgroundColor: colors['pointBackgroundColor'][3],
-              pointBorderColor: colors['pointBorderColor'][3],
-              pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][3],
-              pointHoverBorderColor: colors['pointHoverBorderColor'][3],
+              fillColor: colors['fillColor'][3],
+              strokeColor: colors['strokeColor'][3],
+              pointColor: colors['pointColor'][3],
+              pointStrokeColor: colors['pointStrokeColor'][3],
+              pointHighlightFill: colors['pointHighlightFill'][3],
+              pointHighlightStroke: colors['pointHighlightStroke'][3],
               data: catchIndices
           }
       ]
@@ -179,11 +159,12 @@ function drawIndices() {
 
   var options = {
       //Boolean - Whether to fill the dataset with a colour
-      scales: { y: { beginAtZero: true } },      // legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].borderColor%>\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>"
+      datasetFill : false,
+      // legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"background-color:<%=datasets[i].strokeColor%>\"></span><%if(datasets[i].label){%><%=datasets[i].label%><%}%></li><%}%></ul>"
       // legendTemplate : '<p>TEST</p>'
   };
-  // document.getElementById('indicesChart-legend').innerHTML = (new Chart(ctx, {type:"line", data:data, options:options})).generateLegend();
-  new Chart(ctx, {type:"line", data:data, options:options});
+  // document.getElementById('indicesChart-legend').innerHTML = (new Chart(ctx).Line(data, options)).generateLegend();
+  new Chart(ctx).Line(data, options);
 
   // Draw Table
   var tableHtmlHeaderStr = "<table border='1'><tr><td align='center'>年</td>";
@@ -214,8 +195,8 @@ function drawBanBals() {
   var teamBankBalDataJSON = parent.myStorage.getItem("teamBankBalData");
   var teamShipsDataJSON = parent.myStorage.getItem("teamShipsData");
   var teamAssetsDataJSON = parent.myStorage.getItem("teamAssetsData");
-	if (!teamBankBalDataJSON || !teamShipsDataJSON || !teamAssetsDataJSON) {
-		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
+	if (teamBankBalDataJSON == "" || teamShipsDataJSON == "" || teamAssetsDataJSON == "") {
+		alert('Sorry, there are no data\nsaved on this browser.');
     return false;
 	}
   var teamBankBalData = JSON.parse(teamBankBalDataJSON);
@@ -243,12 +224,12 @@ function drawBanBals() {
       for(var t=1, teams=parent.getTeams(); t<=teams; t++){
         result.push({
           label: t,
-          backgroundColor: colors['backgroundColor'][t],
-          borderColor: colors['borderColor'][t],
-          pointBackgroundColor: colors['pointBackgroundColor'][t],
-          pointBorderColor: colors['pointBorderColor'][t],
-          pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][t],
-          pointHoverBorderColor: colors['pointHoverBorderColor'][t],
+          fillColor: colors['fillColor'][t],
+          strokeColor: colors['strokeColor'][t],
+          pointColor: colors['pointColor'][t],
+          pointStrokeColor: colors['pointStrokeColor'][t],
+          pointHighlightFill: colors['pointHighlightFill'][t],
+          pointHighlightStroke: colors['pointHighlightStroke'][t],
           data: teamShipsData[t].slice(1)
         });
       }
@@ -263,12 +244,12 @@ function drawBanBals() {
       for(var t=1, teams=parent.getTeams(); t<=teams; t++){
         result.push({
           label: t,
-          backgroundColor: colors['backgroundColor'][t],
-          borderColor: colors['borderColor'][t],
-          pointBackgroundColor: colors['pointBackgroundColor'][t],
-          pointBorderColor: colors['pointBorderColor'][t],
-          pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][t],
-          pointHoverBorderColor: colors['pointHoverBorderColor'][t],
+          fillColor: colors['fillColor'][t],
+          strokeColor: colors['strokeColor'][t],
+          pointColor: colors['pointColor'][t],
+          pointStrokeColor: colors['pointStrokeColor'][t],
+          pointHighlightFill: colors['pointHighlightFill'][t],
+          pointHighlightStroke: colors['pointHighlightStroke'][t],
           data: teamBankBalData[t].slice(1)
         });
       }
@@ -282,12 +263,12 @@ function drawBanBals() {
       for(var t=1, teams=parent.getTeams(); t<=teams; t++){
         result.push({
           label: t,
-          backgroundColor: colors['backgroundColor'][t],
-          borderColor: colors['borderColor'][t],
-          pointBackgroundColor: colors['pointBackgroundColor'][t],
-          pointBorderColor: colors['pointBorderColor'][t],
-          pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][t],
-          pointHoverBorderColor: colors['pointHoverBorderColor'][t],
+          fillColor: colors['fillColor'][t],
+          strokeColor: colors['strokeColor'][t],
+          pointColor: colors['pointColor'][t],
+          pointStrokeColor: colors['pointStrokeColor'][t],
+          pointHighlightFill: colors['pointHighlightFill'][t],
+          pointHighlightStroke: colors['pointHighlightStroke'][t],
           data: teamAssetsData[t].slice(1)
         });
       }
@@ -295,13 +276,13 @@ function drawBanBals() {
     })()
   };
 
-  var options = {scales:{y:{beginAtZero:true}}};
-  // document.getElementById('shipsChart-legend').innerHTML = (new Chart(shipsCtx, {type:"line", data:shipsCtxData, options:options})).generateLegend();
-  new Chart(shipsCtx, {type:"line", data:shipsCtxData, options:options});
-  // document.getElementById('banBalsChart-legend').innerHTML = (new Chart(banBalCtx, {type:"line", data:banBalCtxData, options:options})).generateLegend();
-  new Chart(banBalCtx, {type:"line", data:banBalCtxData, options:options});
-  // document.getElementById('assetsChart-legend').innerHTML = (new Chart(assetsCtx, {type:"line", data:assetsCtxData, options:options})).generateLegend();
-  new Chart(assetsCtx, {type:"line", data:assetsCtxData, options:options});
+  var options = {datasetFill : false};
+  // document.getElementById('shipsChart-legend').innerHTML = (new Chart(shipsCtx).Line(shipsCtxData, options)).generateLegend();
+  new Chart(shipsCtx).Line(shipsCtxData, options);
+  // document.getElementById('banBalsChart-legend').innerHTML = (new Chart(banBalCtx).Line(banBalCtxData, options)).generateLegend();
+  new Chart(banBalCtx).Line(banBalCtxData, options);
+  // document.getElementById('assetsChart-legend').innerHTML = (new Chart(assetsCtx).Line(assetsCtxData, options)).generateLegend();
+  new Chart(assetsCtx).Line(assetsCtxData, options);
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   // csv comment 8871231 // Draw Table And CSV
@@ -376,8 +357,8 @@ function drawBanBals() {
 function drawFishPop() {
   var fishPopDeepDataJSON = parent.myStorage.getItem("fishPopDeepData");
   var fishPopCoastDataJSON = parent.myStorage.getItem("fishPopCoastData");
-	if (!fishPopDeepDataJSON || !fishPopCoastDataJSON) {
-		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
+	if (fishPopDeepDataJSON == "" || fishPopCoastDataJSON == "") {
+		alert('Sorry, there are no data\nsaved on this browser.');
     return false;
 	}
   var fishPopDeepData = JSON.parse(fishPopDeepDataJSON);
@@ -398,29 +379,29 @@ function drawFishPop() {
     datasets: [
       {
         label: "遠洋",
-        backgroundColor: colors['backgroundColor'][1],
-        borderColor: colors['borderColor'][1],
-        pointBackgroundColor: colors['pointBackgroundColor'][1],
-        pointBorderColor: colors['pointBorderColor'][1],
-        pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][1],
-        pointHoverBorderColor: colors['pointHoverBorderColor'][1],
+        fillColor: colors['fillColor'][1],
+        strokeColor: colors['strokeColor'][1],
+        pointColor: colors['pointColor'][1],
+        pointStrokeColor: colors['pointStrokeColor'][1],
+        pointHighlightFill: colors['pointHighlightFill'][1],
+        pointHighlightStroke: colors['pointHighlightStroke'][1],
         data: fishPopDeepData
       },{
         label: "近海",
-        backgroundColor: colors['backgroundColor'][2],
-        borderColor: colors['borderColor'][2],
-        pointBackgroundColor: colors['pointBackgroundColor'][2],
-        pointBorderColor: colors['pointBorderColor'][2],
-        pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][2],
-        pointHoverBorderColor: colors['pointHoverBorderColor'][2],
+        fillColor: colors['fillColor'][2],
+        strokeColor: colors['strokeColor'][2],
+        pointColor: colors['pointColor'][2],
+        pointStrokeColor: colors['pointStrokeColor'][2],
+        pointHighlightFill: colors['pointHighlightFill'][2],
+        pointHighlightStroke: colors['pointHighlightStroke'][2],
         data: fishPopCoastData
       }
     ]
   };
 
-  var options = {scales:{y:{beginAtZero:true}}};
-  // document.getElementById('fishPopChart-legend').innerHTML = (new Chart(ctx, {type:"line", data:data, options:options})).generateLegend();
-  new Chart(ctx, {type:"line", data:data, options:options});
+  var options = {datasetFill : false};
+  // document.getElementById('fishPopChart-legend').innerHTML = (new Chart(ctx).Line(data, options)).generateLegend();
+  new Chart(ctx).Line(data, options);
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   // Draw Table
@@ -461,8 +442,8 @@ function drawFishPop() {
 function drawFishDensity() {
   var fishDensityDeepDataJSON = parent.myStorage.getItem("fishDensityDeepData");
   var fishDensityCoastDataJSON = parent.myStorage.getItem("fishDensityCoastData");
-	if (!fishDensityDeepDataJSON || !fishDensityCoastDataJSON) {
-		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
+	if (fishDensityDeepDataJSON == "" || fishDensityCoastDataJSON == "") {
+		alert('Sorry, there are no data\nsaved on this browser.');
     return false;
 	}
   var fishDensityDeepData = JSON.parse(fishDensityDeepDataJSON);
@@ -483,29 +464,29 @@ function drawFishDensity() {
     datasets: [
       {
         label: "遠洋",
-        backgroundColor: colors['backgroundColor'][1],
-        borderColor: colors['borderColor'][1],
-        pointBackgroundColor: colors['pointBackgroundColor'][1],
-        pointBorderColor: colors['pointBorderColor'][1],
-        pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][1],
-        pointHoverBorderColor: colors['pointHoverBorderColor'][1],
+        fillColor: colors['fillColor'][1],
+        strokeColor: colors['strokeColor'][1],
+        pointColor: colors['pointColor'][1],
+        pointStrokeColor: colors['pointStrokeColor'][1],
+        pointHighlightFill: colors['pointHighlightFill'][1],
+        pointHighlightStroke: colors['pointHighlightStroke'][1],
         data: fishDensityDeepData
       },{
         label: "近海",
-        backgroundColor: colors['backgroundColor'][2],
-        borderColor: colors['borderColor'][2],
-        pointBackgroundColor: colors['pointBackgroundColor'][2],
-        pointBorderColor: colors['pointBorderColor'][2],
-        pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][2],
-        pointHoverBorderColor: colors['pointHoverBorderColor'][2],
+        fillColor: colors['fillColor'][2],
+        strokeColor: colors['strokeColor'][2],
+        pointColor: colors['pointColor'][2],
+        pointStrokeColor: colors['pointStrokeColor'][2],
+        pointHighlightFill: colors['pointHighlightFill'][2],
+        pointHighlightStroke: colors['pointHighlightStroke'][2],
         data: fishDensityCoastData
       }
     ]
   };
 
-  var options = {scales:{y:{beginAtZero:true}}};
-  // document.getElementById('fishDensityChart-legend').innerHTML = (new Chart(ctx, {type:"line", data:data, options:options})).generateLegend();
-  new Chart(ctx, {type:"line", data:data, options:options});
+  var options = {datasetFill : false};
+  // document.getElementById('fishDensityChart-legend').innerHTML = (new Chart(ctx).Line(data, options)).generateLegend();
+  new Chart(ctx).Line(data, options);
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   // Draw Table
@@ -546,8 +527,8 @@ function drawFishDensity() {
 // salvageValueTable
 function drawSalvageValue() {
   var salvageValuesJSON = parent.myStorage.getItem("salvageValues");
-	if (!salvageValuesJSON) {
-		alert('抱歉，這個瀏覽器上沒有儲存的資料。');
+	if (salvageValuesJSON == "") {
+		alert('Sorry, there are no data\nsaved on this browser.');
     return false;
 	}
   var salvageValues = JSON.parse(salvageValuesJSON);
@@ -565,20 +546,20 @@ function drawSalvageValue() {
     datasets: [
       {
         label: "魚船殘值",
-        backgroundColor: colors['backgroundColor'][1],
-        borderColor: colors['borderColor'][1],
-        pointBackgroundColor: colors['pointBackgroundColor'][1],
-        pointBorderColor: colors['pointBorderColor'][1],
-        pointHoverBackgroundColor: colors['pointHoverBackgroundColor'][1],
-        pointHoverBorderColor: colors['pointHoverBorderColor'][1],
+        fillColor: colors['fillColor'][1],
+        strokeColor: colors['strokeColor'][1],
+        pointColor: colors['pointColor'][1],
+        pointStrokeColor: colors['pointStrokeColor'][1],
+        pointHighlightFill: colors['pointHighlightFill'][1],
+        pointHighlightStroke: colors['pointHighlightStroke'][1],
         data: salvageValues
       }
     ]
   };
 
-  var options = {scales:{y:{beginAtZero:true}}};
-  // document.getElementById('salvageValueChart-legend').innerHTML = (new Chart(ctx, {type:"line", data:data, options:options})).generateLegend();
-  new Chart(ctx, {type:"line", data:data, options:options});
+  var options = {datasetFill : false};
+  // document.getElementById('salvageValueChart-legend').innerHTML = (new Chart(ctx).Line(data, options)).generateLegend();
+  new Chart(ctx).Line(data, options);
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   // Draw Table
@@ -625,20 +606,7 @@ function addEvent(evnt, elem, func) {
   // drawFishDensity();
 // });
 
-// Chart.js v4 forbids attaching a new Chart to a canvas that still has one.
-// Under the SPA we re-enter the graphs page (or click 繪圖) repeatedly, so
-// destroy every Chart bound to the seven graph canvases before redrawing.
-function destroyAllCharts() {
-  var ids = ['indicesChart', 'shipsChart', 'banBalsChart', 'assetsChart',
-             'fishPopChart', 'fishDensityChart', 'salvageValueChart'];
-  for (var i = 0; i < ids.length; i++) {
-    var existing = Chart.getChart(ids[i]);
-    if (existing) { existing.destroy(); }
-  }
-}
-
 function drawAllGraphs(){
-  destroyAllCharts();
   drawIndices();
   drawBanBals();
   drawSalvageValue();
@@ -646,10 +614,6 @@ function drawAllGraphs(){
   drawFishDensity();
 }
 
-// Note: in the frameset era graphslib.js was loaded only inside the graphs
-// page, so a top-level DOMContentLoaded handler that called drawAllGraphs()
-// fired exactly once when the user reached the graphs view. Under the SPA
-// shell every lib is loaded up-front, so that handler would fire on every
-// first paint regardless of the active route — and drawAllGraphs() reads
-// from myStorage, which is empty until a game has been played. The router
-// will call drawAllGraphs() from init_graphs() instead (Phase 6).
+document.addEventListener("DOMContentLoaded", function(event) {
+  drawAllGraphs();
+});

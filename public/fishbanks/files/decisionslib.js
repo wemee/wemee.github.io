@@ -12,34 +12,187 @@
 
 // Navigate HTML text input fields with arrow keys
 function setupNavInputWithArrowKeys(){
-	$('input').keyup(function (e) {
-    if (e.which == 39) { // right arrow
-      $(this).closest('td').next().find('input').focus();
-    } else if (e.which == 37) { // left arrow
-      $(this).closest('td').prev().find('input').focus();
-    } else if (e.which == 40) { // down arrow
-      $(this).closest('tr').next().find('td:eq(' + $(this).closest('td').index() + ')').prev().find('input').focus();
-    } else if (e.which == 38) { // up arrow
-      $(this).closest('tr').prev().find('td:eq(' + $(this).closest('td').index() + ')').prev().find('input').focus();
-    }
-  });
+	var inputs = document.querySelectorAll('input');
+	for (var i = 0; i < inputs.length; i++) {
+		inputs[i].addEventListener('keyup', function (e) {
+			var td = this.closest('td');
+			if (!td) return;
+			var tr = td.parentNode;
+			var idx = Array.prototype.indexOf.call(tr.children, td);
+			var targetTd = null;
+			if (e.which == 39) { // right arrow
+				targetTd = td.nextElementSibling;
+			} else if (e.which == 37) { // left arrow
+				targetTd = td.previousElementSibling;
+			} else if (e.which == 40) { // down arrow
+				if (tr.nextElementSibling && tr.nextElementSibling.children[idx]) {
+					targetTd = tr.nextElementSibling.children[idx].previousElementSibling;
+				}
+			} else if (e.which == 38) { // up arrow
+				if (tr.previousElementSibling && tr.previousElementSibling.children[idx]) {
+					targetTd = tr.previousElementSibling.children[idx].previousElementSibling;
+				}
+			}
+			if (targetTd) {
+				var input = targetTd.querySelector('input');
+				if (input) input.focus();
+			}
+		});
+	}
 
-  // un-comment to display key code
-  // $("input").keydown(function (e) {
-  //   alert(e.which);
-  // });
+	// un-comment to display key code
+	// for (var j = 0; j < inputs.length; j++) {
+	//   inputs[j].addEventListener('keydown', function (e) { alert(e.which); });
+	// }
 }
 
-$(document).on('focus', 'input[type="text"]', function() {
-  this.select();
+// Select text on focus for all text inputs (focusin bubbles, unlike focus)
+document.addEventListener('focusin', function (e) {
+	if (e.target && e.target.matches && e.target.matches('input[type="text"]')) {
+		e.target.select();
+	}
 });
 
-// Handle the page load event for decisions.html
-function handleLoad() {
-	var i;
-	var the_form = document.DecisionsFrm;
+// Called by the router after tpl-decisions is cloned into #app. Builds
+// the dynamic per-team rows (D1-D15) into placeholder <tr> elements,
+// populates the static single-input rows (D16-D19, RevokeShipDols,
+// ContinuousForYear), then runs the cascade of update*Total() helpers
+// so the right-hand totals column reflects the initial values.
+function init_decisions() {
+	var f = document.DecisionsFrm;
 	var teams = parent.getTeams();
+	var t, i;
 
+	document.getElementById('decisions-year').textContent = parent.getGameYear();
+
+	var headerHTML = '';
+	for (t = 1; t <= teams; t++) {
+		headerHTML += '<td>' + t + '</td>';
+	}
+	headerHTML += '<td>合計</td>';
+	for (i = teams; i < 6; i++) { headerHTML += '<td>&nbsp;</td>'; }
+	document.getElementById('dec-row-header').insertAdjacentHTML('beforeend', headerHTML);
+
+	// Helper that builds and appends per-team input cells + total cell + spacers.
+	// opts: { tabBase, value(t), onblur, onchange(t), disabled, totalName }
+	function appendDecRow(rowId, name, opts) {
+		var html = '';
+		for (var t = 1; t <= teams; t++) {
+			var val = opts.value ? opts.value(t) : 0;
+			html += '<td><input type="text" name="' + name + t + 'Fld" size="5"';
+			html += ' value="' + val + '"';
+			if (opts.disabled) {
+				html += ' tabindex="0" disabled="disabled"';
+			} else {
+				html += ' tabindex="' + (t * 20 + opts.tabBase) + '"';
+				if (opts.onblur) { html += ' onblur="' + opts.onblur + '"'; }
+				if (opts.onchange) { html += ' onchange="' + opts.onchange(t) + '"'; }
+			}
+			html += ' /></td>';
+		}
+		var totalName = opts.totalName || (name + 'Total');
+		html += '<td><input type="text" name="' + totalName + 'Fld" size="5" value="0" tabindex="0" disabled="disabled" /></td>';
+		for (var i = teams; i < 6; i++) { html += '<td>&nbsp;</td>'; }
+		document.getElementById(rowId).insertAdjacentHTML('beforeend', html);
+	}
+
+	appendDecRow('dec-row-d1', 'AuctionShips', {
+		tabBase: 1,
+		value: function(t) { return parent.resumeFlag ? parent.auctionShips[t] : 0; },
+		onblur: 'return validateDec(this,true);',
+		onchange: function(t) { return 'changeShips(' + t + ')'; }
+	});
+	appendDecRow('dec-row-d2', 'AuctionDols', {
+		tabBase: 2,
+		value: function(t) { return parent.resumeFlag ? parent.auctionDols[t] : 0; },
+		onblur: 'return validateDec(this,true);',
+		onchange: function() { return 'updateAuctionDolsTotal()'; }
+	});
+	appendDecRow('dec-row-d3', 'ShipPurch', {
+		tabBase: 3,
+		value: function(t) { return parent.resumeFlag ? parent.shipPurch[t] : 0; },
+		onblur: 'return validateDec(this,false);',
+		onchange: function(t) { return 'changeShips(' + t + ')'; }
+	});
+	appendDecRow('dec-row-d4', 'ShipPurchDols', {
+		tabBase: 4,
+		value: function(t) { return parent.resumeFlag ? parent.shipPurchDols[t] : 0; },
+		onblur: 'return validateDec(this,false);',
+		onchange: function() { return 'updateShipPurchDolsTotal()'; }
+	});
+	appendDecRow('dec-row-d5', 'ShipSales', {
+		tabBase: 5,
+		value: function(t) { return parent.resumeFlag ? parent.shipSales[t] : 0; },
+		onblur: 'return validateDec(this,false);',
+		onchange: function(t) { return 'changeShips(' + t + ')'; }
+	});
+	appendDecRow('dec-row-d6', 'ShipSalesDols', {
+		tabBase: 6,
+		value: function(t) { return parent.resumeFlag ? parent.shipSalesDols[t] : 0; },
+		onblur: 'return validateDec(this,false);',
+		onchange: function() { return 'updateShipSalesDolsTotal()'; }
+	});
+	appendDecRow('dec-row-d7', 'ShipOrders', {
+		tabBase: 7,
+		value: function(t) { return parent.resumeFlag ? parent.shipOrders[t] : 0; },
+		onblur: 'return validateDec(this,false);',
+		onchange: function() { return 'updateShipOrdersTotal()'; }
+	});
+	appendDecRow('dec-row-d8', 'ShipsAvail', {
+		value: function(t) { return parent.getShipsAvail(t); },
+		disabled: true
+	});
+	appendDecRow('dec-row-d9', 'ShipsToDeep', {
+		tabBase: 8,
+		value: function(t) { return parent.resumeFlag ? parent.shipsToDeep[t] : 0; },
+		onblur: 'return validateDec(this,false);',
+		onchange: function(t) { return 'updateShipsToDeepTotal();updateShipsToHarbor(' + t + ');'; }
+	});
+	appendDecRow('dec-row-d10', 'ShipsToCoast', {
+		tabBase: 9,
+		value: function(t) { return parent.resumeFlag ? parent.shipsToCoast[t] : 0; },
+		onblur: 'return validateDec(this,false);',
+		onchange: function(t) { return 'updateShipsToCoastTotal();updateShipsToHarbor(' + t + ');'; }
+	});
+	appendDecRow('dec-row-d11', 'ShipsToHarbor', {
+		value: function() { return 0; },
+		disabled: true
+	});
+	appendDecRow('dec-row-d12', 'GivenDols', {
+		tabBase: 10,
+		value: function(t) { return parent.resumeFlag ? parent.givenDols[t] : 0; },
+		onblur: 'return validateDec(this,true);',
+		onchange: function() { return 'updateGivenDolsTotal()'; }
+	});
+	appendDecRow('dec-row-d13', 'ReceiveDols', {
+		tabBase: 11,
+		value: function(t) { return parent.resumeFlag ? parent.receiveDols[t] : 0; },
+		onblur: 'return validateDec(this,true);',
+		onchange: function() { return 'updateReceiveDolsTotal()'; }
+	});
+	appendDecRow('dec-row-d14', 'ReceiveDolsFromFishery', {
+		tabBase: 12,
+		value: function(t) { return parent.resumeFlag ? parent.receiveDolsFromFishery[t] : 0; },
+		onblur: 'return validateDec(this,true);',
+		onchange: function() { return 'updateReceiveDolsFromFisheryTotal()'; }
+	});
+	appendDecRow('dec-row-d15', 'RevokeShips', {
+		tabBase: 13,
+		totalName: 'RevokeShipTotal',  // irregular (no trailing 's')
+		value: function() { return 0; },
+		onblur: 'return validateRevokeShips(this,false);',
+		onchange: function(t) { return 'changeShips(' + t + ')'; }
+	});
+
+	// Static single-input fields
+	f.FishDeepSalesPriceFld.value  = parent.getFishDeepSalesPrice();
+	f.FishCoastSalesPriceFld.value = parent.getFishCoastSalesPrice();
+	f.FishPopDeepFld.value         = parent.getFishPopDeep();
+	f.FishPopCoastFld.value        = parent.getFishPopCoast();
+	f.RevokeShipDolsFld.value      = parent.getRevokeShipDols();
+	f.ContinuousForYearFld.value   = parent.resumeFlag ? parent.getContinuousForYear() : 1;
+
+	// Compute initial totals (now that all input rows exist)
 	updateAuctionShipsTotal();
 	updateAuctionDolsTotal();
 	updateShipPurchTotal();
@@ -47,23 +200,26 @@ function handleLoad() {
 	updateShipSalesTotal();
 	updateShipSalesDolsTotal();
 	updateShipOrdersTotal();
-
 	updateShipsAvailTotal();
 	updateShipsToDeepTotal();
 	updateShipsToCoastTotal();
+	updateGivenDolsTotal();
+	updateReceiveDolsTotal();
+	updateReceiveDolsFromFisheryTotal();
+	updateRevokeShipTotal();
 
-	for (var t = 1; t <= teams; t++) {
+	for (t = 1; t <= teams; t++) {
 		updateShipsToHarbor(t);
 	}
 
-	if(parent.resumeFlag){
-		for (var t = 1; t <= teams; t++) {
+	if (parent.resumeFlag) {
+		for (t = 1; t <= teams; t++) {
 			changeShips(t);
 		}
 	}
 
-	the_form.AuctionShips1Fld.focus();
-	the_form.AuctionShips1Fld.select();
+	f.AuctionShips1Fld.focus();
+	f.AuctionShips1Fld.select();
 
 	setupNavInputWithArrowKeys();
 }
@@ -82,12 +238,12 @@ function changeShips(t) {
 	updateRevokeShipTotal();
 
 	shipsAvailable = parseInt(parent.getShipsAvail(t));
-	auctionShips = parseInt(eval("the_form.AuctionShips" + t + "Fld.value"));
-	purchShips = parseInt(eval("the_form.ShipPurch" + t + "Fld.value"));
-	salesShips = parseInt(eval("the_form.ShipSales" + t + "Fld.value"));
-	revokeShips = parseInt(eval("the_form.RevokeShips" + t + "Fld.value"));
+	auctionShips = parseInt(the_form["AuctionShips" + t + "Fld"].value);
+	purchShips = parseInt(the_form["ShipPurch" + t + "Fld"].value);
+	salesShips = parseInt(the_form["ShipSales" + t + "Fld"].value);
+	revokeShips = parseInt(the_form["RevokeShips" + t + "Fld"].value);
 	shipsAvailable += (auctionShips + purchShips - salesShips - revokeShips);
-	eval("the_form.ShipsAvail" + t + "Fld.value = shipsAvailable");
+	the_form["ShipsAvail" + t + "Fld"].value = shipsAvailable;
 	updateShipsToHarbor(t);
 
 	updateShipsAvailTotal();
@@ -99,7 +255,7 @@ function updateAuctionShipsTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.AuctionShips" + t + "Fld.value"));
+		total += parseInt(the_form["AuctionShips" + t + "Fld"].value);
 	}
 
 	the_form.AuctionShipsTotalFld.value = total;
@@ -111,7 +267,7 @@ function updateAuctionDolsTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.AuctionDols" + t + "Fld.value"));
+		total += parseInt(the_form["AuctionDols" + t + "Fld"].value);
 	}
 
 	the_form.AuctionDolsTotalFld.value = total;
@@ -123,7 +279,7 @@ function updateShipPurchTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipPurch" + t + "Fld.value"));
+		total += parseInt(the_form["ShipPurch" + t + "Fld"].value);
 	}
 
 	the_form.ShipPurchTotalFld.value = total;
@@ -135,7 +291,7 @@ function updateShipPurchDolsTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipPurchDols" + t + "Fld.value"));
+		total += parseInt(the_form["ShipPurchDols" + t + "Fld"].value);
 	}
 
 	the_form.ShipPurchDolsTotalFld.value = total;
@@ -147,7 +303,7 @@ function updateShipSalesTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipSales" + t + "Fld.value"));
+		total += parseInt(the_form["ShipSales" + t + "Fld"].value);
 	}
 
 	the_form.ShipSalesTotalFld.value = total;
@@ -159,7 +315,7 @@ function updateShipSalesDolsTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipSalesDols" + t + "Fld.value"));
+		total += parseInt(the_form["ShipSalesDols" + t + "Fld"].value);
 	}
 
 	the_form.ShipSalesDolsTotalFld.value = total;
@@ -171,7 +327,7 @@ function updateShipOrdersTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipOrders" + t + "Fld.value"));
+		total += parseInt(the_form["ShipOrders" + t + "Fld"].value);
 	}
 
 	the_form.ShipOrdersTotalFld.value = total;
@@ -183,7 +339,7 @@ function updateShipsAvailTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipsAvail" + t + "Fld.value"));
+		total += parseInt(the_form["ShipsAvail" + t + "Fld"].value);
 	}
 
 	the_form.ShipsAvailTotalFld.value = total;
@@ -195,7 +351,7 @@ function updateShipsToDeepTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipsToDeep" + t + "Fld.value"));
+		total += parseInt(the_form["ShipsToDeep" + t + "Fld"].value);
 	}
 
 	the_form.ShipsToDeepTotalFld.value = total;
@@ -207,7 +363,7 @@ function updateShipsToCoastTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipsToCoast" + t + "Fld.value"));
+		total += parseInt(the_form["ShipsToCoast" + t + "Fld"].value);
 	}
 
 	the_form.ShipsToCoastTotalFld.value = total;
@@ -219,7 +375,7 @@ function updateShipsToHarborTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ShipsToHarbor" + t + "Fld.value"));
+		total += parseInt(the_form["ShipsToHarbor" + t + "Fld"].value);
 	}
 
 	the_form.ShipsToHarborTotalFld.value = total;
@@ -231,7 +387,7 @@ function updateGivenDolsTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.GivenDols" + t + "Fld.value"));
+		total += parseInt(the_form["GivenDols" + t + "Fld"].value);
 	}
 
 	the_form.GivenDolsTotalFld.value = total;
@@ -243,7 +399,7 @@ function updateReceiveDolsTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ReceiveDols" + t + "Fld.value"));
+		total += parseInt(the_form["ReceiveDols" + t + "Fld"].value);
 	}
 
 	the_form.ReceiveDolsTotalFld.value = total;
@@ -255,7 +411,7 @@ function updateReceiveDolsFromFisheryTotal() {
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.ReceiveDolsFromFishery" + t + "Fld.value"));
+		total += parseInt(the_form["ReceiveDolsFromFishery" + t + "Fld"].value);
 	}
 
 	the_form.ReceiveDolsFromFisheryTotalFld.value = total;
@@ -268,7 +424,7 @@ function updateRevokeShipTotal(){
 	var total = 0;
 
 	for (var t = 1; t <= teams; t++) {
-		total += parseInt(eval("the_form.RevokeShips" + t + "Fld.value"));
+		total += parseInt(the_form["RevokeShips" + t + "Fld"].value);
 	}
 
 	the_form.RevokeShipTotalFld.value = total;
@@ -278,10 +434,10 @@ function updateShipsToHarbor(team) {
 	var the_form = document.DecisionsFrm;
 	var total = 0;
 
-	total = parseInt(eval("the_form.ShipsAvail" + team + "Fld.value"));
-	total -= parseInt(eval("the_form.ShipsToDeep" + team + "Fld.value"));
-	total -= parseInt(eval("the_form.ShipsToCoast" + team + "Fld.value"));
-	eval("the_form.ShipsToHarbor" + team + "Fld.value = total");
+	total = parseInt(the_form["ShipsAvail" + team + "Fld"].value);
+	total -= parseInt(the_form["ShipsToDeep" + team + "Fld"].value);
+	total -= parseInt(the_form["ShipsToCoast" + team + "Fld"].value);
+	the_form["ShipsToHarbor" + team + "Fld"].value = total;
 
 	updateShipsToHarborTotal();
 }
@@ -293,12 +449,12 @@ function updateShipsToHarbor(team) {
 function validateDec(field,negallow) {
 	var entry = parseInt(field.value)
 	if (isNaN(entry) || field.value == "") {
-		alert('You must use a numeric\nvalue in this field');
+		alert('此欄位必須輸入數字');
 		field.focus();
 		field.select();
 		return false;
 	} else if (!negallow && entry < 0) {
-		alert('You must use a non-negative\nvalue in this field');
+		alert('此欄位必須輸入非負數');
 		field.focus();
 		field.select();
 		return false;
@@ -311,12 +467,12 @@ function validateDec(field,negallow) {
 function validateDecNoneZero(field,negallow) {
 	var entry = parseInt(field.value)
 	if (isNaN(entry) || field.value == "") {
-		alert('You must use a numeric\nvalue in this field');
+		alert('此欄位必須輸入數字');
 		field.focus();
 		field.select();
 		return false;
 	} else if (entry < 1) {
-		// alert('You must use a non-negative\nvalue in this field');
+		// alert('此欄位必須輸入非負數');
 		alert('連續進行幾年欄位，數值需大於1');
 		field.focus();
 		field.select();
@@ -330,12 +486,12 @@ function validateDecNoneZero(field,negallow) {
 function validateRevokeShips(field,negallow) {
 	var entry = parseInt(field.value)
 	if (isNaN(entry) || field.value == "") {
-		alert('You must use a numeric\nvalue in this field');
+		alert('此欄位必須輸入數字');
 		field.focus();
 		field.select();
 		return false;
 	} else if (!negallow && entry < 0) {
-		alert('You must use a non-negative\nvalue in this field');
+		alert('此欄位必須輸入非負數');
 		field.focus();
 		field.select();
 		return false;
@@ -358,7 +514,7 @@ function processDecisions() {
 	var totalShipPurch = parseInt(the_form.ShipPurchTotalFld.value);
 	var totalShipSales = parseInt(the_form.ShipSalesTotalFld.value);
 	if (totalShipPurch != totalShipSales) {
-		alert('Total of D3, Ship Purchases, must\nequal the Total of D5, Ship Sales');
+		alert('D3 購入總船數合計，必須等於\nD5 售出總船數合計');
 		the_form.ShipPurch1Fld.focus();
 		the_form.ShipPurch1Fld.select();
 		return false;
@@ -367,7 +523,7 @@ function processDecisions() {
 	var totalShipPurchDols = parseInt(the_form.ShipPurchDolsTotalFld.value);
 	var totalShipSalesDols = parseInt(the_form.ShipSalesDolsTotalFld.value);
 	if (totalShipPurchDols != totalShipSalesDols) {
-		alert('Total of D4, Ship Purchases $, must\nequal the Total of D6, Ship Sales $');
+		alert('D4 購入總花費合計，必須等於\nD6 售船總收入合計');
 		the_form.ShipPurchDols1Fld.focus();
 		the_form.ShipPurchDols1Fld.select();
 		return false;
@@ -376,7 +532,7 @@ function processDecisions() {
 	var totalGivenDols = parseInt(the_form.GivenDolsTotalFld.value);
 	var totalReceiveDols = parseInt(the_form.ReceiveDolsTotalFld.value);
 	if (totalGivenDols != totalReceiveDols) {
-		alert('Total of D12, 給出去的錢,\n跟收到的錢 Total of D13, 不相等');
+		alert('D12 給出去的錢合計，必須等於\nD13 收到的錢合計');
 		the_form.GivenDols1Fld.focus();
 		the_form.GivenDols1Fld.select();
 		return false;
@@ -388,26 +544,26 @@ function processDecisions() {
 	var shipsToHarbor;
 
 	for (var t = 1; t <= teams; t++) {
-		shipsAvail = parseInt(eval('the_form.ShipsAvail' + t + 'Fld.value'));
+		shipsAvail = parseInt(the_form["ShipsAvail" + t + "Fld"].value);
 		if (shipsAvail < 0) {
-			alert('Available Ships for Team ' + t + '\nmay not be less than 0');
-			eval('the_form.ShipPurch' + t + 'Fld.focus()');
-			eval('the_form.ShipPurch' + t + 'Fld.select()');
+			alert('第 ' + t + ' 組的可派船數\n不能小於 0');
+			the_form["ShipPurch" + t + "Fld"].focus();
+			the_form["ShipPurch" + t + "Fld"].select();
 			return false;
 		}
-		shipsOrdered = parseInt(eval('the_form.ShipOrders' + t + 'Fld.value'));
+		shipsOrdered = parseInt(the_form["ShipOrders" + t + "Fld"].value);
 		if (shipsOrdered > Math.round(shipsAvail/2)) {
-			alert('No team may order in one year more\nships than half their existing fleet');
-			eval('the_form.ShipOrders' + t + 'Fld.focus()');
-			eval('the_form.ShipOrders' + t + 'Fld.select()');
+			alert('每年訂購的新船數，不能超過\n現有船隊的一半');
+			the_form["ShipOrders" + t + "Fld"].focus();
+			the_form["ShipOrders" + t + "Fld"].select();
 			return false;
 		}
 
-		shipsToHarbor = parseInt(eval('the_form.ShipsToHarbor' + t + 'Fld.value'));
+		shipsToHarbor = parseInt(the_form["ShipsToHarbor" + t + "Fld"].value);
 		if (shipsToHarbor < 0) {
-			alert('The sum of ships sent to the Deep Sea and\nto the Coast fisheries for each team must be less\nthan or equal to the Ships Available');
-			eval('the_form.ShipsToDeep' + t + 'Fld.focus()');
-			eval('the_form.ShipsToDeep' + t + 'Fld.select()');
+			alert('每組派往遠洋與近海的船數合計，\n不能超過該組的船隊總船數');
+			the_form["ShipsToDeep" + t + "Fld"].focus();
+			the_form["ShipsToDeep" + t + "Fld"].select();
 			return false;
 		}
 	}
@@ -416,29 +572,29 @@ function processDecisions() {
 	parent.setRevokeShipDols(parseInt(the_form.RevokeShipDolsFld.value));
 
 	for (var t = 1; t <= teams; t++) {
-		parent.auctionShips[t]  = parseInt(eval("the_form.AuctionShips"  + t + "Fld.value"));
-		parent.auctionDols[t]   = parseInt(eval("the_form.AuctionDols" 	 + t + "Fld.value"));
-		parent.shipPurch[t]     = parseInt(eval("the_form.ShipPurch" 		 + t + "Fld.value"));
-		parent.shipPurchDols[t] = parseInt(eval("the_form.ShipPurchDols" + t + "Fld.value"));
-		parent.shipSales[t]     = parseInt(eval("the_form.ShipSales" 		 + t + "Fld.value"));
-		parent.shipSalesDols[t] = parseInt(eval("the_form.ShipSalesDols" + t + "Fld.value"));
-		parent.shipOrders[t]    = parseInt(eval("the_form.ShipOrders" 	 + t + "Fld.value"));
-		parent.setShipsAvail(t, 	parseInt(eval("the_form.ShipsAvail" 	 + t + "Fld.value")));
-		parent.shipsToDeep[t]   = parseInt(eval("the_form.ShipsToDeep"   + t + "Fld.value"));
-		parent.shipsToCoast[t]  = parseInt(eval("the_form.ShipsToCoast"  + t + "Fld.value"));
-		parent.shipsToHarbor[t] = parseInt(eval("the_form.ShipsToHarbor" + t + "Fld.value"));
+		parent.auctionShips[t]  = parseInt(the_form["AuctionShips" + t + "Fld"].value);
+		parent.auctionDols[t]   = parseInt(the_form["AuctionDols" + t + "Fld"].value);
+		parent.shipPurch[t]     = parseInt(the_form["ShipPurch" + t + "Fld"].value);
+		parent.shipPurchDols[t] = parseInt(the_form["ShipPurchDols" + t + "Fld"].value);
+		parent.shipSales[t]     = parseInt(the_form["ShipSales" + t + "Fld"].value);
+		parent.shipSalesDols[t] = parseInt(the_form["ShipSalesDols" + t + "Fld"].value);
+		parent.shipOrders[t]    = parseInt(the_form["ShipOrders" + t + "Fld"].value);
+		parent.setShipsAvail(t, 	parseInt(the_form["ShipsAvail" + t + "Fld"].value));
+		parent.shipsToDeep[t]   = parseInt(the_form["ShipsToDeep" + t + "Fld"].value);
+		parent.shipsToCoast[t]  = parseInt(the_form["ShipsToCoast" + t + "Fld"].value);
+		parent.shipsToHarbor[t] = parseInt(the_form["ShipsToHarbor" + t + "Fld"].value);
 
 		// 報廢漁船 // 已經在 changeShips 處理過了
-		// var rShips = parseInt(eval("the_form.RevokeShips" + t + "Fld.value"));
+		// var rShips = parseInt(the_form["RevokeShips" + t + "Fld"].value);
 		// if(parent.getShipsAvail(t) < rShips) {
 		// 	alert('組別:' + t + ' ,沒那麼多漁船可以報廢');
 		// 	return false;
 		// }
 		// parent.setRevokeShips(t, rShips);
 
-		var gMoney = parseInt(eval("the_form.GivenDols" + t + "Fld.value"));
-		var rMoney = parseInt(eval("the_form.ReceiveDols" + t + "Fld.value"));
-		var rMoneyFromFishery = parseInt(eval("the_form.ReceiveDolsFromFishery" + t + "Fld.value"));
+		var gMoney = parseInt(the_form["GivenDols" + t + "Fld"].value);
+		var rMoney = parseInt(the_form["ReceiveDols" + t + "Fld"].value);
+		var rMoneyFromFishery = parseInt(the_form["ReceiveDolsFromFishery" + t + "Fld"].value);
 
 		if (gMoney) {
 			var cMoney = parent.getBankBal(t);
@@ -468,6 +624,20 @@ function processDecisions() {
 
 	// 連續進行幾年
 	var continuousForYear = parseInt(the_form.ContinuousForYearFld.value);
+	// Clamp: NaN or huge values would loop executeTurn forever (fuzz found a
+	// 7-hour hang triggered by pasting an 8-digit number into 連續休魚幾年).
+	if (isNaN(continuousForYear) || continuousForYear < 1) {
+		alert('連續休魚幾年必須是 1 到 100 之間的整數');
+		the_form.ContinuousForYearFld.focus();
+		the_form.ContinuousForYearFld.select();
+		return false;
+	}
+	if (continuousForYear > 100) {
+		alert('連續休魚幾年最多 100 年');
+		the_form.ContinuousForYearFld.focus();
+		the_form.ContinuousForYearFld.select();
+		return false;
+	}
 	parent.setContinuousForYear(continuousForYear);
 	for(var i=1; i<=continuousForYear; i++) {
 		// 計算新魚價
@@ -486,7 +656,7 @@ function processDecisions() {
 		parent.saveGame();
 	}
 
-	location.replace('reports.html');
+	goto('reports');
 
 	return true;
 }
@@ -498,13 +668,9 @@ function skipToFld(fld) {
 }
 
 function returnToReports() {
-	location.replace('reports.html');
+	goto('reports');
 }
 
-function validateFishDeepSalesPrice(fld) {
-	return parent.validateFishDeepSalesPrice(fld);
-}
-
-function validateFishCoastSalesPrice(fld) {
-	return parent.validateFishCoastSalesPrice(fld);
-}
+// validateFishDeepSalesPrice / validateFishCoastSalesPrice live in
+// mainlib.js. The old frameset child shadow wrappers were removed —
+// under the SPA shell they recurse into themselves because parent === window.
