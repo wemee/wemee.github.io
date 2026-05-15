@@ -13,13 +13,13 @@ npm run preview      # Preview production build locally
 
 ## Project Architecture
 
-This is an Astro 5 static site (wemee.github.io) using **Tailwind CSS 4** (with `preflight: false` to avoid conflicts with existing styles) and React 19 for interactive components.
+This is an Astro 6 static site (wemee.github.io) using **Tailwind CSS 4** (with `preflight: false` to avoid conflicts with existing styles) and React 19 for interactive components.
 
 ### Directory Structure
 - `src/pages/` - File-based routing (game/, math/, tools/, blog/)
 - `src/layouts/BaseLayout.astro` - Main layout with SEO meta tags, OG tags, and JSON-LD structured data. `SudokuAppLayout.astro` is a specialized layout for the Sudoku game.
 - `src/components/Navbar.astro` - Navigation with dropdowns for each section
-- `src/content/blog/` - Markdown blog posts with frontmatter schema defined in `src/content/config.ts`
+- `src/content/blog/` - Markdown blog posts with frontmatter schema defined in `src/content.config.ts` (Astro 6 uses a top-level config and the `glob` loader)
 - `src/lib/` - TypeScript logic separated from UI
 - `src/hooks/` - React hooks (`useGameLoop.ts`, `useKeyboardInput.ts`)
 - `src/store/` - Zustand stores (`gameStore.ts` for game state, selection, undo/redo, timer)
