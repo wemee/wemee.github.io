@@ -1,0 +1,84 @@
+/* ============================================================
+   Design tokens — Yaya Chen portfolio
+   Direction: editorial / gallery-first
+   Neutral warm "paper" canvas + ink + a single terracotta accent,
+   so the colourful work carries the colour, not the chrome.
+   ============================================================ */
+
+:root {
+  /* ---- Colour (OKLCH: perceptually even, wide-gamut ready) ---- */
+  --paper:        oklch(98.6% 0.006 85);   /* page canvas, warm off-white   */
+  --paper-sunk:   oklch(96.4% 0.009 78);   /* alternating section ground    */
+  --paper-edge:   oklch(99.4% 0.004 90);   /* raised card / lifted surface  */
+
+  --ink:          oklch(23% 0.014 55);     /* primary text, warm near-black */
+  --ink-soft:     oklch(43% 0.012 55);     /* secondary prose               */
+  --ink-faint:    oklch(56% 0.010 58);     /* captions, meta, eyebrows      */
+
+  --line:         oklch(87% 0.008 75);     /* hairline rules / borders      */
+  --line-strong:  oklch(76% 0.010 70);
+
+  --accent:       oklch(60% 0.158 38);     /* terracotta — links, marks     */
+  --accent-deep:  oklch(50% 0.150 36);     /* accent on hover/active        */
+  --accent-wash:  oklch(60% 0.158 38 / 0.10);
+
+  --ink-invert:   oklch(96% 0.006 85);     /* text on dark contact band     */
+  --ground-dark:  oklch(26% 0.018 50);     /* dark editorial band           */
+
+  --focus-ring:   oklch(60% 0.158 38);
+
+  /* ---- Type families (CJK falls back to platform faces;
+          no heavy Chinese webfont shipped) ---- */
+  --font-display: "Fraunces", "Noto Serif TC", "Songti TC", Georgia, serif;
+  --font-text:    "Inter", "PingFang TC", "Noto Sans TC",
+                  -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+
+  /* ---- Fluid type scale (clamp: min · preferred · max) ---- */
+  --text-eyebrow: 0.78rem;
+  --text-sm:      0.875rem;
+  --text-base:    clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  --text-lg:      clamp(1.2rem, 1.08rem + 0.6vw, 1.5rem);
+  --text-xl:      clamp(1.6rem, 1.3rem + 1.4vw, 2.4rem);
+  --text-h2:      clamp(2.1rem, 1.5rem + 2.6vw, 3.6rem);
+  --text-display: clamp(2.8rem, 1.4rem + 6vw, 6rem);
+  --text-hero:    clamp(3.4rem, 1rem + 11vw, 9.5rem);
+
+  --leading-tight: 1.04;
+  --leading-snug:  1.22;
+  --leading-body:  1.65;
+  --tracking-wide: 0.18em;   /* eyebrows / labels */
+  --tracking-tight: -0.02em; /* large display     */
+
+  --measure: 64ch;           /* optimal reading width */
+
+  /* ---- Spacing — deliberate rhythm, not uniform padding ---- */
+  --space-2xs: 0.375rem;
+  --space-xs:  0.625rem;
+  --space-sm:  1rem;
+  --space-md:  1.75rem;
+  --space-lg:  3rem;
+  --space-xl:  5rem;
+  --space-2xl: 8rem;
+  --space-section: clamp(4.5rem, 3rem + 7vw, 10rem);
+
+  --gutter:    clamp(1.25rem, 0.6rem + 3vw, 3.5rem);
+  --container: 1280px;
+  --container-prose: 760px;
+
+  /* ---- Form ---- */
+  --radius:    3px;
+  --radius-lg: 6px;
+  --shadow-lift:
+    0 1px 2px oklch(23% 0.014 55 / 0.04),
+    0 12px 34px oklch(23% 0.014 55 / 0.10);
+  --shadow-deep:
+    0 2px 6px oklch(23% 0.014 55 / 0.10),
+    0 30px 70px oklch(23% 0.014 55 / 0.22);
+
+  /* ---- Motion ---- */
+  --dur-fast:   160ms;
+  --dur-normal: 320ms;
+  --dur-slow:   620ms;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-soft:     cubic-bezier(0.33, 0.05, 0.2, 1);
+}
