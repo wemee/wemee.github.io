@@ -413,6 +413,7 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 .contact h2 a {
   color: inherit;
   text-decoration: none;
+  overflow-wrap: anywhere; /* let the email token wrap on narrow screens */
   background-image: linear-gradient(var(--accent), var(--accent));
   background-size: 100% 2px;
   background-position: 0 100%;
