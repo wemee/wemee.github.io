@@ -294,15 +294,14 @@
 
     <!-- Contact -->
     <section class="contact" id="contact" aria-labelledby="contact-title">
-      <div class="shell contact-grid">
-       <div class="contact-intro">
+      <div class="shell">
         <span class="eyebrow" data-reveal>04 — Contact</span>
         <h2 id="contact-title" data-reveal style="--reveal-delay:60ms">
-          Let's make<br />something.
+          Let's make something —<br />
+          <a href="mailto:nthuyaya@gmail.com">nthuyaya@gmail.com</a>
         </h2>
         <p class="contact-note" data-reveal style="--reveal-delay:100ms">
-          Tell me about the project — or just say hello. Prefer email?
-          <a href="mailto:nthuyaya@gmail.com">nthuyaya@gmail.com</a>
+          Drop me a line about a project, or just say hello.
         </p>
         <ul class="socials" data-reveal style="--reveal-delay:140ms">
           <li><a href="https://www.facebook.com/nthuyaya" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 9h3l.5-3H14V4.5c0-.9.3-1.5 1.6-1.5H17V.2C16.7.1 15.6 0 14.3 0 11.7 0 10 1.6 10 4.2V6H7v3h3v9h4z"/></svg></a></li>
@@ -313,32 +312,6 @@
           <li><a href="https://www.linkedin.com/in/yaya-chen-796821108" target="_blank" rel="noopener" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5A2.5 2.5 0 1 1 0 3.5a2.5 2.5 0 0 1 4.98 0zM.3 8h4.4v13H.3zM8 8h4.2v1.8h.1c.6-1.1 2-2.2 4-2.2 4.3 0 5.1 2.8 5.1 6.5V21h-4.4v-5.8c0-1.4 0-3.2-2-3.2s-2.2 1.5-2.2 3.1V21H8z"/></svg></a></li>
           <li><a href="mailto:nthuyaya@gmail.com" aria-label="Email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m3 6 9 7 9-7"/></svg></a></li>
         </ul>
-       </div>
-
-       <!-- Formspree: create a form at https://formspree.io, then replace
-            YOUR_FORM_ID below with the endpoint id (e.g. f/abcdwxyz).
-            Until then, submissions fall back to the mailto: above. -->
-       <form class="contact-form" data-reveal style="--reveal-delay:120ms"
-             action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
-         <div class="field">
-           <label for="cf-name">Name</label>
-           <input id="cf-name" name="name" type="text" required autocomplete="name" />
-         </div>
-         <div class="field">
-           <label for="cf-email">Email</label>
-           <input id="cf-email" name="email" type="email" required autocomplete="email" />
-         </div>
-         <div class="field">
-           <label for="cf-msg">Message</label>
-           <textarea id="cf-msg" name="message" rows="5" required></textarea>
-         </div>
-         <input type="hidden" name="_subject" value="New message from the portfolio" />
-         <!-- honeypot: bots fill this, humans never see it -->
-         <input class="hp" type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true" />
-         <button class="btn-send" type="submit">
-           Send message <span class="arrow" aria-hidden="true">→</span>
-         </button>
-       </form>
       </div>
     </section>
   </main>

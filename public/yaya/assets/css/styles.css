@@ -443,80 +443,10 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; background: 
 }
 .socials svg { width: 1.05rem; height: 1.05rem; }
 
-.contact-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
-  gap: clamp(2.5rem, 1rem + 6vw, 7rem);
-  align-items: start;
-}
 .contact-note {
-  max-width: 38ch;
+  max-width: 42ch;
   color: oklch(78% 0.015 60);
   margin-bottom: var(--space-lg);
-}
-.contact-note a {
-  color: var(--ink-invert);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-color: var(--accent);
-}
-.contact-form { display: grid; gap: var(--space-md); }
-.field { display: grid; gap: 0.5rem; }
-.field label {
-  font-size: var(--text-eyebrow);
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-  color: oklch(72% 0.02 60);
-}
-.field input,
-.field textarea {
-  width: 100%;
-  background: oklch(100% 0 0 / 0.04);
-  border: 0;
-  border-bottom: 1px solid oklch(100% 0 0 / 0.22);
-  color: var(--ink-invert);
-  font: inherit;
-  padding: 0.7rem 0.5rem;
-  border-radius: var(--radius) var(--radius) 0 0;
-  transition: border-color var(--dur-fast) var(--ease-soft),
-              background var(--dur-fast) var(--ease-soft);
-}
-.field textarea { resize: vertical; min-height: 7rem; }
-.field input:focus,
-.field textarea:focus {
-  outline: none;
-  border-bottom-color: var(--accent);
-  background: oklch(100% 0 0 / 0.07);
-}
-.field input:user-invalid,
-.field textarea:user-invalid { border-bottom-color: oklch(62% 0.17 25); }
-.hp {
-  position: absolute !important;
-  left: -9999px;
-  width: 1px; height: 1px;
-  opacity: 0;
-}
-.btn-send {
-  justify-self: start;
-  margin-top: var(--space-2xs);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6ch;
-  background: var(--accent);
-  color: var(--paper);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  padding: 0.85rem 1.6rem;
-  border-radius: var(--radius);
-  transition: background var(--dur-fast) var(--ease-soft),
-              transform var(--dur-fast) var(--ease-out-expo);
-}
-.btn-send:hover { background: var(--ink-invert); color: var(--ground-dark); }
-.btn-send:active { transform: translateY(1px); }
-.btn-send .arrow { transition: transform var(--dur-fast) var(--ease-out-expo); }
-.btn-send:hover .arrow { transform: translateX(3px); }
-@media (max-width: 860px) {
-  .contact-grid { grid-template-columns: 1fr; gap: var(--space-xl); }
 }
 
 /* ---- Footer --------------------------------------------------- */
