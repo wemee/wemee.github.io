@@ -3,6 +3,9 @@ dist/
 node_modules/
 .astro/
 
+# pw-agent session state — contains live cookies, never commit
+pw-state.json
+
 # IDE
 .vscode/
 .idea/
