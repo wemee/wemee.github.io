@@ -231,6 +231,127 @@ h2, h3, h4 { margin: 0; }
   border-bottom-color: var(--mint);
 }
 
+/* ---- About me — definition list ------------------------------ */
+.info {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.85em 2em;
+  margin: 0;
+  max-width: 32em;
+}
+.info dt {
+  margin: 0;
+  font-size: var(--text-small);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  font-weight: 600;
+  align-self: center;
+}
+.info dd {
+  margin: 0;
+  color: var(--text-strong);
+  align-self: center;
+  line-height: 1.5;
+}
+
+/* ---- Business experience — work-history table ---------------- */
+.experience {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+.experience th {
+  text-align: left;
+  padding: 0.65em 0.85em;
+  border-bottom: 2px solid var(--rule);
+  color: var(--text-soft);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+}
+.experience td {
+  padding: 1.1em 0.85em;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: middle;
+  line-height: 1.6;
+}
+.experience tbody tr:last-child td { border-bottom: 0; }
+.experience .exp-logo { width: 130px; }
+.experience .exp-logo img {
+  max-width: 100px;
+  max-height: 60px;
+  width: auto;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+.experience .exp-type {
+  width: 110px;
+  color: var(--text-soft);
+  white-space: nowrap;
+  font-size: var(--text-small);
+}
+
+/* ---- Closing image (footer photo from 2.html) ---------------- */
+.section--closing { margin-top: var(--space-section); }
+.closing-image { margin: 0; width: 100%; }
+.closing-image img { width: 100%; height: auto; display: block; }
+
+/* ---- Bio paragraph with floating portrait (2.html intro) ---- */
+.bio-with-portrait {
+  color: var(--text);
+  line-height: 1.75;
+  max-width: 65ch;
+  margin: 0;
+}
+.bio-portrait {
+  float: left;
+  width: 7em;
+  height: 7em;
+  margin: 0.25em 1.5em 0.5em 0;
+  border-radius: 50%;
+  overflow: hidden;
+  border: solid 2px var(--rule);
+  shape-outside: circle(50%);
+}
+.bio-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ---- Buttons (Strata's .actions / .button pattern) ----------- */
+.actions {
+  display: flex;
+  gap: 0.75em;
+  flex-wrap: wrap;
+  list-style: none;
+  padding: 0;
+  margin: 1.5em 0 0;
+}
+.button {
+  display: inline-block;
+  padding: 0.7em 1.6em;
+  border: 1px solid var(--rule);
+  color: var(--text-strong);
+  font-size: var(--text-small);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
+}
+.button:hover {
+  color: var(--mint);
+  border-color: var(--mint);
+  background: var(--mint-tint);
+}
+
 /* ---- Lightbox (native <dialog>) ------------------------------ */
 .lightbox {
   border: 0;
@@ -316,4 +437,30 @@ h2, h3, h4 { margin: 0; }
   .avatar { width: 5em; height: 5em; }
   .sidebar { padding: 3em 1.25rem 2em 1.25rem; }
   .content { padding: 2.5em 1.25rem; }
+
+  /* About me stacks vertically */
+  .info { grid-template-columns: 1fr; gap: 0.1em 0; }
+  .info dt { margin-top: 0.7em; }
+  .info dt:first-of-type { margin-top: 0; }
+
+  /* Experience table → card-stack on narrow screens */
+  .experience thead { position: absolute; left: -9999px; }
+  .experience,
+  .experience tbody,
+  .experience tr { display: block; width: 100%; }
+  .experience tr {
+    padding: 1em 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .experience tbody tr:last-child { border-bottom: 0; }
+  .experience td { display: block; padding: 0.18em 0; border: 0; }
+  .experience .exp-logo { width: auto; padding-bottom: 0.55em; }
+  .experience .exp-type { width: auto; }
+
+  /* Bio portrait: drop the float on narrow screens, centre it instead */
+  .bio-portrait {
+    float: none;
+    margin: 0 auto 1em;
+    shape-outside: none;
+  }
 }
