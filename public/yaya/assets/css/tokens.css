@@ -1,84 +1,75 @@
 /* ============================================================
-   Design tokens — Yaya Chen portfolio
-   Direction: editorial / gallery-first
-   Neutral warm "paper" canvas + ink + a single terracotta accent,
-   so the colourful work carries the colour, not the chrome.
+   Design tokens — faithful to the original Strata-based palette.
+   Colours ported to OKLCH; hex equivalents in comments.
    ============================================================ */
 
 :root {
-  /* ---- Colour (OKLCH: perceptually even, wide-gamut ready) ---- */
-  --paper:        oklch(98.6% 0.006 85);   /* page canvas, warm off-white   */
-  --paper-sunk:   oklch(96.4% 0.009 78);   /* alternating section ground    */
-  --paper-edge:   oklch(99.4% 0.004 90);   /* raised card / lifted surface  */
+  /* Sidebar (warm dark brown) */
+  --ink:           oklch(18% 0.012 50);                  /* ≈ #1f1815 */
+  --ink-text:      rgba(255, 255, 255, 0.5);
+  --ink-strong:    #ffffff;
+  --ink-soft:      rgba(255, 255, 255, 0.4);
+  --ink-rule:      rgba(255, 255, 255, 0.25);
 
-  --ink:          oklch(23% 0.014 55);     /* primary text, warm near-black */
-  --ink-soft:     oklch(43% 0.012 55);     /* secondary prose               */
-  --ink-faint:    oklch(56% 0.010 58);     /* captions, meta, eyebrows      */
+  /* Mint accent (Strata signature) */
+  --mint:          oklch(72% 0.13 165);                  /* ≈ #49bf9d */
+  --mint-deep:     oklch(64% 0.12 165);                  /* ≈ #3eb08f */
+  --mint-tint:     oklch(72% 0.13 165 / 0.12);
 
-  --line:         oklch(87% 0.008 75);     /* hairline rules / borders      */
-  --line-strong:  oklch(76% 0.010 70);
+  /* Paper / content area */
+  --paper:         #ffffff;
+  --surface:       #f7f7f7;
+  --rule:          #efefef;
 
-  --accent:       oklch(60% 0.158 38);     /* terracotta — links, marks     */
-  --accent-deep:  oklch(50% 0.150 36);     /* accent on hover/active        */
-  --accent-wash:  oklch(60% 0.158 38 / 0.10);
+  /* Greys */
+  --text:          #787878;
+  --text-soft:     #a2a2a2;
+  --text-strong:   #555555;
+  --text-mute:     #b2b2b2;
+  --text-faint:    #dfdfdf;
 
-  --ink-invert:   oklch(96% 0.006 85);     /* text on dark contact band     */
-  --ground-dark:  oklch(26% 0.018 50);     /* dark editorial band           */
+  /* Typography
+     ── Source Sans 3 (renamed from Source Sans Pro in 2023)
+     ── Microsoft JhengHei fallback honours her original CJK choice */
+  --font-body: "Source Sans 3", "Source Sans Pro",
+               "Microsoft JhengHei", "微軟正黑體",
+               -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
-  --focus-ring:   oklch(60% 0.158 38);
+  --text-base:     16px;
+  --text-bio:      1rem;
+  --text-h1:       clamp(1.25rem, 1.05rem + 0.6vw, 1.5rem);   /* sidebar intro */
+  --text-h2:       clamp(1.65rem, 1.3rem + 1vw, 2.1rem);      /* section title */
+  --text-h3:       1rem;                                       /* work caption */
+  --text-small:    0.85rem;
 
-  /* ---- Type families (CJK falls back to platform faces;
-          no heavy Chinese webfont shipped) ---- */
-  --font-display: "Fraunces", "Noto Serif TC", "Songti TC", Georgia, serif;
-  --font-text:    "Inter", "PingFang TC", "Noto Sans TC",
-                  -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  /* Layout
+     sidebar-w: min(35%, sidebar-w-max) on ≥1024, else 100% */
+  --sidebar-w-pct:    35%;
+  --sidebar-w-max:    30em;
+  --sidebar-pad-top:  8em;
+  --sidebar-pad-rt:   4em;
+  --sidebar-pad-bt:   6em;
 
-  /* ---- Fluid type scale (clamp: min · preferred · max) ---- */
-  --text-eyebrow: 0.78rem;
-  --text-sm:      0.875rem;
-  --text-base:    clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
-  --text-lg:      clamp(1.2rem, 1.08rem + 0.6vw, 1.5rem);
-  --text-xl:      clamp(1.6rem, 1.3rem + 1.4vw, 2.4rem);
-  --text-h2:      clamp(2.1rem, 1.5rem + 2.6vw, 3.6rem);
-  --text-display: clamp(2.2rem, 0.9rem + 6vw, 6rem);
-  --text-hero:    clamp(3.4rem, 1rem + 11vw, 9.5rem);
+  --content-pad-x:    clamp(1.5rem, 1rem + 2vw, 4em);
+  --content-pad-y:    clamp(3rem, 2rem + 3vw, 7em);
+  --content-max:      48em;
 
-  --leading-tight: 1.04;
-  --leading-snug:  1.22;
-  --leading-body:  1.65;
-  --tracking-wide: 0.18em;   /* eyebrows / labels */
-  --tracking-tight: -0.02em; /* large display     */
+  --gap:              1.5rem;
+  --space-section:    clamp(3rem, 2.5rem + 2vw, 5rem);
 
-  --measure: 64ch;           /* optimal reading width */
+  /* Motion */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast:    180ms;
+  --dur-mid:     280ms;
+  --dur-slow:    420ms;
+}
 
-  /* ---- Spacing — deliberate rhythm, not uniform padding ---- */
-  --space-2xs: 0.375rem;
-  --space-xs:  0.625rem;
-  --space-sm:  1rem;
-  --space-md:  1.75rem;
-  --space-lg:  3rem;
-  --space-xl:  5rem;
-  --space-2xl: 8rem;
-  --space-section: clamp(4.5rem, 3rem + 7vw, 10rem);
-
-  --gutter:    clamp(1.25rem, 0.6rem + 3vw, 3.5rem);
-  --container: 1280px;
-  --container-prose: 760px;
-
-  /* ---- Form ---- */
-  --radius:    3px;
-  --radius-lg: 6px;
-  --shadow-lift:
-    0 1px 2px oklch(23% 0.014 55 / 0.04),
-    0 12px 34px oklch(23% 0.014 55 / 0.10);
-  --shadow-deep:
-    0 2px 6px oklch(23% 0.014 55 / 0.10),
-    0 30px 70px oklch(23% 0.014 55 / 0.22);
-
-  /* ---- Motion ---- */
-  --dur-fast:   160ms;
-  --dur-normal: 320ms;
-  --dur-slow:   620ms;
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-soft:     cubic-bezier(0.33, 0.05, 0.2, 1);
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-w-pct:    100%;
+    --sidebar-w-max:    none;
+    --sidebar-pad-top:  4em;
+    --sidebar-pad-rt:   2em;
+    --sidebar-pad-bt:   3em;
+  }
 }

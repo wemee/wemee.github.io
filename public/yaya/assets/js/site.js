@@ -1,47 +1,18 @@
 /* ============================================================
    Yaya Chen — portfolio interactions
-   Vanilla, dependency-free, progressively enhanced.
+   Vanilla, dependency-free. Two responsibilities:
+     1. Scroll-reveal via IntersectionObserver (reduced-motion aware)
+     2. Native <dialog> lightbox with keyboard navigation
    ============================================================ */
 (function () {
   "use strict";
 
-  var reduceMotion = window.matchMedia(
-    "(prefers-reduced-motion: reduce)"
-  ).matches;
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* ---- Sticky nav ------------------------------------------- */
-  var nav = document.querySelector(".site-nav");
-  if (nav) {
-    var onScroll = function () {
-      nav.classList.toggle("is-stuck", window.scrollY > 40);
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-  }
-
-  /* ---- Mobile nav ------------------------------------------- */
-  var toggle = document.querySelector(".nav-toggle");
-  var links = document.querySelector(".nav-links");
-  if (toggle && links) {
-    var setNav = function (open) {
-      links.classList.toggle("is-open", open);
-      toggle.classList.toggle("is-open", open);
-      toggle.setAttribute("aria-expanded", String(open));
-    };
-    toggle.addEventListener("click", function () {
-      setNav(!links.classList.contains("is-open"));
-    });
-    links.addEventListener("click", function (e) {
-      if (e.target.closest("a")) setNav(false);
-    });
-  }
-
-  /* ---- Scroll reveal ---------------------------------------- */
+  /* ---- Scroll reveal -------------------------------------- */
   var revealables = document.querySelectorAll("[data-reveal]");
   if (reduceMotion || !("IntersectionObserver" in window)) {
-    revealables.forEach(function (el) {
-      el.classList.add("is-in");
-    });
+    revealables.forEach(function (el) { el.classList.add("is-in"); });
   } else {
     var io = new IntersectionObserver(
       function (entries) {
@@ -52,74 +23,66 @@
           }
         });
       },
-      { rootMargin: "0px 0px -10% 0px", threshold: 0.08 }
+      { rootMargin: "0px 0px -8% 0px", threshold: 0.08 }
     );
-    revealables.forEach(function (el) {
-      io.observe(el);
-    });
+    revealables.forEach(function (el) { io.observe(el); });
   }
 
-  /* ---- Lightbox --------------------------------------------- */
-  var triggers = Array.prototype.slice.call(
-    document.querySelectorAll("[data-lightbox]")
-  );
-  if (!triggers.length || typeof HTMLDialogElement === "undefined") return;
+  /* ---- Lightbox ------------------------------------------- */
+  var dialog = document.getElementById("lightbox");
+  var lbImg  = document.getElementById("lb-img");
+  var closeBtn = dialog && dialog.querySelector(".lb-close");
 
-  var dialog = document.createElement("dialog");
-  dialog.className = "lightbox";
-  dialog.innerHTML =
-    '<button class="lb-btn lb-close" type="button" aria-label="Close">✕</button>' +
-    '<button class="lb-btn lb-prev" type="button" aria-label="Previous">←</button>' +
-    '<button class="lb-btn lb-next" type="button" aria-label="Next">→</button>' +
-    '<figure class="lightbox-stage" style="margin:0">' +
-    '<img class="lb-img" alt="">' +
-    '<figcaption class="lb-cap"></figcaption></figure>';
-  document.body.appendChild(dialog);
+  if (!dialog || !lbImg || typeof HTMLDialogElement === "undefined") return;
 
-  var lbImg = dialog.querySelector(".lb-img");
-  var lbCap = dialog.querySelector(".lb-cap");
-  var group = [];
+  // All lightbox triggers in document order (gallery = the whole page)
+  var triggers = Array.prototype.slice.call(document.querySelectorAll("[data-lightbox]"));
   var index = 0;
 
-  var show = function (i) {
-    index = (i + group.length) % group.length;
-    var t = group[index];
+  function show(i) {
+    if (!triggers.length) return;
+    index = (i + triggers.length) % triggers.length;
+    var t = triggers[index];
     lbImg.src = t.getAttribute("data-full");
-    var cap = t.getAttribute("data-caption") || "";
-    lbImg.alt = cap;
-    lbCap.textContent =
-      cap + (group.length > 1 ? "  ·  " + (index + 1) + " / " + group.length : "");
-  };
+    lbImg.alt = t.getAttribute("data-caption") || "";
+  }
 
-  var openFrom = function (trigger) {
-    var name = trigger.getAttribute("data-gallery") || "all";
-    group = triggers.filter(function (t) {
-      return (t.getAttribute("data-gallery") || "all") === name;
-    });
-    show(group.indexOf(trigger));
+  function openFrom(trigger) {
+    show(triggers.indexOf(trigger));
     if (!dialog.open) dialog.showModal();
-  };
+  }
 
   triggers.forEach(function (t) {
-    t.addEventListener("click", function () {
-      openFrom(t);
-    });
+    t.addEventListener("click", function () { openFrom(t); });
   });
 
-  dialog.querySelector(".lb-close").addEventListener("click", function () {
-    dialog.close();
-  });
-  dialog.querySelector(".lb-next").addEventListener("click", function () {
-    show(index + 1);
-  });
-  dialog.querySelector(".lb-prev").addEventListener("click", function () {
-    show(index - 1);
-  });
+  if (closeBtn) {
+    closeBtn.addEventListener("click", function () { dialog.close(); });
+  }
+
+  // Click outside the image area closes
   dialog.addEventListener("click", function (e) {
     if (e.target === dialog) dialog.close();
   });
+
+  // Keyboard: arrows to navigate, esc closes (esc is native to <dialog>)
   dialog.addEventListener("keydown", function (e) {
-    if (e.key === "ArrowRight") show(index + 1);
-    if (e.key === "ArrowLeft") show(index - 1);
+    if (e.key === "ArrowRight") { e.preventDefault(); show(index + 1); }
+    if (e.key === "ArrowLeft")  { e.preventDefault(); show(index - 1); }
   });
+
+  // Refresh trigger list once after first paint (the Graphic grid is
+  // populated by an inline script that runs before this one, but a
+  // safety re-query catches any later additions).
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      triggers = Array.prototype.slice.call(document.querySelectorAll("[data-lightbox]"));
+      triggers.forEach(function (t) {
+        if (!t.__lbBound) {
+          t.__lbBound = true;
+          t.addEventListener("click", function () { openFrom(t); });
+        }
+      });
+    });
+  }
 })();
