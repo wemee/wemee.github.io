@@ -80,6 +80,7 @@ h2, h3, h4 { margin: 0; }
 /* Avatar — round, 6.25em, soft outer ring (matches original) */
 .avatar {
   display: inline-block;
+  align-self: flex-end;            /* stick to sidebar's right edge (Strata cue) */
   width: 6.25em; height: 6.25em;
   margin: 0 0 1em 0;
   border-radius: 50%;
@@ -149,7 +150,6 @@ h2, h3, h4 { margin: 0; }
 .content {
   margin-left: min(var(--sidebar-w-pct), var(--sidebar-w-max));
   padding: var(--content-pad-y) var(--content-pad-x);
-  max-width: var(--content-max);
 }
 
 .section { margin-bottom: var(--space-section); }
@@ -164,13 +164,19 @@ h2, h3, h4 { margin: 0; }
   margin: 0 0 1em 0;
 }
 
-.section p { line-height: 1.75; color: var(--text); }
+.section p { line-height: 1.75; color: var(--text); max-width: 65ch; }
 .section p strong { color: var(--text-strong); }
 
 /* ---- Work grid (two columns, original Strata cadence) -------- */
 .work-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  /* Auto-fit: each track is a minmax(min(100%, 320px), 1fr) so the browser
+     packs as many ~320px columns as the available width allows. Yields:
+       ≤640px (mobile)   → 1 col
+       1280–1599         → 2 cols (~354px, close to native thumb 370)
+       1600–1919         → 3 cols (~314px)
+       ≥1920             → 4 cols (~316px, portfolio-grid density) */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   gap: var(--gap);
 }
 
@@ -305,7 +311,8 @@ h2, h3, h4 { margin: 0; }
 }
 
 @media (max-width: 640px) {
-  .work-grid { grid-template-columns: 1fr; }
+  /* work-grid already collapses via auto-fit; just polish the small-screen
+     paddings + avatar */
   .avatar { width: 5em; height: 5em; }
   .sidebar { padding: 3em 1.25rem 2em 1.25rem; }
   .content { padding: 2.5em 1.25rem; }

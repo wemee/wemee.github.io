@@ -52,7 +52,6 @@
 
   --content-pad-x:    clamp(1.5rem, 1rem + 2vw, 4em);
   --content-pad-y:    clamp(3rem, 2rem + 3vw, 7em);
-  --content-max:      48em;
 
   --gap:              1.5rem;
   --space-section:    clamp(3rem, 2.5rem + 2vw, 5rem);
