@@ -1,0 +1,293 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { PRESETS } from '@/lib/math/linalg/presets';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<BaseLayout
+  currentPage="math"
+  title="矩陣組合 (A · B)"
+  description="兩個矩陣怎麼疊起來？順序為什麼這麼重要？拖拉兩個 preset 看 A·B 跟 B·A 差在哪。"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
+    <a href="/math/linalg/" class="text-accent-blue hover:underline text-sm">← 回線性代數專區</a>
+
+    <header class="mt-4 mb-6 text-center">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 1 · 直覺基礎</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🔗 矩陣組合</h1>
+      <p class="text-base-400 max-w-2xl mx-auto">「先轉再平移」跟「先平移再轉」結果不一樣 — 矩陣的順序是會說話的。</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- 左：3D 視覺化 -->
+      <div class="lg:col-span-2">
+        <div id="scene-container" class="rounded-lg border border-base-600 bg-base-900 overflow-hidden shadow-lg" style="height: 60vh; min-height: 420px;"></div>
+
+        <div class="mt-3 rounded-lg border border-accent-cyan/40 bg-base-800 p-4">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-accent-cyan font-bold text-sm" id="composed-label">目前順序：<span class="font-mono">C = A · B</span></span>
+            <button id="swap-btn" class="px-3 py-1 text-xs rounded bg-accent-cyan/20 hover:bg-accent-cyan/40 border border-accent-cyan/40 text-accent-cyan transition">
+              🔄 交換順序
+            </button>
+          </div>
+          <div id="composed-grid" class="grid grid-cols-4 gap-1 mb-3"></div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-base-400" set:html={tex('\\det(C) \\;=')}></span>
+            <span id="composed-det" class="text-base-50 font-bold">1</span>
+          </div>
+          <p id="composed-hint" class="text-xs text-base-400 mt-1 min-h-[1.2em]"></p>
+        </div>
+      </div>
+
+      <!-- 右：兩個矩陣輸入 -->
+      <div class="space-y-4">
+        <!-- 矩陣 A -->
+        <div class="rounded-lg border border-accent-yellow/40 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-accent-yellow/10 border-b border-accent-yellow/40 font-bold text-accent-yellow text-sm flex justify-between items-center">
+            <span set:html={tex('\\text{矩陣 } A')}></span>
+            <button data-reset="A" class="px-2 py-0.5 text-xs rounded bg-base-700 hover:bg-base-600 border border-base-600">重設</button>
+          </div>
+          <div class="p-3">
+            <div class="grid grid-cols-4 gap-1 mb-2" id="presets-A">
+              {PRESETS.map((p) => (
+                <button
+                  data-slot="A"
+                  data-preset={p.id}
+                  class="px-1 py-1 text-[10px] rounded bg-base-700 hover:bg-accent-yellow/30 border border-base-600 text-base-100 transition truncate"
+                  title={p.hint}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <div id="grid-A" class="grid grid-cols-4 gap-1"></div>
+          </div>
+        </div>
+
+        <!-- 矩陣 B -->
+        <div class="rounded-lg border border-accent-green/40 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-accent-green/10 border-b border-accent-green/40 font-bold text-accent-green text-sm flex justify-between items-center">
+            <span set:html={tex('\\text{矩陣 } B')}></span>
+            <button data-reset="B" class="px-2 py-0.5 text-xs rounded bg-base-700 hover:bg-base-600 border border-base-600">重設</button>
+          </div>
+          <div class="p-3">
+            <div class="grid grid-cols-4 gap-1 mb-2" id="presets-B">
+              {PRESETS.map((p) => (
+                <button
+                  data-slot="B"
+                  data-preset={p.id}
+                  class="px-1 py-1 text-[10px] rounded bg-base-700 hover:bg-accent-green/30 border border-base-600 text-base-100 transition truncate"
+                  title={p.hint}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <div id="grid-B" class="grid grid-cols-4 gap-1"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 教學內容 -->
+    <section class="mt-12 max-w-3xl mx-auto">
+      <h2 class="text-2xl font-bold text-base-50 mb-4">📖 為什麼順序這麼重要？</h2>
+
+      <div class="space-y-4 text-base-300 leading-relaxed">
+        <p>把兩個矩陣相乘的意思是：<strong class="text-base-50">「先做 B，再做 A」</strong>。注意這個順序 — 寫法是 <span set:html={tex('A \\cdot B \\cdot v')} />，但<strong class="text-base-50">讀的時候是從右往左</strong>：先把 <span set:html={tex('v')} /> 餵給 <span set:html={tex('B')} />，得到 <span set:html={tex('B \\cdot v')} />，再把這個結果餵給 <span set:html={tex('A')} />。</p>
+
+        <div class="my-6 flex justify-center" set:html={tex("A \\cdot B \\cdot v \\;=\\; A \\cdot (B \\cdot v)", true)} />
+
+        <p>這個閱讀方向跟我們平常寫程式的 <code class="text-accent-cyan">f(g(x))</code> 是一樣的 — 內層先算。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+        <ol class="list-decimal list-inside space-y-2 ml-2">
+          <li>A 選 <strong class="text-accent-yellow">繞 Z 旋轉 45°</strong>，B 選 <strong class="text-accent-green">平移</strong> → 立方體先被平移，再被旋轉（旋轉是繞原點轉，結果立方體飛遠了）</li>
+          <li>點 <strong class="text-accent-cyan">🔄 交換順序</strong> → 變成「先轉再平移」。立方體該在的位置完全不一樣了！</li>
+          <li>把 A 和 B 都改成 <strong>繞 Z 旋轉</strong> → 順序沒差別，因為兩個旋轉繞同一根軸，可交換。</li>
+          <li>A 設 <strong>縮放</strong>，B 設 <strong>剪切</strong> → 順序差很多，因為縮放與剪切不可交換。</li>
+        </ol>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">💡 順序為什麼重要？</h3>
+        <p>幾何上：<strong class="text-base-50">A·B</strong> 是「在 B 變形後的空間裡再做 A」，<strong class="text-base-50">B·A</strong> 是「在 A 變形後的空間裡再做 B」。除非兩個變換剛好「對稱」（例如繞同一軸的兩個旋轉、或兩個縮放），否則結果一定不同。</p>
+
+        <p>程式上：<strong class="text-base-50">矩陣乘法<em>沒有</em>交換律</strong>，但<strong class="text-base-50">有結合律</strong>。也就是說：</p>
+        <div class="my-4 flex justify-center" set:html={tex("A \\cdot B \\ne B \\cdot A \\quad\\text{(一般情況)}", true)} />
+        <div class="my-4 flex justify-center" set:html={tex("(A \\cdot B) \\cdot C \\;=\\; A \\cdot (B \\cdot C) \\quad\\text{(永遠成立)}", true)} />
+        <p>所以你可以「先算出 <span set:html={tex('A \\cdot B')} />」再套用到一堆向量上，CPU 只乘一次。圖學裡的 <code class="text-accent-cyan">Model · View · Projection</code> 三矩陣鏈，引擎啟動時就會先預乘起來。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 下一步</h3>
+        <p>學會看「動作組合」之後，下一個重要觀念是<a href="/math/linalg/change-of-basis" class="text-accent-blue hover:underline">換基底</a> — 當你用 <span set:html={tex('P^{-1} A P')} /> 這種「夾擊」形式時，你其實是在說：「把空間換到新座標系做事，做完再換回來」。這是對角化的核心想法。</p>
+      </div>
+    </section>
+  </div>
+
+  <style>
+    .m-input {
+      width: 100%;
+      padding: 5px 2px;
+      background: rgb(15 23 42 / 1);
+      border: 1px solid rgb(71 85 105 / 1);
+      color: white;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 12px;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+    }
+    .m-input:focus { border-color: #00bcd4; outline: none; }
+    .m-input.locked { background: rgb(15 23 42 / 0.6); color: rgb(100 116 139 / 1); }
+    .m-input.readonly-display {
+      background: rgb(15 23 42 / 0.6);
+      color: rgb(228 240 255 / 1);
+      pointer-events: none;
+    }
+  </style>
+
+  <script>
+    import { MatrixScene3D } from '@/lib/math/linalg/MatrixScene3D';
+    import { PRESETS } from '@/lib/math/linalg/presets';
+    import { identity4, multiplyMatrices, determinant4, formatNumber, type Matrix4 } from '@/lib/math/linalg/MatrixMath';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      let matA: Matrix4 = identity4();
+      let matB: Matrix4 = identity4();
+      let order: 'AB' | 'BA' = 'AB';
+
+      function buildGrid(containerId: string, readonly: boolean): HTMLInputElement[][] {
+        const container = document.getElementById(containerId)!;
+        const inputs: HTMLInputElement[][] = [];
+        for (let i = 0; i < 4; i++) {
+          const row: HTMLInputElement[] = [];
+          for (let j = 0; j < 4; j++) {
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.step = '0.1';
+            input.dataset.row = String(i);
+            input.dataset.col = String(j);
+            if (readonly) {
+              input.className = 'm-input readonly-display';
+              input.readOnly = true;
+            } else {
+              input.className = i === 3 ? 'm-input locked' : 'm-input';
+              if (i === 3) input.readOnly = true;
+            }
+            input.value = i === j ? '1' : '0';
+            container.appendChild(input);
+            row.push(input);
+          }
+          inputs.push(row);
+        }
+        return inputs;
+      }
+
+      function syncToGrid(inputs: HTMLInputElement[][], m: Matrix4) {
+        for (let i = 0; i < 4; i++) {
+          for (let j = 0; j < 4; j++) {
+            inputs[i][j].value = formatNumber(m[i][j], 4);
+          }
+        }
+      }
+
+      const gridA = buildGrid('grid-A', false);
+      const gridB = buildGrid('grid-B', false);
+      const gridC = buildGrid('composed-grid', true);
+
+      // Edit handlers
+      const wireEdit = (inputs: HTMLInputElement[][], getMat: () => Matrix4, setMat: (m: Matrix4) => void) => {
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 4; j++) {
+            inputs[i][j].addEventListener('input', () => {
+              const v = parseFloat(inputs[i][j].value);
+              if (Number.isNaN(v)) return;
+              const m = getMat();
+              m[i][j] = v;
+              setMat(m);
+              recompute();
+            });
+          }
+        }
+      };
+      wireEdit(gridA, () => matA, (m) => { matA = m; });
+      wireEdit(gridB, () => matB, (m) => { matB = m; });
+
+      const composedLabel = document.getElementById('composed-label')!;
+      const composedDet = document.getElementById('composed-det')!;
+      const composedHint = document.getElementById('composed-hint')!;
+
+      function recompute() {
+        const composed = order === 'AB' ? multiplyMatrices(matA, matB) : multiplyMatrices(matB, matA);
+        syncToGrid(gridC, composed);
+        scene.setMatrix(composed);
+        const det = determinant4(composed);
+        composedDet.textContent = formatNumber(det, 3);
+        composedDet.className = det < -1e-9 ? 'text-accent-red font-bold' :
+                                Math.abs(det) < 1e-9 ? 'text-accent-yellow font-bold' :
+                                'text-base-50 font-bold';
+        composedHint.textContent =
+          Math.abs(det) < 1e-9 ? '⚠️ 不可逆 — 組合後把空間壓扁了。' :
+          det < 0 ? `🔄 翻面了 — 體積變 ${Math.abs(det).toFixed(2)} 倍。` :
+          Math.abs(det - 1) < 1e-9 ? '✅ 體積保持不變。' :
+          `📏 體積放大 ${det.toFixed(2)} 倍。`;
+      }
+
+      const scene = new MatrixScene3D({ containerId: 'scene-container' });
+      scene.setVector([1, 1, 1]);
+
+      // Preset buttons
+      document.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.preset;
+          const slot = btn.dataset.slot;
+          const preset = PRESETS.find((p) => p.id === id);
+          if (!preset) return;
+          if (slot === 'A') {
+            matA = preset.matrix.map((r) => [...r]);
+            syncToGrid(gridA, matA);
+          } else {
+            matB = preset.matrix.map((r) => [...r]);
+            syncToGrid(gridB, matB);
+          }
+          recompute();
+        });
+      });
+
+      // Reset buttons
+      document.querySelectorAll<HTMLButtonElement>('[data-reset]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const slot = btn.dataset.reset;
+          const id = identity4();
+          if (slot === 'A') {
+            matA = id;
+            syncToGrid(gridA, matA);
+          } else {
+            matB = id;
+            syncToGrid(gridB, matB);
+          }
+          recompute();
+        });
+      });
+
+      // Swap order
+      const swapBtn = document.getElementById('swap-btn')!;
+      const renderSwapLabel = () => {
+        // Re-render KaTeX inline via existing CSS — use plain text for swap to keep client-bundle small
+        composedLabel.innerHTML = order === 'AB'
+          ? '目前順序：<span class="font-mono">C = A · B</span>'
+          : '目前順序：<span class="font-mono">C = B · A</span>';
+      };
+      swapBtn.addEventListener('click', () => {
+        order = order === 'AB' ? 'BA' : 'AB';
+        renderSwapLabel();
+        recompute();
+      });
+
+      // Initial compute
+      recompute();
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</BaseLayout>

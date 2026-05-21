@@ -55,7 +55,8 @@ export class MatrixScene3D {
 
   private onUpdate?: (state: SceneUpdate) => void;
   private resizeObserver: ResizeObserver;
-  private rafId: number | null = null;
+  private rafScheduled = false;
+  private destroyed = false;
 
   constructor(options: SceneOptions) {
     const container = document.getElementById(options.containerId);
@@ -79,6 +80,8 @@ export class MatrixScene3D {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
+    // Render-on-demand: re-render whenever the controls move (incl. damping easing).
+    this.controls.addEventListener("change", () => this.scheduleRender());
 
     this.scene.add(new THREE.GridHelper(10, 10, 0x333333, 0x1f1f1f));
     this.scene.add(new THREE.AxesHelper(3));
@@ -110,7 +113,7 @@ export class MatrixScene3D {
     this.resizeObserver.observe(container);
 
     this.applyChanges();
-    this.animate();
+    this.scheduleRender();
   }
 
   public setMatrix(m: Matrix4): void {
@@ -137,7 +140,7 @@ export class MatrixScene3D {
   }
 
   public destroy(): void {
-    if (this.rafId !== null) cancelAnimationFrame(this.rafId);
+    this.destroyed = true;
     this.resizeObserver.disconnect();
     this.controls.dispose();
     this.scene.traverse((obj) => {
@@ -158,6 +161,19 @@ export class MatrixScene3D {
     this.updateCube();
     this.updateArrows();
     this.emitUpdate();
+    this.scheduleRender();
+  }
+
+  private scheduleRender(): void {
+    if (this.rafScheduled || this.destroyed) return;
+    this.rafScheduled = true;
+    requestAnimationFrame(() => {
+      // Clear flag BEFORE update() so any 'change' fired by damping can re-schedule us.
+      this.rafScheduled = false;
+      if (this.destroyed) return;
+      this.controls.update();
+      this.renderer.render(this.scene, this.camera);
+    });
   }
 
   private updateCube(): void {
@@ -252,11 +268,6 @@ export class MatrixScene3D {
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
+    this.scheduleRender();
   }
-
-  private animate = (): void => {
-    this.rafId = requestAnimationFrame(this.animate);
-    this.controls.update();
-    this.renderer.render(this.scene, this.camera);
-  };
 }

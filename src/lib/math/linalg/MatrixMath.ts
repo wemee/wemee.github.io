@@ -38,6 +38,24 @@ export function transformPoint(m: Matrix4, p: Vector3): Vector3 {
   return [rx / w, ry / w, rz / w];
 }
 
+/** Multiply two 4×4 matrices: A · B (column-vector convention). */
+export function multiplyMatrices(a: Matrix4, b: Matrix4): Matrix4 {
+  const out: Matrix4 = [
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+  ];
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      let sum = 0;
+      for (let k = 0; k < 4; k++) sum += a[i][k] * b[k][j];
+      out[i][j] = sum;
+    }
+  }
+  return out;
+}
+
 /** Determinant of 4×4 via cofactor expansion along the first row. */
 export function determinant4(m: Matrix4): number {
   const det3 = (a: number[][]): number =>

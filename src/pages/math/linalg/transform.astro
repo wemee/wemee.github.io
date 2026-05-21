@@ -1,6 +1,11 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { PRESETS } from '@/lib/math/linalg/presets';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
 ---
 <BaseLayout
   currentPage="math"
@@ -102,15 +107,16 @@ import { PRESETS } from '@/lib/math/linalg/presets';
 
         <!-- 計算結果 -->
         <div class="rounded-lg border border-accent-cyan/40 bg-base-800 overflow-hidden">
-          <div class="px-4 py-3 bg-accent-cyan/10 border-b border-accent-cyan/40 font-bold text-accent-cyan text-sm">
-            🧮 M · v =
+          <div class="px-4 py-3 bg-accent-cyan/10 border-b border-accent-cyan/40 font-bold text-accent-cyan text-sm flex items-center gap-2">
+            <span>🧮</span>
+            <span set:html={tex('M \\cdot v \\;=')} />
           </div>
           <div class="p-4 font-mono">
             <p id="result-vec" class="text-xl text-accent-cyan mb-3">[ 1, 1, 1 ]</p>
             <div class="text-xs text-base-300 space-y-0.5" id="result-expand"></div>
             <hr class="border-base-600 my-3">
             <div class="flex justify-between items-center text-sm">
-              <span class="text-base-400">行列式 det(M) =</span>
+              <span class="text-base-400" set:html={'行列式 ' + tex('\\det(M) \\;=')}></span>
               <span id="det-value" class="text-base-50 font-bold">1</span>
             </div>
             <p id="det-hint" class="text-xs text-base-400 mt-1 min-h-[1.2em]"></p>
@@ -126,7 +132,22 @@ import { PRESETS } from '@/lib/math/linalg/presets';
       <div class="space-y-4 text-base-300 leading-relaxed">
         <p>線性代數最核心的觀念是：<strong class="text-base-50">矩陣不是一堆死數字，而是一個「動作」</strong>。它把一個向量送進去，吐出另一個向量。從這個角度看，所有線性代數的招式（投影、對角化、SVD ...）都是在問同一件事：<em class="text-accent-cyan">這個動作到底在做什麼？</em></p>
 
-        <p>4×4 是 3D 圖學的標準尺寸。為什麼不是 3×3？因為 3×3 矩陣只能做<strong class="text-base-50">旋轉、縮放、剪切</strong>這些「動原點不變」的變換，做不了<strong class="text-base-50">平移</strong>。把座標多加一個 w=1 變成 4 維（叫做齊次座標），平移就能塞進矩陣最右邊那一欄裡。代價就是多了一列 <code class="text-accent-cyan">[0, 0, 0, 1]</code>，這列除非要做透視投影，否則永遠是這個樣子。</p>
+        <p>4×4 是 3D 圖學的標準尺寸。為什麼不是 3×3？因為 3×3 矩陣只能做<strong class="text-base-50">旋轉、縮放、剪切</strong>這些「動原點不變」的變換，做不了<strong class="text-base-50">平移</strong>。把座標多加一個 <span set:html={tex('w=1')} /> 變成 4 維（叫做齊次座標），平移就能塞進矩陣最右邊那一欄裡。代價就是多了一列 <span set:html={tex('[\\,0,\\,0,\\,0,\\,1\\,]')} />，這列除非要做透視投影，否則永遠是這個樣子。</p>
+
+        <div class="my-6 flex justify-center" set:html={tex(`
+          \\begin{bmatrix}
+            x' \\\\\\\\ y' \\\\\\\\ z' \\\\\\\\ 1
+          \\end{bmatrix} \\;=\\;
+          \\begin{bmatrix}
+            m_{00} & m_{01} & m_{02} & t_x \\\\\\\\
+            m_{10} & m_{11} & m_{12} & t_y \\\\\\\\
+            m_{20} & m_{21} & m_{22} & t_z \\\\\\\\
+            0 & 0 & 0 & 1
+          \\end{bmatrix}
+          \\begin{bmatrix}
+            x \\\\\\\\ y \\\\\\\\ z \\\\\\\\ 1
+          \\end{bmatrix}
+        `, true)} />
 
         <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
         <ol class="list-decimal list-inside space-y-2 ml-2">
@@ -138,17 +159,18 @@ import { PRESETS } from '@/lib/math/linalg/presets';
         </ol>
 
         <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">💡 行列式在說什麼</h3>
-        <p>右下角那個 <code class="text-accent-cyan">det(M)</code> 數字，其實是<strong class="text-base-50">「這個變換把單位立方體的體積放大幾倍」</strong>：</p>
+        <p>右下角那個 <span set:html={tex('\\det(M)')} /> 數字，其實是<strong class="text-base-50">「這個變換把單位立方體的體積放大幾倍」</strong>：</p>
         <ul class="list-disc list-inside space-y-1 ml-2">
-          <li><code class="text-accent-cyan">det = 1</code> — 體積不變（旋轉、平移都是這樣）</li>
-          <li><code class="text-accent-cyan">det = 2</code> — 體積變兩倍（縮放、剪切會改變）</li>
-          <li><code class="text-accent-cyan">det &lt; 0</code> — 翻面了（鏡射、反射）</li>
-          <li><code class="text-accent-cyan">det = 0</code> — 壓扁了。這個矩陣<strong class="text-base-50">不可逆</strong>，因為你沒辦法把一個平面「還原回」一個立方體。</li>
+          <li><span set:html={tex('\\det = 1')} /> — 體積不變（旋轉、平移都是這樣）</li>
+          <li><span set:html={tex('\\det = 2')} /> — 體積變兩倍（縮放、剪切會改變）</li>
+          <li><span set:html={tex('\\det < 0')} /> — 翻面了（鏡射、反射）</li>
+          <li><span set:html={tex('\\det = 0')} /> — 壓扁了。這個矩陣<strong class="text-base-50">不可逆</strong>，因為你沒辦法把一個平面「還原回」一個立方體。</li>
         </ul>
 
         <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 下一步</h3>
         <p>當你能直觀感受「矩陣就是動作」之後，接下來幾頁會教你回答這些問題：</p>
         <ul class="list-disc list-inside space-y-1 ml-2">
+          <li><a href="/math/linalg/composition" class="text-accent-blue hover:underline">矩陣組合</a>：兩個動作疊起來會發生什麼？為什麼順序很重要？</li>
           <li><a href="/math/linalg/projection" class="text-accent-blue hover:underline">投影</a>：把高維資料壓到一條線或一個平面 — 怎麼壓最不失真？</li>
           <li><a href="/math/linalg/change-of-basis" class="text-accent-blue hover:underline">換基底</a>：同一個向量在不同座標系裡怎麼變？這是圖學、PCA、Fourier 的共同骨幹。</li>
           <li><a href="/math/linalg/eigen" class="text-accent-blue hover:underline">特徵向量</a>：有沒有哪些方向「被矩陣作用後仍是原方向」？PageRank 與 PCA 的核心。</li>
