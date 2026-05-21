@@ -1,0 +1,48 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+<BaseLayout
+  currentPage="math"
+  title="投影與最小平方 (籌備中)"
+  description="把高維向量壓到一條線或一個平面上 — 線性回歸與壓縮演算法的幾何意義。"
+>
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-16">
+    <a href="/math/linalg/" class="text-accent-blue hover:underline text-sm">← 回線性代數專區</a>
+
+    <header class="mt-4 mb-8">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 2 · 核心工具</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-3">📐 投影與最小平方</h1>
+      <p class="text-base-400">把高維向量「壓」到一條線或一個平面上，找最近的影子。</p>
+      <span class="inline-block mt-3 px-3 py-1 rounded-full text-xs bg-accent-yellow/20 text-accent-yellow border border-accent-yellow/40">籌備中</span>
+    </header>
+
+    <section class="rounded-lg border border-base-600 bg-base-800/60 p-6 mb-6">
+      <h2 class="text-lg font-bold text-accent-green mb-3">你會學到什麼</h2>
+      <ul class="space-y-2 text-base-300 text-sm">
+        <li>· 投影一個向量到另一個向量、到一條直線、到一個平面</li>
+        <li>· 投影矩陣 <code class="text-accent-cyan">P = A(AᵀA)⁻¹Aᵀ</code> 是什麼意思</li>
+        <li>· 為什麼線性回歸就是「投影到 X 的 column space」</li>
+        <li>· 正交投影 vs 透視投影（圖學裡的差別）</li>
+        <li>· 投影矩陣的兩個特殊性質：<code class="text-accent-cyan">P² = P</code>（冪等）、<code class="text-accent-cyan">Pᵀ = P</code>（對稱）</li>
+      </ul>
+    </section>
+
+    <section class="rounded-lg border border-base-600 bg-base-800/60 p-6 mb-6">
+      <h2 class="text-lg font-bold text-accent-blue mb-3">需要先懂</h2>
+      <ul class="space-y-2 text-base-300 text-sm">
+        <li>· <a href="/math/linalg/transform" class="text-accent-blue hover:underline">4×4 矩陣變換</a> — 矩陣作為「動詞」</li>
+        <li>· <a href="/math/dot-product" class="text-accent-blue hover:underline">向量內積</a> — 投影量 = <code class="text-accent-cyan">a · b / ‖b‖</code></li>
+      </ul>
+    </section>
+
+    <section class="rounded-lg border border-accent-red/40 bg-base-800/60 p-6">
+      <h2 class="text-lg font-bold text-accent-red mb-3">CS 上有什麼用</h2>
+      <ul class="space-y-2 text-base-300 text-sm">
+        <li>· <span class="text-base-50 font-semibold">線性回歸</span> — 找一條最接近所有資料點的線（最小化垂直距離 = 投影殘差）</li>
+        <li>· <span class="text-base-50 font-semibold">PCA</span> — 把高維資料投影到「最重要的方向」</li>
+        <li>· <span class="text-base-50 font-semibold">圖學陰影 / 透視投影</span> — 把 3D 場景投影到 2D 螢幕</li>
+        <li>· <span class="text-base-50 font-semibold">JPEG 壓縮的 DCT</span> — 把影像投影到一組標準頻率基底</li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>

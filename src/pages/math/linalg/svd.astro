@@ -1,0 +1,52 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+<BaseLayout
+  currentPage="math"
+  title="奇異值分解 SVD (籌備中)"
+  description="CS 裡最重要的矩陣分解 — 推薦系統、降維、影像壓縮、潛在語意分析全靠它。"
+>
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-16">
+    <a href="/math/linalg/" class="text-accent-blue hover:underline text-sm">← 回線性代數專區</a>
+
+    <header class="mt-4 mb-8">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 3 · 分解與譜論</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-3">🔱 奇異值分解 SVD</h1>
+      <p class="text-base-400">任何矩陣（不必方陣、不必可逆）都能拆成「旋轉 → 拉伸 → 旋轉」三步。這個分解是 CS 線代的最高峰。</p>
+      <span class="inline-block mt-3 px-3 py-1 rounded-full text-xs bg-accent-yellow/20 text-accent-yellow border border-accent-yellow/40">籌備中</span>
+    </header>
+
+    <section class="rounded-lg border border-base-600 bg-base-800/60 p-6 mb-6">
+      <h2 class="text-lg font-bold text-accent-green mb-3">你會學到什麼</h2>
+      <ul class="space-y-2 text-base-300 text-sm">
+        <li>· SVD 的幾何意義 — 任何矩陣 <code class="text-accent-cyan">A = U Σ Vᵀ</code> 三步驟動畫</li>
+        <li>· 奇異值 vs 特徵值 — 為什麼 SVD 比對角化更通用</li>
+        <li>· 低秩近似 — 為什麼丟掉小的奇異值能壓縮資料且失真很少</li>
+        <li>· SVD 與 PCA 的關係 — PCA 就是 SVD 套用在中心化資料上</li>
+        <li>· Moore-Penrose 偽反矩陣 — 當 A 不可逆時的「最佳解」</li>
+        <li>· 條件數 <code class="text-accent-cyan">κ(A) = σ_max / σ_min</code> — 何時數值上會炸開</li>
+      </ul>
+    </section>
+
+    <section class="rounded-lg border border-base-600 bg-base-800/60 p-6 mb-6">
+      <h2 class="text-lg font-bold text-accent-blue mb-3">需要先懂</h2>
+      <ul class="space-y-2 text-base-300 text-sm">
+        <li>· <a href="/math/linalg/eigen" class="text-accent-blue hover:underline">特徵向量與對角化</a> — SVD 是它的進階推廣</li>
+        <li>· <a href="/math/linalg/change-of-basis" class="text-accent-blue hover:underline">換基底</a></li>
+        <li>· <a href="/math/linalg/projection" class="text-accent-blue hover:underline">投影</a></li>
+      </ul>
+    </section>
+
+    <section class="rounded-lg border border-accent-red/40 bg-base-800/60 p-6">
+      <h2 class="text-lg font-bold text-accent-red mb-3">CS 上有什麼用</h2>
+      <ul class="space-y-2 text-base-300 text-sm">
+        <li>· <span class="text-base-50 font-semibold">推薦系統</span> — Netflix Prize 的 SVD++、矩陣補全</li>
+        <li>· <span class="text-base-50 font-semibold">影像壓縮</span> — 保留前 k 個奇異值就能還原 90% 視覺內容</li>
+        <li>· <span class="text-base-50 font-semibold">LSA (Latent Semantic Analysis)</span> — 文字搜尋找潛在語意</li>
+        <li>· <span class="text-base-50 font-semibold">資料降維</span> — t-SNE 之前的標準做法</li>
+        <li>· <span class="text-base-50 font-semibold">數值穩定的最小平方解</span> — 比正規方程式可靠得多</li>
+        <li>· <span class="text-base-50 font-semibold">電腦視覺</span> — 相機校正、影像對齊、結構從動作 (SfM)</li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>

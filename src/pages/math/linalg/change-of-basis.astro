@@ -1,0 +1,48 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+<BaseLayout
+  currentPage="math"
+  title="換基底 Change of Basis (籌備中)"
+  description="同一個向量，在不同座標系裡長得不一樣 — 圖學、PCA、Fourier 的共同骨幹。"
+>
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-16">
+    <a href="/math/linalg/" class="text-accent-blue hover:underline text-sm">← 回線性代數專區</a>
+
+    <header class="mt-4 mb-8">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 2 · 核心工具</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-3">🔄 換基底 (Change of Basis)</h1>
+      <p class="text-base-400">同一個向量，在不同座標系裡長得不一樣。看懂這個，後面的 PCA、Fourier、對角化都會通。</p>
+      <span class="inline-block mt-3 px-3 py-1 rounded-full text-xs bg-accent-yellow/20 text-accent-yellow border border-accent-yellow/40">籌備中</span>
+    </header>
+
+    <section class="rounded-lg border border-base-600 bg-base-800/60 p-6 mb-6">
+      <h2 class="text-lg font-bold text-accent-green mb-3">你會學到什麼</h2>
+      <ul class="space-y-2 text-base-300 text-sm">
+        <li>· 「向量」與「座標」的差別 — 向量是物件，座標是物件在某組基底下的表示</li>
+        <li>· 換基底矩陣 <code class="text-accent-cyan">P</code> 與其反矩陣 <code class="text-accent-cyan">P⁻¹</code> 的角色</li>
+        <li>· 同一個線性變換在不同基底下長什麼樣（相似矩陣 <code class="text-accent-cyan">A' = P⁻¹AP</code>）</li>
+        <li>· 為什麼「找對基底」能讓矩陣變得超好算（鋪陳對角化）</li>
+        <li>· 正交基底的特殊好處：<code class="text-accent-cyan">P⁻¹ = Pᵀ</code></li>
+      </ul>
+    </section>
+
+    <section class="rounded-lg border border-base-600 bg-base-800/60 p-6 mb-6">
+      <h2 class="text-lg font-bold text-accent-blue mb-3">需要先懂</h2>
+      <ul class="space-y-2 text-base-300 text-sm">
+        <li>· <a href="/math/linalg/transform" class="text-accent-blue hover:underline">4×4 矩陣變換</a></li>
+        <li>· <a href="/math/linalg/projection" class="text-accent-blue hover:underline">投影</a>（推薦但非必要）</li>
+      </ul>
+    </section>
+
+    <section class="rounded-lg border border-accent-red/40 bg-base-800/60 p-6">
+      <h2 class="text-lg font-bold text-accent-red mb-3">CS 上有什麼用</h2>
+      <ul class="space-y-2 text-base-300 text-sm">
+        <li>· <span class="text-base-50 font-semibold">圖學的世界 / 視圖 / 螢幕座標</span> — 一連串換基底</li>
+        <li>· <span class="text-base-50 font-semibold">PCA</span> — 把資料從原始座標系換到「主成分基底」</li>
+        <li>· <span class="text-base-50 font-semibold">Fourier 變換</span> — 把訊號從「時間基底」換到「頻率基底」</li>
+        <li>· <span class="text-base-50 font-semibold">遊戲引擎的局部 / 世界座標切換</span> — 模型動畫、骨架蒙皮</li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>

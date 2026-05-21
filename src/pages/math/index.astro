@@ -20,6 +20,12 @@ interface Tool {
 
 const tools: Tool[] = [
   {
+    title: '📚 線性代數專區',
+    description: '從 4×4 矩陣變換到 SVD — 給 CS 工程師的線代教學，動手玩、看視覺化',
+    href: '/math/linalg/',
+    color: 'info'
+  },
+  {
     title: '🧮 數學計算器',
     description: '質數檢查、質因數分解、最大公因數 (GCD)、最小公倍數 (LCM)',
     href: '/math/gcdlcm',
@@ -51,7 +57,7 @@ const tools: Tool[] = [
   }
 ];
 ---
-<BaseLayout currentPage="math" currentPage="math" title="數學工具">
+<BaseLayout currentPage="math" title="數學工具">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
     <h1 class="text-center text-3xl font-bold text-base-50 mb-2">📐 數學工具</h1>
     <p class="text-center text-base-400 mb-10">各種有趣的數學視覺化與計算工具</p>

@@ -1,0 +1,130 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+const colorMap: Record<string, { bg: string; hover: string; border: string }> = {
+  primary: { bg: 'bg-accent-blue', hover: 'hover:bg-accent-blue/80', border: 'border-accent-blue' },
+  success: { bg: 'bg-accent-green', hover: 'hover:bg-accent-green/80', border: 'border-accent-green' },
+  info: { bg: 'bg-accent-cyan', hover: 'hover:bg-accent-cyan/80', border: 'border-accent-cyan' },
+  warning: { bg: 'bg-accent-yellow', hover: 'hover:bg-accent-yellow/80', border: 'border-accent-yellow' },
+  danger: { bg: 'bg-accent-red', hover: 'hover:bg-accent-red/80', border: 'border-accent-red' },
+};
+
+interface Tool {
+  title: string;
+  description: string;
+  href: string;
+  color: string;
+  ready: boolean;
+  chapter: string;
+}
+
+const tools: Tool[] = [
+  {
+    title: '🧊 4×4 矩陣變換',
+    description: '把矩陣當作「動詞」— 即時調整每個分量，看立方體與向量怎麼被拉伸、旋轉、平移。',
+    href: '/math/linalg/transform',
+    color: 'primary',
+    ready: true,
+    chapter: 'Chapter 1 · 直覺基礎',
+  },
+  {
+    title: '📐 投影與最小平方',
+    description: '把高維資料壓到一條線或一個平面上 — 線性回歸與壓縮演算法的幾何意義。',
+    href: '/math/linalg/projection',
+    color: 'success',
+    ready: false,
+    chapter: 'Chapter 2 · 核心工具',
+  },
+  {
+    title: '🔄 換基底 (Change of Basis)',
+    description: '同一個向量，在不同座標系裡長得不一樣。圖學、PCA、Fourier 的共同骨幹。',
+    href: '/math/linalg/change-of-basis',
+    color: 'info',
+    ready: false,
+    chapter: 'Chapter 2 · 核心工具',
+  },
+  {
+    title: '🌟 特徵向量與對角化',
+    description: '哪些方向「被矩陣作用後仍是原方向」？PageRank、PCA 與量子裡的不變方向。',
+    href: '/math/linalg/eigen',
+    color: 'warning',
+    ready: false,
+    chapter: 'Chapter 3 · 分解與譜論',
+  },
+  {
+    title: '🔱 奇異值分解 SVD',
+    description: 'CS 裡最重要的矩陣分解 — 推薦系統、降維、影像壓縮、潛在語意分析全靠它。',
+    href: '/math/linalg/svd',
+    color: 'danger',
+    ready: false,
+    chapter: 'Chapter 3 · 分解與譜論',
+  },
+];
+---
+<BaseLayout
+  currentPage="math"
+  title="線性代數 · 給電腦科學的版本"
+  description="從矩陣變換到 SVD，用互動式視覺化建立線代直覺。對標 3Blue1Brown，給 CS 應用優先排序。"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-16">
+    <header class="text-center mb-10">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">線性代數專區</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-3">給 CS 工程師的線性代數</h1>
+      <p class="text-base-400 max-w-2xl mx-auto">
+        從矩陣變換到 SVD — 不是背公式，而是動手玩。每個概念都對應到一個 CS 應用，先建直覺再上符號。
+      </p>
+    </header>
+
+    <section class="rounded-lg border border-base-600 bg-base-800/60 p-6 mb-10">
+      <h2 class="text-lg font-bold text-accent-blue mb-3">📍 為什麼學這個？</h2>
+      <div class="grid md:grid-cols-2 gap-4 text-base-300 text-sm leading-relaxed">
+        <div>
+          <p class="mb-2"><span class="text-base-50 font-semibold">圖學 / 遊戲</span> — 4×4 變換、透視投影、quaternion 旋轉</p>
+          <p class="mb-2"><span class="text-base-50 font-semibold">機器學習</span> — 矩陣乘法、SVD、PCA（= 對角化 covariance）</p>
+          <p><span class="text-base-50 font-semibold">NLP / 推薦</span> — 餘弦相似度、SVD（LSA）、attention = 矩陣乘</p>
+        </div>
+        <div>
+          <p class="mb-2"><span class="text-base-50 font-semibold">圖論</span> — adjacency matrix、PageRank（= 最大特徵向量）</p>
+          <p class="mb-2"><span class="text-base-50 font-semibold">訊號 / 影像</span> — Fourier = 換基底、DCT（JPEG）、convolution</p>
+          <p><span class="text-base-50 font-semibold">量子運算</span> — 向量空間、unitary 矩陣、tensor product</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {tools.map((tool) => {
+        const colors = colorMap[tool.color];
+        return (
+          <div class={`flex flex-col rounded-lg border ${colors.border} bg-base-800 h-full`}>
+            <div class="p-5 flex-1">
+              <p class="text-xs text-base-400 mb-1">{tool.chapter}</p>
+              <h5 class="text-lg font-semibold text-base-50 mb-2">{tool.title}</h5>
+              <p class="text-base-400 text-sm">{tool.description}</p>
+            </div>
+            <div class="px-5 pb-5">
+              {tool.ready ? (
+                <a
+                  href={tool.href}
+                  class={`block text-center px-4 py-2 rounded ${colors.bg} ${colors.hover} text-base-50 font-medium transition`}
+                >
+                  開始學習 →
+                </a>
+              ) : (
+                <a
+                  href={tool.href}
+                  class="block text-center px-4 py-2 rounded border border-base-600 text-base-400 hover:bg-base-700 transition"
+                >
+                  看大綱（籌備中）
+                </a>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+    <section class="mt-12 text-center text-base-400 text-sm">
+      <p>對標 <a href="https://www.3blue1brown.com/topics/linear-algebra" class="text-accent-blue hover:underline" target="_blank" rel="noopener">3Blue1Brown · Essence of Linear Algebra</a> — 看影片建直覺，回這裡動手玩。</p>
+    </section>
+  </div>
+</BaseLayout>
