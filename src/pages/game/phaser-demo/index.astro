@@ -1,8 +1,9 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import RelatedNotes from '@/components/RelatedNotes.astro';
 ---
 
-<BaseLayout currentPage="game" currentPage="game" title="Phaser 3 Demo - 熱血風格遊戲引擎測試" description="使用 Phaser 3 製作的像素風格遊戲 Demo">
+<BaseLayout currentPage="game" title="Phaser 3 Demo - 熱血風格遊戲引擎測試" description="使用 Phaser 3 製作的像素風格遊戲 Demo">
     <main class="game-container">
         <div class="game-header">
             <a href="/game" class="back-link">← 返回遊戲列表</a>
@@ -38,6 +39,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             </ul>
         </div>
     </main>
+
+    <RelatedNotes currentPath="/game/phaser-demo/" />
 
     <script>
         import { initDemoGame } from '@/lib/games/phaser/games/demo';

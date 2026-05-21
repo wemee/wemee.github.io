@@ -4,6 +4,7 @@ description: "分享一個高內聚、低耦合的機器學習架構設計。利
 pubDate: 2026-01-18
 heroImage: "/images/blog/snake-rl-architecture.png"
 tags: ["Machine Learning", "TypeScript", "Python", "Architecture", "Design Patterns", "Snake AI"]
+related: ["/game/snake/"]
 ---
 
 在將強化學習 (Reinforcement Learning) 應用到網頁遊戲時，開發者常面臨一個兩難：

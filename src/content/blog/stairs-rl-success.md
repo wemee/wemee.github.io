@@ -4,6 +4,7 @@ pubDate: 2026-01-14
 description: "記錄下樓梯遊戲從規則 AI 失敗到 RL 成功的完整歷程。探討 GameCore 分離、PyMiniRacer 數值一致性、統一訓練框架與 500K 步訓練的實作細節。"
 author: "wemee (with AI assistant)"
 tags: ["reinforcement-learning", "ppo", "architecture", "pytorch", "tensorflow-js", "solid"]
+related: ["/game/stairs/"]
 ---
 
 ## 前言：失敗之後

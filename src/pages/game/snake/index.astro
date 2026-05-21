@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import RelatedNotes from '@/components/RelatedNotes.astro';
 import { SnakeGame } from '@/components/games/snake';
 ---
 
@@ -11,11 +12,7 @@ import { SnakeGame } from '@/components/games/snake';
     <div class="min-h-[60vh] flex flex-col items-center justify-center py-8">
         <h1 class="text-3xl font-bold text-base-50 mb-6">🐍 貪吃蛇</h1>
         <SnakeGame client:load />
-        
-        <div class="mt-8 text-center">
-            <a href="/blog/snake-rl-evolution-zen" class="text-primary-400 hover:text-primary-300 transition-colors underline decoration-2 underline-offset-4">
-                📖 閱讀：這隻 AI 蛇是如何訓練出來的？（從人工智障到禪意大師）
-            </a>
-        </div>
     </div>
+
+    <RelatedNotes currentPath="/game/snake/" />
 </BaseLayout>

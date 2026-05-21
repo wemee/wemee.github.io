@@ -4,6 +4,7 @@ pubDate: 2026-01-10
 description: "深入解析經典打磚塊遊戲的 AI 實作。探討如何利用確定性物理系統的特性，透過暴力搜尋 (Brute-force Search) 與軌跡模擬，在有限狀態空間中尋求全域最佳解。"
 author: "wemee (with AI assistant)"
 tags: ["game-ai", "algorithm", "simulation", "typescript"]
+related: ["/game/breakout/"]
 ---
 
 ## 前言

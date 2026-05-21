@@ -5,6 +5,7 @@ description: "從零開始訓練 MNIST 模型，轉換為 TensorFlow.js 格式�
 author: "wemee (with AI assistant)"
 tags: ["machine-learning", "tensorflow", "browser", "mnist", "explainability"]
 image: "/images/blog/mnist-browser-ml-cover.webp"
+related: ["/tools/digit-recognition/"]
 ---
 
 ## 前言

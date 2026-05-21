@@ -10,6 +10,7 @@ const blogCollection = defineCollection({
         author: z.string().default('wemee'),
         tags: z.array(z.string()).default([]),
         image: z.string().optional(),
+        related: z.array(z.string()).default([]),
     }),
 });
 

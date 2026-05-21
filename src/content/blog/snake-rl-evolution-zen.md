@@ -4,6 +4,7 @@ description: "這是一篇關於我們如何把一條只會在角落轉圈的笨
 pubDate: 2026-01-18
 heroImage: "/images/blog/snake-rl-evolution-hero.webp"
 tags: ["Reinforcement Learning", "AI", "Snake Game", "Gymnasium", "Reward Shaping"]
+related: ["/game/snake/"]
 ---
 
 在將強化學習 (Reinforcement Learning) 應用到貪吃蛇這個經典遊戲時，我們最初以為這會是一場輕鬆的勝利。畢竟，規則如此簡單：**吃蘋果，變長，不要撞牆**。

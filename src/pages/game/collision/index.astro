@@ -1,8 +1,9 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import RelatedNotes from '@/components/RelatedNotes.astro';
 ---
 
-<BaseLayout currentPage="game" currentPage="game" title="基礎碰撞 - 物理引擎測試" description="使用 Phaser 3 Arcade Physics 展示完全彈性碰撞">
+<BaseLayout currentPage="game" title="基礎碰撞 - 物理引擎測試" description="使用 Phaser 3 Arcade Physics 展示完全彈性碰撞">
     <main class="game-container">
         <div class="game-header">
             <a href="/game" class="back-link">← 返回遊戲列表</a>
@@ -33,14 +34,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             </ul>
         </div>
 
-        <div class="related-article">
-            <h2>📝 相關文章</h2>
-            <a href="/blog/phaser-physics-gotcha" class="article-link">
-                <span class="article-title">Phaser Arcade Physics 的隱藏陷阱</span>
-                <span class="article-desc">為什麼 bounce=1 不等於完全彈性碰撞？深入研究動能損失的根本原因</span>
-            </a>
-        </div>
     </main>
+
+    <RelatedNotes currentPath="/game/collision/" />
 
     <script>
         import { initCollisionGame } from '@/lib/games/phaser/games/collision';

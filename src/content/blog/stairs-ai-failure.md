@@ -4,6 +4,7 @@ pubDate: 2026-01-10
 description: "為什麼同樣是物理模擬，打磚塊成功了，下樓梯卻失敗了？深入分析高頻連續決策系統中的震盪效應 (Oscillation) 與貪婪演算法的侷限。"
 author: "wemee (with AI assistant)"
 tags: ["game-ai", "control-theory", "failure-analysis", "javascript"]
+related: ["/game/stairs/"]
 ---
 
 ## 前言

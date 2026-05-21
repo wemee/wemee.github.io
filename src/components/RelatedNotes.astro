@@ -1,0 +1,46 @@
+---
+import { getCollection } from 'astro:content';
+import { formatDate } from '@/lib/utils';
+
+interface Props {
+  currentPath: string;
+  heading?: string;
+  intro?: string;
+}
+
+const { currentPath, heading = '📖 延伸閱讀：開發筆記', intro } = Astro.props;
+
+const normalize = (path: string): string => path.replace(/\/+$/, '');
+const target = normalize(currentPath);
+
+const allPosts = await getCollection('blog');
+const matched = allPosts
+  .filter((post) =>
+    (post.data.related ?? []).some((p: string) => normalize(p) === target)
+  )
+  .sort((a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf());
+---
+{matched.length > 0 && (
+  <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 my-10">
+    <div class="rounded-lg border border-base-600 bg-base-800/60 p-6">
+      <h2 class="text-xl font-bold text-base-50 mb-1">{heading}</h2>
+      {intro && <p class="text-sm text-base-600 mb-4">{intro}</p>}
+      <ul class="space-y-3 mt-4">
+        {matched.map((post) => (
+          <li class="border-l-2 border-accent-cyan/60 pl-4 py-1">
+            <a
+              href={`/blog/${post.id}`}
+              class="block text-base-50 hover:text-accent-cyan transition no-underline"
+            >
+              <h3 class="text-base font-semibold leading-snug">{post.data.title}</h3>
+              <p class="text-sm text-base-400 mt-1">{post.data.description}</p>
+              <p class="text-xs text-base-600 mt-1">
+                {formatDate(post.data.pubDate)} · {post.data.author}
+              </p>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+)}

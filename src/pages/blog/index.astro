@@ -6,15 +6,57 @@ import { formatDate } from '@/lib/utils';
 const posts = (await getCollection('blog')).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
 );
+
+const tagCounts = new Map<string, number>();
+posts.forEach((post) => {
+  post.data.tags.forEach((tag) => {
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+  });
+});
+const sortedTags = Array.from(tagCounts.entries()).sort((a, b) => {
+  if (b[1] !== a[1]) return b[1] - a[1];
+  return a[0].localeCompare(b[0]);
+});
 ---
-<BaseLayout currentPage="blog" currentPage="blog" title="部落格">
+<BaseLayout currentPage="blog" title="部落格">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
     <h1 class="text-3xl font-bold text-base-50 mb-4">📝 部落格</h1>
-    <p class="text-base-400 mb-8">技術筆記、學習心得與隨筆</p>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <p class="text-base-400 mb-6">技術筆記、學習心得與隨筆</p>
+
+    {sortedTags.length > 0 && (
+      <div class="mb-8" data-tag-filter>
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-sm text-base-600">依標籤篩選：</span>
+          <button
+            type="button"
+            data-tag-clear
+            class="text-xs px-2 py-1 rounded text-base-600 hover:text-accent-cyan transition hidden"
+          >
+            ✕ 清除
+          </button>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          {sortedTags.map(([tag, count]) => (
+            <button
+              type="button"
+              data-tag={tag}
+              class="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-full border border-base-600 bg-base-800 text-base-400 hover:border-accent-cyan hover:text-accent-cyan transition"
+            >
+              <span>{tag}</span>
+              <span class="text-base-600">{count}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    )}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-post-grid>
       {posts.map((post) => (
-        <div class="flex flex-col rounded-lg border border-base-600 bg-base-800 h-full">
+        <div
+          class="flex flex-col rounded-lg border border-base-600 bg-base-800 h-full"
+          data-post-card
+          data-tags={post.data.tags.join('|')}
+        >
           <div class="p-5 flex-1">
             <h5 class="text-lg font-semibold mb-2">
               <a href={`/blog/${post.id}`} class="text-base-50 hover:text-accent-cyan transition no-underline">
@@ -34,8 +76,8 @@ const posts = (await getCollection('blog')).sort(
             </div>
           </div>
           <div class="px-5 pb-5">
-            <a 
-              href={`/blog/${post.id}`} 
+            <a
+              href={`/blog/${post.id}`}
               class="inline-block px-3 py-1.5 text-sm rounded border border-accent-blue text-accent-blue hover:bg-accent-blue hover:text-base-50 transition"
             >
               閱讀更多 →
@@ -44,7 +86,14 @@ const posts = (await getCollection('blog')).sort(
         </div>
       ))}
     </div>
-    
+
+    <div
+      data-empty-state
+      class="hidden mt-8 p-4 rounded-lg bg-base-800 border border-base-600 text-base-400 text-center"
+    >
+      沒有符合此標籤的文章。
+    </div>
+
     {posts.length === 0 && (
       <div class="p-4 rounded-lg bg-accent-blue/20 border border-accent-blue/50 text-base-400">
         目前還沒有文章，敬請期待！
@@ -53,3 +102,44 @@ const posts = (await getCollection('blog')).sort(
   </div>
 </BaseLayout>
 
+<script>
+  const filterRoot = document.querySelector<HTMLElement>('[data-tag-filter]');
+  const clearBtn = document.querySelector<HTMLButtonElement>('[data-tag-clear]');
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-post-card]'));
+  const emptyState = document.querySelector<HTMLElement>('[data-empty-state]');
+  const activeClasses = ['border-accent-cyan', 'text-accent-cyan', 'bg-accent-cyan/10'];
+
+  let active: string | null = null;
+
+  function applyFilter(): void {
+    let visible = 0;
+    for (const card of cards) {
+      const tags = (card.dataset.tags ?? '').split('|');
+      const show = active === null || tags.includes(active);
+      card.classList.toggle('hidden', !show);
+      if (show) visible += 1;
+    }
+    emptyState?.classList.toggle('hidden', visible > 0 || active === null);
+    clearBtn?.classList.toggle('hidden', active === null);
+  }
+
+  function setActive(tag: string | null): void {
+    active = tag;
+    filterRoot?.querySelectorAll<HTMLButtonElement>('[data-tag]').forEach((btn) => {
+      const isActive = btn.dataset.tag === active;
+      btn.classList.toggle('border-accent-cyan', isActive);
+      btn.classList.toggle('text-accent-cyan', isActive);
+      btn.classList.toggle('bg-accent-cyan/10', isActive);
+    });
+    applyFilter();
+  }
+
+  filterRoot?.querySelectorAll<HTMLButtonElement>('[data-tag]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const tag = btn.dataset.tag ?? null;
+      setActive(active === tag ? null : tag);
+    });
+  });
+
+  clearBtn?.addEventListener('click', () => setActive(null));
+</script>

@@ -1,8 +1,9 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import RelatedNotes from '@/components/RelatedNotes.astro';
 import '@/styles/game-common.css';
 ---
-<BaseLayout currentPage="game" currentPage="game" 
+<BaseLayout currentPage="game" 
   title="打磚塊 | 挫屎勇的遊戲間" 
   description="經典復古的打磚塊遊戲，挑戰反應神經！內含超強 AI 自動遊玩模式 (AI 模式)，來看看演算法是怎麼過關的。"
 >
@@ -42,6 +43,8 @@ import '@/styles/game-common.css';
       </div>
     </div>
   </div>
+
+  <RelatedNotes currentPath="/game/breakout/" />
 </BaseLayout>
 
 <script>

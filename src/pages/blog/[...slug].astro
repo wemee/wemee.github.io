@@ -13,8 +13,20 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { Content } = await render(post);
+
+const artifactLabels: Record<string, string> = {
+  '/game/snake/': '🐍 貪吃蛇',
+  '/game/stairs/': '🏃 下樓梯',
+  '/game/breakout/': '🧱 打磚塊',
+  '/game/collision/': '⚪ 基礎碰撞 (Phaser)',
+  '/game/phaser-demo/': '🎮 Phaser Demo',
+  '/math/traffic/': '🚗 交通流體力學',
+  '/tools/digit-recognition/': '✏️ 手寫數字辨識',
+};
+
+const related: string[] = post.data.related ?? [];
 ---
-<BaseLayout currentPage="blog" currentPage="blog"
+<BaseLayout currentPage="blog"
   title={post.data.title}
   description={post.data.description}
   image={post.data.image}
@@ -38,13 +50,30 @@ const { Content } = await render(post);
       
       {post.data.image && (
         <div class="my-6">
-          <img 
-            src={post.data.image} 
-            alt={post.data.title} 
-            class="w-full max-h-[500px] object-cover rounded-lg shadow-sm" 
+          <img
+            src={post.data.image}
+            alt={post.data.title}
+            class="w-full max-h-[500px] object-cover rounded-lg shadow-sm"
           />
         </div>
       )}
+
+      {related.length > 0 && (
+        <aside class="mb-6 rounded-lg border border-accent-cyan/40 bg-accent-cyan/5 px-4 py-3">
+          <p class="text-sm text-base-400 mb-2">🧪 這篇文章對應的互動作品</p>
+          <div class="flex flex-wrap gap-2">
+            {related.map((path) => (
+              <a
+                href={path}
+                class="inline-flex items-center px-3 py-1.5 text-sm rounded border border-accent-cyan text-accent-cyan hover:bg-accent-cyan hover:text-base-50 transition no-underline"
+              >
+                {artifactLabels[path] ?? path}<span class="ml-1">→</span>
+              </a>
+            ))}
+          </div>
+        </aside>
+      )}
+
       <hr class="border-base-600" />
     </header>
     

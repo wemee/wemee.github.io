@@ -1,7 +1,8 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import RelatedNotes from '@/components/RelatedNotes.astro';
 ---
-<BaseLayout currentPage="tools" currentPage="tools"
+<BaseLayout currentPage="tools"
   title="手寫數字辨識 | 挫屎勇的實用工具"
   description="在畫布上手寫數字，AI 即時辨識！使用 TensorFlow.js 在瀏覽器端運行深度學習模型，支援手機與電腦。"
 >
@@ -94,12 +95,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     <!-- 技術說明 -->
     <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden mt-6 mb-8">
-      <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 flex items-center justify-between">
+      <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 flex items-center">
         <span class="flex items-center">
           <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-accent-blue text-base-50 text-sm font-bold mr-2">?</span>
           這是怎麼運作的？
         </span>
-        <a href="/blog/mnist-browser-ml/" class="px-3 py-1 rounded border border-accent-blue text-accent-blue hover:bg-accent-blue/10 text-sm transition">閱讀開發筆記</a>
       </div>
       <div class="p-4">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -131,6 +131,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       </div>
     </div>
   </div>
+
+  <RelatedNotes currentPath="/tools/digit-recognition/" />
 </BaseLayout>
 
 <script is:inline src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
