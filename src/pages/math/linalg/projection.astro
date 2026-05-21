@@ -1,48 +1,307 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+
+const PLANE_PRESETS = [
+  { id: 'xy', label: 'X-Y 平面', hint: '法向量 = (0, 0, 1) — 投影到水平面，把 Z 變 0', normal: [0, 0, 1] },
+  { id: 'xz', label: 'X-Z 平面', hint: '法向量 = (0, 1, 0) — 把 Y 變 0（地板）', normal: [0, 1, 0] },
+  { id: 'yz', label: 'Y-Z 平面', hint: '法向量 = (1, 0, 0) — 把 X 變 0', normal: [1, 0, 0] },
+  { id: 'tilted', label: '斜面', hint: '法向量 = (1, 1, 1) — 跟三軸都不平行的平面', normal: [1, 1, 1] },
+];
 ---
 <BaseLayout
   currentPage="math"
-  title="投影與最小平方 (籌備中)"
-  description="把高維向量壓到一條線或一個平面上 — 線性回歸與壓縮演算法的幾何意義。"
+  title="投影 (Projection)"
+  description="把一個向量「壓」到一條線或一個平面上 — 線性回歸與 PCA 的幾何基礎。"
 >
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-16">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
     <a href="/math/linalg/" class="text-accent-blue hover:underline text-sm">← 回線性代數專區</a>
 
-    <header class="mt-4 mb-8">
+    <header class="mt-4 mb-6 text-center">
       <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 2 · 核心工具</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-3">📐 投影與最小平方</h1>
-      <p class="text-base-400">把高維向量「壓」到一條線或一個平面上，找最近的影子。</p>
-      <span class="inline-block mt-3 px-3 py-1 rounded-full text-xs bg-accent-yellow/20 text-accent-yellow border border-accent-yellow/40">籌備中</span>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">📐 投影 (Projection)</h1>
+      <p class="text-base-400 max-w-2xl mx-auto">在牆上拉一個影子。投影就是找「最接近的影子」— 線性回歸與壓縮演算法的幾何核心。</p>
     </header>
 
-    <section class="rounded-lg border border-base-600 bg-base-800/60 p-6 mb-6">
-      <h2 class="text-lg font-bold text-accent-green mb-3">你會學到什麼</h2>
-      <ul class="space-y-2 text-base-300 text-sm">
-        <li>· 投影一個向量到另一個向量、到一條直線、到一個平面</li>
-        <li>· 投影矩陣 <code class="text-accent-cyan">P = A(AᵀA)⁻¹Aᵀ</code> 是什麼意思</li>
-        <li>· 為什麼線性回歸就是「投影到 X 的 column space」</li>
-        <li>· 正交投影 vs 透視投影（圖學裡的差別）</li>
-        <li>· 投影矩陣的兩個特殊性質：<code class="text-accent-cyan">P² = P</code>（冪等）、<code class="text-accent-cyan">Pᵀ = P</code>（對稱）</li>
-      </ul>
-    </section>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- 左：3D 視覺化 -->
+      <div class="lg:col-span-2">
+        <div id="scene-container" class="rounded-lg border border-base-600 bg-base-900 overflow-hidden shadow-lg" style="height: 60vh; min-height: 420px;"></div>
 
-    <section class="rounded-lg border border-base-600 bg-base-800/60 p-6 mb-6">
-      <h2 class="text-lg font-bold text-accent-blue mb-3">需要先懂</h2>
-      <ul class="space-y-2 text-base-300 text-sm">
-        <li>· <a href="/math/linalg/transform" class="text-accent-blue hover:underline">4×4 矩陣變換</a> — 矩陣作為「動詞」</li>
-        <li>· <a href="/math/dot-product" class="text-accent-blue hover:underline">向量內積</a> — 投影量 = <code class="text-accent-cyan">a · b / ‖b‖</code></li>
-      </ul>
-    </section>
+        <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          <div class="flex items-center gap-2 px-3 py-2 rounded bg-base-800 border border-base-600">
+            <span class="w-3 h-3 rounded" style="background:#ff9800"></span> 原向量 v
+          </div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded bg-base-800 border border-base-600">
+            <span class="w-3 h-3 rounded" style="background:#00e5ff"></span> 投影 Pv
+          </div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded bg-base-800 border border-base-600">
+            <span class="w-3 h-3 rounded" style="background:#ff5252"></span> 殘差 (v − Pv)
+          </div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded bg-base-800 border border-base-600">
+            <span class="w-3 h-3 rounded opacity-40" style="background:#4dd0e1"></span> 目標子空間
+          </div>
+        </div>
+      </div>
 
-    <section class="rounded-lg border border-accent-red/40 bg-base-800/60 p-6">
-      <h2 class="text-lg font-bold text-accent-red mb-3">CS 上有什麼用</h2>
-      <ul class="space-y-2 text-base-300 text-sm">
-        <li>· <span class="text-base-50 font-semibold">線性回歸</span> — 找一條最接近所有資料點的線（最小化垂直距離 = 投影殘差）</li>
-        <li>· <span class="text-base-50 font-semibold">PCA</span> — 把高維資料投影到「最重要的方向」</li>
-        <li>· <span class="text-base-50 font-semibold">圖學陰影 / 透視投影</span> — 把 3D 場景投影到 2D 螢幕</li>
-        <li>· <span class="text-base-50 font-semibold">JPEG 壓縮的 DCT</span> — 把影像投影到一組標準頻率基底</li>
-      </ul>
+      <!-- 右：控制 -->
+      <div class="space-y-4">
+        <!-- 模式 -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-blue text-sm">
+            🎯 投影到
+          </div>
+          <div class="p-3 grid grid-cols-2 gap-2">
+            <button id="mode-plane" class="px-3 py-2 text-sm rounded bg-accent-blue/30 border border-accent-blue text-base-50 transition">平面 (2D)</button>
+            <button id="mode-line" class="px-3 py-2 text-sm rounded bg-base-700 hover:bg-base-600 border border-base-600 text-base-100 transition">直線 (1D)</button>
+          </div>
+        </div>
+
+        <!-- 法向量/方向 preset -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-cyan text-sm">
+            🧭 <span id="vec-input-label">法向量 n</span>
+          </div>
+          <div class="p-3">
+            <div class="grid grid-cols-4 gap-2 mb-3">
+              {PLANE_PRESETS.map((p) => (
+                <button data-preset={p.id} class="px-1 py-1 text-[10px] rounded bg-base-700 hover:bg-accent-cyan/30 border border-base-600 text-base-100 transition truncate" title={p.hint} data-normal={JSON.stringify(p.normal)}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <div class="text-xs text-base-400 text-center mb-1">X</div>
+                <input type="number" id="n-x" value="0" step="0.1" class="m-input">
+              </div>
+              <div>
+                <div class="text-xs text-base-400 text-center mb-1">Y</div>
+                <input type="number" id="n-y" value="1" step="0.1" class="m-input">
+              </div>
+              <div>
+                <div class="text-xs text-base-400 text-center mb-1">Z</div>
+                <input type="number" id="n-z" value="0" step="0.1" class="m-input">
+              </div>
+            </div>
+            <p id="hint-line" class="text-xs text-base-400 mt-2 italic min-h-[1.5em]">平面模式：n 是平面的法向量 — 平面垂直於這個方向。</p>
+          </div>
+        </div>
+
+        <!-- 輸入向量 -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-yellow text-sm">
+            🏹 輸入向量 v
+          </div>
+          <div class="p-3 grid grid-cols-3 gap-2">
+            <div>
+              <div class="text-xs text-base-400 text-center mb-1">X</div>
+              <input type="number" id="v-x" value="1" step="0.5" class="m-input">
+            </div>
+            <div>
+              <div class="text-xs text-base-400 text-center mb-1">Y</div>
+              <input type="number" id="v-y" value="2" step="0.5" class="m-input">
+            </div>
+            <div>
+              <div class="text-xs text-base-400 text-center mb-1">Z</div>
+              <input type="number" id="v-z" value="1.5" step="0.5" class="m-input">
+            </div>
+          </div>
+        </div>
+
+        <!-- 結果 -->
+        <div class="rounded-lg border border-accent-cyan/40 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-accent-cyan/10 border-b border-accent-cyan/40 font-bold text-accent-cyan text-sm">
+            🧮 計算結果
+          </div>
+          <div class="p-4 space-y-3 font-mono text-sm">
+            <div>
+              <div class="text-xs text-base-400 mb-1" set:html={tex('P = ')}></div>
+              <div id="proj-matrix" class="grid grid-cols-3 gap-1 text-xs"></div>
+            </div>
+            <hr class="border-base-600">
+            <div class="flex justify-between"><span class="text-base-400">|v|</span><span id="v-mag" class="text-base-50">0</span></div>
+            <div class="flex justify-between"><span class="text-base-400" set:html={tex('|Pv|')}></span><span id="p-mag" class="text-accent-cyan">0</span></div>
+            <div class="flex justify-between"><span class="text-base-400" set:html={tex('|v - Pv|')}></span><span id="r-mag" class="text-accent-red">0</span></div>
+            <hr class="border-base-600">
+            <div class="flex justify-between text-xs">
+              <span class="text-base-400" set:html={'正交性 ' + tex('Pv \\cdot (v - Pv)')}></span>
+              <span id="ortho" class="text-base-50">0</span>
+            </div>
+            <p class="text-xs text-base-400 italic">↑ 應該永遠是 0：投影向量與殘差互相垂直。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 教學內容 -->
+    <section class="mt-12 max-w-3xl mx-auto">
+      <h2 class="text-2xl font-bold text-base-50 mb-4">📖 投影是什麼？</h2>
+
+      <div class="space-y-4 text-base-300 leading-relaxed">
+        <p>想像太陽從正上方照下來，你站在地上 — <strong class="text-base-50">影子就是你的投影</strong>。投影是「把一個向量壓到一個比它低維的空間（直線、平面）上」，而且要「壓得最接近」— 也就是<strong class="text-base-50">殘差（影子到原點的距離）要最小</strong>。</p>
+
+        <p>幾何上有個關鍵性質：<strong class="text-base-50">殘差永遠垂直於目標子空間</strong>。換句話說，<span set:html={tex('Pv')} /> 跟 <span set:html={tex('v - Pv')} /> 是直角關係（你可以在右邊看到正交性數值永遠是 0）。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">📏 兩種投影公式</h3>
+
+        <p><strong class="text-accent-cyan">投影到一條直線</strong>（方向為單位向量 <span set:html={tex('\\hat{a}')} />）：</p>
+        <div class="my-4 flex justify-center" set:html={tex("P = \\hat{a}\\hat{a}^\\top, \\quad Pv = (\\hat{a}^\\top v)\\hat{a}", true)} />
+        <p>意思是：「v 在 <span set:html={tex('\\hat{a}')} /> 方向上的長度」乘以「<span set:html={tex('\\hat{a}')} /> 本身」。</p>
+
+        <p class="mt-4"><strong class="text-accent-cyan">投影到一個平面</strong>（法向量為單位向量 <span set:html={tex('\\hat{n}')} />）：</p>
+        <div class="my-4 flex justify-center" set:html={tex("P = I - \\hat{n}\\hat{n}^\\top, \\quad Pv = v - (\\hat{n}^\\top v)\\hat{n}", true)} />
+        <p>意思是：「把 v 沿著 <span set:html={tex('\\hat{n}')} /> 方向那個分量扣掉」 — 剩下的就是躺在平面上的部分。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">💡 投影矩陣的兩個招牌性質</h3>
+        <ul class="list-disc list-inside space-y-2 ml-2">
+          <li><strong class="text-base-50">冪等</strong>（idempotent）：<span set:html={tex('P^2 = P')} /> — 把影子再投影一次還是同一個影子。投影過的東西已經在子空間裡了。</li>
+          <li><strong class="text-base-50">對稱</strong>：<span set:html={tex('P^\\top = P')} /> — 正交投影才有這性質。如果 <span set:html={tex('P^\\top \\ne P')} /> 那叫做「斜投影」，不一定最短距離。</li>
+        </ul>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+        <ol class="list-decimal list-inside space-y-2 ml-2">
+          <li>預設模式：投影到 <strong>X-Z 平面</strong>。看右邊的 <span set:html={tex('P')} /> 矩陣，注意 Y 那一列被清成 0 了 — 投影後 Y 分量永遠是 0。</li>
+          <li>把 v 改成 <code class="text-accent-cyan">(0, 5, 0)</code>（純 Y 方向）→ 投影完全變 0！因為 v 完全垂直於目標平面，影子是「一個點」（原點）。</li>
+          <li>切換到 <strong>直線模式</strong>，方向設 (1, 1, 0) → 投影是 v 在那條斜線上的影子。注意 <span set:html={tex('P')} /> 矩陣現在每個 cell 都長得像 <span set:html={tex('\\hat{a}_i \\hat{a}_j')} />。</li>
+          <li>觀察 <strong>正交性</strong> 那一行 — 不管你怎麼改 v 跟 n，永遠都是 0。這是投影的數學保證。</li>
+        </ol>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 投影 = 線性回歸</h3>
+        <p>當你在 Excel 點「加入趨勢線」，背後的數學就是<strong class="text-base-50">把資料投影到一條直線</strong>。給定一堆 <span set:html={tex('(x_i, y_i)')} /> 資料點，要找一條 <span set:html={tex('y = mx + b')} /> 最接近所有點 — 這就是把目標向量 <span set:html={tex('y')} /> 投影到「<span set:html={tex('X')} /> 的 column space」。一般公式：</p>
+        <div class="my-4 flex justify-center" set:html={tex("P = X(X^\\top X)^{-1} X^\\top", true)} />
+        <p>看到這個公式不要慌 — 它就是上面平面/直線公式的一般化。<span set:html={tex('(X^\\top X)^{-1}')} /> 是用來「歸一化」<span set:html={tex('X')} /> 的多欄（如果欄之間不正交），<span set:html={tex('X X^\\top')} /> 那部分跟前面 <span set:html={tex('\\hat{a}\\hat{a}^\\top')} /> 同樣是「在 column space 內」。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 下一步</h3>
+        <ul class="list-disc list-inside space-y-1 ml-2">
+          <li><a href="/math/linalg/change-of-basis" class="text-accent-blue hover:underline">換基底</a>：投影完之後，要不要用新的座標系記錄結果？這是 PCA 的關鍵。</li>
+          <li><a href="/math/linalg/eigen" class="text-accent-blue hover:underline">特徵向量</a>：PCA 就是「把資料投影到 covariance 矩陣的最大特徵向量」。</li>
+          <li><a href="/math/linalg/svd" class="text-accent-blue hover:underline">SVD</a>：投影 + 特徵向量的進階推廣，可以處理任何矩陣。</li>
+        </ul>
+      </div>
     </section>
   </div>
+
+  <style>
+    .m-input {
+      width: 100%;
+      padding: 6px 4px;
+      background: rgb(15 23 42 / 1);
+      border: 1px solid rgb(71 85 105 / 1);
+      color: white;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+    }
+    .m-input:focus { border-color: #00bcd4; outline: none; }
+    .p-cell {
+      padding: 4px;
+      background: rgb(15 23 42 / 0.6);
+      border-radius: 3px;
+      text-align: center;
+      color: rgb(228 240 255 / 1);
+    }
+  </style>
+
+  <script>
+    import { ProjectionScene, type Vector3 } from '@/lib/math/linalg/ProjectionScene';
+    import { formatNumber } from '@/lib/math/linalg/MatrixMath';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const projMatrixEl = document.getElementById('proj-matrix')!;
+      const cells: HTMLDivElement[][] = [];
+      for (let i = 0; i < 3; i++) {
+        const row: HTMLDivElement[] = [];
+        for (let j = 0; j < 3; j++) {
+          const cell = document.createElement('div');
+          cell.className = 'p-cell';
+          cell.textContent = i === j ? '1' : '0';
+          projMatrixEl.appendChild(cell);
+          row.push(cell);
+        }
+        cells.push(row);
+      }
+
+      const vMagEl = document.getElementById('v-mag')!;
+      const pMagEl = document.getElementById('p-mag')!;
+      const rMagEl = document.getElementById('r-mag')!;
+      const orthoEl = document.getElementById('ortho')!;
+
+      const scene = new ProjectionScene({
+        containerId: 'scene-container',
+        onUpdate: ({ projectionMatrix, vMag, pMag, rMag, orthogonality }) => {
+          for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+              cells[i][j].textContent = formatNumber(projectionMatrix[i][j], 3);
+            }
+          }
+          vMagEl.textContent = vMag.toFixed(3);
+          pMagEl.textContent = pMag.toFixed(3);
+          rMagEl.textContent = rMag.toFixed(3);
+          orthoEl.textContent = Math.abs(orthogonality) < 1e-9 ? '0' : orthogonality.toExponential(2);
+        },
+      });
+
+      const nx = document.getElementById('n-x') as HTMLInputElement;
+      const ny = document.getElementById('n-y') as HTMLInputElement;
+      const nz = document.getElementById('n-z') as HTMLInputElement;
+      const vx = document.getElementById('v-x') as HTMLInputElement;
+      const vy = document.getElementById('v-y') as HTMLInputElement;
+      const vz = document.getElementById('v-z') as HTMLInputElement;
+      const hintLine = document.getElementById('hint-line')!;
+      const vecInputLabel = document.getElementById('vec-input-label')!;
+
+      const readNormal = (): Vector3 => [
+        parseFloat(nx.value) || 0,
+        parseFloat(ny.value) || 0,
+        parseFloat(nz.value) || 0,
+      ];
+      const readVector = (): Vector3 => [
+        parseFloat(vx.value) || 0,
+        parseFloat(vy.value) || 0,
+        parseFloat(vz.value) || 0,
+      ];
+
+      [nx, ny, nz].forEach((el) => el.addEventListener('input', () => scene.setNormal(readNormal())));
+      [vx, vy, vz].forEach((el) => el.addEventListener('input', () => scene.setVector(readVector())));
+
+      // Presets
+      document.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const n: number[] = JSON.parse(btn.dataset.normal!);
+          nx.value = String(n[0]);
+          ny.value = String(n[1]);
+          nz.value = String(n[2]);
+          scene.setNormal([n[0], n[1], n[2]]);
+          hintLine.textContent = btn.title;
+        });
+      });
+
+      // Mode toggle
+      const modePlane = document.getElementById('mode-plane')!;
+      const modeLine = document.getElementById('mode-line')!;
+      let mode: 'plane' | 'line' = 'plane';
+      const setMode = (m: 'plane' | 'line') => {
+        mode = m;
+        scene.setMode(m);
+        const activeCls = 'bg-accent-blue/30 border-accent-blue text-base-50';
+        const inactiveCls = 'bg-base-700 hover:bg-base-600 border-base-600 text-base-100';
+        modePlane.className = 'px-3 py-2 text-sm rounded border transition ' + (m === 'plane' ? activeCls : inactiveCls);
+        modeLine.className = 'px-3 py-2 text-sm rounded border transition ' + (m === 'line' ? activeCls : inactiveCls);
+        vecInputLabel.textContent = m === 'plane' ? '法向量 n' : '直線方向 a';
+        hintLine.textContent = m === 'plane'
+          ? '平面模式：n 是平面的法向量 — 平面垂直於這個方向。'
+          : '直線模式：a 是直線的方向向量 — 影子會落在這條線上。';
+      };
+      modePlane.addEventListener('click', () => setMode('plane'));
+      modeLine.addEventListener('click', () => setMode('line'));
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
 </BaseLayout>
