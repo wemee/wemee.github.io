@@ -56,6 +56,48 @@ export function multiplyMatrices(a: Matrix4, b: Matrix4): Matrix4 {
   return out;
 }
 
+/** Determinant of a 3×3 matrix. */
+export function determinant3(m: number[][]): number {
+  return (
+    m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) -
+    m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
+    m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
+  );
+}
+
+/** Inverse of a 3×3 matrix. Returns null if singular. */
+export function inverse3(m: number[][]): number[][] | null {
+  const det = determinant3(m);
+  if (Math.abs(det) < 1e-12) return null;
+  const inv = 1 / det;
+  return [
+    [
+      (m[1][1] * m[2][2] - m[1][2] * m[2][1]) * inv,
+      (m[0][2] * m[2][1] - m[0][1] * m[2][2]) * inv,
+      (m[0][1] * m[1][2] - m[0][2] * m[1][1]) * inv,
+    ],
+    [
+      (m[1][2] * m[2][0] - m[1][0] * m[2][2]) * inv,
+      (m[0][0] * m[2][2] - m[0][2] * m[2][0]) * inv,
+      (m[0][2] * m[1][0] - m[0][0] * m[1][2]) * inv,
+    ],
+    [
+      (m[1][0] * m[2][1] - m[1][1] * m[2][0]) * inv,
+      (m[0][1] * m[2][0] - m[0][0] * m[2][1]) * inv,
+      (m[0][0] * m[1][1] - m[0][1] * m[1][0]) * inv,
+    ],
+  ];
+}
+
+/** Multiply a 3×3 matrix by a 3-vector. */
+export function applyMatrix3ToVec3(m: number[][], v: Vector3): Vector3 {
+  return [
+    m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2],
+    m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2],
+    m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2],
+  ];
+}
+
 /** Determinant of 4×4 via cofactor expansion along the first row. */
 export function determinant4(m: Matrix4): number {
   const det3 = (a: number[][]): number =>
