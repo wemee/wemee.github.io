@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import LinalgPageNav from '@/components/LinalgPageNav.astro';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 
@@ -176,14 +177,10 @@ const PLANE_PRESETS = [
         <div class="my-4 flex justify-center" set:html={tex("P = X(X^\\top X)^{-1} X^\\top", true)} />
         <p>看到這個公式不要慌 — 它就是上面平面/直線公式的一般化。<span set:html={tex('(X^\\top X)^{-1}')} /> 是用來「歸一化」<span set:html={tex('X')} /> 的多欄（如果欄之間不正交），<span set:html={tex('X X^\\top')} /> 那部分跟前面 <span set:html={tex('\\hat{a}\\hat{a}^\\top')} /> 同樣是「在 column space 內」。</p>
 
-        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 下一步</h3>
-        <ul class="list-disc list-inside space-y-1 ml-2">
-          <li><a href="/math/linalg/change-of-basis" class="text-accent-blue hover:underline">換基底</a>：投影完之後，要不要用新的座標系記錄結果？這是 PCA 的關鍵。</li>
-          <li><a href="/math/linalg/eigen" class="text-accent-blue hover:underline">特徵向量</a>：PCA 就是「把資料投影到 covariance 矩陣的最大特徵向量」。</li>
-          <li><a href="/math/linalg/svd" class="text-accent-blue hover:underline">SVD</a>：投影 + 特徵向量的進階推廣，可以處理任何矩陣。</li>
-        </ul>
       </div>
     </section>
+
+    <LinalgPageNav slug="projection" />
   </div>
 
   <style>

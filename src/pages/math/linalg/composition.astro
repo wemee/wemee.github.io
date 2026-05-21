@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import LinalgPageNav from '@/components/LinalgPageNav.astro';
 import { PRESETS } from '@/lib/math/linalg/presets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -119,10 +120,10 @@ const tex = (s: string, display = false) =>
         <div class="my-4 flex justify-center" set:html={tex("(A \\cdot B) \\cdot C \\;=\\; A \\cdot (B \\cdot C) \\quad\\text{(永遠成立)}", true)} />
         <p>所以你可以「先算出 <span set:html={tex('A \\cdot B')} />」再套用到一堆向量上，CPU 只乘一次。圖學裡的 <code class="text-accent-cyan">Model · View · Projection</code> 三矩陣鏈，引擎啟動時就會先預乘起來。</p>
 
-        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 下一步</h3>
-        <p>學會看「動作組合」之後，下一個重要觀念是<a href="/math/linalg/change-of-basis" class="text-accent-blue hover:underline">換基底</a> — 當你用 <span set:html={tex('P^{-1} A P')} /> 這種「夾擊」形式時，你其實是在說：「把空間換到新座標系做事，做完再換回來」。這是對角化的核心想法。</p>
       </div>
     </section>
+
+    <LinalgPageNav slug="composition" />
   </div>
 
   <style>

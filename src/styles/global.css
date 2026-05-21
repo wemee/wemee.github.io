@@ -714,3 +714,17 @@ body {
 .hidden {
    display: none;
 }
+/* ==========================================
+   KaTeX display equation overflow guard
+   Long matrix equations would overflow narrow viewports;
+   let them scroll horizontally instead of breaking layout.
+   ========================================== */
+.katex-display {
+   overflow-x: auto;
+   overflow-y: hidden;
+   padding-top: 0.25rem;
+   padding-bottom: 0.25rem;
+}
+.katex-display > .katex {
+   white-space: nowrap;
+}

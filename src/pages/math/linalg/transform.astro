@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import LinalgPageNav from '@/components/LinalgPageNav.astro';
 import { PRESETS } from '@/lib/math/linalg/presets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -167,17 +168,10 @@ const tex = (s: string, display = false) =>
           <li><span set:html={tex('\\det = 0')} /> — 壓扁了。這個矩陣<strong class="text-base-50">不可逆</strong>，因為你沒辦法把一個平面「還原回」一個立方體。</li>
         </ul>
 
-        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 下一步</h3>
-        <p>當你能直觀感受「矩陣就是動作」之後，接下來幾頁會教你回答這些問題：</p>
-        <ul class="list-disc list-inside space-y-1 ml-2">
-          <li><a href="/math/linalg/composition" class="text-accent-blue hover:underline">矩陣組合</a>：兩個動作疊起來會發生什麼？為什麼順序很重要？</li>
-          <li><a href="/math/linalg/projection" class="text-accent-blue hover:underline">投影</a>：把高維資料壓到一條線或一個平面 — 怎麼壓最不失真？</li>
-          <li><a href="/math/linalg/change-of-basis" class="text-accent-blue hover:underline">換基底</a>：同一個向量在不同座標系裡怎麼變？這是圖學、PCA、Fourier 的共同骨幹。</li>
-          <li><a href="/math/linalg/eigen" class="text-accent-blue hover:underline">特徵向量</a>：有沒有哪些方向「被矩陣作用後仍是原方向」？PageRank 與 PCA 的核心。</li>
-          <li><a href="/math/linalg/svd" class="text-accent-blue hover:underline">SVD</a>：任何矩陣都能拆成「旋轉 → 拉伸 → 旋轉」三步 — CS 線代的最高峰。</li>
-        </ul>
       </div>
     </section>
+
+    <LinalgPageNav slug="transform" />
   </div>
 
   <style>
