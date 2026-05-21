@@ -1,51 +1,360 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import LinalgPageNav from '@/components/LinalgPageNav.astro';
+import { EIGEN_PRESETS } from '@/lib/math/linalg/eigenPresets';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
 ---
 <BaseLayout
   currentPage="math"
-  title="特徵向量與對角化 (籌備中)"
-  description="哪些方向「被矩陣作用後仍是原方向」？PageRank、PCA 與量子裡的不變方向。"
+  title="特徵向量與對角化"
+  description="哪些方向會被矩陣作用後保持方向？— PageRank、PCA 與量子物理的核心。"
 >
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-16">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
     <a href="/math/linalg/" class="text-accent-blue hover:underline text-sm">← 回線性代數專區</a>
 
-    <header class="mt-4 mb-8">
+    <header class="mt-4 mb-6 text-center">
       <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 3 · 分解與譜論</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-3">🌟 特徵向量與對角化</h1>
-      <p class="text-base-400">把矩陣作用在一個向量上，大多數方向都會被「轉歪」— 但有一些特殊方向，只會被「拉長或縮短」，方向不變。那些就是特徵向量。</p>
-      <span class="inline-block mt-3 px-3 py-1 rounded-full text-xs bg-accent-yellow/20 text-accent-yellow border border-accent-yellow/40">籌備中</span>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🌟 特徵向量與對角化</h1>
+      <p class="text-base-400 max-w-2xl mx-auto" set:html={'多數方向都會被轉歪 — 但有些「特殊方向」只會被拉長或縮短，方向不變。那些是<strong>特徵向量</strong>，拉伸倍率是<strong>特徵值 ' + tex('\\lambda') + '</strong>。'}></p>
     </header>
 
-    <section class="rounded-lg border border-base-600 bg-base-800/60 p-6 mb-6">
-      <h2 class="text-lg font-bold text-accent-green mb-3">你會學到什麼</h2>
-      <ul class="space-y-2 text-base-300 text-sm">
-        <li>· 特徵方程式 <code class="text-accent-cyan">Av = λv</code> 的直觀（轉動單位圓變橢圓，主軸就是特徵向量）</li>
-        <li>· 解特徵多項式 <code class="text-accent-cyan">det(A − λI) = 0</code>，找特徵值</li>
-        <li>· 對角化 <code class="text-accent-cyan">A = PDP⁻¹</code> — 為什麼「在特徵向量基底下」矩陣會變成對角矩陣</li>
-        <li>· 對角化讓 <code class="text-accent-cyan">Aⁿ</code> 變得超好算：<code class="text-accent-cyan">Aⁿ = PDⁿP⁻¹</code></li>
-        <li>· 何時不能對角化？— Jordan form 補完（不另闢專頁，會在這裡帶到）</li>
-        <li>· 對稱矩陣的特殊性質：特徵向量必為正交，必可對角化</li>
-      </ul>
+    <div class="rounded-md border border-accent-yellow/40 bg-accent-yellow/10 px-4 py-3 mb-6 text-sm text-base-300">
+      ℹ️ 此頁限定為<strong class="text-base-50">對稱矩陣 (Aᵀ = A)</strong>。對稱矩陣的特徵值永遠是實數、特徵向量永遠互相正交，視覺化最乾淨；一般矩陣可能有複數特徵值（例如旋轉），需要另開一頁。改任一個 cell 會自動把對稱的鏡像 cell 同步更新。
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- 左：3D 視覺化 -->
+      <div class="lg:col-span-2">
+        <div id="scene-container" class="rounded-lg border border-base-600 bg-base-900 overflow-hidden shadow-lg" style="height: 60vh; min-height: 420px;"></div>
+
+        <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          <div class="flex items-center gap-2 px-3 py-2 rounded bg-base-800 border border-base-600">
+            <span class="w-3 h-3 rounded opacity-50" style="background:#80d8ff"></span> A·球 → 橢球
+          </div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded bg-base-800 border border-base-600">
+            <span class="w-3 h-3 rounded opacity-50" style="background:#444"></span> 原始單位球
+          </div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded bg-base-800 border border-base-600">
+            <span class="w-3 h-3 rounded" style="background:#ff80ab"></span> λ &gt; 0 軸
+          </div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded bg-base-800 border border-base-600">
+            <span class="w-3 h-3 rounded" style="background:#4dd0e1"></span> λ &lt; 0 軸
+          </div>
+        </div>
+      </div>
+
+      <!-- 右：控制 -->
+      <div class="space-y-4">
+        <!-- Preset -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-blue text-sm">
+            🎯 預設矩陣
+          </div>
+          <div class="p-3 grid grid-cols-2 gap-2">
+            {EIGEN_PRESETS.map((p) => (
+              <button data-preset={p.id} class="px-2 py-2 text-xs rounded bg-base-700 hover:bg-accent-blue/30 border border-base-600 text-base-100 transition text-left" title={p.hint}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <div class="px-4 py-2 bg-base-900/60 border-t border-base-600">
+            <p id="preset-hint" class="text-xs text-base-400 italic min-h-[2.5em]">點按鈕，或直接編輯下面的矩陣。</p>
+          </div>
+        </div>
+
+        <!-- 矩陣輸入 -->
+        <div class="rounded-lg border border-accent-cyan/40 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-accent-cyan/10 border-b border-accent-cyan/40 font-bold text-accent-cyan text-sm flex justify-between items-center">
+            <span set:html={'對稱矩陣 ' + tex('A')}></span>
+            <button id="reset-matrix" class="px-2 py-0.5 text-xs rounded bg-base-700 hover:bg-base-600 border border-base-600">重設</button>
+          </div>
+          <div class="p-3">
+            <div id="matrix-grid" class="grid grid-cols-3 gap-1"></div>
+            <p class="mt-2 text-xs text-base-400">改一個格子，對角的鏡像 cell 會自動同步（保持對稱）。</p>
+          </div>
+        </div>
+
+        <!-- Eigenvalues -->
+        <div class="rounded-lg border border-accent-green/40 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-accent-green/10 border-b border-accent-green/40 font-bold text-accent-green text-sm">
+            🌟 特徵值 (大→小排序)
+          </div>
+          <div class="p-4 space-y-2 font-mono text-sm">
+            <div id="lambda-list"></div>
+            <hr class="border-base-600">
+            <div class="flex justify-between"><span class="text-base-400" set:html={tex('\\text{trace}(A) = \\sum \\lambda_i =')}></span><span id="trace-val" class="text-base-50 font-bold">3</span></div>
+            <div class="flex justify-between"><span class="text-base-400" set:html={tex('\\det(A) = \\prod \\lambda_i =')}></span><span id="det-val" class="text-base-50 font-bold">1</span></div>
+            <p id="det-hint" class="text-xs text-base-400 mt-1 min-h-[1.2em]"></p>
+          </div>
+        </div>
+
+        <!-- Eigenvectors -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-base-100 text-sm">
+            🎯 特徵向量 (欄向量)
+          </div>
+          <div class="p-3">
+            <div id="eigvec-grid" class="grid grid-cols-3 gap-1 text-xs"></div>
+            <p class="mt-2 text-xs text-base-400">第 i 欄是對應第 i 個特徵值的方向。對稱矩陣保證三欄互相正交。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 教學內容 -->
+    <section class="mt-12 max-w-3xl mx-auto">
+      <h2 class="text-2xl font-bold text-base-50 mb-4">📖 特殊方向就是不被旋轉的方向</h2>
+
+      <div class="space-y-4 text-base-300 leading-relaxed">
+        <p>當你把矩陣 <span set:html={tex('A')} /> 作用在一個隨便挑的向量 <span set:html={tex('v')} /> 上，大多數情況 <span set:html={tex('Av')} /> 跟 <span set:html={tex('v')} /> 既不平行也不垂直，方向被轉歪。<strong class="text-base-50">但對於某些特殊的方向</strong>，作用完之後新向量還是<strong class="text-base-50">沿原方向</strong>，只是被拉長或縮短了：</p>
+
+        <div class="my-6 flex justify-center" set:html={tex("A\\,v \\;=\\; \\lambda\\,v", true)} />
+
+        <p>滿足這個等式的 <span set:html={tex('v')} /> 叫做<strong class="text-base-50">特徵向量</strong>（eigenvector），對應的拉伸倍率 <span set:html={tex('\\lambda')} /> 叫做<strong class="text-base-50">特徵值</strong>（eigenvalue）。它們是矩陣 <span set:html={tex('A')} /> 的「骨架」 — 一旦知道這組 <span set:html={tex('(v_i, \\lambda_i)')} />，整個 <span set:html={tex('A')} /> 的行為就完全清楚了。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🥚 球變橢球的故事</h3>
+        <p>把單位球（每個方向長度都是 1 的「球」）丟給 <span set:html={tex('A')} />，得到一個<strong class="text-base-50">橢球</strong>。橢球的<strong class="text-base-50">主軸方向就是特徵向量</strong>，主軸長度就是<strong class="text-base-50">特徵值</strong>。可以從畫面上的橢球看出 <span set:html={tex('A')} /> 在做什麼。試試：</p>
+        <ul class="list-disc list-inside space-y-1 ml-2">
+          <li>點 <strong class="text-accent-blue">沿軸拉伸</strong> → 橢球的三個主軸正好是 X/Y/Z，因為矩陣是對角的。</li>
+          <li>點 <strong class="text-accent-blue">傾斜拉伸</strong> → 同樣的拉伸倍率，但主軸轉了 30°。特徵值不變，特徵向量轉了。</li>
+          <li>點 <strong class="text-accent-blue">有正有負</strong> → 有一個負特徵值 — 那個方向<strong class="text-base-50">翻過去</strong>了。</li>
+          <li>點 <strong class="text-accent-red">退化 (det = 0)</strong> → 橢球壓扁成一個圓盤。某個方向的特徵值 = 0，那個方向被完全壓掉。</li>
+        </ul>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">💎 對稱矩陣的雙重禮物</h3>
+        <p>本頁限定<strong class="text-base-50">對稱矩陣</strong>（<span set:html={tex('A = A^\\top')} />）。為什麼？因為對稱矩陣有兩個漂亮性質：</p>
+        <ul class="list-disc list-inside space-y-1 ml-2">
+          <li><strong class="text-base-50">特徵值都是實數</strong>（不會跑出複數）— 旋轉矩陣不對稱，特徵值是複數，視覺化會很亂。</li>
+          <li><strong class="text-base-50">特徵向量互相正交</strong>（90 度）— 可以把它們當「新的座標軸」，自然形成正交基底。</li>
+        </ul>
+        <p>一般矩陣可能有複數特徵值或重根導致無法對角化（要用 Jordan form 補完）。對稱矩陣<strong class="text-base-50">永遠可以對角化</strong>。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🔧 對角化：找對基底，事情就變簡單</h3>
+        <p>有了三個特徵向量 <span set:html={tex('v_1, v_2, v_3')} />，把它們當欄向量組合成基底矩陣 <span set:html={tex('V = [\\,v_1\\,|\\,v_2\\,|\\,v_3\\,]')} />。然後在這個新基底下看 <span set:html={tex('A')} />（呼叫一下 <a href="/math/linalg/change-of-basis" class="text-accent-blue hover:underline">換基底</a> 的公式）：</p>
+
+        <div class="my-4 flex justify-center" set:html={tex("A \\;=\\; V \\,\\Lambda\\, V^{-1}, \\qquad \\Lambda = \\mathrm{diag}(\\lambda_1, \\lambda_2, \\lambda_3)", true)} />
+
+        <p>對對稱矩陣，<span set:html={tex('V')} /> 是正交矩陣，所以 <span set:html={tex('V^{-1} = V^\\top')} />。整個式子化成：</p>
+
+        <div class="my-4 flex justify-center" set:html={tex("A \\;=\\; V \\,\\Lambda\\, V^\\top", true)} />
+
+        <p>意思是：「<span set:html={tex('A')} /> 等於先換到特徵向量基底（<span set:html={tex('V^\\top')} />）、再沿著新軸拉伸（<span set:html={tex('\\Lambda')} />）、再換回標準基底（<span set:html={tex('V')} />）」。對角化讓很多事變簡單，例如 <span set:html={tex('A^n = V\\Lambda^n V^\\top')} /> — 大矩陣的 n 次方變成「對 n 個數字取 n 次方」。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">💎 行列式與跡的捷徑</h3>
+        <ul class="list-disc list-inside space-y-1 ml-2">
+          <li><span set:html={tex('\\det(A) = \\lambda_1 \\,\\lambda_2 \\,\\lambda_3')} /> — 行列式 = 特徵值連乘。任何一個 λ = 0 就 det = 0（不可逆）。</li>
+          <li><span set:html={tex('\\mathrm{trace}(A) = \\lambda_1 + \\lambda_2 + \\lambda_3 = A_{00} + A_{11} + A_{22}')} /> — 跡 = 特徵值連加 = 對角線連加。這兩個不用算特徵值都能直接看出來。</li>
+        </ul>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 CS 上有什麼用</h3>
+        <ul class="list-disc list-inside space-y-2 ml-2">
+          <li><strong class="text-base-50">PCA (主成分分析)</strong>：把資料的 covariance 矩陣（對稱！）做特徵分解 — 最大特徵值對應的方向就是「資料散布最廣的方向」（第一主成分）。試試 <strong class="text-accent-blue">類 covariance</strong> 那個 preset。</li>
+          <li><strong class="text-base-50">PageRank</strong>：網頁連結矩陣的最大特徵向量 = 每個網頁的 PageRank 值。雖然這個矩陣不對稱（連結有方向），但思路一樣。</li>
+          <li><strong class="text-base-50">Spectral Clustering</strong>：用圖的 Laplacian 矩陣（對稱、正半定）的小特徵向量做分群。</li>
+          <li><strong class="text-base-50">量子物理 / 量子計算</strong>：可觀測量是對稱矩陣 (Hermitian)，測量結果就是特徵值，測量後的狀態就是對應的特徵向量。</li>
+          <li><strong class="text-base-50">振動 / 共振分析</strong>：建築與機械系統的振動模式 = 質量-剛度矩陣的特徵向量，頻率 = 特徵值。</li>
+        </ul>
+
+        <div class="my-6 p-4 rounded bg-base-800/60 border-l-4 border-accent-cyan">
+          <p class="text-base-50 font-bold mb-1">💡 演算法細節（給好奇的工程師）</p>
+          <p class="text-sm">這頁的特徵分解用 <strong>Jacobi rotation</strong> 迭代法：每次找最大的非對角元素，用一個 2D 旋轉把它變 0，重複到所有非對角元素都接近 0。30 步內收斂，誤差 &lt; 10⁻¹⁰。實作在 <code class="text-accent-cyan">MatrixMath.ts</code> 的 <code class="text-accent-cyan">jacobiEigenSymmetric3</code>。</p>
+        </div>
+      </div>
     </section>
 
-    <section class="rounded-lg border border-base-600 bg-base-800/60 p-6 mb-6">
-      <h2 class="text-lg font-bold text-accent-blue mb-3">需要先懂</h2>
-      <ul class="space-y-2 text-base-300 text-sm">
-        <li>· <a href="/math/linalg/transform" class="text-accent-blue hover:underline">4×4 矩陣變換</a></li>
-        <li>· <a href="/math/linalg/change-of-basis" class="text-accent-blue hover:underline">換基底</a> — 對角化本質上就是換到「特徵向量基底」</li>
-        <li>· 行列式（會在 transform 頁帶到）</li>
-      </ul>
-    </section>
-
-    <section class="rounded-lg border border-accent-red/40 bg-base-800/60 p-6">
-      <h2 class="text-lg font-bold text-accent-red mb-3">CS 上有什麼用</h2>
-      <ul class="space-y-2 text-base-300 text-sm">
-        <li>· <span class="text-base-50 font-semibold">PageRank</span> — 整個演算法就是在找轉移矩陣的最大特徵向量</li>
-        <li>· <span class="text-base-50 font-semibold">PCA</span> — 主成分 = covariance 矩陣的特徵向量</li>
-        <li>· <span class="text-base-50 font-semibold">量子運算</span> — 測量就是把量子態投影到某個觀測量的特徵向量</li>
-        <li>· <span class="text-base-50 font-semibold">Spectral Clustering</span> — 用 Laplacian 矩陣的小特徵向量做分群</li>
-        <li>· <span class="text-base-50 font-semibold">振動 / 共振分析</span> — 結構工程裡找系統的自然頻率</li>
-      </ul>
-    </section>
+    <LinalgPageNav slug="eigen" />
   </div>
+
+  <style>
+    .m-input {
+      width: 100%;
+      padding: 6px 4px;
+      background: rgb(15 23 42 / 1);
+      border: 1px solid rgb(71 85 105 / 1);
+      color: white;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 13px;
+      font-family: ui-monospace, SFMono-Regular, monospace;
+    }
+    .m-input:focus { border-color: #00bcd4; outline: none; }
+    .m-input.mirror { background: rgb(15 23 42 / 0.7); border-color: rgb(71 85 105 / 0.6); }
+    .p-cell {
+      padding: 4px;
+      background: rgb(15 23 42 / 0.6);
+      border-radius: 3px;
+      text-align: center;
+      color: rgb(228 240 255 / 1);
+      font-family: ui-monospace, SFMono-Regular, monospace;
+    }
+    .lambda-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid rgb(71 85 105 / 0.3);
+    }
+    .lambda-row:last-child { border-bottom: none; }
+    .lambda-bar {
+      height: 6px;
+      border-radius: 3px;
+      transition: width 0.2s;
+    }
+  </style>
+
+  <script>
+    import { EigenScene } from '@/lib/math/linalg/EigenScene';
+    import { EIGEN_PRESETS } from '@/lib/math/linalg/eigenPresets';
+    import { formatNumber } from '@/lib/math/linalg/MatrixMath';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // 3×3 matrix input grid with auto-symmetrize
+      const grid = document.getElementById('matrix-grid')!;
+      const cellInputs: HTMLInputElement[][] = [];
+      for (let i = 0; i < 3; i++) {
+        const row: HTMLInputElement[] = [];
+        for (let j = 0; j < 3; j++) {
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.step = '0.1';
+          input.className = 'm-input';
+          input.value = i === j ? '1' : '0';
+          input.dataset.row = String(i);
+          input.dataset.col = String(j);
+          input.addEventListener('input', () => {
+            const v = parseFloat(input.value);
+            if (Number.isNaN(v)) return;
+            scene.setMatrixCell(i, j, v);
+            if (i !== j) {
+              // Mirror the value to the symmetric cell
+              cellInputs[j][i].value = formatNumber(v, 4);
+            }
+          });
+          grid.appendChild(input);
+          row.push(input);
+        }
+        cellInputs.push(row);
+      }
+
+      function syncToGrid(m: number[][]) {
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            cellInputs[i][j].value = formatNumber(m[i][j], 4);
+          }
+        }
+      }
+
+      // λ rows with bars
+      const lambdaList = document.getElementById('lambda-list')!;
+      const lambdaRows: { row: HTMLDivElement; label: HTMLSpanElement; bar: HTMLDivElement; value: HTMLSpanElement }[] = [];
+      for (let i = 0; i < 3; i++) {
+        const row = document.createElement('div');
+        row.className = 'lambda-row';
+        const label = document.createElement('span');
+        label.className = 'text-base-400';
+        label.innerHTML = `λ<sub>${i + 1}</sub>`;
+        const barWrap = document.createElement('div');
+        const bar = document.createElement('div');
+        bar.className = 'lambda-bar';
+        bar.style.width = '50%';
+        bar.style.background = '#ff80ab';
+        barWrap.appendChild(bar);
+        const value = document.createElement('span');
+        value.className = 'text-base-50 font-bold tabular-nums';
+        value.textContent = '1';
+        row.appendChild(label);
+        row.appendChild(barWrap);
+        row.appendChild(value);
+        lambdaList.appendChild(row);
+        lambdaRows.push({ row, label, bar, value });
+      }
+
+      // Eigenvector grid (3×3 readonly)
+      const eigvecGrid = document.getElementById('eigvec-grid')!;
+      const vecCells: HTMLDivElement[][] = [];
+      for (let i = 0; i < 3; i++) {
+        const row: HTMLDivElement[] = [];
+        for (let j = 0; j < 3; j++) {
+          const cell = document.createElement('div');
+          cell.className = 'p-cell';
+          cell.textContent = i === j ? '1' : '0';
+          eigvecGrid.appendChild(cell);
+          row.push(cell);
+        }
+        vecCells.push(row);
+      }
+
+      const traceEl = document.getElementById('trace-val')!;
+      const detEl = document.getElementById('det-val')!;
+      const detHint = document.getElementById('det-hint')!;
+      const presetHint = document.getElementById('preset-hint')!;
+
+      const scene = new EigenScene({
+        containerId: 'scene-container',
+        onUpdate: ({ eigenvalues, eigenvectors, determinant, trace }) => {
+          const maxAbs = Math.max(...eigenvalues.map((v) => Math.abs(v)), 0.001);
+          eigenvalues.forEach((lambda, i) => {
+            const row = lambdaRows[i];
+            row.value.textContent = formatNumber(lambda, 4);
+            const pct = Math.abs(lambda) / maxAbs * 100;
+            row.bar.style.width = `${pct.toFixed(0)}%`;
+            if (Math.abs(lambda) < 1e-9) {
+              row.bar.style.background = '#888';
+              row.value.className = 'text-base-400 font-bold tabular-nums';
+            } else if (lambda > 0) {
+              row.bar.style.background = '#ff80ab';
+              row.value.className = 'text-accent-pink font-bold tabular-nums';
+              row.value.style.color = '#ff80ab';
+            } else {
+              row.bar.style.background = '#4dd0e1';
+              row.value.style.color = '#4dd0e1';
+            }
+          });
+
+          for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+              vecCells[i][j].textContent = formatNumber(eigenvectors[i][j], 3);
+            }
+          }
+
+          traceEl.textContent = formatNumber(trace, 3);
+          detEl.textContent = formatNumber(determinant, 3);
+          detEl.className = determinant < -1e-9 ? 'text-accent-red font-bold' :
+                            Math.abs(determinant) < 1e-9 ? 'text-accent-yellow font-bold' :
+                            'text-base-50 font-bold';
+          detHint.textContent =
+            Math.abs(determinant) < 1e-9 ? '⚠️ 不可逆 — 至少有一個 λ = 0。' :
+            determinant < 0 ? '🔄 翻面（奇數個負特徵值）' :
+            '✅ 體積放大係數正常';
+        },
+      });
+
+      // Preset buttons
+      document.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.preset!;
+          const p = EIGEN_PRESETS.find((x) => x.id === id);
+          if (!p) return;
+          scene.setMatrix(p.matrix);
+          syncToGrid(p.matrix);
+          presetHint.textContent = p.hint;
+        });
+      });
+
+      // Reset
+      document.getElementById('reset-matrix')!.addEventListener('click', () => {
+        const I = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+        scene.setMatrix(I);
+        syncToGrid(I);
+        presetHint.textContent = '已重設為單位矩陣。';
+      });
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
 </BaseLayout>

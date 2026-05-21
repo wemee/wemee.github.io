@@ -125,6 +125,107 @@ export function determinant4(m: Matrix4): number {
   );
 }
 
+export interface EigenResult3 {
+  eigenvalues: [number, number, number];
+  /** Columns are eigenvectors corresponding to eigenvalues. */
+  eigenvectors: number[][]; // 3×3
+  converged: boolean;
+  sweeps: number;
+}
+
+/**
+ * Eigendecomposition of a 3×3 symmetric matrix via classical Jacobi rotation.
+ * Eigenvalues sorted in descending order; eigenvector columns reordered to match.
+ * Input must be symmetric; non-symmetric input is symmetrized via (A + Aᵀ)/2.
+ */
+export function jacobiEigenSymmetric3(a: number[][], maxSweeps = 50, tol = 1e-10): EigenResult3 {
+  const A: number[][] = [
+    [a[0][0], (a[0][1] + a[1][0]) / 2, (a[0][2] + a[2][0]) / 2],
+    [(a[1][0] + a[0][1]) / 2, a[1][1], (a[1][2] + a[2][1]) / 2],
+    [(a[2][0] + a[0][2]) / 2, (a[2][1] + a[1][2]) / 2, a[2][2]],
+  ];
+  const V: number[][] = [
+    [1, 0, 0],
+    [0, 1, 0],
+    [0, 0, 1],
+  ];
+
+  let converged = false;
+  let sweep = 0;
+  for (sweep = 0; sweep < maxSweeps; sweep++) {
+    // Find largest off-diagonal magnitude
+    let p = 0;
+    let q = 1;
+    let maxOff = Math.abs(A[0][1]);
+    if (Math.abs(A[0][2]) > maxOff) { p = 0; q = 2; maxOff = Math.abs(A[0][2]); }
+    if (Math.abs(A[1][2]) > maxOff) { p = 1; q = 2; maxOff = Math.abs(A[1][2]); }
+
+    if (maxOff < tol) {
+      converged = true;
+      break;
+    }
+
+    // Rotation angle to zero A[p][q]
+    let theta: number;
+    if (Math.abs(A[p][p] - A[q][q]) < 1e-14) {
+      theta = Math.PI / 4 * Math.sign(A[p][q] || 1);
+    } else {
+      theta = 0.5 * Math.atan2(2 * A[p][q], A[p][p] - A[q][q]);
+    }
+    const c = Math.cos(theta);
+    const s = Math.sin(theta);
+
+    // Apply A' = Rᵀ A R
+    const App = c * c * A[p][p] + 2 * c * s * A[p][q] + s * s * A[q][q];
+    const Aqq = s * s * A[p][p] - 2 * c * s * A[p][q] + c * c * A[q][q];
+    A[p][p] = App;
+    A[q][q] = Aqq;
+    A[p][q] = 0;
+    A[q][p] = 0;
+
+    for (let i = 0; i < 3; i++) {
+      if (i !== p && i !== q) {
+        const Aip = A[i][p];
+        const Aiq = A[i][q];
+        A[i][p] = c * Aip + s * Aiq;
+        A[p][i] = A[i][p];
+        A[i][q] = -s * Aip + c * Aiq;
+        A[q][i] = A[i][q];
+      }
+    }
+
+    // Update V: V = V·R
+    for (let i = 0; i < 3; i++) {
+      const Vip = V[i][p];
+      const Viq = V[i][q];
+      V[i][p] = c * Vip + s * Viq;
+      V[i][q] = -s * Vip + c * Viq;
+    }
+  }
+
+  const eigenvalues: [number, number, number] = [A[0][0], A[1][1], A[2][2]];
+
+  // Sort eigenvalues descending; permute eigenvector columns to match.
+  const indices = [0, 1, 2].sort((i, j) => eigenvalues[j] - eigenvalues[i]);
+  const sortedVals: [number, number, number] = [
+    eigenvalues[indices[0]],
+    eigenvalues[indices[1]],
+    eigenvalues[indices[2]],
+  ];
+  const sortedVecs: number[][] = [
+    [V[0][indices[0]], V[0][indices[1]], V[0][indices[2]]],
+    [V[1][indices[0]], V[1][indices[1]], V[1][indices[2]]],
+    [V[2][indices[0]], V[2][indices[1]], V[2][indices[2]]],
+  ];
+
+  return {
+    eigenvalues: sortedVals,
+    eigenvectors: sortedVecs,
+    converged,
+    sweeps: sweep,
+  };
+}
+
 /** Format a number for display, trimming -0 and excessive precision. */
 export function formatNumber(n: number, precision = 2): string {
   if (Object.is(n, -0)) n = 0;
