@@ -29,11 +29,20 @@
      ========================================== */
 
    /* --- Base Colors (Background & Text) --- */
+   /* The Solarized palette has a natural slot at 700 (`base00` in
+      Solarized nomenclature) and we interpolate 300 to fill the gap
+      between 400 and 100. Both were used throughout the linalg
+      subsection before they existed, so `text-base-300` and
+      `bg-base-700` silently no-op'd — preset buttons rendered without
+      background, body text inherited the wrong shade. Filling restores
+      the intended look. */
    --color-base-50: #fdf6e3;
    --color-base-100: #eee8d5;
+   --color-base-300: #c1c5bb;
    --color-base-400: #93a1a1;
    --color-base-500: #839496;
    --color-base-600: #586e75;
+   --color-base-700: #657b83;
    --color-base-800: #073642;
    --color-base-900: #002b36;
 
