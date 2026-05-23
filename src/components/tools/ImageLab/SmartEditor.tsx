@@ -60,6 +60,10 @@ function formatFileSize(bytes: number): string {
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
 }
 
+// 20 MB. Phone-cam photos top out around 10–15 MB; this still leaves
+// headroom for high-bit-depth RAWs without blowing memory on canvas.
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
+
 // ===== Component =====
 export function SmartEditor({
     aspectPresets = DEFAULT_ASPECT_PRESETS,
@@ -86,6 +90,7 @@ export function SmartEditor({
     const [outputFormat, setOutputFormat] = useState<'auto' | 'jpeg' | 'webp' | 'png'>('auto');
     const [outputQuality, setOutputQuality] = useState<number>(80);
     const [exportError, setExportError] = useState<string | null>(null);
+    const [uploadError, setUploadError] = useState<string | null>(null);
 
     // Accent color class mapping. Every variant we need has to appear here as
     // a full literal string — Tailwind JIT scans source text, so runtime
@@ -125,7 +130,17 @@ export function SmartEditor({
 
     // ===== File Upload =====
     const handleFileSelect = useCallback((file: File) => {
-        if (!file.type.startsWith('image/')) return;
+        if (!file.type.startsWith('image/')) {
+            setUploadError(`只接受圖片檔，這個是 ${file.type || '未知格式'}`);
+            return;
+        }
+        if (file.size > MAX_FILE_SIZE) {
+            setUploadError(
+                `檔案 ${formatFileSize(file.size)} 太大了，上限 ${formatFileSize(MAX_FILE_SIZE)}。請先用相機 App 或圖片工具壓縮再上傳`
+            );
+            return;
+        }
+        setUploadError(null);
 
         const url = URL.createObjectURL(file);
         const img = new Image();
@@ -136,6 +151,10 @@ export function SmartEditor({
                 width: img.naturalWidth,
                 height: img.naturalHeight,
             });
+        };
+        img.onerror = () => {
+            URL.revokeObjectURL(url);
+            setUploadError('這個檔案讀不出來，可能已損毀或格式不被支援');
         };
         img.src = url;
     }, []);
@@ -359,26 +378,38 @@ export function SmartEditor({
     // ===== Render =====
     if (!image) {
         return (
-            <div
-                ref={containerRef}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onClick={() => fileInputRef.current?.click()}
-                className="upload-area border-2 border-dashed border-accent-blue rounded-xl p-12 text-center cursor-pointer hover:bg-accent-blue/10 transition"
-            >
-                <div className="text-6xl mb-4">📁</div>
-                <p className="text-base-400 mb-2">拖拉圖片到這裡，或點擊選擇檔案</p>
-                <p className="text-base-600 text-sm">支援 JPG、PNG、WebP、GIF</p>
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleFileSelect(file);
-                    }}
-                />
+            <div className="space-y-3">
+                <div
+                    ref={containerRef}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="upload-area border-2 border-dashed border-accent-blue rounded-xl p-12 text-center cursor-pointer hover:bg-accent-blue/10 transition"
+                >
+                    <div className="text-6xl mb-4">📁</div>
+                    <p className="text-base-400 mb-2">拖拉圖片到這裡，或點擊選擇檔案</p>
+                    <p className="text-base-600 text-sm">
+                        支援 JPG、PNG、WebP、GIF，{formatFileSize(MAX_FILE_SIZE)} 以下
+                    </p>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleFileSelect(file);
+                        }}
+                    />
+                </div>
+                {uploadError && (
+                    <div
+                        role="alert"
+                        className="rounded-lg border border-accent-red bg-accent-red/10 px-4 py-3 text-sm text-accent-red"
+                    >
+                        ⚠️ {uploadError}
+                    </div>
+                )}
             </div>
         );
     }
