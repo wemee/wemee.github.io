@@ -5,10 +5,16 @@
 .game-container {
   position: relative;
   display: inline-block;
+  /* On phones, let the canvas shrink instead of overflowing horizontally —
+     the `width`/`height` attributes on the canvas itself preserve the
+     drawing-buffer resolution while CSS scales the display size. */
+  max-width: 100%;
 }
 
 #gameCanvas {
   display: block;
+  max-width: 100%;
+  height: auto;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.3);
 }
