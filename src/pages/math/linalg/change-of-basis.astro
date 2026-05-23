@@ -4,6 +4,7 @@ import LinalgPageNav from '@/components/LinalgPageNav.astro';
 import { BASIS_PRESETS } from '@/lib/math/linalg/basisPresets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
+import '@/styles/linalg.css';
 
 const tex = (s: string, display = false) =>
   katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
@@ -184,29 +185,6 @@ const tex = (s: string, display = false) =>
     <LinalgPageNav slug="change-of-basis" />
   </div>
 
-  <style>
-    .m-input {
-      width: 100%;
-      padding: 6px 4px;
-      background: rgb(15 23 42 / 1);
-      border: 1px solid rgb(71 85 105 / 1);
-      color: white;
-      border-radius: 4px;
-      text-align: center;
-      font-size: 13px;
-      font-family: ui-monospace, SFMono-Regular, monospace;
-    }
-    .m-input:focus { border-color: #00bcd4; outline: none; }
-    .p-cell {
-      padding: 4px;
-      background: rgb(15 23 42 / 0.6);
-      border-radius: 3px;
-      text-align: center;
-      color: rgb(228 240 255 / 1);
-      font-family: ui-monospace, SFMono-Regular, monospace;
-    }
-    .p-cell.error { color: rgb(239 68 68 / 1); }
-  </style>
 
   <script>
     import { BasisScene } from '@/lib/math/linalg/BasisScene';

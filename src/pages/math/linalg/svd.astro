@@ -4,6 +4,7 @@ import LinalgPageNav from '@/components/LinalgPageNav.astro';
 import { SVD_PRESETS } from '@/lib/math/linalg/svdPresets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
+import '@/styles/linalg.css';
 
 const tex = (s: string, display = false) =>
   katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
@@ -188,63 +189,6 @@ const tex = (s: string, display = false) =>
 
     <LinalgPageNav slug="svd" />
   </div>
-
-  <style>
-    .m-input {
-      width: 100%;
-      padding: 6px 4px;
-      background: rgb(15 23 42 / 1);
-      border: 1px solid rgb(71 85 105 / 1);
-      color: white;
-      border-radius: 4px;
-      text-align: center;
-      font-size: 13px;
-      font-family: ui-monospace, SFMono-Regular, monospace;
-    }
-    .m-input:focus { border-color: #00bcd4; outline: none; }
-    .p-cell {
-      padding: 4px;
-      background: rgb(15 23 42 / 0.6);
-      border-radius: 3px;
-      text-align: center;
-      color: rgb(228 240 255 / 1);
-      font-family: ui-monospace, SFMono-Regular, monospace;
-    }
-    .phase-btn, .rank-btn {
-      background: rgb(51 65 85 / 1);
-      border: 1px solid rgb(71 85 105 / 1);
-      color: rgb(241 245 249 / 1);
-    }
-    .phase-btn:hover, .rank-btn:hover {
-      background: rgb(0 188 212 / 0.3);
-    }
-    .phase-btn.active {
-      background: rgb(0 188 212 / 0.3);
-      border-color: rgb(0 188 212 / 1);
-      color: rgb(241 245 249 / 1);
-    }
-    .rank-btn.active {
-      background: rgb(245 158 11 / 0.3);
-      border-color: rgb(245 158 11 / 1);
-      color: rgb(241 245 249 / 1);
-    }
-    .sigma-row {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.4rem 0;
-      border-bottom: 1px solid rgb(71 85 105 / 0.3);
-    }
-    .sigma-row:last-child { border-bottom: none; }
-    .sigma-bar {
-      height: 6px;
-      border-radius: 3px;
-      transition: width 0.2s;
-    }
-    .sigma-row.dropped .sigma-bar { opacity: 0.25; }
-    .sigma-row.dropped .sigma-value { color: rgb(100 116 139 / 1); text-decoration: line-through; }
-  </style>
 
   <script>
     import { SVDScene } from '@/lib/math/linalg/SVDScene';

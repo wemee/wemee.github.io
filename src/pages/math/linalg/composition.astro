@@ -4,6 +4,7 @@ import LinalgPageNav from '@/components/LinalgPageNav.astro';
 import { PRESETS } from '@/lib/math/linalg/presets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
+import '@/styles/linalg.css';
 
 const tex = (s: string, display = false) =>
   katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
@@ -126,24 +127,12 @@ const tex = (s: string, display = false) =>
     <LinalgPageNav slug="composition" />
   </div>
 
+  <!-- This page packs A + B + result side-by-side (3 × 16 cells in one row).
+       Shrink padding/font from the shared linalg.css baseline so they fit. -->
   <style>
     .m-input {
-      width: 100%;
       padding: 5px 2px;
-      background: rgb(15 23 42 / 1);
-      border: 1px solid rgb(71 85 105 / 1);
-      color: white;
-      border-radius: 4px;
-      text-align: center;
       font-size: 12px;
-      font-family: ui-monospace, SFMono-Regular, monospace;
-    }
-    .m-input:focus { border-color: #00bcd4; outline: none; }
-    .m-input.locked { background: rgb(15 23 42 / 0.6); color: rgb(100 116 139 / 1); }
-    .m-input.readonly-display {
-      background: rgb(15 23 42 / 0.6);
-      color: rgb(228 240 255 / 1);
-      pointer-events: none;
     }
   </style>
 
