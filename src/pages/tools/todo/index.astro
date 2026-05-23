@@ -1,0 +1,37 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import TodoApp from './_TodoApp';
+---
+<BaseLayout currentPage="tools"
+  title="免登入待辦清單 - 不用註冊、資料存本地 | 快速備忘"
+  description="受夠了每個待辦 App 都要註冊帳號？這個極簡待辦清單免登入、免註冊，資料直接存在你的瀏覽器。秒開即用，支援細項和備註，完全離線可用。"
+>
+
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+    <h1 class="text-3xl font-bold text-base-50 mb-4">☑️ 免登入待辦清單</h1>
+
+    <!-- 說明 -->
+    <div class="bg-accent-cyan/20 border border-accent-cyan rounded-lg p-4 mb-6">
+      <h5 class="font-bold text-accent-cyan mb-2">😤 為什麼又要我註冊帳號？</h5>
+      <p class="text-base-400 mb-2">
+        想記個待辦事項，打開 App 卻要你「建立帳號」「驗證 Email」「同意隱私條款」...<br />
+        <strong class="text-base-50">拜託，我只是想記一下等等要買牛奶！</strong>
+      </p>
+      <p class="text-base-400 mb-2">
+        所以我做了這個<strong class="text-base-50">免登入、免註冊的極簡待辦清單</strong>：
+      </p>
+      <ul class="text-base-400 list-disc list-inside mb-2 space-y-1">
+        <li>✅ <strong>秒開即用</strong> — 打開網頁就能寫，沒有任何阻礙</li>
+        <li>✅ <strong>資料存本地</strong> — 用瀏覽器 localStorage，不上傳任何伺服器</li>
+        <li>✅ <strong>離線也能用</strong> — 沒網路？照樣運作</li>
+        <li>✅ <strong>支援細項</strong> — 點開可加備註和子任務</li>
+      </ul>
+      <p class="text-base-600 text-sm">
+        ⚠️ 提醒：清除瀏覽器資料會遺失待辦事項，重要內容請自行備份。
+      </p>
+    </div>
+
+    <!-- React Component -->
+    <TodoApp client:load />
+  </div>
+</BaseLayout>
