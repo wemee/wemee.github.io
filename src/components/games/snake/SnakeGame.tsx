@@ -327,13 +327,14 @@ export function SnakeGame({
                 )}
             </div>
 
-            {/* 遊戲畫布 */}
-            <div className="relative">
+            {/* 遊戲畫布 — drawing buffer 維持原解析度，CSS 寬度依視窗縮放 */}
+            <div className="relative w-full" style={{ maxWidth: `${canvasWidth}px` }}>
                 <canvas
                     ref={canvasRef}
                     width={canvasWidth}
                     height={canvasHeight}
-                    className="rounded-lg border-2 border-base-600"
+                    className="rounded-lg border-2 border-base-600 w-full h-auto"
+                    style={{ aspectRatio: `${canvasWidth} / ${canvasHeight}` }}
                 />
 
                 {/* 開始按鈕 */}
