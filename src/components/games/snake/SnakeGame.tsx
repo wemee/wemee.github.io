@@ -67,7 +67,8 @@ export function SnakeGame({
             setAiLoading(false);
             return true;
         } catch (e) {
-            setAiError('AI 載入失敗');
+            console.error('Failed to load Snake AI model:', e);
+            setAiError('AI 載入失敗，請查看控制台');
             setAiLoading(false);
             return false;
         }
@@ -307,19 +308,20 @@ export function SnakeGame({
     return (
         <div className="flex flex-col items-center gap-4">
             {/* 分數顯示 */}
-            <div className="flex items-center gap-6 text-base-100">
-                <span className="text-lg">🏆 分數: <strong className={isAIMode ? 'text-blue-400' : 'text-green-400'}>{gameState?.score ?? 0}</strong></span>
-                <span className="text-lg">🐍 長度: <strong className={isAIMode ? 'text-blue-400' : 'text-green-400'}>{gameState?.snake.length ?? 0}</strong></span>
+            <div className="flex items-center gap-6 text-base-50">
+                <span className="text-lg">🏆 分數: <strong className={isAIMode ? 'text-accent-blue' : 'text-accent-green'}>{gameState?.score ?? 0}</strong></span>
+                <span className="text-lg">🐍 長度: <strong className={isAIMode ? 'text-accent-blue' : 'text-accent-green'}>{gameState?.snake.length ?? 0}</strong></span>
                 {isAIMode && isPlaying && (
                     <div className="flex items-center gap-2">
-                        <span className="text-blue-400 text-sm">🤖 AI 模式</span>
-                        <div className="tooltip" data-tip="AI 飢餓度 (越高越急迫)">
-                            <div className="w-16 h-2 bg-gray-700 rounded-full overflow-hidden">
-                                <div
-                                    className={`h-full transition-all duration-300 ${currentHunger > 0.8 ? 'bg-red-500' : 'bg-yellow-400'}`}
-                                    style={{ width: `${currentHunger * 100}%` }}
-                                />
-                            </div>
+                        <span className="text-accent-blue text-sm">🤖 AI 模式</span>
+                        <div
+                            className="w-16 h-2 bg-base-700 rounded-full overflow-hidden"
+                            title="AI 飢餓度 (越高越急迫)"
+                        >
+                            <div
+                                className={`h-full transition-all duration-300 ${currentHunger > 0.8 ? 'bg-accent-red' : 'bg-accent-yellow'}`}
+                                style={{ width: `${currentHunger * 100}%` }}
+                            />
                         </div>
                     </div>
                 )}
@@ -339,18 +341,18 @@ export function SnakeGame({
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/50 rounded-lg">
                         <button
                             onClick={() => startGame(false)}
-                            className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition text-lg w-48"
+                            className="px-6 py-3 bg-accent-green hover:bg-accent-green/80 text-base-50 font-bold rounded-lg transition text-lg w-48"
                         >
                             ▶️ 玩家遊戲
                         </button>
                         <button
                             onClick={() => startGame(true)}
                             disabled={aiLoading}
-                            className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition text-lg w-48 disabled:opacity-50"
+                            className="px-6 py-3 bg-accent-blue hover:bg-accent-blue/80 text-base-50 font-bold rounded-lg transition text-lg w-48 disabled:opacity-50"
                         >
                             {aiLoading ? '載入中...' : '🤖 AI 遊戲'}
                         </button>
-                        {aiError && <p className="text-red-400 text-sm">{aiError}</p>}
+                        {aiError && <p className="text-accent-red text-sm">{aiError}</p>}
                     </div>
                 )}
             </div>

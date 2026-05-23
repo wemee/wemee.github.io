@@ -52,6 +52,16 @@ export class StairsGame {
     private readonly MOVE_SPEED = 5;
     private readonly STAIR_HEIGHT = 12;
 
+    // 事件處理器 refs (destroy() 用)
+    private onKeyDown!: (e: KeyboardEvent) => void;
+    private onKeyUp!: (e: KeyboardEvent) => void;
+    private onTouchStart!: (e: TouchEvent) => void;
+    private onTouchMove!: (e: TouchEvent) => void;
+    private onTouchEnd!: () => void;
+    private onStartClick!: () => void;
+    private onAIStartClick!: () => void;
+    private onRestartClick!: () => void;
+
     constructor(rlAgent?: StairsWeightsAgent) {
         this.rlAgent = rlAgent || null;
         this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -83,11 +93,18 @@ export class StairsGame {
     }
 
     private bindEvents() {
-        document.getElementById('startBtn')?.addEventListener('click', () => this.startGame(false));
-        document.getElementById('aiStartBtn')?.addEventListener('click', () => this.startGame('rule'));
-        document.getElementById('restartBtn')?.addEventListener('click', () => this.startGame(this.aiMode));
+        // 建立可移除的事件處理器 — 用實體屬性而非 inline arrow，
+        // 讓 destroy() 能精準拆掉。本來只 cancelAnimationFrame、
+        // 沒拆 listener，切到 RL 模式建第二個實例後同一個按鍵會被
+        // 兩個 game 重複處理。
+        this.onStartClick = () => this.startGame(false);
+        this.onAIStartClick = () => this.startGame('rule');
+        this.onRestartClick = () => this.startGame(this.aiMode);
+        document.getElementById('startBtn')?.addEventListener('click', this.onStartClick);
+        document.getElementById('aiStartBtn')?.addEventListener('click', this.onAIStartClick);
+        document.getElementById('restartBtn')?.addEventListener('click', this.onRestartClick);
 
-        document.addEventListener('keydown', (e) => {
+        this.onKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.keys.left = true;
             if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.keys.right = true;
             if (e.key === ' ') {
@@ -100,29 +117,33 @@ export class StairsGame {
                     hideOverlay('pauseScreen');
                 }
             }
-        });
-
-        document.addEventListener('keyup', (e) => {
+        };
+        this.onKeyUp = (e: KeyboardEvent) => {
             if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.keys.left = false;
             if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.keys.right = false;
-        });
+        };
+        document.addEventListener('keydown', this.onKeyDown);
+        document.addEventListener('keyup', this.onKeyUp);
 
         // 觸控支援
         let touchStartX = 0;
-        this.canvas.addEventListener('touchstart', (e) => {
+        this.onTouchStart = (e: TouchEvent) => {
             touchStartX = e.touches[0].clientX;
-        });
-        this.canvas.addEventListener('touchmove', (e) => {
+        };
+        this.onTouchMove = (e: TouchEvent) => {
             e.preventDefault();
             const touchX = e.touches[0].clientX;
             const diff = touchX - touchStartX;
             this.keys.left = diff < -10;
             this.keys.right = diff > 10;
-        });
-        this.canvas.addEventListener('touchend', () => {
+        };
+        this.onTouchEnd = () => {
             this.keys.left = false;
             this.keys.right = false;
-        });
+        };
+        this.canvas.addEventListener('touchstart', this.onTouchStart);
+        this.canvas.addEventListener('touchmove', this.onTouchMove, { passive: false });
+        this.canvas.addEventListener('touchend', this.onTouchEnd);
     }
 
     public startGame(aiMode: 'rule' | 'rl' | false = false) {
@@ -518,6 +539,14 @@ export class StairsGame {
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = null;
         }
+        document.removeEventListener('keydown', this.onKeyDown);
+        document.removeEventListener('keyup', this.onKeyUp);
+        this.canvas.removeEventListener('touchstart', this.onTouchStart);
+        this.canvas.removeEventListener('touchmove', this.onTouchMove);
+        this.canvas.removeEventListener('touchend', this.onTouchEnd);
+        document.getElementById('startBtn')?.removeEventListener('click', this.onStartClick);
+        document.getElementById('aiStartBtn')?.removeEventListener('click', this.onAIStartClick);
+        document.getElementById('restartBtn')?.removeEventListener('click', this.onRestartClick);
         console.log('🧹 StairsGame instance destroyed');
     }
 }

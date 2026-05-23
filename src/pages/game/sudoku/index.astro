@@ -13,16 +13,16 @@ import '@/styles/global.css';
   <div class="container mt-5 mb-5">
     <div class="max-w-2xl mx-auto">
       <header class="text-center mb-4">
-        <h1 class="text-4xl font-extrabold text-gray-800 tracking-widest mb-2">
+        <h1 class="text-4xl font-extrabold text-base-50 tracking-widest mb-2">
           SUDOKU
         </h1>
-        <p class="text-sm text-gray-600 uppercase tracking-wider">
+        <p class="text-sm text-base-400 uppercase tracking-wider">
           Pure Logic. Pure Zen.
         </p>
       </header>
 
       <!-- Tailwind-styled game area -->
-      <div class="p-6 bg-[#073642]/50 backdrop-blur-md rounded-3xl border border-gray-300 relative">
+      <div class="p-6 bg-base-800/50 backdrop-blur-md rounded-3xl border border-base-600 relative">
         <WinModal client:only="react" />
         <GameInfo client:only="react" />
         <SudokuBoard client:only="react" />
@@ -31,7 +31,7 @@ import '@/styles/global.css';
 
       <!-- Link to standalone version -->
       <div class="text-center mt-4">
-        <a href="/sudoku" class="text-sm text-blue-600 hover:text-blue-800 hover:underline transition-colors">
+        <a href="/sudoku" class="text-sm text-accent-blue hover:text-accent-blue/80 hover:underline transition-colors">
           🎮 切換至全螢幕沉浸模式
         </a>
       </div>

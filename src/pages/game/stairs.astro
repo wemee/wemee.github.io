@@ -96,7 +96,7 @@ import '@/styles/game-common.css';
     } catch (error) {
       console.error('❌ Failed to load RL AI:', error);
       rlAiBtn.textContent = '🧠 載入失敗';
-      loadingInfo!.innerHTML = '<small class="text-danger">載入失敗，請檢查控制台</small>';
+      loadingInfo!.innerHTML = '<small class="text-accent-red">載入失敗，請檢查控制台</small>';
       return false;
     }
   };
