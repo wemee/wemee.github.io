@@ -101,8 +101,16 @@ function DecodePanel() {
         return () => window.removeEventListener('paste', onPaste);
     }, [handlePaste]);
 
-    const copyToClipboard = useCallback((text: string) => {
-        navigator.clipboard.writeText(text);
+    const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle');
+    const copyToClipboard = useCallback(async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopyState('copied');
+            setTimeout(() => setCopyState('idle'), 1500);
+        } catch (err) {
+            console.warn('Clipboard write failed:', err);
+            setError('複製失敗，請手動框選');
+        }
     }, []);
 
     const clear = useCallback(() => {
@@ -174,7 +182,7 @@ function DecodePanel() {
                                     className={buttonStyles.secondary}
                                     onClick={() => copyToClipboard(result.data)}
                                 >
-                                    📋 複製
+                                    {copyState === 'copied' ? '✅ 已複製' : '📋 複製'}
                                 </button>
                                 {result.isUrl && (
                                     <a
@@ -259,6 +267,7 @@ function EncodePanel() {
         }
     }, [text, size, errorLevel]);
 
+    const [downloadState, setDownloadState] = useState<'idle' | 'downloaded'>('idle');
     const download = useCallback(() => {
         if (!qrCanvas) return;
         qrCanvas.toBlob((blob) => {
@@ -269,6 +278,8 @@ function EncodePanel() {
             a.download = 'qrcode.png';
             a.click();
             URL.revokeObjectURL(url);
+            setDownloadState('downloaded');
+            setTimeout(() => setDownloadState('idle'), 1500);
         }, 'image/png');
     }, [qrCanvas]);
 
@@ -333,7 +344,7 @@ function EncodePanel() {
                                 className="border-4 border-white rounded shadow-lg mx-auto"
                             />
                             <button className={buttonStyles.success} onClick={download}>
-                                ⬇️ 下載 PNG
+                                {downloadState === 'downloaded' ? '✅ 已下載' : '⬇️ 下載 PNG'}
                             </button>
                         </div>
                     )}

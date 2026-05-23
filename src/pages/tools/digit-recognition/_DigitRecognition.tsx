@@ -61,14 +61,35 @@ function fillCanvas(canvas: HTMLCanvasElement | null, color: string): void {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
+// Pull the (clientX, clientY) for the active pointer. For touch events we
+// follow a specific Touch.identifier so a second finger landing mid-stroke
+// can't hijack the line into a jump.
 function getCanvasCoords(
     canvas: HTMLCanvasElement,
-    e: MouseEvent | TouchEvent
-): { x: number; y: number } {
+    e: MouseEvent | TouchEvent,
+    touchId: number | null
+): { x: number; y: number } | null {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    const source = 'touches' in e ? e.touches[0] : e;
+
+    let source: { clientX: number; clientY: number } | null = null;
+    if ('touches' in e) {
+        // touchend/touchcancel: the finger we want lives in changedTouches
+        const lists = [e.touches, e.changedTouches];
+        for (const list of lists) {
+            for (let i = 0; i < list.length; i++) {
+                if (touchId === null || list[i].identifier === touchId) {
+                    source = list[i];
+                    break;
+                }
+            }
+            if (source) break;
+        }
+    } else {
+        source = e;
+    }
+    if (!source) return null;
     return {
         x: (source.clientX - rect.left) * scaleX,
         y: (source.clientY - rect.top) * scaleY,
@@ -198,6 +219,9 @@ export default function DigitRecognition() {
     const modelRef = useRef<TFModel | null>(null);
     const isDrawingRef = useRef(false);
     const lastPosRef = useRef({ x: 0, y: 0 });
+    // Identifier of the touch that started the current stroke. Stays null
+    // for mouse input. Used to ignore secondary fingers landing mid-stroke.
+    const touchIdRef = useRef<number | null>(null);
 
     const [modelStatus, setModelStatus] = useState<ModelStatus>({ kind: 'loading' });
     const [prediction, setPrediction] = useState<Prediction | null>(null);
@@ -295,9 +319,24 @@ export default function DigitRecognition() {
     const handlePointerStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
         const canvas = drawCanvasRef.current;
         if (!canvas) return;
+        // Already drawing? Ignore subsequent fingers landing on the canvas.
+        if (isDrawingRef.current) {
+            e.preventDefault();
+            return;
+        }
         e.preventDefault();
+
+        const native = e.nativeEvent;
+        if ('touches' in native && native.changedTouches.length > 0) {
+            touchIdRef.current = native.changedTouches[0].identifier;
+        } else {
+            touchIdRef.current = null;
+        }
+
+        const coords = getCanvasCoords(canvas, native, touchIdRef.current);
+        if (!coords) return;
         isDrawingRef.current = true;
-        lastPosRef.current = getCanvasCoords(canvas, e.nativeEvent);
+        lastPosRef.current = coords;
     }, []);
 
     const handlePointerMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
@@ -306,17 +345,33 @@ export default function DigitRecognition() {
         const ctx = canvas?.getContext('2d');
         if (!canvas || !ctx) return;
         e.preventDefault();
-        const { x, y } = getCanvasCoords(canvas, e.nativeEvent);
+        const coords = getCanvasCoords(canvas, e.nativeEvent, touchIdRef.current);
+        // Move event arrived but our tracked finger isn't in the list — let it pass.
+        if (!coords) return;
         ctx.beginPath();
         ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
-        ctx.lineTo(x, y);
+        ctx.lineTo(coords.x, coords.y);
         ctx.stroke();
-        lastPosRef.current = { x, y };
+        lastPosRef.current = coords;
     }, []);
 
-    const handlePointerEnd = useCallback(() => {
+    const handlePointerEnd = useCallback((e: React.MouseEvent | React.TouchEvent) => {
         if (!isDrawingRef.current) return;
+        // For touch, only end the stroke when the tracked finger lifts —
+        // other fingers releasing should not finalize the prediction.
+        const native = e.nativeEvent;
+        if ('changedTouches' in native && touchIdRef.current !== null) {
+            let foundOurs = false;
+            for (let i = 0; i < native.changedTouches.length; i++) {
+                if (native.changedTouches[i].identifier === touchIdRef.current) {
+                    foundOurs = true;
+                    break;
+                }
+            }
+            if (!foundOurs) return;
+        }
         isDrawingRef.current = false;
+        touchIdRef.current = null;
         runPrediction();
     }, [runPrediction]);
 
