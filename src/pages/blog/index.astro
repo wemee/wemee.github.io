@@ -107,7 +107,6 @@ const sortedTags = Array.from(tagCounts.entries()).sort((a, b) => {
   const clearBtn = document.querySelector<HTMLButtonElement>('[data-tag-clear]');
   const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-post-card]'));
   const emptyState = document.querySelector<HTMLElement>('[data-empty-state]');
-  const activeClasses = ['border-accent-cyan', 'text-accent-cyan', 'bg-accent-cyan/10'];
 
   let active: string | null = null;
 
@@ -123,7 +122,19 @@ const sortedTags = Array.from(tagCounts.entries()).sort((a, b) => {
     clearBtn?.classList.toggle('hidden', active === null);
   }
 
-  function setActive(tag: string | null): void {
+  // Reflect the active tag in the URL so filters are shareable / back-button
+  // restorable. Uses replaceState to avoid polluting history on every click.
+  function syncUrl(tag: string | null): void {
+    const url = new URL(window.location.href);
+    if (tag === null) {
+      url.searchParams.delete('tag');
+    } else {
+      url.searchParams.set('tag', tag);
+    }
+    window.history.replaceState({}, '', url.pathname + (url.search ? url.search : '') + url.hash);
+  }
+
+  function setActive(tag: string | null, opts: { sync?: boolean } = { sync: true }): void {
     active = tag;
     filterRoot?.querySelectorAll<HTMLButtonElement>('[data-tag]').forEach((btn) => {
       const isActive = btn.dataset.tag === active;
@@ -132,6 +143,7 @@ const sortedTags = Array.from(tagCounts.entries()).sort((a, b) => {
       btn.classList.toggle('bg-accent-cyan/10', isActive);
     });
     applyFilter();
+    if (opts.sync !== false) syncUrl(tag);
   }
 
   filterRoot?.querySelectorAll<HTMLButtonElement>('[data-tag]').forEach((btn) => {
@@ -142,4 +154,18 @@ const sortedTags = Array.from(tagCounts.entries()).sort((a, b) => {
   });
 
   clearBtn?.addEventListener('click', () => setActive(null));
+
+  // Hydrate from URL on first paint — only apply if the tag actually exists
+  // in the rendered set, otherwise silently ignore (stale link / typo).
+  const initialTag = new URL(window.location.href).searchParams.get('tag');
+  if (initialTag) {
+    const knownTags = new Set(
+      Array.from(filterRoot?.querySelectorAll<HTMLButtonElement>('[data-tag]') ?? [])
+        .map((btn) => btn.dataset.tag)
+        .filter((t): t is string => typeof t === 'string')
+    );
+    if (knownTags.has(initialTag)) {
+      setActive(initialTag, { sync: false });
+    }
+  }
 </script>
