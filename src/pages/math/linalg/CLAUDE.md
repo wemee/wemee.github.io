@@ -25,6 +25,12 @@ Live at https://wemee.github.io/math/linalg/
 src/
 ├── components/
 │   └── LinalgPageNav.astro       # prev/next + supplements; used by every page
+├── styles/
+│   └── linalg.css                # Shared input/cell/button styles. Imported
+│                                 # by every page in this subsection. Defines
+│                                 # .m-input, .vec-input, .p-cell, .lambda-row,
+│                                 # .sigma-row, .phase-btn, .rank-btn etc.
+│                                 # Always edit here, not in page <style> blocks.
 ├── lib/math/linalg/
 │   ├── linalgPages.ts            # LINALG_PAGES (curriculum order) + SUPPLEMENTS (extensibility hook)
 │   ├── MatrixMath.ts             # Pure math: 4×4 ops, det, inverse3, Jacobi eigen
