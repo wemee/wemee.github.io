@@ -17,7 +17,7 @@ interface Todo {
 
 const STORAGE_KEY = 'wemee_todos';
 
-export default function MemoTool() {
+export default function TodoApp() {
     const [todos, setTodos] = useState<Todo[]>([]);
     const [newItem, setNewItem] = useState('');
     const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
@@ -155,7 +155,7 @@ export default function MemoTool() {
                             {todos.map((todo) => (
                                 <li
                                     key={todo.id}
-                                    className={`flex items-center gap-3 p-3 rounded-lg border transition cursor-pointer hover:bg-base-600/30 ${todo.completed
+                                    className={`group flex items-center gap-3 p-3 rounded-lg border transition cursor-pointer hover:bg-base-600/30 ${todo.completed
                                             ? 'border-base-600/50 bg-base-600/10'
                                             : 'border-base-600'
                                         }`}
