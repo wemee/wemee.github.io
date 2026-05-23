@@ -15,7 +15,6 @@ interface Tool {
   description: string;
   href: string;
   color: string;
-  badge?: string;
 }
 
 const tools: Tool[] = [
@@ -68,32 +67,16 @@ const tools: Tool[] = [
         return (
           <div class={`flex flex-col rounded-lg border ${colors.border} bg-base-800 h-full`}>
             <div class="p-5 flex-1">
-              <h5 class="text-lg font-semibold text-base-50 mb-2">
-                {tool.title}
-                {tool.badge && (
-                  <span class="ml-2 px-2 py-0.5 text-xs rounded bg-accent-yellow text-base-900">
-                    {tool.badge}
-                  </span>
-                )}
-              </h5>
+              <h5 class="text-lg font-semibold text-base-50 mb-2">{tool.title}</h5>
               <p class="text-base-400">{tool.description}</p>
             </div>
             <div class="px-5 pb-5">
-              {tool.badge ? (
-                <button 
-                  class="block w-full text-center px-4 py-2 rounded border border-base-600 text-base-600 cursor-not-allowed"
-                  disabled
-                >
-                  敬請期待
-                </button>
-              ) : (
-                <a 
-                  href={tool.href} 
-                  class={`block text-center px-4 py-2 rounded ${colors.bg} ${colors.hover} text-base-50 font-medium transition`}
-                >
-                  開始使用
-                </a>
-              )}
+              <a
+                href={tool.href}
+                class={`block text-center px-4 py-2 rounded ${colors.bg} ${colors.hover} text-base-50 font-medium transition`}
+              >
+                開始使用
+              </a>
             </div>
           </div>
         );
