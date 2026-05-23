@@ -59,6 +59,19 @@ export class BreakoutGame {
         '#ff6b6b', '#feca57', '#48dbfb', '#1dd1a1', '#ff9ff3', '#54a0ff'
     ];
 
+    // 事件處理器 refs (destroy() 用)
+    private animationFrameId: number | null = null;
+    private onStartClick!: () => void;
+    private onAIStartClick!: () => void;
+    private onRestartClick!: () => void;
+    private onNextLevelClick!: () => void;
+    private onKeyDown!: (e: KeyboardEvent) => void;
+    private onKeyUp!: (e: KeyboardEvent) => void;
+    private onMouseMove!: (e: MouseEvent) => void;
+    private onCanvasClick!: () => void;
+    private onTouchMove!: (e: TouchEvent) => void;
+    private onTouchStart!: () => void;
+
     constructor() {
         this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
         this.ctx = this.canvas.getContext('2d')!;
@@ -128,22 +141,27 @@ export class BreakoutGame {
     }
 
     private bindEvents() {
-        document.getElementById('startBtn')?.addEventListener('click', () => this.startGame(false));
-        document.getElementById('aiStartBtn')?.addEventListener('click', () => this.startGame(true));
-        document.getElementById('restartBtn')?.addEventListener('click', () => {
+        // 用實體屬性綁定，destroy() 可精準拆掉。對齊 Tetris/Stairs 範式。
+        this.onStartClick = () => this.startGame(false);
+        this.onAIStartClick = () => this.startGame(true);
+        this.onRestartClick = () => {
             this.level = 1;
             this.score = 0;
             this.lives = 3;
             this.startGame(this.aiMode);
-        });
-        document.getElementById('nextLevelBtn')?.addEventListener('click', () => {
+        };
+        this.onNextLevelClick = () => {
             this.level++;
             this.lives = Math.min(this.lives + 1, 5);
             this.startGame(this.aiMode);
-        });
+        };
+        document.getElementById('startBtn')?.addEventListener('click', this.onStartClick);
+        document.getElementById('aiStartBtn')?.addEventListener('click', this.onAIStartClick);
+        document.getElementById('restartBtn')?.addEventListener('click', this.onRestartClick);
+        document.getElementById('nextLevelBtn')?.addEventListener('click', this.onNextLevelClick);
 
         // 鍵盤控制 - 持續移動
-        document.addEventListener('keydown', (e) => {
+        this.onKeyDown = (e: KeyboardEvent) => {
             if (this.gameState !== 'ready' && this.gameState !== 'playing') return;
 
             if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
@@ -159,51 +177,73 @@ export class BreakoutGame {
                     this.gameState = 'playing';
                 }
             }
-        });
-
-        document.addEventListener('keyup', (e) => {
+        };
+        this.onKeyUp = (e: KeyboardEvent) => {
             if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
                 this.keys.left = false;
             }
             if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
                 this.keys.right = false;
             }
-        });
+        };
+        document.addEventListener('keydown', this.onKeyDown);
+        document.addEventListener('keyup', this.onKeyUp);
 
         // 滑鼠控制
-        this.canvas.addEventListener('mousemove', (e) => {
+        this.onMouseMove = (e: MouseEvent) => {
             if (this.gameState !== 'ready' && this.gameState !== 'playing') return;
             const rect = this.canvas.getBoundingClientRect();
             const scaleX = this.canvas.width / rect.width;
             this.paddle.x = (e.clientX - rect.left) * scaleX - this.paddle.width / 2;
             this.paddle.x = Math.max(0, Math.min(this.paddle.x, this.canvas.width - this.paddle.width));
-        });
+        };
+        this.canvas.addEventListener('mousemove', this.onMouseMove);
 
         // 滑鼠點擊發球
-        this.canvas.addEventListener('click', () => {
+        this.onCanvasClick = () => {
             if ((this.gameState === 'ready' || this.gameState === 'playing') && !this.ballLaunched) {
                 this.launchBall();
                 this.gameState = 'playing';
             }
-        });
+        };
+        this.canvas.addEventListener('click', this.onCanvasClick);
 
         // 觸控控制
-        this.canvas.addEventListener('touchmove', (e) => {
+        this.onTouchMove = (e: TouchEvent) => {
             e.preventDefault();
             if (this.gameState !== 'ready' && this.gameState !== 'playing') return;
             const rect = this.canvas.getBoundingClientRect();
             const scaleX = this.canvas.width / rect.width;
             this.paddle.x = (e.touches[0].clientX - rect.left) * scaleX - this.paddle.width / 2;
             this.paddle.x = Math.max(0, Math.min(this.paddle.x, this.canvas.width - this.paddle.width));
-        });
+        };
+        this.canvas.addEventListener('touchmove', this.onTouchMove, { passive: false });
 
         // 觸控點擊發球
-        this.canvas.addEventListener('touchstart', () => {
+        this.onTouchStart = () => {
             if ((this.gameState === 'ready' || this.gameState === 'playing') && !this.ballLaunched) {
                 this.launchBall();
                 this.gameState = 'playing';
             }
-        });
+        };
+        this.canvas.addEventListener('touchstart', this.onTouchStart);
+    }
+
+    public destroy() {
+        if (this.animationFrameId !== null) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+        document.removeEventListener('keydown', this.onKeyDown);
+        document.removeEventListener('keyup', this.onKeyUp);
+        this.canvas.removeEventListener('mousemove', this.onMouseMove);
+        this.canvas.removeEventListener('click', this.onCanvasClick);
+        this.canvas.removeEventListener('touchmove', this.onTouchMove);
+        this.canvas.removeEventListener('touchstart', this.onTouchStart);
+        document.getElementById('startBtn')?.removeEventListener('click', this.onStartClick);
+        document.getElementById('aiStartBtn')?.removeEventListener('click', this.onAIStartClick);
+        document.getElementById('restartBtn')?.removeEventListener('click', this.onRestartClick);
+        document.getElementById('nextLevelBtn')?.removeEventListener('click', this.onNextLevelClick);
     }
 
     private startGame(enableAI: boolean = false) {
@@ -822,6 +862,6 @@ export class BreakoutGame {
     private gameLoop = () => {
         this.update();
         this.draw();
-        requestAnimationFrame(this.gameLoop);
+        this.animationFrameId = requestAnimationFrame(this.gameLoop);
     }
 }
