@@ -91,7 +91,23 @@ function generateCSVReport() {
 	csvReport += parent.generateTeamCSVReport() + "\n";
 	csvReport += parent.generateOperatorCSVReport();
 
-	var htmlStr = '<textarea rows="16" cols="75">' + csvReport + '</textarea>'
-		+ '<p>複製貼到筆記本，副檔名改為.csv就可以用Excel開。(單機版網頁沒方法中的方法)</p>';
-	document.getElementById("csv").innerHTML = htmlStr;
+	// 直接觸發瀏覽器下載 .csv 檔。開頭加 UTF-8 BOM (\uFEFF)，
+	// Excel 才能正確辨識編碼、中文不會變亂碼。
+	var blob = new Blob(["\uFEFF" + csvReport], { type: "text/csv;charset=utf-8;" });
+	var url = URL.createObjectURL(blob);
+	var filename = "漁人的榮耀_第" + parent.getGameYear() + "年_" + parent.getTodayString() + ".csv";
+
+	var link = document.createElement("a");
+	link.href = url;
+	link.download = filename;
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+	URL.revokeObjectURL(url);
+
+	// #csv 區塊原本顯示可複製的 textarea，現在改顯示下載提示。
+	var csvCell = document.getElementById("csv");
+	if (csvCell) {
+		csvCell.innerHTML = '<p>已下載 CSV 檔案：' + filename + '</p>';
+	}
 }
