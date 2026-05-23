@@ -43,13 +43,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
           <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 text-base-50">時域波形 (Time Domain)</div>
           <div class="p-2">
-            <canvas id="waveCanvas" width="700" height="200" class="w-full border border-base-600 rounded"></canvas>
+            <canvas id="waveCanvas" width="700" height="200" class="w-full border border-base-600 rounded" style="aspect-ratio: 7 / 2; height: auto;"></canvas>
           </div>
         </div>
         <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
           <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 text-base-50">頻譜 (Frequency Domain)</div>
           <div class="p-2">
-            <canvas id="spectrumCanvas" width="700" height="150" class="w-full border border-base-600 rounded"></canvas>
+            <canvas id="spectrumCanvas" width="700" height="150" class="w-full border border-base-600 rounded" style="aspect-ratio: 14 / 3; height: auto;"></canvas>
           </div>
         </div>
       </div>
@@ -80,38 +80,58 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     for (let i = 1; i <= harmonicCount; i++) {
       harmonics.push({ frequency: i, amplitude: i === 1 ? 1 : 0 });
     }
-    renderControls();
+    rebuildControls();
     draw();
   }
 
-  function renderControls() {
+  // Build one slider row for a harmonic and wire its input handler. The row
+  // updates only its own amplitude — full controls list rebuilding only
+  // happens when harmonic count actually changes.
+  function makeSliderRow(h: Harmonic, index: number): HTMLDivElement {
+    const div = document.createElement('div');
+    div.className = 'mb-4';
+    div.dataset.harmonicIndex = index.toString();
+    div.innerHTML = `
+      <label class="flex justify-between text-sm mb-1">
+        <span class="text-base-400">第 ${h.frequency} 諧波</span>
+        <span class="text-accent-cyan harmonic-amp">${(h.amplitude * 100).toFixed(0)}%</span>
+      </label>
+      <input type="range" class="w-full harmonic-slider"
+             min="0" max="100" value="${h.amplitude * 100}">
+    `;
+    const slider = div.querySelector('.harmonic-slider') as HTMLInputElement;
+    const ampLabel = div.querySelector('.harmonic-amp') as HTMLSpanElement;
+    slider.addEventListener('input', () => {
+      harmonics[index].amplitude = parseInt(slider.value) / 100;
+      ampLabel.textContent = (harmonics[index].amplitude * 100).toFixed(0) + '%';
+      draw();
+    });
+    return div;
+  }
+
+  // Full rebuild — only call when harmonic count changes (init / add / remove
+  // / preset). Dragging a slider must NOT trigger this or its focus is lost.
+  function rebuildControls() {
     const container = document.getElementById('harmonicControls')!;
     container.innerHTML = '';
-    
-    harmonics.forEach((h, i) => {
-      const div = document.createElement('div');
-      div.className = 'mb-4';
-      div.innerHTML = `
-        <label class="flex justify-between text-sm mb-1">
-          <span class="text-base-400">第 ${h.frequency} 諧波</span>
-          <span class="text-accent-cyan" id="amp${i}">${(h.amplitude * 100).toFixed(0)}%</span>
-        </label>
-        <input type="range" class="w-full" id="slider${i}" 
-               min="0" max="100" value="${h.amplitude * 100}" data-index="${i}">
-      `;
-      container.appendChild(div);
-      
-      const slider = document.getElementById(`slider${i}`) as HTMLInputElement;
-      slider.addEventListener('input', (e) => {
-        const idx = parseInt((e.target as HTMLInputElement).dataset.index!);
-        harmonics[idx].amplitude = parseInt((e.target as HTMLInputElement).value) / 100;
-        document.getElementById(`amp${idx}`)!.textContent = 
-          (harmonics[idx].amplitude * 100).toFixed(0) + '%';
-        draw();
-      });
-    });
-    
+    harmonics.forEach((h, i) => container.appendChild(makeSliderRow(h, i)));
     document.getElementById('harmonicCount')!.textContent = harmonicCount.toString();
+  }
+
+  // Sync each slider's value + amplitude label without recreating DOM nodes,
+  // so focus and active input survive. Used by preset buttons.
+  function syncControlsToHarmonics() {
+    const container = document.getElementById('harmonicControls')!;
+    const rows = container.querySelectorAll<HTMLDivElement>('[data-harmonic-index]');
+    rows.forEach((row) => {
+      const idx = parseInt(row.dataset.harmonicIndex || '0');
+      const h = harmonics[idx];
+      if (!h) return;
+      const slider = row.querySelector('.harmonic-slider') as HTMLInputElement;
+      const ampLabel = row.querySelector('.harmonic-amp') as HTMLSpanElement;
+      slider.value = (h.amplitude * 100).toString();
+      ampLabel.textContent = (h.amplitude * 100).toFixed(0) + '%';
+    });
   }
 
   function draw() {
@@ -213,7 +233,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const n = i + 1;
       h.amplitude = (n % 2 === 1) ? 1 / n : 0;
     });
-    renderControls();
+    syncControlsToHarmonics();
     draw();
   }
 
@@ -222,7 +242,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       const n = i + 1;
       h.amplitude = 1 / n;
     });
-    renderControls();
+    syncControlsToHarmonics();
     draw();
   }
 
@@ -236,26 +256,35 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         h.amplitude = 0;
       }
     });
-    renderControls();
+    syncControlsToHarmonics();
     draw();
   }
 
   document.getElementById('resetBtn')!.addEventListener('click', init);
   
+  // Add appends only the new row; preserves focus/values on existing sliders.
   document.getElementById('addHarmonic')!.addEventListener('click', () => {
     if (harmonicCount < 20) {
       harmonicCount++;
-      harmonics.push({ frequency: harmonicCount, amplitude: 0 });
-      renderControls();
+      const h: Harmonic = { frequency: harmonicCount, amplitude: 0 };
+      harmonics.push(h);
+      document.getElementById('harmonicControls')!.appendChild(
+        makeSliderRow(h, harmonics.length - 1)
+      );
+      document.getElementById('harmonicCount')!.textContent = harmonicCount.toString();
       draw();
     }
   });
 
+  // Remove drops only the last row.
   document.getElementById('removeHarmonic')!.addEventListener('click', () => {
     if (harmonicCount > 1) {
       harmonicCount--;
       harmonics.pop();
-      renderControls();
+      const container = document.getElementById('harmonicControls')!;
+      const last = container.lastElementChild;
+      if (last) container.removeChild(last);
+      document.getElementById('harmonicCount')!.textContent = harmonicCount.toString();
       draw();
     }
   });

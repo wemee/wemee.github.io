@@ -14,7 +14,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <button id="clearBtn" class="px-3 py-1 rounded border border-accent-red text-accent-red hover:bg-accent-red/10 text-sm transition">清除</button>
         </div>
         <div class="p-2">
-          <canvas id="drawCanvas" width="500" height="400" class="w-full border border-base-600 rounded cursor-crosshair" style="touch-action: none;"></canvas>
+          <canvas id="drawCanvas" width="500" height="400" class="w-full border border-base-600 rounded cursor-crosshair" style="touch-action: none; aspect-ratio: 5 / 4; height: auto;"></canvas>
         </div>
       </div>
       
@@ -28,7 +28,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           </div>
         </div>
         <div class="p-2">
-          <canvas id="animCanvas" width="500" height="400" class="w-full border border-base-600 rounded"></canvas>
+          <canvas id="animCanvas" width="500" height="400" class="w-full border border-base-600 rounded" style="aspect-ratio: 5 / 4; height: auto;"></canvas>
         </div>
       </div>
     </div>
@@ -72,12 +72,24 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   
   let path: Complex[] = [];
   let isDrawing = false;
+  // Touch identifier of the finger that started the stroke. Locks input to
+  // that finger so a second touch landing on the canvas mid-stroke can't
+  // hijack getPos. Null while drawing with a mouse.
+  let activeTouchId: number | null = null;
   let coefficients: FourierCoeff[] = [];
   let animationId: number | null = null;
   let time = 0;
   let drawnPath: Complex[] = [];
   let speed = 1;
   let circleCount = 50;
+
+  function findActiveTouch(list: TouchList): Touch | null {
+    if (activeTouchId === null) return null;
+    for (let i = 0; i < list.length; i++) {
+      if (list[i].identifier === activeTouchId) return list[i];
+    }
+    return null;
+  }
 
   // === 繪圖功能 ===
   function getPos(e: MouseEvent | Touch): Complex {
@@ -91,21 +103,42 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   }
 
   function startDraw(e: MouseEvent | TouchEvent) {
+    // Already stroking? Don't start a second one (e.g. second finger lands).
+    if (isDrawing) {
+      if (e instanceof TouchEvent) e.preventDefault();
+      return;
+    }
+    let pointer: MouseEvent | Touch | null = null;
+    if (e instanceof MouseEvent) {
+      pointer = e;
+      activeTouchId = null;
+    } else {
+      const touch = e.changedTouches[0];
+      if (!touch) return;
+      activeTouchId = touch.identifier;
+      pointer = touch;
+      e.preventDefault();
+    }
     isDrawing = true;
     path = [];
     drawnPath = [];
     stopAnimation();
     drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-    
-    const pos = e instanceof MouseEvent ? getPos(e) : getPos(e.touches[0]);
-    path.push(pos);
+    path.push(getPos(pointer));
   }
 
   function draw(e: MouseEvent | TouchEvent) {
     if (!isDrawing) return;
     e.preventDefault();
-    
-    const pos = e instanceof MouseEvent ? getPos(e) : getPos(e.touches[0]);
+
+    let pointer: MouseEvent | Touch | null = null;
+    if (e instanceof MouseEvent) {
+      pointer = e;
+    } else {
+      pointer = findActiveTouch(e.touches);
+      if (!pointer) return;
+    }
+    const pos = getPos(pointer);
     path.push(pos);
     
     // 繪製路徑
@@ -123,13 +156,26 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     drawCtx.restore();
   }
 
-  function endDraw() {
+  function endDraw(e?: MouseEvent | TouchEvent) {
     if (!isDrawing) return;
+    // For touch, only end when the tracked finger lifts. Releasing some
+    // other concurrent finger shouldn't finalize the stroke.
+    if (e instanceof TouchEvent && activeTouchId !== null) {
+      let ourLift = false;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === activeTouchId) {
+          ourLift = true;
+          break;
+        }
+      }
+      if (!ourLift) return;
+    }
     isDrawing = false;
-    
+    activeTouchId = null;
+
     if (path.length > 10) {
       computeFourier();
-      document.getElementById('playBtn')!.removeAttribute('disabled');
+      (document.getElementById('playBtn') as HTMLButtonElement).disabled = false;
     }
   }
 
@@ -240,13 +286,21 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     }
   }
 
+  // Use HTMLButtonElement.disabled (boolean) rather than setAttribute with
+  // the string 'true' — the latter works (any non-empty value disables) but
+  // is sloppy and confuses tooling/screen-readers.
+  function setDisabled(id: string, disabled: boolean) {
+    const btn = document.getElementById(id) as HTMLButtonElement | null;
+    if (btn) btn.disabled = disabled;
+  }
+
   function startAnimation() {
     if (coefficients.length === 0) return;
     time = 0;
     drawnPath = [];
     animate();
-    document.getElementById('playBtn')!.setAttribute('disabled', 'true');
-    document.getElementById('pauseBtn')!.removeAttribute('disabled');
+    setDisabled('playBtn', true);
+    setDisabled('pauseBtn', false);
   }
 
   function stopAnimation() {
@@ -254,8 +308,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       cancelAnimationFrame(animationId);
       animationId = null;
     }
-    document.getElementById('playBtn')!.removeAttribute('disabled');
-    document.getElementById('pauseBtn')!.setAttribute('disabled', 'true');
+    setDisabled('playBtn', false);
+    setDisabled('pauseBtn', true);
   }
 
   function clearAll() {
@@ -267,7 +321,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
     animCtx.fillStyle = '#002b36';
     animCtx.fillRect(0, 0, animCanvas.width, animCanvas.height);
-    document.getElementById('playBtn')!.setAttribute('disabled', 'true');
+    setDisabled('playBtn', true);
   }
 
   // === 事件綁定 ===
@@ -276,9 +330,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   drawCanvas.addEventListener('mouseup', endDraw);
   drawCanvas.addEventListener('mouseleave', endDraw);
   
-  drawCanvas.addEventListener('touchstart', startDraw);
-  drawCanvas.addEventListener('touchmove', draw);
+  drawCanvas.addEventListener('touchstart', startDraw, { passive: false });
+  drawCanvas.addEventListener('touchmove', draw, { passive: false });
   drawCanvas.addEventListener('touchend', endDraw);
+  drawCanvas.addEventListener('touchcancel', endDraw);
 
   document.getElementById('clearBtn')!.addEventListener('click', clearAll);
   document.getElementById('playBtn')!.addEventListener('click', startAnimation);

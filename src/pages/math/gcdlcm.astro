@@ -127,7 +127,22 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
   // === 質數相關 ===
   let primes: bigint[] = [2n, 3n, 5n, 7n, 11n, 13n];
-  let stopCalculation = false;
+
+  // Integer sqrt via Newton's method. Math.sqrt(Number(n)) loses precision
+  // when n exceeds Number.MAX_SAFE_INTEGER (2^53), which made the original
+  // sqrt cutoff unsafe for very large primes (could return wrong sqrt,
+  // either missing a factor or stopping search too early).
+  function bigintSqrt(n: bigint): bigint {
+    if (n < 0n) throw new Error('bigintSqrt of negative');
+    if (n < 2n) return n;
+    let x = n;
+    let y = (x + 1n) / 2n;
+    while (y < x) {
+      x = y;
+      y = (x + n / x) / 2n;
+    }
+    return x;
+  }
 
   function addNewPrime(): bigint {
     let candidate = primes[primes.length - 1] + 2n;
@@ -143,7 +158,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     if (num <= 3n) return true;
     if (num % 2n === 0n) return false;
 
-    const sqrtNum = BigInt(Math.ceil(Math.sqrt(Number(num))));
+    const sqrtNum = bigintSqrt(num);
     for (const p of primes) {
       if (p > sqrtNum) return true;
       if (num % p === 0n) return false;
@@ -151,22 +166,20 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     return true;
   }
 
-  function isPrime(num: bigint): boolean | null {
+  function isPrime(num: bigint): boolean {
     if (num <= 1n) return false;
     if (num <= 3n) return true;
     if (num % 2n === 0n) return false;
 
-    const sqrtNum = BigInt(Math.ceil(Math.sqrt(Number(num))));
-    
+    const sqrtNum = bigintSqrt(num);
+
     for (const p of primes) {
-      if (stopCalculation) return null;
       if (p > sqrtNum) return true;
       if (num % p === 0n) return false;
     }
 
     let p = addNewPrime();
     while (p <= sqrtNum) {
-      if (stopCalculation) return null;
       if (num % p === 0n) return false;
       p = addNewPrime();
     }
@@ -183,12 +196,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       return;
     }
 
-    stopCalculation = false;
-    const result = isPrime(num);
-
-    if (result === null) {
-      showResult('primeResult', `${num}：計算已停止`, true);
-    } else if (result) {
+    if (isPrime(num)) {
       showResult('primeResult', `${num} 是質數 ✓`);
     } else {
       showResult('primeResult', `${num} 不是質數 ✗`);
@@ -287,8 +295,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   document.getElementById('factorInput')?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') factorize();
   });
+  // Enter triggers calculation from either input box for consistency.
+  document.getElementById('gcdInput1')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') calculateGCD();
+  });
   document.getElementById('gcdInput2')?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') calculateGCD();
+  });
+  document.getElementById('lcmInput1')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') calculateLCM();
   });
   document.getElementById('lcmInput2')?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') calculateLCM();

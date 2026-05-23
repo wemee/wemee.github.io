@@ -30,6 +30,10 @@ export class VectorVisualizer {
     private isNormalizedMode: boolean = false;
     private isDraggingA: boolean = false;
     private isDraggingB: boolean = false;
+    // Touch.identifier of the finger that started the current drag. Null for
+    // mouse input. Used so a second finger landing mid-drag can't steal the
+    // pointer position.
+    private activeTouchId: number | null = null;
     private readonly defaultScale = 1; // Pixels per unit, can scale if needed, but using direct pixels for simplicity
     private readonly hitRadius = 20;
 
@@ -63,12 +67,22 @@ export class VectorVisualizer {
             this.render();
         };
         this.boundHandleTouchStart = (e: TouchEvent) => {
+            if (this.isDraggingA || this.isDraggingB) {
+                // Already tracking a finger — ignore secondary touches.
+                e.preventDefault();
+                return;
+            }
             e.preventDefault();
-            this.handleStart(e.touches[0]);
+            const touch = e.changedTouches[0];
+            if (!touch) return;
+            this.activeTouchId = touch.identifier;
+            this.handleStart(touch);
         };
         this.boundHandleTouchMove = (e: TouchEvent) => {
-            if (this.isDraggingA || this.isDraggingB) e.preventDefault();
-            this.handleMove(e.touches[0]);
+            if (!(this.isDraggingA || this.isDraggingB)) return;
+            e.preventDefault();
+            const touch = this.findActiveTouch(e.touches);
+            if (touch) this.handleMove(touch);
         };
 
         // 初始化尺寸 (必須在事件監聯前執行)
@@ -84,26 +98,26 @@ export class VectorVisualizer {
 
     private setupCanvas() {
         const dpr = window.devicePixelRatio || 1;
-        // 取得 CSS 顯示尺寸
         const rect = this.canvas.getBoundingClientRect();
 
-        // 設定邏輯尺寸
+        // Read both dimensions from the rendered element so CSS controls
+        // sizing (e.g. responsive aspect-ratio on narrow screens). Previously
+        // height was hardcoded to 500 which broke on phones.
         this.width = rect.width;
-        this.height = 500; // 固定高度，需與 CSS 一致
+        this.height = rect.height || 500;
 
-        // 設定物理尺寸 (Retina 支援)，避免模糊
+        // Physical (backing) buffer scaled for Retina to stay sharp.
         this.canvas.width = this.width * dpr;
         this.canvas.height = this.height * dpr;
 
-        // 強制 CSS 尺寸以確保佈局穩定
+        // Force CSS so the buffer-vs-display sizes stay in sync.
         this.canvas.style.width = `${this.width}px`;
         this.canvas.style.height = `${this.height}px`;
 
-        // 縮放繪圖 Context，所有的繪圖指令都使用邏輯座標 (CSS Pixel)
-        this.ctx.resetTransform(); // 重置變換矩陣，避免重複縮放
+        // All drawing commands work in CSS pixels.
+        this.ctx.resetTransform();
         this.ctx.scale(dpr, dpr);
 
-        // 設定中心點 (邏輯座標)
         this.centerX = this.width / 2;
         this.centerY = this.height / 2;
     }
@@ -233,6 +247,15 @@ export class VectorVisualizer {
     private handleEnd() {
         this.isDraggingA = false;
         this.isDraggingB = false;
+        this.activeTouchId = null;
+    }
+
+    private findActiveTouch(list: TouchList): Touch | null {
+        if (this.activeTouchId === null) return null;
+        for (let i = 0; i < list.length; i++) {
+            if (list[i].identifier === this.activeTouchId) return list[i];
+        }
+        return null;
     }
 
     private dist(p1: Vector, p2: Vector): number {
