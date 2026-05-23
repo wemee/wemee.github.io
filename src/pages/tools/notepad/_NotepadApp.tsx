@@ -77,6 +77,15 @@ async function deleteNote(db: IDBDatabase, id: string): Promise<void> {
     });
 }
 
+// contentEditable "empty" is a fuzzy concept — browsers leave behind
+// stray <br> / <div><br></div> markers even when the user has cleared
+// everything. Treat those as empty too.
+function isEditorEmpty(html: string | undefined): boolean {
+    if (!html) return true;
+    const stripped = html.replace(/<br\s*\/?>/gi, '').replace(/<div>\s*<\/div>/gi, '').trim();
+    return stripped === '';
+}
+
 // Get title from HTML content
 function getTitleFromContent(html: string): string {
     const temp = document.createElement('div');
@@ -95,6 +104,12 @@ export default function NotepadApp() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isHelpOpen, setIsHelpOpen] = useState(false);
     const [keepStyles, setKeepStyles] = useState<boolean>(true);
+    // Mirror of "is the editor visually empty" — drives the placeholder overlay.
+    // We can't derive this from editorRef during render: refs don't trigger
+    // re-renders, so a ref-based check would only update when something else
+    // (e.g. auto-save status flip) happens to re-render — leaving the
+    // placeholder stuck on top of freshly typed text for ~1s.
+    const [isEmpty, setIsEmpty] = useState<boolean>(true);
 
     const editorRef = useRef<HTMLDivElement>(null);
     const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -127,6 +142,7 @@ export default function NotepadApp() {
                     if (editorRef.current) {
                         editorRef.current.innerHTML = allNotes[0].content;
                     }
+                    setIsEmpty(isEditorEmpty(allNotes[0].content));
                 } else {
                     createNewNote(database, false);
                 }
@@ -144,6 +160,7 @@ export default function NotepadApp() {
         if (editorRef.current) {
             editorRef.current.innerHTML = '';
         }
+        setIsEmpty(true);
 
         if (shouldSave) {
             const note: Note = { id: newId, content: '', updatedAt: Date.now() };
@@ -176,6 +193,9 @@ export default function NotepadApp() {
 
     // Handle editor input with debounce
     const handleEditorInput = useCallback(() => {
+        // Synchronously flip the placeholder the instant the editor changes —
+        // don't wait for the auto-save tick to incidentally re-render us.
+        setIsEmpty(isEditorEmpty(editorRef.current?.innerHTML));
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
         }
@@ -231,6 +251,7 @@ export default function NotepadApp() {
         if (editorRef.current) {
             editorRef.current.innerHTML = note.content;
         }
+        setIsEmpty(isEditorEmpty(note.content));
 
         // Close sidebar on mobile
         if (window.innerWidth <= 768) {
@@ -261,8 +282,6 @@ export default function NotepadApp() {
         const title = getTitleFromContent(note.content).toLowerCase();
         return title.includes(searchTerm.toLowerCase());
     });
-
-    const editorHasContent = editorRef.current?.innerHTML && editorRef.current.innerHTML !== '<br>';
 
     return (
         <div className="flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
@@ -377,7 +396,7 @@ export default function NotepadApp() {
                         spellCheck={false}
                         style={{ minHeight: 0 }}
                     />
-                    {!editorHasContent && (
+                    {isEmpty && (
                         <div className="absolute top-0 left-0 p-4 text-base-600 pointer-events-none text-lg">
                             開始打字...<br />
                             <small>支援貼上截圖 (Ctrl+V)</small>
