@@ -85,12 +85,41 @@ export function SmartEditor({
     const [customWidth, setCustomWidth] = useState<number>(800);
     const [outputFormat, setOutputFormat] = useState<'auto' | 'jpeg' | 'webp' | 'png'>('auto');
     const [outputQuality, setOutputQuality] = useState<number>(80);
+    const [exportError, setExportError] = useState<string | null>(null);
 
-    // Accent color class mapping
+    // Accent color class mapping. Every variant we need has to appear here as
+    // a full literal string — Tailwind JIT scans source text, so runtime
+    // concatenations like `hover:${border}` are not detectable and silently
+    // produce no CSS. List the full `hover:`/`focus:` and opacity variants
+    // explicitly per color.
     const accentClasses = {
-        green: { bg: 'bg-accent-green', hover: 'hover:bg-accent-green/80', border: 'border-accent-green', text: 'text-accent-green' },
-        blue: { bg: 'bg-accent-blue', hover: 'hover:bg-accent-blue/80', border: 'border-accent-blue', text: 'text-accent-blue' },
-        cyan: { bg: 'bg-accent-cyan', hover: 'hover:bg-accent-cyan/80', border: 'border-accent-cyan', text: 'text-accent-cyan' },
+        green: {
+            bg: 'bg-accent-green',
+            bgSubtle: 'bg-accent-green/10',
+            hover: 'hover:bg-accent-green/80',
+            border: 'border-accent-green',
+            hoverBorder: 'hover:border-accent-green',
+            focusBorder: 'focus:border-accent-green',
+            text: 'text-accent-green',
+        },
+        blue: {
+            bg: 'bg-accent-blue',
+            bgSubtle: 'bg-accent-blue/10',
+            hover: 'hover:bg-accent-blue/80',
+            border: 'border-accent-blue',
+            hoverBorder: 'hover:border-accent-blue',
+            focusBorder: 'focus:border-accent-blue',
+            text: 'text-accent-blue',
+        },
+        cyan: {
+            bg: 'bg-accent-cyan',
+            bgSubtle: 'bg-accent-cyan/10',
+            hover: 'hover:bg-accent-cyan/80',
+            border: 'border-accent-cyan',
+            hoverBorder: 'hover:border-accent-cyan',
+            focusBorder: 'focus:border-accent-cyan',
+            text: 'text-accent-cyan',
+        },
     };
     const accent = accentClasses[accentColor];
 
@@ -169,14 +198,6 @@ export function SmartEditor({
         updateOutputDimensions(cropData);
     }, [sizeMode, customWidth, cropData, updateOutputDimensions]);
 
-    // ===== Auto-Zoom on Crop End (DISABLED - to be discussed) =====
-    const handleCropEnd = useCallback(() => {
-        // Auto-zoom disabled for now - will discuss better UX approach
-        // const cropper = cropperRef.current?.cropper;
-        // if (!cropper) return;
-        // ... auto-zoom logic removed
-    }, []);
-
     // ===== Estimate Output Size =====
     useEffect(() => {
         if (!cropperRef.current?.cropper || !outputDimensions) return;
@@ -218,6 +239,7 @@ export function SmartEditor({
         if (!cropper || !outputDimensions || !image) return;
 
         setIsExporting(true);
+        setExportError(null);
 
         try {
             const canvas = cropper.getCroppedCanvas({
@@ -265,7 +287,8 @@ export function SmartEditor({
             }
         } catch (error) {
             console.error('Export error:', error);
-            alert('處理圖片時發生錯誤');
+            const detail = error instanceof Error ? error.message : '請再試一次';
+            setExportError(`處理圖片時發生錯誤：${detail}`);
         } finally {
             setIsExporting(false);
         }
@@ -294,7 +317,7 @@ export function SmartEditor({
     };
 
     // ===== Zoom Controls =====
-    const zoomIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const zoomIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const zoomAtCropCenter = (delta: number) => {
         const cropper = cropperRef.current?.cropper;
@@ -442,7 +465,6 @@ export function SmartEditor({
                             cropBoxResizable={true}
                             toggleDragModeOnDblclick={false}
                             crop={handleCrop}
-                            cropend={handleCropEnd}
                             className="iphone-cropper"
                         />
                     </div>
@@ -471,6 +493,15 @@ export function SmartEditor({
                         🔄 重選
                     </button>
                 </div>
+
+                {exportError && (
+                    <div
+                        role="alert"
+                        className="rounded-lg border border-accent-red bg-accent-red/10 px-4 py-3 text-sm text-accent-red"
+                    >
+                        ⚠️ {exportError}
+                    </div>
+                )}
             </div>
 
             {/* Right: Settings Panel */}
@@ -492,7 +523,7 @@ export function SmartEditor({
                                     onClick={() => handleAspectChange(ar.value)}
                                     className={`px-3 py-2 rounded border text-sm transition ${(isNaN(currentAspectRatio) && isNaN(ar.value)) || currentAspectRatio === ar.value
                                         ? `${accent.border} ${accent.bg} text-base-50`
-                                        : `border-base-600 text-base-400 hover:${accent.border}`
+                                        : `border-base-600 text-base-400 ${accent.hoverBorder}`
                                         }`}
                                 >
                                     {ar.label}
@@ -526,8 +557,8 @@ export function SmartEditor({
                                         />
                                         <span
                                             className={`size-option-content flex flex-col p-3 border-2 rounded-lg transition ${sizeMode === mode
-                                                ? `${accent.border} ${accent.bg}/10`
-                                                : `border-base-600 hover:${accent.border}`
+                                                ? `${accent.border} ${accent.bgSubtle}`
+                                                : `border-base-600 ${accent.hoverBorder}`
                                                 }`}
                                         >
                                             <span className="font-medium text-base-50">
@@ -549,7 +580,7 @@ export function SmartEditor({
                                             type="number"
                                             value={customWidth}
                                             onChange={(e) => setCustomWidth(parseInt(e.target.value) || 800)}
-                                            className={`flex-1 px-3 py-2 bg-base-900 border border-base-600 rounded-l text-base-50 focus:${accent.border} focus:outline-none`}
+                                            className={`flex-1 px-3 py-2 bg-base-900 border border-base-600 rounded-l text-base-50 ${accent.focusBorder} focus:outline-none`}
                                             placeholder="800"
                                         />
                                         <span className="px-3 py-2 bg-base-600 border border-base-600 rounded-r text-base-400">
@@ -573,7 +604,7 @@ export function SmartEditor({
                                     <select
                                         value={outputFormat}
                                         onChange={(e) => setOutputFormat(e.target.value as 'auto' | 'jpeg' | 'webp' | 'png')}
-                                        className={`px-3 py-2 bg-base-900 border border-base-600 rounded text-base-50 focus:${accent.border} focus:outline-none`}
+                                        className={`px-3 py-2 bg-base-900 border border-base-600 rounded text-base-50 ${accent.focusBorder} focus:outline-none`}
                                     >
                                         <option value="auto">自動</option>
                                         <option value="jpeg">JPG</option>
@@ -606,7 +637,7 @@ export function SmartEditor({
                     </>
                 )}
             </div>
-        </div >
+        </div>
     );
 }
 

@@ -22,6 +22,11 @@ function DecodePanel() {
     const [isDragging, setIsDragging] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    // Used to skip the global paste listener while the encode tab is active.
+    // Headless UI keeps both TabPanels mounted (display:none on the inactive
+    // one), so without this check, pasting an image while on the encode tab
+    // would silently feed the hidden decode panel.
+    const rootRef = useRef<HTMLDivElement>(null);
 
     const handleFile = useCallback((file: File) => {
         const url = URL.createObjectURL(file);
@@ -30,31 +35,38 @@ function DecodePanel() {
         setResult(null);
 
         const img = new Image();
+        const cleanup = () => URL.revokeObjectURL(url);
         img.onload = () => {
             const canvas = canvasRef.current;
-            if (!canvas) return;
+            if (!canvas) { cleanup(); return; }
 
             canvas.width = img.width;
             canvas.height = img.height;
             const ctx = canvas.getContext('2d');
-            if (!ctx) return;
+            if (!ctx) { cleanup(); return; }
 
             ctx.drawImage(img, 0, 0);
             const imgData = ctx.getImageData(0, 0, img.width, img.height);
 
-            if (window.jsQR) {
-                const code = window.jsQR(imgData.data, imgData.width, imgData.height);
-                if (code) {
-                    setResult({
-                        data: code.data,
-                        isUrl: /^https?:\/\//i.test(code.data)
-                    });
-                } else {
-                    setError('未偵測到 QR Code，請確認圖片清晰');
-                }
+            if (!window.jsQR) {
+                setError('QR Code 解碼程式還在載入，請稍候再試一次');
+                cleanup();
+                return;
             }
-
-            URL.revokeObjectURL(url);
+            const code = window.jsQR(imgData.data, imgData.width, imgData.height);
+            if (code) {
+                setResult({
+                    data: code.data,
+                    isUrl: /^https?:\/\//i.test(code.data),
+                });
+            } else {
+                setError('未偵測到 QR Code，請確認圖片清晰');
+            }
+            cleanup();
+        };
+        img.onerror = () => {
+            setError('無法讀取此圖片');
+            cleanup();
         };
         img.src = url;
     }, []);
@@ -79,7 +91,12 @@ function DecodePanel() {
     }, [handleFile]);
 
     useEffect(() => {
-        const onPaste = (e: ClipboardEvent) => handlePaste(e);
+        const onPaste = (e: ClipboardEvent) => {
+            // Skip when this panel is hidden (encode tab is active).
+            // offsetParent is null when an ancestor has display:none.
+            if (!rootRef.current || rootRef.current.offsetParent === null) return;
+            handlePaste(e);
+        };
         window.addEventListener('paste', onPaste);
         return () => window.removeEventListener('paste', onPaste);
     }, [handlePaste]);
@@ -96,7 +113,7 @@ function DecodePanel() {
     }, []);
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div ref={rootRef} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Upload Card */}
             <div className={cardStyles.container}>
                 <div className={`${cardStyles.header} flex items-center`}>
@@ -197,6 +214,11 @@ function EncodePanel() {
             setQrCanvas(null);
             return;
         }
+        if (!window.qrcode) {
+            setError('QR Code 產生程式還在載入，請稍候再試一次');
+            setQrCanvas(null);
+            return;
+        }
 
         try {
             const qr = window.qrcode(0, errorLevel);
@@ -227,7 +249,12 @@ function EncodePanel() {
             setQrCanvas(canvas);
             setError(null);
         } catch (e) {
-            setError('產生失敗：內容可能太長');
+            // The qrcode-generator library throws when content exceeds the
+            // capacity for the chosen error-correction level. Other errors
+            // (e.g. invalid encoding) are very rare; the message is still
+            // accurate enough.
+            const detail = e instanceof Error ? `（${e.message}）` : '';
+            setError(`產生失敗：內容超過容量上限${detail}。試試降低容錯等級或縮短內容`);
             setQrCanvas(null);
         }
     }, [text, size, errorLevel]);

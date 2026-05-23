@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { SmartEditor, type AspectPreset } from '../ImageLab/SmartEditor';
 import { LayoutEngine, PHOTO_SIZES, PAPER_SIZES, type PhotoSizeKey, type PaperSizeKey } from './LayoutEngine';
 
@@ -11,38 +11,20 @@ const ID_PHOTO_PRESETS: AspectPreset[] = [
 
 // ===== Component =====
 export function IDPhotoEditor() {
-    // State
     const [croppedBlob, setCroppedBlob] = useState<Blob | null>(null);
     const [photoSize, setPhotoSize] = useState<PhotoSizeKey>('2inch');
     const [paperSize, setPaperSize] = useState<PaperSizeKey>('4x6');
     const [showCutLines, setShowCutLines] = useState(true);
     const [photoCount, setPhotoCount] = useState(0);
 
-    // For real-time preview from SmartEditor's cropper
-    const [livePreviewBlob, setLivePreviewBlob] = useState<Blob | null>(null);
-    const cropperRef = useRef<any>(null);
-
-    // Get aspect for selected photo size
+    // Aspect ratio derived from the selected ID-photo size
     const getAspectForPhotoSize = (size: PhotoSizeKey): number => {
         return PHOTO_SIZES[size].width / PHOTO_SIZES[size].height;
     };
 
-    // When crop changes, update live preview
-    const handleCropChange = useCallback(() => {
-        // This will be called on crop changes - we'll update preview blob
-        // For now, we rely on the export button to update
-    }, []);
-
-    // When user confirms crop (clicks "確認裁切")
+    // Fired by SmartEditor when the user confirms crop ("✂️ 確認裁切並生成排版")
     const handleCropReady = useCallback((blob: Blob) => {
         setCroppedBlob(blob);
-        setLivePreviewBlob(blob);
-    }, []);
-
-    // Reset
-    const handleReset = useCallback(() => {
-        setCroppedBlob(null);
-        setLivePreviewBlob(null);
     }, []);
 
     return (
@@ -118,7 +100,7 @@ export function IDPhotoEditor() {
                                 <div className="text-center py-12 text-base-600">
                                     <div className="text-4xl mb-2">👆</div>
                                     <p>上傳並裁切照片後</p>
-                                    <p>點擊「下載圖片」產生預覽</p>
+                                    <p>點擊「✂️ 確認裁切並生成排版」</p>
                                 </div>
                             )}
                         </div>
