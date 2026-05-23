@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { buttonStyles, inputStyles } from '@/components/ui';
+import {
+    KEEP_STYLES_KEY,
+    sanitizeFragmentToHtml,
+    findSoleImage,
+    writeImageToClipboard,
+} from '@/lib/notepad/clipboard';
 
 // IndexedDB Configuration
 const DB_NAME = 'WemeeQuickMemo';
@@ -88,9 +94,25 @@ export default function NotepadApp() {
     const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'hidden'>('hidden');
     const [searchTerm, setSearchTerm] = useState('');
     const [isHelpOpen, setIsHelpOpen] = useState(false);
+    const [keepStyles, setKeepStyles] = useState<boolean>(true);
 
     const editorRef = useRef<HTMLDivElement>(null);
     const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Ref mirror so the copy handler always reads the latest toggle without
+    // having to be re-bound (and re-attached to the editor) on every change.
+    const keepStylesRef = useRef(keepStyles);
+    keepStylesRef.current = keepStyles;
+
+    // Load persisted toggle on mount
+    useEffect(() => {
+        const stored = localStorage.getItem(KEEP_STYLES_KEY);
+        if (stored !== null) setKeepStyles(stored === 'true');
+    }, []);
+
+    // Persist toggle on change
+    useEffect(() => {
+        localStorage.setItem(KEEP_STYLES_KEY, String(keepStyles));
+    }, [keepStyles]);
 
     // Initialize IndexedDB
     useEffect(() => {
@@ -160,6 +182,43 @@ export default function NotepadApp() {
         setSaveStatus('hidden');
         saveTimeoutRef.current = setTimeout(performSave, AUTO_SAVE_DELAY);
     }, [performSave]);
+
+    // Intercept copy so we control exactly what lands on the clipboard:
+    //   - text/plain  : selection.toString()  (always)
+    //   - text/html   : sanitized HTML (background-color always stripped;
+    //                   other text styling stripped iff keepStyles=false;
+    //                   <img> always preserved)
+    //   - image/png   : single-image selections additionally write a raw PNG
+    //                   so the image is pastable into Photoshop/Figma/chats
+    const handleCopy = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+
+        const range = selection.getRangeAt(0);
+        const fragment = range.cloneContents();
+        const plainText = selection.toString();
+        const html = sanitizeFragmentToHtml(fragment, keepStylesRef.current);
+        const soleImage = findSoleImage(fragment);
+
+        e.preventDefault();
+        e.clipboardData.setData('text/plain', plainText);
+        e.clipboardData.setData('text/html', html);
+
+        if (soleImage) {
+            // Fire-and-forget async write; the sync HTML/plain are already set.
+            void writeImageToClipboard(soleImage);
+        }
+    }, []);
+
+    // Cut = copy + delete selection. preventDefault() in handleCopy suppresses
+    // the native deletion too, so we restore it via execCommand to keep undo
+    // history intact and fire the input event for auto-save.
+    const handleCut = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+        handleCopy(e);
+        document.execCommand('delete');
+    }, [handleCopy]);
 
     // Load note
     const loadNote = useCallback(async (note: Note) => {
@@ -233,6 +292,19 @@ export default function NotepadApp() {
                         ❔
                     </button>
                     <button
+                        className={buttonStyles.secondary + ' text-sm whitespace-nowrap'}
+                        onClick={() => setKeepStyles((v) => !v)}
+                        title={keepStyles
+                            ? '複製時保留文字樣式（永遠不含背景色）。點擊切換為純文字'
+                            : '複製時剝除文字樣式，圖片保留。點擊切換為帶樣式'}
+                        aria-pressed={keepStyles}
+                    >
+                        <span>{keepStyles ? '🎨' : '🅰️'}</span>
+                        <span className="hidden md:inline ml-1">
+                            {keepStyles ? '帶樣式' : '純文字'}
+                        </span>
+                    </button>
+                    <button
                         className={buttonStyles.primary + ' text-sm'}
                         onClick={() => db && createNewNote(db)}
                     >
@@ -265,7 +337,7 @@ export default function NotepadApp() {
                                 <div
                                     key={note.id}
                                     onClick={() => loadNote(note)}
-                                    className={`px-3 py-2 cursor-pointer border-l-2 flex items-center justify-between transition ${note.id === currentNoteId
+                                    className={`group px-3 py-2 cursor-pointer border-l-2 flex items-center justify-between transition ${note.id === currentNoteId
                                             ? 'bg-base-600/50 border-accent-blue text-base-50'
                                             : 'border-transparent hover:bg-base-600/30 text-base-400'
                                         }`}
@@ -299,6 +371,8 @@ export default function NotepadApp() {
                         ref={editorRef}
                         contentEditable
                         onInput={handleEditorInput}
+                        onCopy={handleCopy}
+                        onCut={handleCut}
                         className="flex-1 p-4 outline-none overflow-auto text-base-50"
                         spellCheck={false}
                         style={{ minHeight: 0 }}
