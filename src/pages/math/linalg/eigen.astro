@@ -4,6 +4,7 @@ import LinalgPageNav from '@/components/LinalgPageNav.astro';
 import { EIGEN_PRESETS } from '@/lib/math/linalg/eigenPresets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
+import '@/styles/linalg.css';
 
 const tex = (s: string, display = false) =>
   katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
@@ -168,44 +169,6 @@ const tex = (s: string, display = false) =>
 
     <LinalgPageNav slug="eigen" />
   </div>
-
-  <style>
-    .m-input {
-      width: 100%;
-      padding: 6px 4px;
-      background: rgb(15 23 42 / 1);
-      border: 1px solid rgb(71 85 105 / 1);
-      color: white;
-      border-radius: 4px;
-      text-align: center;
-      font-size: 13px;
-      font-family: ui-monospace, SFMono-Regular, monospace;
-    }
-    .m-input:focus { border-color: #00bcd4; outline: none; }
-    .m-input.mirror { background: rgb(15 23 42 / 0.7); border-color: rgb(71 85 105 / 0.6); }
-    .p-cell {
-      padding: 4px;
-      background: rgb(15 23 42 / 0.6);
-      border-radius: 3px;
-      text-align: center;
-      color: rgb(228 240 255 / 1);
-      font-family: ui-monospace, SFMono-Regular, monospace;
-    }
-    .lambda-row {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.4rem 0;
-      border-bottom: 1px solid rgb(71 85 105 / 0.3);
-    }
-    .lambda-row:last-child { border-bottom: none; }
-    .lambda-bar {
-      height: 6px;
-      border-radius: 3px;
-      transition: width 0.2s;
-    }
-  </style>
 
   <script>
     import { EigenScene } from '@/lib/math/linalg/EigenScene';

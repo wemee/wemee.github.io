@@ -4,6 +4,7 @@ import LinalgPageNav from '@/components/LinalgPageNav.astro';
 import { PRESETS } from '@/lib/math/linalg/presets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
+import '@/styles/linalg.css';
 
 const tex = (s: string, display = false) =>
   katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
@@ -173,30 +174,6 @@ const tex = (s: string, display = false) =>
 
     <LinalgPageNav slug="transform" />
   </div>
-
-  <style>
-    .vec-input,
-    .m-input {
-      width: 100%;
-      padding: 6px 4px;
-      background: rgb(15 23 42 / 1);
-      border: 1px solid rgb(71 85 105 / 1);
-      color: white;
-      border-radius: 4px;
-      text-align: center;
-      font-size: 13px;
-      font-family: ui-monospace, SFMono-Regular, monospace;
-    }
-    .vec-input:focus,
-    .m-input:focus {
-      border-color: #00bcd4;
-      outline: none;
-    }
-    .m-input.locked {
-      background: rgb(15 23 42 / 0.6);
-      color: rgb(100 116 139 / 1);
-    }
-  </style>
 
   <script>
     import { MatrixScene3D } from '@/lib/math/linalg/MatrixScene3D';

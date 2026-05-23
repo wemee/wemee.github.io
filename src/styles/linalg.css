@@ -1,0 +1,121 @@
+/**
+ * Linalg subsection — shared input cell + result panel styles.
+ *
+ * Extracted from 6 page-level <style> blocks that all carried the same
+ * off-palette values (Tailwind slate-* hex literals + #00bcd4 cyan).
+ * Consolidated and remapped to the site's Solarized tokens.
+ *
+ * Imported by every page under /math/linalg/. Classes are deliberately
+ * specific (`.m-input`, `.lambda-row`, etc.) so global scope is fine —
+ * they only collide inside this subsection.
+ */
+
+/* ---- Matrix / vector input cells ---- */
+
+.m-input,
+.vec-input {
+  width: 100%;
+  padding: 6px 4px;
+  background: var(--color-base-900);
+  border: 1px solid var(--color-base-600);
+  color: var(--color-base-50);
+  border-radius: 4px;
+  text-align: center;
+  font-size: 13px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+.m-input:focus,
+.vec-input:focus {
+  border-color: var(--color-accent-cyan);
+  outline: none;
+}
+
+/* Locked (homogeneous-coords bottom row, w=1 vec component) */
+.m-input.locked,
+.vec-input.locked {
+  background: color-mix(in srgb, var(--color-base-900) 60%, transparent);
+  color: var(--color-base-500);
+}
+
+/* Mirror cells — eigen page: editing one auto-syncs the symmetric pair */
+.m-input.mirror {
+  background: color-mix(in srgb, var(--color-base-900) 70%, transparent);
+  border-color: color-mix(in srgb, var(--color-base-600) 60%, transparent);
+}
+
+/* Computed-output cells: A·B result on composition, projected v on projection */
+.m-input.readonly-display {
+  background: color-mix(in srgb, var(--color-base-900) 60%, transparent);
+  color: var(--color-base-100);
+  pointer-events: none;
+}
+
+/* Result chips (smaller than .m-input, used in result panels) */
+.p-cell {
+  padding: 4px;
+  background: color-mix(in srgb, var(--color-base-900) 60%, transparent);
+  border-radius: 3px;
+  text-align: center;
+  color: var(--color-base-100);
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+.p-cell.error {
+  color: var(--color-accent-red);
+}
+
+/* ---- Eigenvalue / singular-value rows (eigen + svd pages) ---- */
+
+.lambda-row,
+.sigma-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-base-600) 30%, transparent);
+}
+
+.lambda-row:last-child,
+.sigma-row:last-child {
+  border-bottom: none;
+}
+
+.lambda-bar,
+.sigma-bar {
+  height: 6px;
+  border-radius: 3px;
+  transition: width 0.2s;
+}
+
+/* SVD only: rank truncation visually drops singular values */
+.sigma-row.dropped .sigma-bar { opacity: 0.25; }
+.sigma-row.dropped .sigma-value {
+  color: var(--color-base-500);
+  text-decoration: line-through;
+}
+
+/* ---- SVD phase + rank picker buttons ---- */
+
+.phase-btn,
+.rank-btn {
+  background: var(--color-base-700);
+  border: 1px solid var(--color-base-600);
+  color: var(--color-base-50);
+}
+
+.phase-btn:hover,
+.rank-btn:hover {
+  background: color-mix(in srgb, var(--color-accent-cyan) 30%, transparent);
+}
+
+.phase-btn.active {
+  background: color-mix(in srgb, var(--color-accent-cyan) 30%, transparent);
+  border-color: var(--color-accent-cyan);
+}
+
+.rank-btn.active {
+  background: color-mix(in srgb, var(--color-accent-yellow) 30%, transparent);
+  border-color: var(--color-accent-yellow);
+}
