@@ -94,38 +94,53 @@ const related: string[] = post.data.related ?? [];
     margin-top: 2rem;
     margin-bottom: 1rem;
   }
-  
+
   .blog-content :global(h3) {
     margin-top: 1.5rem;
     margin-bottom: 0.75rem;
   }
-  
+
+  /* Fenced code blocks: Shiki ships github-dark inline styles on <pre> and the
+     child <span>s. We only add layout (padding/rounding/scroll); never touch
+     background or text colour, or we end up with the legacy `#f4f4f4` bug that
+     made every <pre> a near-white slab on the dark site. */
   .blog-content :global(pre) {
-    background: #f4f4f4;
     padding: 1rem;
     border-radius: 0.5rem;
     overflow-x: auto;
+    margin: 1rem 0;
   }
-  
+
+  /* Inline <code>: not touched by Shiki. Use the site's darkest surface so it
+     reads as a chip rather than a flash of white. */
   .blog-content :global(code) {
-    background: #f4f4f4;
-    padding: 0.2rem 0.4rem;
+    background: var(--color-base-900);
+    color: var(--color-base-50);
+    padding: 0.15rem 0.4rem;
     border-radius: 0.25rem;
     font-size: 0.9em;
+    border: 1px solid var(--color-base-600);
   }
-  
+
+  /* Reset our inline-code styling for <code> *inside* <pre> so Shiki's own
+     theme colours show through. */
   .blog-content :global(pre code) {
     background: transparent;
+    color: inherit;
+    border: none;
     padding: 0;
+    font-size: inherit;
   }
-  
+
   .blog-content :global(blockquote) {
-    border-left: 4px solid #78c2ad;
-    padding-left: 1rem;
-    margin-left: 0;
-    color: #666;
+    border-left: 4px solid var(--color-accent-cyan);
+    padding: 0.5rem 1rem;
+    margin: 1rem 0;
+    color: var(--color-base-400);
+    background: var(--color-base-800);
+    border-radius: 0.25rem;
   }
-  
+
   .blog-content :global(ul), .blog-content :global(ol) {
     padding-left: 1.5rem;
   }
