@@ -12,6 +12,24 @@
 
 // Navigate HTML text input fields with arrow keys
 function setupNavInputWithArrowKeys(){
+	// 沿著 tr 的 next/previousElementSibling 一直走，直到該列同一欄 (children[idx])
+	// 有一個非 disabled 的 input 為止。跨過兩種「跳過去也沒意義」的列：
+	//   1. <tr><td colspan="8">&nbsp;</td></tr> 分隔列：children[idx] 不存在。
+	//   2. D8 船隊總船數 / D11 港口停船數：children[idx] 有 input 但 disabled，
+	//      .focus() 在這上面是 no-op。
+	function findEnabledInputInColumn(startTr, idx, dir) {
+		var sib = (dir === 'next') ? startTr.nextElementSibling : startTr.previousElementSibling;
+		while (sib) {
+			var cell = sib.children[idx];
+			if (cell) {
+				var input = cell.querySelector('input');
+				if (input && !input.disabled) return input;
+			}
+			sib = (dir === 'next') ? sib.nextElementSibling : sib.previousElementSibling;
+		}
+		return null;
+	}
+
 	var inputs = document.querySelectorAll('input');
 	for (var i = 0; i < inputs.length; i++) {
 		inputs[i].addEventListener('keyup', function (e) {
@@ -19,22 +37,23 @@ function setupNavInputWithArrowKeys(){
 			if (!td) return;
 			var tr = td.parentNode;
 			var idx = Array.prototype.indexOf.call(tr.children, td);
-			var targetTd = null;
 			if (e.which == 39) { // right arrow
-				targetTd = td.nextElementSibling;
+				var targetTd = td.nextElementSibling;
+				if (targetTd) {
+					var input = targetTd.querySelector('input');
+					if (input) input.focus();
+				}
 			} else if (e.which == 37) { // left arrow
-				targetTd = td.previousElementSibling;
+				var targetTd = td.previousElementSibling;
+				if (targetTd) {
+					var input = targetTd.querySelector('input');
+					if (input) input.focus();
+				}
 			} else if (e.which == 40) { // down arrow
-				if (tr.nextElementSibling && tr.nextElementSibling.children[idx]) {
-					targetTd = tr.nextElementSibling.children[idx];
-				}
+				var input = findEnabledInputInColumn(tr, idx, 'next');
+				if (input) input.focus();
 			} else if (e.which == 38) { // up arrow
-				if (tr.previousElementSibling && tr.previousElementSibling.children[idx]) {
-					targetTd = tr.previousElementSibling.children[idx];
-				}
-			}
-			if (targetTd) {
-				var input = targetTd.querySelector('input');
+				var input = findEnabledInputInColumn(tr, idx, 'prev');
 				if (input) input.focus();
 			}
 		});
