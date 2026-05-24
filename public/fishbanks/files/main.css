@@ -286,3 +286,65 @@ div.reporthead span.shipindexvalue, div.reporthead span.catchindexvalue, div.rep
 	font-weight: bold;
 }
 */
+
+/* 各組別報表的年度趨勢箭頭：▲ 比上一年高（綠）、▼ 比上一年低（紅）。
+   字級略小於數值本身、垂直置中。負值（負債、虧損）由 mainlib 直接以 inline style 變紅。 */
+span.trend {
+	font-size: 0.75em;
+	margin-left: 0.25em;
+	vertical-align: middle;
+	font-weight: normal;
+}
+span.trend-up   { color: #27ae60; }
+span.trend-down { color: #c0392b; }
+
+/* ============================================================
+   投影模式 (?display=present)：給講師桌前那台筆電 + 投影機 + 後排
+   學員的場景。把 banner 壓掉一半、字級加粗加大、按鈕熱區放寬，
+   讓 5m 外也看得清楚。
+   ============================================================ */
+body.display-present {
+	font-size: 18px;
+	line-height: 1.5;
+}
+/* banner 壓掉一半垂直空間 */
+body.display-present img[alt="漁人的榮耀"] {
+	max-height: 60px;
+	width: auto;
+}
+/* 標題與小節標題放大 */
+body.display-present h1 { font-size: 2.2em; }
+body.display-present h2 { font-size: 1.6em; }
+/* 表格內 <big> 預設約 1.17em，投影模式下顯著放大 */
+body.display-present big {
+	font-size: 1.45em;
+	font-weight: 600;
+}
+/* 數值欄位的 input 加大 */
+body.display-present input[type="text"],
+body.display-present input[type="number"],
+body.display-present input[type="date"],
+body.display-present select {
+	font-size: 1.1em;
+	padding: 0.3em 0.4em;
+}
+/* 按鈕熱區放寬，文字加大 */
+body.display-present input[type="button"] {
+	font-size: 1.1em;
+	padding: 0.6em 1.2em;
+	margin: 0.2em 0;
+	min-height: 2.4em;
+}
+/* 報表表格邊框加粗，後排也看得到格線 */
+body.display-present table[border] {
+	border-collapse: collapse;
+}
+body.display-present table[border] td,
+body.display-present table[border] th {
+	border: 2px solid #555;
+	padding: 0.4em 0.6em;
+}
+/* 趨勢箭頭跟著字級走，視覺上不會變得太小 */
+body.display-present span.trend {
+	font-size: 0.9em;
+}

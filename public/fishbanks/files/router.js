@@ -23,6 +23,10 @@ function goto(page, replace) {
 		return;
 	}
 	var url = '?page=' + page;
+	// 跨頁切換時保留 display 旗標，這樣使用者中途 F5 也不會掉出投影模式。
+	if (document.body.classList && document.body.classList.contains('display-present')) {
+		url += '&display=present';
+	}
 	if (replace) {
 		history.replaceState({page: page}, '', url);
 	} else {
@@ -57,15 +61,48 @@ function getRouteFromURL() {
 	return m ? decodeURIComponent(m[1]) : DEFAULT_ROUTE;
 }
 
+// Deep-link guard：游戲狀態活在 in-memory myStorage + globals。直接 deep-link
+// 到 decisions/reports/graphs 而沒走過 teams → setup → startTurn 的人，
+// 會看到一整片 NaN/undefined。攔下來、顯示提示、塞個按鈕送回 teams。
+// init_* 在判斷狀態未就緒時呼叫此函式，回傳 false 並中止後續渲染。
+function requireGameState() {
+	if (myStorage.getItem('allData') && typeof ships[1] !== 'undefined') return true;
+	document.getElementById('app').innerHTML =
+		'<div style="max-width:600px;margin:4em auto;padding:2em;text-align:center;font-family:sans-serif;line-height:1.6">' +
+		'<h2>遊戲尚未開始</h2>' +
+		'<p>看起來你是從外部連結或書籤直接進到這頁。<br/>' +
+		'這份遊戲的狀態存在記憶體中，必須先從「開新遊戲」走起始設定，才能繼續。</p>' +
+		'<p><input type="button" value="回到開新遊戲" onclick="goto(\'teams\')" ' +
+		'style="padding:0.8em 1.6em;font-size:1.1em;cursor:pointer" /></p>' +
+		'</div>';
+	return false;
+}
+
 window.addEventListener('popstate', function(e) {
 	var page = (e.state && e.state.page) || getRouteFromURL();
 	render(page);
 });
 
+// 投影模式：URL 帶 ?display=present 進入時開啟，加大字級、放大按鈕、壓低 banner，
+// 給講師投影機 + 後排看的場合用。狀態 sticky 到 SPA reload；page 切換不會掉。
+function applyDisplayMode() {
+	var m = location.search.match(/[?&]display=([^&]+)/);
+	if (!m) return;
+	var mode = decodeURIComponent(m[1]);
+	if (mode === 'present') {
+		document.body.classList.add('display-present');
+	}
+}
+
 window.addEventListener('DOMContentLoaded', function() {
+	applyDisplayMode();
 	var page = getRouteFromURL();
-	// Replace state so popstate gets a sensible initial entry
-	history.replaceState({page: page}, '', '?page=' + page);
+	// Replace state so popstate gets a sensible initial entry。保留 display 旗標。
+	var initUrl = '?page=' + page;
+	if (document.body.classList && document.body.classList.contains('display-present')) {
+		initUrl += '&display=present';
+	}
+	history.replaceState({page: page}, '', initUrl);
 	render(page);
 });
 

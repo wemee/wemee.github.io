@@ -59,6 +59,8 @@ document.addEventListener('focusin', function (e) {
 // ContinuousForYear), then runs the cascade of update*Total() helpers
 // so the right-hand totals column reflects the initial values.
 function init_decisions() {
+	if (!requireGameState()) return;
+
 	var f = document.DecisionsFrm;
 	var teams = parent.getTeams();
 	var t, i;
@@ -514,7 +516,7 @@ function processDecisions() {
 	var totalShipPurch = parseInt(the_form.ShipPurchTotalFld.value);
 	var totalShipSales = parseInt(the_form.ShipSalesTotalFld.value);
 	if (totalShipPurch != totalShipSales) {
-		alert('D3 購入總船數合計，必須等於\nD5 售出總船數合計');
+		alert('購入總船數合計，必須等於\n售出總船數合計');
 		the_form.ShipPurch1Fld.focus();
 		the_form.ShipPurch1Fld.select();
 		return false;
@@ -523,7 +525,7 @@ function processDecisions() {
 	var totalShipPurchDols = parseInt(the_form.ShipPurchDolsTotalFld.value);
 	var totalShipSalesDols = parseInt(the_form.ShipSalesDolsTotalFld.value);
 	if (totalShipPurchDols != totalShipSalesDols) {
-		alert('D4 購入總花費合計，必須等於\nD6 售船總收入合計');
+		alert('購入總花費合計，必須等於\n售船總收入合計');
 		the_form.ShipPurchDols1Fld.focus();
 		the_form.ShipPurchDols1Fld.select();
 		return false;
@@ -532,7 +534,7 @@ function processDecisions() {
 	var totalGivenDols = parseInt(the_form.GivenDolsTotalFld.value);
 	var totalReceiveDols = parseInt(the_form.ReceiveDolsTotalFld.value);
 	if (totalGivenDols != totalReceiveDols) {
-		alert('D12 給出去的錢合計，必須等於\nD13 收到的錢合計');
+		alert('給出去的錢合計，必須等於\n收到的錢合計');
 		the_form.GivenDols1Fld.focus();
 		the_form.GivenDols1Fld.select();
 		return false;

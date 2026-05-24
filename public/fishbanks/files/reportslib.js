@@ -12,6 +12,8 @@
 // invoked by showReport() to re-render in place when the user picks a
 // different report type.
 function init_reports() {
+	if (!requireGameState()) return;
+
 	var yr = parent.getGameYear();
 	var type = parent.reportType;
 	var titleText;
