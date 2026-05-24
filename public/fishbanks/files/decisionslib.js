@@ -26,11 +26,11 @@ function setupNavInputWithArrowKeys(){
 				targetTd = td.previousElementSibling;
 			} else if (e.which == 40) { // down arrow
 				if (tr.nextElementSibling && tr.nextElementSibling.children[idx]) {
-					targetTd = tr.nextElementSibling.children[idx].previousElementSibling;
+					targetTd = tr.nextElementSibling.children[idx];
 				}
 			} else if (e.which == 38) { // up arrow
 				if (tr.previousElementSibling && tr.previousElementSibling.children[idx]) {
-					targetTd = tr.previousElementSibling.children[idx].previousElementSibling;
+					targetTd = tr.previousElementSibling.children[idx];
 				}
 			}
 			if (targetTd) {
