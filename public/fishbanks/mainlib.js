@@ -763,49 +763,86 @@ function generateTeamRowReport(team) {
 	report += "<td><big>" + ships[team] + "</big></td></tr>";
 	return report;
 }
+// 從 myStorage 撈某條時序資料的「上一年」值，沒有就回傳 null
+// （第一年、或玩家直接 deep-link 進 reports 都會是 null）
+function getPrevYearValue(storageKey, team) {
+	var raw = myStorage.getItem(storageKey);
+	if (!raw) return null;
+	try {
+		var data = JSON.parse(raw);
+		if (!data || !data[team]) return null;
+		var prev = data[team][gameYear - 1];
+		return (prev === undefined || prev === null) ? null : prev;
+	} catch (e) {
+		return null;
+	}
+}
+
+// 渲染一格附帶趨勢箭頭 + 語意色的數值。
+// negativeIsBad: true 時，負值（負債、虧損）以紅字呈現；其他時候只用箭頭表達方向。
+// ▲ 綠色 = 比上一年高；▼ 紅色 = 比上一年低；無上一年資料時不出箭頭。
+function renderTrendCell(value, prevValue, bgColor, opts) {
+	opts = opts || {};
+	var valueColor = '';
+	if (opts.negativeIsBad && typeof value === 'number' && value < 0) {
+		valueColor = ';color:#c0392b;font-weight:bold';
+	}
+	var arrow = '';
+	if (prevValue !== null && typeof value === 'number' && typeof prevValue === 'number') {
+		if (value > prevValue) {
+			arrow = " <span class='trend trend-up' title='高於上一年 " + prevValue + "'>▲</span>";
+		} else if (value < prevValue) {
+			arrow = " <span class='trend trend-down' title='低於上一年 " + prevValue + "'>▼</span>";
+		}
+	}
+	return "<td align='center' style='background-color: " + bgColor + valueColor + "'><big>" + value + arrow + "</big></td>";
+}
+
 function generateTeamColumnReport() {
 	var report = "<table border='1'><tr align='center'><td align='center'><big>組別</big></td>";
     for (var t = 1; t <= teams; t++)
     	report += "<td align='center' style='background-color: " + tableBackgroundColor[t] + "'><big>" + t + "</big></td>";
     if (gameYear>1) {
-    report += "</tr><tr><td><big>R1 遠洋漁獲</big></td>";
+    report += "</tr><tr><td title='R1'><big>遠洋漁獲</big></td>";
     for (var t = 1; t <= teams; t++)
-    	report += "<td align='center' style='background-color: " + tableBackgroundColor[t] + "'><big>" + catchDeep[t] + "</big></td>";
+    	report += renderTrendCell(catchDeep[t], getPrevYearValue("teamCatchDeepData", t), tableBackgroundColor[t], {});
     report += "</tr>";
-      report += "</tr><tr><td><big>R2 近海漁獲</big></td>";
+      report += "</tr><tr><td title='R2'><big>近海漁獲</big></td>";
     for (var t = 1; t <= teams; t++)
-    	report += "<td align='center' style='background-color: " + tableBackgroundColor[t] + "'><big>" + catchCoast[t] + "</big></td>";
+    	report += renderTrendCell(catchCoast[t], getPrevYearValue("teamCatchCoastData", t), tableBackgroundColor[t], {});
     report += "</tr>";
-    report += "</tr><tr><td><big>R3.1 遠洋魚價</big></td>";
+    report += "</tr><tr><td title='R3.1'><big>遠洋魚價</big></td>";
     for (var t = 1; t <= teams; t++)
     	report += "<td align='center' style='background-color: " + tableBackgroundColor[t] + "'><big>" + fishDeepPrice[t] + "</big></td>";
     report += "</tr>";
-    report += "</tr><tr><td><big>R3.2 近海魚價</big></td>";
+    report += "</tr><tr><td title='R3.2'><big>近海魚價</big></td>";
     for (var t = 1; t <= teams; t++)
     	report += "<td align='center' style='background-color: " + tableBackgroundColor[t] + "'><big>" + fishCoastPrice[t] + "</big></td>";
     report += "</tr>";
-    report += "</tr><tr><td><big>R4 售魚總收入</big></td>";
+    report += "</tr><tr><td title='R4'><big>售魚總收入</big></td>";
     for (var t = 1; t <= teams; t++)
-    	report += "<td align='center' style='background-color: " + tableBackgroundColor[t] + "'><big>" + fishSales[t] + "</big></td>";
-    report += "</tr><tr><td><big>R5 利息</big></td>";
+    	report += renderTrendCell(fishSales[t], getPrevYearValue("teamFishSalesData", t), tableBackgroundColor[t], {});
+    report += "</tr><tr><td title='R5'><big>利息</big></td>";
     if (gameYear == 1) {
       for (var t = 1; t <= teams; t++)
   		  report += "<td align='center' style='background-color: " + tableBackgroundColor[t] + "'><big>" + 0 + "</big></td>";
   	} else {
       for (var t = 1; t <= teams; t++)
-  		  report += "<td align='center' style='background-color: " + tableBackgroundColor[t] + "'><big>" + interest[t] + "</big></td>";
+  		  report += renderTrendCell(interest[t], getPrevYearValue("teamInterestData", t), tableBackgroundColor[t], { negativeIsBad: true });
   	}
     report += "</tr>";
   }
-  report += "<tr><td><big>R6 銀行結餘</big></td>";
+  report += "<tr><td title='R6'><big>銀行結餘</big></td>";
   for (var t = 1; t <= teams; t++)
-    report += "<td align='center' style='background-color: " + tableBackgroundColor[t] + "'><big>" + bankBal[t] + "</big></td>";
-  report += "</tr><tr><td><big>R7 船隊總船數</big></td>";
+    report += renderTrendCell(bankBal[t], getPrevYearValue("teamBankBalData", t), tableBackgroundColor[t], { negativeIsBad: true });
+  report += "</tr><tr><td title='R7'><big>船隊總船數</big></td>";
   for (var t = 1; t <= teams; t++)
-    report += "<td align='center' style='background-color: " + tableBackgroundColor[t] + "'><big>" + ships[t] + "</big></td>";
-  report += "</tr><tr><td><big>R8 總資產</big></td>";
-  for (var t = 1; t <= teams; t++)
-    report += "<td align='center' style='background-color: " + tableBackgroundColor[t] + "'><big>" + getTeamAssets(t) + "</big></td>";
+    report += renderTrendCell(ships[t], getPrevYearValue("teamShipsData", t), tableBackgroundColor[t], {});
+  report += "</tr><tr><td title='R8'><big>總資產</big></td>";
+  for (var t = 1; t <= teams; t++) {
+    var assetsNow = getTeamAssets(t);
+    report += renderTrendCell(assetsNow, getPrevYearValue("teamAssetsData", t), tableBackgroundColor[t], { negativeIsBad: true });
+  }
   report += "</tr></table>";
 	return report;
 }
@@ -822,36 +859,30 @@ function generateTeamReport(team) {
 	// report += '    <span class="yearvalue">' + gameYear + '</span></div>\n';
 	report += '  </div>\n';
 
-	// Team data
+	// Team data — R-codes 移到 title tooltip
 	report += '  <table class="reporttable">\n';
 	report += '    <tr>\n';
-	report += '      <td class="code">R:1</td>\n';
-	report += '      <td class="label">遠洋漁獲</td>\n';
+	report += '      <td class="label" title="R:1">遠洋漁獲</td>\n';
 	report += '      <td class="value">' + catchDeep[team] + '</td>\n';
 	report += '    </tr>\n';
 	report += '    <tr>\n';
-	report += '      <td class="code">R:2</td>\n';
-	report += '      <td class="label">近海漁獲</td>\n';
+	report += '      <td class="label" title="R:2">近海漁獲</td>\n';
 	report += '      <td class="value">' + catchCoast[team] + '</td>\n';
 	report += '    </tr>\n';
 	report += '    <tr>\n';
-	report += '      <td class="code">R:3.1</td>\n';
-	report += '      <td class="label">遠洋魚價</td>\n';
+	report += '      <td class="label" title="R:3.1">遠洋魚價</td>\n';
 	report += '      <td class="value">' + fishDeepPrice[team] + '</td>\n';
 	report += '    </tr>\n';
-  report += '    <tr>\n';
-  report += '      <td class="code">R:3.2</td>\n';
-  report += '      <td class="label">近海魚價</td>\n';
-  report += '      <td class="value">' + fishCoastPrice[team] + '</td>\n';
-  report += '    </tr>\n';
 	report += '    <tr>\n';
-	report += '      <td class="code">R:4</td>\n';
-	report += '      <td class="label">售魚總收入</td>\n';
+	report += '      <td class="label" title="R:3.2">近海魚價</td>\n';
+	report += '      <td class="value">' + fishCoastPrice[team] + '</td>\n';
+	report += '    </tr>\n';
+	report += '    <tr>\n';
+	report += '      <td class="label" title="R:4">售魚總收入</td>\n';
 	report += '      <td class="value">' + fishSales[team] + '</td>\n';
 	report += '    </tr>\n';
 	report += '    <tr>\n';
-	report += '      <td class="code">R:5</td>\n';
-	report += '      <td class="label">利息</td>\n';
+	report += '      <td class="label" title="R:5">利息</td>\n';
 	if (gameYear == 1) {
 		report += '      <td class="value">0</td>\n';
 	} else {
@@ -859,13 +890,11 @@ function generateTeamReport(team) {
 	}
 	report += '    </tr>\n';
 	report += '    <tr>\n';
-	report += '      <td class="code">R:6</td>\n';
-	report += '      <td class="label">銀行結餘</td>\n';
+	report += '      <td class="label" title="R:6">銀行結餘</td>\n';
 	report += '      <td class="value">' + bankBal[team] + '</td>\n';
 	report += '    </tr>\n';
 	report += '    <tr>\n';
-	report += '      <td class="code">R:7</td>\n';
-	report += '      <td class="label">船隊總船數</td>\n';
+	report += '      <td class="label" title="R:7">船隊總船數</td>\n';
 	report += '      <td class="value">' + ships[team] + '</td>\n';
 	report += '    </tr>\n';
 	report += '  </table>\n';

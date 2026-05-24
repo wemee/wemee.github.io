@@ -5,6 +5,8 @@
 // dynamic title (mirrors the original switch on parent.reportType) then
 // runs drawAllGraphs() to populate the 7 charts and their data tables.
 function init_graphs() {
+	if (!requireGameState()) return;
+
 	var yr = parent.getGameYear();
 	var titleText;
 	switch (parent.reportType) {
