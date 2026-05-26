@@ -7,6 +7,80 @@
 export type ImageFormat = 'jpeg' | 'webp' | 'png';
 
 /**
+ * 偵測檔案是否為瀏覽器無法原生解碼的格式（需要 JS/WASM 解碼器）
+ * - HEIC/HEIF：只有 Safari 原生支援，需要 libheif (heic-to)
+ * - TIFF：所有瀏覽器都不原生支援，需要 UTIF
+ *
+ * iOS Safari 對 HEIC 的 `file.type` 偶爾回傳空字串，所以同時用副檔名 fallback
+ */
+function detectNonNativeFormat(file: File): 'heic' | 'tiff' | null {
+  const name = file.name.toLowerCase();
+  const type = file.type.toLowerCase();
+
+  if (type === 'image/heic' || type === 'image/heif' || name.endsWith('.heic') || name.endsWith('.heif')) {
+    return 'heic';
+  }
+  if (type === 'image/tiff' || type === 'image/x-tiff' || name.endsWith('.tif') || name.endsWith('.tiff')) {
+    return 'tiff';
+  }
+  return null;
+}
+
+/**
+ * 把 HEIC/TIFF 等瀏覽器不原生支援的格式轉成原生可讀的 File。
+ * 其他格式（JPEG/PNG/WebP/GIF/AVIF/BMP/ICO）原樣回傳。
+ *
+ * - HEIC → JPEG（quality 0.92，符合人像照片的取捨）
+ * - TIFF → PNG（無損；只解第一頁，multi-page TIFF 後續頁面會忽略）
+ *
+ * 解碼器使用動態 import，未碰到對應格式時不會進入主 bundle。
+ */
+export async function decodeFile(file: File): Promise<File> {
+  const kind = detectNonNativeFormat(file);
+  if (!kind) return file;
+
+  if (kind === 'heic') {
+    const { heicTo } = await import('heic-to');
+    const blob = await heicTo({ blob: file, type: 'image/jpeg', quality: 0.92 });
+    const newName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+    return new File([blob], newName || 'image.jpg', { type: 'image/jpeg' });
+  }
+
+  // TIFF — UTIF 為 CommonJS，default export 即 UTIF 物件
+  const UTIF = (await import('utif')).default;
+  const buf = await file.arrayBuffer();
+  const ifds = UTIF.decode(buf);
+  if (!ifds.length) {
+    throw new Error('TIFF 檔案沒有可解析的頁面');
+  }
+  const page = ifds[0];
+  UTIF.decodeImage(buf, page);
+  const rgba = UTIF.toRGBA8(page);
+  const canvas = document.createElement('canvas');
+  canvas.width = page.width;
+  canvas.height = page.height;
+  const ctx = canvas.getContext('2d')!;
+  const imageData = new ImageData(
+    new Uint8ClampedArray(rgba.buffer, rgba.byteOffset, rgba.byteLength),
+    page.width,
+    page.height
+  );
+  ctx.putImageData(imageData, 0, 0);
+  const blob = await new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('TIFF 轉 PNG 失敗'))), 'image/png')
+  );
+  const newName = file.name.replace(/\.(tif|tiff)$/i, '.png');
+  return new File([blob], newName || 'image.png', { type: 'image/png' });
+}
+
+/**
+ * 判斷是否需要顯示「解碼中…」的提示（HEIC/TIFF 通常 1–3 秒）
+ */
+export function needsDecoding(file: File): boolean {
+  return detectNonNativeFormat(file) !== null;
+}
+
+/**
  * 讀取檔案並轉換為 HTMLImageElement
  * 會自動處理 EXIF 方向問題 (現代瀏覽器已原生支援)
  */

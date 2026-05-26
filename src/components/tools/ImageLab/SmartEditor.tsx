@@ -1,7 +1,13 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import Cropper from 'react-cropper';
 import type CropperType from 'cropperjs';
+import { decodeFile, needsDecoding } from '@/lib/image';
 import './iphone-cropper.css';
+
+// 接受的格式：原生支援 + HEIC/HEIF (heic-to 解碼) + TIFF (UTIF 解碼)
+// 部分檔案管理員只看副檔名而忽略 MIME，所以兩種都列
+const ACCEPT_TYPES =
+    'image/jpeg,image/png,image/webp,image/gif,image/avif,image/bmp,image/x-icon,image/vnd.microsoft.icon,image/heic,image/heif,image/tiff,.jpg,.jpeg,.png,.webp,.gif,.avif,.bmp,.ico,.heic,.heif,.tif,.tiff';
 
 // ===== Types =====
 interface ImageData {
@@ -91,6 +97,7 @@ export function SmartEditor({
     const [outputQuality, setOutputQuality] = useState<number>(80);
     const [exportError, setExportError] = useState<string | null>(null);
     const [uploadError, setUploadError] = useState<string | null>(null);
+    const [isDecoding, setIsDecoding] = useState(false);
 
     // Accent color class mapping. Every variant we need has to appear here as
     // a full literal string — Tailwind JIT scans source text, so runtime
@@ -129,8 +136,16 @@ export function SmartEditor({
     const accent = accentClasses[accentColor];
 
     // ===== File Upload =====
-    const handleFileSelect = useCallback((file: File) => {
-        if (!file.type.startsWith('image/')) {
+    // 判斷是否為合理的圖片檔。iOS Safari 對 HEIC 的 file.type 偶爾為空字串，
+    // 所以同時用副檔名作為 fallback。
+    const isLikelyImage = (file: File): boolean => {
+        if (file.type.startsWith('image/')) return true;
+        const ext = file.name.toLowerCase().match(/\.(jpe?g|png|webp|gif|avif|bmp|ico|heic|heif|tiff?)$/);
+        return ext !== null;
+    };
+
+    const handleFileSelect = useCallback(async (file: File) => {
+        if (!isLikelyImage(file)) {
             setUploadError(`只接受圖片檔，這個是 ${file.type || '未知格式'}`);
             return;
         }
@@ -142,11 +157,27 @@ export function SmartEditor({
         }
         setUploadError(null);
 
-        const url = URL.createObjectURL(file);
+        // HEIC / TIFF 等瀏覽器不原生支援的格式，先在 client 解碼成 JPEG/PNG
+        let processedFile = file;
+        if (needsDecoding(file)) {
+            setIsDecoding(true);
+            try {
+                processedFile = await decodeFile(file);
+            } catch (err) {
+                setIsDecoding(false);
+                setUploadError(
+                    err instanceof Error ? `解碼失敗：${err.message}` : '解碼失敗，這個檔案可能損毀或格式不支援'
+                );
+                return;
+            }
+            setIsDecoding(false);
+        }
+
+        const url = URL.createObjectURL(processedFile);
         const img = new Image();
         img.onload = () => {
             setImage({
-                file,
+                file: processedFile,
                 url,
                 width: img.naturalWidth,
                 height: img.naturalHeight,
@@ -168,6 +199,46 @@ export function SmartEditor({
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
     }, []);
+
+    // 從剪貼簿貼上圖片（截圖、網頁圖片複製等）
+    // 限制：從檔案總管「複製檔案」貼上時 clipboard 是路徑字串，瀏覽器沒有對應 API
+    const handlePaste = useCallback((e: React.ClipboardEvent) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            if (item.kind === 'file' && item.type.startsWith('image/')) {
+                const file = item.getAsFile();
+                if (file) {
+                    e.preventDefault();
+                    handleFileSelect(file);
+                    return;
+                }
+            }
+        }
+    }, [handleFileSelect]);
+
+    // 即使焦點不在上傳區，瀏覽器頁面層級的貼上也要能觸發
+    useEffect(() => {
+        if (image) return; // 已有圖片時不再攔截全域貼上
+        const onWindowPaste = (e: ClipboardEvent) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    if (file) {
+                        e.preventDefault();
+                        handleFileSelect(file);
+                        return;
+                    }
+                }
+            }
+        };
+        window.addEventListener('paste', onWindowPaste);
+        return () => window.removeEventListener('paste', onWindowPaste);
+    }, [image, handleFileSelect]);
 
     // ===== Cropper Events =====
     const handleCrop = useCallback(() => {
@@ -383,18 +454,38 @@ export function SmartEditor({
                     ref={containerRef}
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
-                    onClick={() => fileInputRef.current?.click()}
-                    className="upload-area border-2 border-dashed border-accent-blue rounded-xl p-12 text-center cursor-pointer hover:bg-accent-blue/10 transition"
+                    onPaste={handlePaste}
+                    onClick={() => !isDecoding && fileInputRef.current?.click()}
+                    tabIndex={0}
+                    role="button"
+                    aria-label="上傳圖片"
+                    aria-busy={isDecoding}
+                    className={`upload-area border-2 border-dashed border-accent-blue rounded-xl p-12 text-center transition focus:outline-none focus:ring-2 focus:ring-accent-blue/60 ${isDecoding ? 'cursor-wait opacity-70' : 'cursor-pointer hover:bg-accent-blue/10'
+                        }`}
                 >
-                    <div className="text-6xl mb-4">📁</div>
-                    <p className="text-base-400 mb-2">拖拉圖片到這裡，或點擊選擇檔案</p>
-                    <p className="text-base-600 text-sm">
-                        支援 JPG、PNG、WebP、GIF，{formatFileSize(MAX_FILE_SIZE)} 以下
-                    </p>
+                    {isDecoding ? (
+                        <>
+                            <div className="text-6xl mb-4 animate-pulse">⏳</div>
+                            <p className="text-base-400 mb-2">正在解碼圖片…</p>
+                            <p className="text-base-600 text-sm">
+                                HEIC / TIFF 需要在瀏覽器內轉檔，第一次大約 1–3 秒
+                            </p>
+                        </>
+                    ) : (
+                        <>
+                            <div className="text-6xl mb-4">📁</div>
+                            <p className="text-base-400 mb-2">
+                                拖拉圖片到這裡、點擊選擇檔案，或直接 Ctrl/Cmd+V 貼上
+                            </p>
+                            <p className="text-base-600 text-sm">
+                                支援 JPG、PNG、WebP、GIF、AVIF、BMP、ICO、HEIC、TIFF，{formatFileSize(MAX_FILE_SIZE)} 以下
+                            </p>
+                        </>
+                    )}
                     <input
                         ref={fileInputRef}
                         type="file"
-                        accept="image/*"
+                        accept={ACCEPT_TYPES}
                         className="hidden"
                         onChange={(e) => {
                             const file = e.target.files?.[0];
