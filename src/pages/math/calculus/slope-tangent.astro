@@ -1,0 +1,241 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import CalcPageNav from '@/components/CalcPageNav.astro';
+import { FUNCTION_PRESETS } from '@/lib/math/calculus/presets';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/calculus.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+
+// Slope/tangent uses the canonical "smooth function" subset of presets.
+const presetSubset = ['parabola', 'cubic', 'sin', 'exp', 'gaussian'];
+const presets = FUNCTION_PRESETS.filter((p) => presetSubset.includes(p.id));
+---
+<BaseLayout
+  currentPage="math"
+  title="導數即斜率 · 從割線到切線"
+  description="導數到底在測量什麼？拖滑桿讓割線縮成切線，親眼看極限怎麼發生。"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
+    <a href="/math/calculus/" class="text-accent-blue hover:underline text-sm">← 回微積分專區</a>
+
+    <header class="mt-4 mb-6 text-center">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 1 · 導數</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">📈 導數即斜率</h1>
+      <p class="text-base-400 max-w-2xl mx-auto">當兩個點靠得夠近，連接它們的「割線」就變成切線。把 <code>h</code> 滑到接近 0 — 那個極限，就是導數。</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- 左側：Canvas -->
+      <div class="lg:col-span-2">
+        <canvas id="slope-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 60vh; min-height: 420px;"></canvas>
+
+        <div class="mt-3 flex flex-wrap gap-2 text-xs">
+          <span class="calc-chip"><span class="dot" style="background:#00e5ff"></span> f(x)</span>
+          <span class="calc-chip"><span class="dot" style="background:#ffd54f"></span> 割線（P → Q）</span>
+          <span class="calc-chip"><span class="dot" style="background:#ff6b9d"></span> 真實切線（虛線）</span>
+          <span class="calc-chip"><span class="dot" style="background:#ffffff"></span> 取樣點 P, Q</span>
+        </div>
+      </div>
+
+      <!-- 右側：控制 -->
+      <div class="space-y-4">
+        <!-- 函式預設 -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-blue text-sm">
+            🎯 選函式
+          </div>
+          <div class="p-3 grid grid-cols-1 gap-2" id="preset-list">
+            {presets.map((p) => (
+              <button data-preset={p.id} class="calc-btn text-left">
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <!-- x₀ 控制 -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-yellow text-sm flex justify-between items-center">
+            <span set:html={tex('x_0')} />
+            <span id="x0-readout" class="text-base-50 font-mono">0.50</span>
+          </div>
+          <div class="p-3">
+            <input id="x0-slider" type="range" class="calc-slider" min="-3" max="3" step="0.01" value="0.5">
+            <p class="text-xs text-base-400 mt-2">取樣的基準點 — 切線就畫在這裡。</p>
+          </div>
+        </div>
+
+        <!-- h 控制 -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-magenta text-sm flex justify-between items-center">
+            <span set:html={tex('h')} />
+            <span id="h-readout" class="text-base-50 font-mono">1.00</span>
+          </div>
+          <div class="p-3">
+            <input id="h-slider" type="range" class="calc-slider" min="0.01" max="2" step="0.01" value="1">
+            <p class="text-xs text-base-400 mt-2">兩點之間的水平距離 — 滑到接近 0，看割線變切線。</p>
+          </div>
+        </div>
+
+        <!-- 計算結果 -->
+        <div class="rounded-lg border border-accent-cyan/40 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-accent-cyan/10 border-b border-accent-cyan/40 font-bold text-accent-cyan text-sm">
+            🧮 即時計算
+          </div>
+          <div class="p-4 space-y-2 text-sm font-mono">
+            <div class="flex justify-between">
+              <span class="text-base-400" set:html={tex('\\dfrac{f(x_0 + h) - f(x_0)}{h} \\;=')} />
+              <span id="secant" class="calc-readout accent-yellow w-24">—</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-base-400" set:html={tex(`f'(x_0) \\;=`)} />
+              <span id="tangent" class="calc-readout accent-magenta w-24">—</span>
+            </div>
+            <hr class="border-base-600 my-2">
+            <div class="flex justify-between items-center">
+              <span class="text-base-400">誤差</span>
+              <span id="error" class="calc-readout w-24">—</span>
+            </div>
+            <p id="error-hint" class="text-xs text-base-400 mt-1 italic min-h-[1.2em]"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 教學內容 -->
+    <section class="mt-12 max-w-3xl mx-auto prose-content">
+      <h2 class="text-2xl font-bold text-base-50 mb-4">📖 導數在「測量」什麼？</h2>
+
+      <div class="space-y-4 text-base-300 leading-relaxed">
+        <p>導數的故事其實只有一句話：<strong class="text-base-50">當你把放大鏡無限放大，曲線看起來就是一條直線 — 那條直線的斜率，就是導數</strong>。</p>
+
+        <p>怎麼測量？你選一個點 <span set:html={tex('x_0')} />，再往旁邊走一點點距離 <span set:html={tex('h')} />，得到兩個點：</p>
+
+        <div class="my-4 flex justify-center" set:html={tex(`P = (x_0,\\, f(x_0)),\\quad Q = (x_0 + h,\\, f(x_0 + h))`, true)} />
+
+        <p>連接 P 和 Q 的直線叫<strong class="text-base-50">割線</strong>（secant line），它的斜率是：</p>
+
+        <div class="my-4 flex justify-center" set:html={tex(`\\text{slope}_{\\text{secant}} = \\dfrac{f(x_0 + h) - f(x_0)}{h}`, true)} />
+
+        <p>這個比值就是高中學的「升幅 / 跑幅」(rise / run)。問題是 — 它只是「平均斜率」，不是「點 P 那一瞬間」的斜率。要拿到瞬間斜率，就讓 <span set:html={tex('h')} /> 變得超級小：</p>
+
+        <div class="my-4 flex justify-center" set:html={tex(`f'(x_0) \\;=\\; \\lim_{h \\to 0} \\dfrac{f(x_0 + h) - f(x_0)}{h}`, true)} />
+
+        <p>這就是<strong class="text-base-50">導數的定義</strong>。你右邊那塊「即時計算」面板顯示的就是這兩個數字 — 一個是現在的割線斜率，一個是真實的切線斜率（由解析公式算出），下面是它們的差。把 <span set:html={tex('h')} /> 滑桿滑到最左邊，誤差應該會掉到接近 0。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+        <ol class="list-decimal list-inside space-y-2 ml-2">
+          <li>選 <strong class="text-accent-blue">f(x) = x²</strong>，把 <span set:html={tex('x_0')} /> 滑到 <strong>1.0</strong>。真實切線斜率是 <span set:html={tex(`f'(1) = 2`)} />。把 <span set:html={tex('h')} /> 從 2 慢慢滑到 0.01 — 黃色割線會逐漸貼合粉色切線。</li>
+          <li>選 <strong class="text-accent-blue">f(x) = sin(x)</strong>，把 <span set:html={tex('x_0')} /> 滑到 <strong>0</strong>。導數應該是 <span set:html={tex(`\\cos(0) = 1`)} />。注意當 <span set:html={tex('h')} /> 還很大時，割線斜率明顯小於 1（因為 sin 在 0 附近呈正弦狀，平均斜率拉低了）。</li>
+          <li>選 <strong class="text-accent-blue">f(x) = x³ − x</strong>，找<strong class="text-base-50">切線斜率為 0</strong> 的地方（提示：<span set:html={tex(`f'(x) = 3x^2 - 1`)} /> 為 0 時 <span set:html={tex(`x = \\pm 1/\\sqrt{3} \\approx \\pm 0.577`)} />）。這兩個點就是函式的<strong class="text-base-50">局部極值</strong>。</li>
+          <li>選 <strong class="text-accent-blue">f(x) = eˣ</strong>，注意一個神奇的性質：<strong class="text-base-50">eˣ 的導數就是自己</strong>。隨便挑 <span set:html={tex('x_0')} />，切線斜率永遠等於 <span set:html={tex('f(x_0)')} /> 本身。</li>
+        </ol>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">💡 為什麼這個極限會存在？</h3>
+        <p>「兩個會越來越靠近的東西相除」聽起來很可疑 — 分子和分母都同時趨近 0，那不是 0/0 嗎？這就是<strong class="text-base-50">微積分發明的核心難題</strong>，也是 17 世紀牛頓和萊布尼茲被批評的地方。嚴格的解答是 19 世紀 Cauchy 和 Weierstrass 的 ε–δ 定義，但對<strong class="text-base-50">光滑（可微）函式</strong>，這個比值的極限會穩定存在，這就足夠用了。</p>
+
+        <p>從這頁的視覺角度看極限其實很直觀：當 P 和 Q 緊靠在一起，割線就「卡住」在唯一一條斜率上 — 那條斜率，就是切線。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 之後會用到</h3>
+        <ul class="list-disc list-inside space-y-1 ml-2">
+          <li><strong class="text-base-50">鏈式法則</strong>（下一頁）— 函式合成時導數怎麼接力</li>
+          <li><strong class="text-base-50">微積分基本定理</strong> — 導數和積分是互逆操作</li>
+          <li><strong class="text-base-50">梯度</strong>（多變數版的導數）— 機器學習梯度下降的核心</li>
+        </ul>
+      </div>
+    </section>
+
+    <CalcPageNav slug="slope-tangent" />
+  </div>
+
+  <script>
+    import { SlopeTangentScene, type SlopeTangentState } from '@/lib/math/calculus/SlopeTangentScene';
+    import { FUNCTION_PRESETS } from '@/lib/math/calculus/presets';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // IMPORTANT: declare element refs BEFORE creating the scene. The scene
+      // calls onUpdate synchronously inside its constructor (initial state
+      // emit), which calls renderState, which reads these consts. If they're
+      // declared after `new ...Scene(...)`, they're in the TDZ and throw a
+      // ReferenceError that kills the rest of this callback — including the
+      // slider/preset event listeners. (Spent an evening on this.)
+      const x0Slider = document.getElementById('x0-slider') as HTMLInputElement;
+      const hSlider = document.getElementById('h-slider') as HTMLInputElement;
+      const x0Readout = document.getElementById('x0-readout')!;
+      const hReadout = document.getElementById('h-readout')!;
+      const secantEl = document.getElementById('secant')!;
+      const tangentEl = document.getElementById('tangent')!;
+      const errorEl = document.getElementById('error')!;
+      const errorHint = document.getElementById('error-hint')!;
+      const presetList = document.getElementById('preset-list')!;
+
+      function renderState(state: SlopeTangentState) {
+        x0Readout.textContent = state.x0.toFixed(2);
+        hReadout.textContent = state.h.toFixed(2);
+        secantEl.textContent = Number.isFinite(state.secantSlope) ? state.secantSlope.toFixed(3) : '—';
+        tangentEl.textContent = state.tangentSlope.toFixed(3);
+        if (Number.isFinite(state.error)) {
+          errorEl.textContent = state.error.toFixed(3);
+          if (state.error < 0.01) {
+            errorEl.className = 'calc-readout accent-green w-24';
+            errorHint.textContent = '✅ h 已經夠小，割線幾乎就是切線。';
+          } else if (state.error < 0.1) {
+            errorEl.className = 'calc-readout accent-yellow w-24';
+            errorHint.textContent = 'h 還可以再小，誤差會繼續縮小。';
+          } else {
+            errorEl.className = 'calc-readout error w-24';
+            errorHint.textContent = 'h 還太大，割線跟切線差很多。';
+          }
+        }
+      }
+
+      function highlight(id: string) {
+        presetList.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((b) => {
+          b.classList.toggle('active', b.dataset.preset === id);
+        });
+      }
+
+      // Now safe to construct — renderState's deps are all initialized.
+      const scene = new SlopeTangentScene({
+        canvasId: 'slope-canvas',
+        onUpdate: (state: SlopeTangentState) => {
+          renderState(state);
+        },
+      });
+
+      x0Slider.addEventListener('input', () => {
+        scene.setX0(parseFloat(x0Slider.value));
+      });
+      hSlider.addEventListener('input', () => {
+        scene.setH(parseFloat(hSlider.value));
+      });
+
+      presetList.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.preset;
+          if (!id) return;
+          const preset = FUNCTION_PRESETS.find((p) => p.id === id);
+          if (!preset) return;
+          scene.setPreset(id);
+          // Re-sync slider range to preset's x-range.
+          x0Slider.min = String(preset.range[0]);
+          x0Slider.max = String(preset.range[1]);
+          if (parseFloat(x0Slider.value) < preset.range[0] || parseFloat(x0Slider.value) > preset.range[1]) {
+            const mid = (preset.range[0] + preset.range[1]) / 2;
+            x0Slider.value = String(mid);
+            scene.setX0(mid);
+          }
+          highlight(id);
+        });
+      });
+
+      // Default selection.
+      highlight('parabola');
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</BaseLayout>

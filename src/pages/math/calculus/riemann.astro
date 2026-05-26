@@ -1,0 +1,255 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import CalcPageNav from '@/components/CalcPageNav.astro';
+import { FUNCTION_PRESETS } from '@/lib/math/calculus/presets';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/calculus.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+
+const presets = FUNCTION_PRESETS.filter((p) =>
+  ['parabola', 'cubic', 'sin', 'cos', 'exp', 'gaussian'].includes(p.id),
+);
+---
+<BaseLayout
+  currentPage="math"
+  title="黎曼和 · 用矩形逼近積分"
+  description="把曲線下的面積切成 n 個矩形 — 看看 n 多大時，矩形總和才會逼近真值。"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
+    <a href="/math/calculus/" class="text-accent-blue hover:underline text-sm">← 回微積分專區</a>
+
+    <header class="mt-4 mb-6 text-center">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 2 · 積分</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">📊 黎曼和</h1>
+      <p class="text-base-400 max-w-2xl mx-auto">積分的定義其實很笨：「<strong>把面積切成超多矩形然後加起來</strong>」。看 n 從 4 升到 200，矩形怎麼逐漸貼合曲線。</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2">
+        <canvas id="riemann-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 60vh; min-height: 420px;"></canvas>
+
+        <div class="mt-3 flex flex-wrap gap-2 text-xs">
+          <span class="calc-chip"><span class="dot" style="background:#00e5ff"></span> f(x) 曲線</span>
+          <span class="calc-chip"><span class="dot" style="background:rgba(255,213,79,0.6)"></span> 正面積矩形</span>
+          <span class="calc-chip"><span class="dot" style="background:rgba(255,107,157,0.6)"></span> 負面積矩形</span>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <!-- 函式 -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-blue text-sm">
+            🎯 選函式
+          </div>
+          <div class="p-3 grid grid-cols-1 gap-2" id="preset-list">
+            {presets.map((p) => (
+              <button data-preset={p.id} class="calc-btn text-left">
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <!-- 取樣點選擇 -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-cyan text-sm">
+            ⛳ 取樣點
+          </div>
+          <div class="p-3 grid grid-cols-3 gap-2" id="mode-list">
+            <button data-mode="left" class="calc-btn">左端</button>
+            <button data-mode="mid" class="calc-btn active">中點</button>
+            <button data-mode="right" class="calc-btn">右端</button>
+          </div>
+        </div>
+
+        <!-- n slider -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-yellow text-sm flex justify-between items-center">
+            <span>矩形數量 n</span>
+            <span id="n-readout" class="text-base-50 font-mono">8</span>
+          </div>
+          <div class="p-3">
+            <input id="n-slider" type="range" class="calc-slider" min="1" max="200" step="1" value="8">
+            <p class="text-xs text-base-400 mt-2">越多矩形越貼合 — 但永遠不會完全等於真值，只有 n → ∞ 才會。</p>
+          </div>
+        </div>
+
+        <!-- 積分區間 -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-magenta text-sm">
+            📐 積分區間 [a, b]
+          </div>
+          <div class="p-3 grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-xs text-base-400 block mb-1" set:html={tex('a')} />
+              <input id="a-input" type="number" step="0.1" value="-1" class="calc-input">
+            </div>
+            <div>
+              <label class="text-xs text-base-400 block mb-1" set:html={tex('b')} />
+              <input id="b-input" type="number" step="0.1" value="1" class="calc-input">
+            </div>
+          </div>
+        </div>
+
+        <!-- 計算結果 -->
+        <div class="rounded-lg border border-accent-cyan/40 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-accent-cyan/10 border-b border-accent-cyan/40 font-bold text-accent-cyan text-sm">
+            🧮 黎曼和 vs 真值
+          </div>
+          <div class="p-4 space-y-2 text-sm font-mono">
+            <div class="flex justify-between items-center">
+              <span class="text-base-400">矩形總和 ≈</span>
+              <span id="approx" class="calc-readout accent-yellow w-24">—</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-base-400" set:html={tex(`\\int_a^b f \\;=`)} />
+              <span id="truth" class="calc-readout accent-cyan w-24">—</span>
+            </div>
+            <hr class="border-base-600 my-2">
+            <div class="flex justify-between items-center">
+              <span class="text-base-400">誤差</span>
+              <span id="error" class="calc-readout w-24">—</span>
+            </div>
+            <p id="error-hint" class="text-xs text-base-400 mt-1 italic min-h-[1.2em]"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="mt-12 max-w-3xl mx-auto prose-content">
+      <h2 class="text-2xl font-bold text-base-50 mb-4">📖 積分到底是什麼？</h2>
+
+      <div class="space-y-4 text-base-300 leading-relaxed">
+        <p>定積分 <span set:html={tex(`\\int_a^b f(x)\\, dx`)} /> 的<strong class="text-base-50">字面意思</strong>就是「<span set:html={tex('f')} /> 在 <span set:html={tex('[a, b]')} /> 上面的累積量」 — 通常想像成「曲線下的面積」。</p>
+
+        <p>但「面積」本身的嚴格定義也不容易。Riemann 的解法是：<strong class="text-base-50">把區間切成 n 個小段，每段乘上函式在那點的高度，全部加起來</strong>：</p>
+
+        <div class="my-4 flex justify-center" set:html={tex(`S_n \\;=\\; \\sum_{i=0}^{n-1} f(x_i^*) \\cdot \\Delta x, \\quad \\Delta x = \\dfrac{b-a}{n}`, true)} />
+
+        <p>那個 <span set:html={tex('x_i^*')} /> 是「<strong class="text-base-50">在第 i 段裡選一個取樣點</strong>」— 可以是左端、右端、或中點。當函式單調時，左端永遠低估、右端永遠高估。中點通常最準（誤差是 <span set:html={tex('O(1/n^2)')} /> 而不是 <span set:html={tex('O(1/n)')} />）。</p>
+
+        <p>定積分就定義為「當 <span set:html={tex('n')} /> 趨於無限大時，這個和的極限」：</p>
+
+        <div class="my-4 flex justify-center" set:html={tex(`\\int_a^b f(x)\\, dx \\;=\\; \\lim_{n \\to \\infty} S_n`, true)} />
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+        <ol class="list-decimal list-inside space-y-2 ml-2">
+          <li>
+            預設：<span set:html={tex('f(x) = x^2')} />、區間 <span set:html={tex('[-1, 1]')} />、中點、n = 8。真實值是 <span set:html={tex('2/3 \\approx 0.667')} />。把 n 滑到 200，誤差應該掉到 0.0001 以下。
+          </li>
+          <li>
+            切到「左端」或「右端」 — 因為 <span set:html={tex('x^2')} /> 在 <span set:html={tex('[-1, 1]')} /> 是對稱的，這兩個其實會給一樣的結果。試試切到 <span set:html={tex('[0, 1]')} />（非對稱區間），左/右端就有差別了。
+          </li>
+          <li>
+            選 <span set:html={tex('\\sin(x)')} />、區間 <span set:html={tex('[-\\pi, \\pi]')} />（約 -3.14 到 3.14）。理論上是 <strong class="text-base-50">0</strong>，因為正負面積對稱抵消。動畫上紅色和黃色矩形面積相等。
+          </li>
+          <li>
+            選 <span set:html={tex('e^{-x^2}')} />（高斯）、區間 <span set:html={tex('[-3, 3]')} />、n = 100。結果 ≈ <span set:html={tex('\\sqrt{\\pi} \\approx 1.7725')} /> — 這就是統計裡常態分布的歸一化常數。
+          </li>
+        </ol>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">💡 為什麼中點比較準？</h3>
+        <p>對足夠平滑的函式，中點法的誤差是 <span set:html={tex('O(h^2)')} />（h 是矩形寬度），而左右端是 <span set:html={tex('O(h)')} />。直覺是：中點選的高度，剛好「補償」了矩形上半部超出曲線、下半部低於曲線的部分。這就是<strong class="text-base-50">數值積分的第一條規則</strong> — 對稱性會抵消誤差。</p>
+
+        <p>更高階的方法（梯形、Simpson、Gauss 求積）就是把這個觀察推到極致：用越來越聰明的取樣權重，讓誤差階數越來越高。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 為什麼工程上還是用這個</h3>
+        <p>機率密度、訊號能量、物理量積分 — 很多時候沒有解析解，必須用數值積分。網頁、遊戲、模擬都會用到。<strong class="text-base-50">蒙地卡羅積分</strong>（隨機取樣）就是黎曼和的隨機版，特別適合高維度。</p>
+
+        <p>下一頁我們會看到，雖然這個定義很笨，但它跟導數有一個<strong class="text-base-50">超漂亮的關係</strong> — 這個關係讓我們不用真的加 200 個矩形，也能算出積分。</p>
+      </div>
+    </section>
+
+    <CalcPageNav slug="riemann" />
+  </div>
+
+  <script>
+    import { RiemannScene, type RiemannState, type RiemannMode } from '@/lib/math/calculus/RiemannScene';
+    import { FUNCTION_PRESETS } from '@/lib/math/calculus/presets';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const nSlider = document.getElementById('n-slider') as HTMLInputElement;
+      const nReadout = document.getElementById('n-readout')!;
+      const aInput = document.getElementById('a-input') as HTMLInputElement;
+      const bInput = document.getElementById('b-input') as HTMLInputElement;
+      const approxEl = document.getElementById('approx')!;
+      const truthEl = document.getElementById('truth')!;
+      const errorEl = document.getElementById('error')!;
+      const errorHint = document.getElementById('error-hint')!;
+      const presetList = document.getElementById('preset-list')!;
+      const modeList = document.getElementById('mode-list')!;
+
+      function renderState(state: RiemannState) {
+        nReadout.textContent = String(state.n);
+        aInput.value = state.a.toFixed(2);
+        bInput.value = state.b.toFixed(2);
+        approxEl.textContent = Number.isFinite(state.approx) ? state.approx.toFixed(4) : '—';
+        truthEl.textContent = Number.isFinite(state.truth) ? state.truth.toFixed(4) : '—';
+        if (Number.isFinite(state.error)) {
+          errorEl.textContent = state.error.toExponential(1);
+          if (state.error < 0.001) {
+            errorEl.className = 'calc-readout accent-green w-24';
+            errorHint.textContent = '✅ 已經非常接近真值。';
+          } else if (state.error < 0.05) {
+            errorEl.className = 'calc-readout accent-yellow w-24';
+            errorHint.textContent = '不錯，但 n 加大還能更準。';
+          } else {
+            errorEl.className = 'calc-readout error w-24';
+            errorHint.textContent = '矩形太少，誤差還很明顯。';
+          }
+        } else {
+          errorEl.textContent = '—';
+          errorHint.textContent = '';
+        }
+      }
+
+      function highlight(list: HTMLElement, attr: string, id: string) {
+        list.querySelectorAll<HTMLButtonElement>(`[data-${attr}]`).forEach((b) => {
+          b.classList.toggle('active', b.dataset[attr] === id);
+        });
+      }
+
+      const scene = new RiemannScene({
+        canvasId: 'riemann-canvas',
+        onUpdate: renderState,
+      });
+
+      nSlider.addEventListener('input', () => {
+        scene.setN(parseFloat(nSlider.value));
+      });
+
+      function commitBounds() {
+        const a = parseFloat(aInput.value);
+        const b = parseFloat(bInput.value);
+        if (Number.isFinite(a) && Number.isFinite(b) && a < b) {
+          scene.setBounds(a, b);
+        }
+      }
+      aInput.addEventListener('change', commitBounds);
+      bInput.addEventListener('change', commitBounds);
+
+      presetList.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.preset!;
+          scene.setPreset(id);
+          highlight(presetList, 'preset', id);
+        });
+      });
+
+      modeList.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const m = btn.dataset.mode as RiemannMode;
+          scene.setMode(m);
+          highlight(modeList, 'mode', m);
+        });
+      });
+
+      highlight(presetList, 'preset', 'parabola');
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</BaseLayout>

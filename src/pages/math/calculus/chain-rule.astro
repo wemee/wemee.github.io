@@ -1,0 +1,227 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import CalcPageNav from '@/components/CalcPageNav.astro';
+import { FUNCTION_PRESETS } from '@/lib/math/calculus/presets';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/calculus.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+
+// Filter to presets that compose nicely (smooth + finite ranges).
+const presets = FUNCTION_PRESETS.filter((p) =>
+  ['parabola', 'cubic', 'sin', 'cos', 'exp', 'gaussian'].includes(p.id),
+);
+---
+<BaseLayout
+  currentPage="math"
+  title="鏈式法則 · 兩個斜率的相乘"
+  description="函式合成的微分：(g∘f)′(x) = g′(f(x))·f′(x) — 用兩條曲線並排看斜率怎麼「接力」。"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
+    <a href="/math/calculus/" class="text-accent-blue hover:underline text-sm">← 回微積分專區</a>
+
+    <header class="mt-4 mb-6 text-center">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 1 · 導數</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🔗 鏈式法則</h1>
+      <p class="text-base-400 max-w-2xl mx-auto">把兩個函式串起來變一個 — 它的斜率不是相加，而是<strong>相乘</strong>。把 x 拖看看，上下兩條切線的斜率對著看。</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2">
+        <canvas id="chain-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 65vh; min-height: 460px;"></canvas>
+
+        <div class="mt-3 flex flex-wrap gap-2 text-xs">
+          <span class="calc-chip"><span class="dot" style="background:#00e5ff"></span> 函式曲線</span>
+          <span class="calc-chip"><span class="dot" style="background:#ff6b9d"></span> 該點切線</span>
+          <span class="calc-chip"><span class="dot" style="background:rgba(255,213,79,0.6)"></span> 共享 x 標線</span>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <!-- f 預設 -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-cyan text-sm">
+            <span set:html={tex('f(x)')} /> — 內層
+          </div>
+          <div class="p-3 grid grid-cols-1 gap-2" id="f-preset-list">
+            {presets.map((p) => (
+              <button data-fpreset={p.id} class="calc-btn text-left">
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <!-- g 預設 -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-yellow text-sm">
+            <span set:html={tex('g(y)')} /> — 外層
+          </div>
+          <div class="p-3 grid grid-cols-1 gap-2" id="g-preset-list">
+            {presets.map((p) => (
+              <button data-gpreset={p.id} class="calc-btn text-left">
+                {p.label.replace('f(x)', 'g(y)').replace('x', 'y')}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <!-- x slider -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-magenta text-sm flex justify-between items-center">
+            <span set:html={tex('x')} />
+            <span id="x-readout" class="text-base-50 font-mono">1.00</span>
+          </div>
+          <div class="p-3">
+            <input id="x-slider" type="range" class="calc-slider" min="-3" max="3" step="0.01" value="1">
+          </div>
+        </div>
+
+        <!-- 計算結果 -->
+        <div class="rounded-lg border border-accent-cyan/40 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-accent-cyan/10 border-b border-accent-cyan/40 font-bold text-accent-cyan text-sm">
+            🧮 兩個斜率相乘
+          </div>
+          <div class="p-4 space-y-2 text-sm font-mono">
+            <div class="flex justify-between items-center">
+              <span class="text-base-400" set:html={tex(`f'(x) \\;=`)} />
+              <span id="fpx" class="calc-readout accent-cyan w-24">—</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-base-400" set:html={tex(`g'(f(x)) \\;=`)} />
+              <span id="gpfx" class="calc-readout accent-yellow w-24">—</span>
+            </div>
+            <hr class="border-base-600 my-2">
+            <div class="flex justify-between items-center">
+              <span class="text-base-400" set:html={tex(`(g \\circ f)'(x) \\;=`)} />
+              <span id="composite" class="calc-readout accent-magenta w-24 font-bold">—</span>
+            </div>
+            <p class="text-xs text-base-400 mt-1 italic">下圖的切線斜率 = 上面兩個數字的乘積。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="mt-12 max-w-3xl mx-auto prose-content">
+      <h2 class="text-2xl font-bold text-base-50 mb-4">📖 為什麼是相乘，不是相加？</h2>
+
+      <div class="space-y-4 text-base-300 leading-relaxed">
+        <p>當你把兩個函式串起來 — <span set:html={tex('f')} /> 先把 <span set:html={tex('x')} /> 變成 <span set:html={tex('y')} />，<span set:html={tex('g')} /> 再把 <span set:html={tex('y')} /> 變成 <span set:html={tex('z')} /> — 想知道整體 <span set:html={tex('z')} /> 對 <span set:html={tex('x')} /> 的變化率，憑直覺應該是把兩段「比例」乘起來：</p>
+
+        <div class="my-4 flex justify-center" set:html={tex(`\\dfrac{dz}{dx} \\;=\\; \\dfrac{dz}{dy} \\cdot \\dfrac{dy}{dx}`, true)} />
+
+        <p>萊布尼茲的記號刻意這樣寫，就是要讓這條規則看起來像「分數消去」。但它<strong class="text-base-50">不是</strong>真的分數消去 — 兩個比值是兩個獨立極限，但結果剛好就是相乘。</p>
+
+        <div class="my-4 flex justify-center" set:html={tex(`(g \\circ f)'(x) \\;=\\; g'(f(x)) \\cdot f'(x)`, true)} />
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+        <ol class="list-decimal list-inside space-y-2 ml-2">
+          <li>
+            預設：<span set:html={tex('f(x) = x^2')} />、<span set:html={tex('g(y) = \\sin(y)')} />，所以 <span set:html={tex('(g \\circ f)(x) = \\sin(x^2)')} />。在 <span set:html={tex('x = 1')} /> 時，<span set:html={tex(`f'(1) = 2`)} />、<span set:html={tex(`g'(1) = \\cos(1) \\approx 0.54`)} />，所以複合斜率 ≈ 1.08。對照看下面的數字。
+          </li>
+          <li>
+            把 <span set:html={tex('x')} /> 滑到 <span set:html={tex('x = 0')} />：<span set:html={tex(`f'(0) = 0`)} />。不管 <span set:html={tex('g')} /> 在那邊斜率是多少，<strong class="text-base-50">乘 0 就是 0</strong> — 下面的切線會變水平。這就是為什麼「<span set:html={tex('f')} /> 卡住」會讓整個複合也卡住。
+          </li>
+          <li>
+            選 <span set:html={tex('f(x) = e^x')} />、<span set:html={tex('g(y) = e^y')} />：複合是 <span set:html={tex('e^{e^x}')} />，斜率是 <span set:html={tex('e^{e^x} \\cdot e^x')} /> — 增長速度爆炸。試著拖 <span set:html={tex('x')} /> 看數字怎麼瘋掉。
+          </li>
+          <li>
+            選 <span set:html={tex('g(y) = \\sin(y)')} />、<span set:html={tex('f(x) = e^x')} />：複合是 <span set:html={tex('\\sin(e^x)')} />。隨著 <span set:html={tex('x')} /> 變大，<span set:html={tex('e^x')} /> 快速增長，餵進 sin 後變成超快速振盪 — 上面的曲線單調，下面卻在抖動。
+          </li>
+        </ol>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 為什麼這麼重要</h3>
+        <p>鏈式法則是<strong class="text-base-50">反向傳播（backpropagation）</strong>的核心。神經網路就是一長串函式合成 — 輸入經過很多層線性 + 非線性變換，得到輸出。要算「損失對某個權重的梯度」，就是不斷套鏈式法則，從輸出層一路乘回去：</p>
+
+        <div class="my-4 flex justify-center" set:html={tex(`\\dfrac{\\partial L}{\\partial w} \\;=\\; \\dfrac{\\partial L}{\\partial z_n} \\cdot \\dfrac{\\partial z_n}{\\partial z_{n-1}} \\cdots \\dfrac{\\partial z_1}{\\partial w}`, true)} />
+
+        <p>整個「向後傳播」其實只是把<strong class="text-base-50">這條規則重複應用很多次</strong>。下一章看完梯度後，你會看到這個更具體。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">💡 為什麼順序很重要</h3>
+        <p>注意公式裡寫的是 <span set:html={tex(`g'(f(x))`)} /> — 是 <span set:html={tex('g')} /> 的導數在 <span set:html={tex('y = f(x)')} /> 這個位置算出來的值，不是在 <span set:html={tex('x')} /> 算的。也就是說，<span set:html={tex('g')} /> 不知道 <span set:html={tex('x')} /> 是什麼，它只看到 <span set:html={tex('f')} /> 餵進來的那個值。</p>
+
+        <p>右邊面板中間那個 <span set:html={tex(`g'(f(x))`)} /> 數字 — 不是 <span set:html={tex(`g'(x)`)} />，那是不同的東西。試著切換 <span set:html={tex('f')} /> 不換 <span set:html={tex('g')} />，看這個值怎麼跟著 <span set:html={tex('f(x)')} /> 一起變。</p>
+      </div>
+    </section>
+
+    <CalcPageNav slug="chain-rule" />
+  </div>
+
+  <script>
+    import { ChainRuleScene, type ChainRuleState } from '@/lib/math/calculus/ChainRuleScene';
+    import { FUNCTION_PRESETS } from '@/lib/math/calculus/presets';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Declare element refs BEFORE creating the scene — scene's constructor
+      // emits the initial state synchronously and that calls renderState.
+      const xSlider = document.getElementById('x-slider') as HTMLInputElement;
+      const xReadout = document.getElementById('x-readout')!;
+      const fpxEl = document.getElementById('fpx')!;
+      const gpfxEl = document.getElementById('gpfx')!;
+      const compositeEl = document.getElementById('composite')!;
+      const fList = document.getElementById('f-preset-list')!;
+      const gList = document.getElementById('g-preset-list')!;
+
+      function renderState(state: ChainRuleState) {
+        xReadout.textContent = state.x.toFixed(2);
+        fpxEl.textContent = Number.isFinite(state.fpx) ? state.fpx.toFixed(3) : '—';
+        gpfxEl.textContent = Number.isFinite(state.gpfx) ? state.gpfx.toFixed(3) : '—';
+        compositeEl.textContent = Number.isFinite(state.compositeSlope) ? state.compositeSlope.toFixed(3) : '—';
+      }
+
+      function highlight(list: HTMLElement, attr: string, id: string) {
+        list.querySelectorAll<HTMLButtonElement>(`[data-${attr}]`).forEach((b) => {
+          b.classList.toggle('active', b.dataset[attr] === id);
+        });
+      }
+
+      const scene = new ChainRuleScene({
+        canvasId: 'chain-canvas',
+        onUpdate: renderState,
+      });
+
+      const [xMin, xMax] = scene.getXRange();
+      xSlider.min = String(xMin);
+      xSlider.max = String(xMax);
+      xSlider.value = '1';
+
+      xSlider.addEventListener('input', () => {
+        scene.setX(parseFloat(xSlider.value));
+      });
+
+      fList.querySelectorAll<HTMLButtonElement>('[data-fpreset]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.fpreset!;
+          const preset = FUNCTION_PRESETS.find((p) => p.id === id);
+          if (!preset) return;
+          scene.setFPreset(id);
+          const [lo, hi] = preset.range;
+          xSlider.min = String(lo);
+          xSlider.max = String(hi);
+          const cur = parseFloat(xSlider.value);
+          if (cur < lo || cur > hi) {
+            const mid = (lo + hi) / 2;
+            xSlider.value = String(mid);
+            scene.setX(mid);
+          }
+          highlight(fList, 'fpreset', id);
+        });
+      });
+
+      gList.querySelectorAll<HTMLButtonElement>('[data-gpreset]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.gpreset!;
+          scene.setGPreset(id);
+          highlight(gList, 'gpreset', id);
+        });
+      });
+
+      highlight(fList, 'fpreset', 'parabola');
+      highlight(gList, 'gpreset', 'sin');
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</BaseLayout>

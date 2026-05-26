@@ -1,0 +1,146 @@
+/**
+ * Calculus subsection — shared control + readout styles.
+ *
+ * Imported by every page under /math/calculus/. Class names are prefixed
+ * with `.calc-` to avoid collision with linalg's `.m-input` etc. Palette
+ * uses the site's Solarized tokens via CSS custom properties, mirroring
+ * the linalg.css approach.
+ */
+
+/* ---- Inputs (number boxes, text fields) ---- */
+
+.calc-input {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--color-base-900);
+  border: 1px solid var(--color-base-600);
+  color: var(--color-base-50);
+  border-radius: 4px;
+  text-align: center;
+  font-size: 13px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+.calc-input:focus {
+  border-color: var(--color-accent-cyan);
+  outline: none;
+}
+
+.calc-input.locked {
+  background: color-mix(in srgb, var(--color-base-900) 60%, transparent);
+  color: var(--color-base-500);
+  pointer-events: none;
+}
+
+/* ---- Read-only result chips ---- */
+
+.calc-readout {
+  padding: 6px 8px;
+  background: color-mix(in srgb, var(--color-base-900) 60%, transparent);
+  border-radius: 4px;
+  color: var(--color-base-100);
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  text-align: center;
+  font-size: 13px;
+}
+
+.calc-readout.accent-cyan { color: var(--color-accent-cyan); }
+.calc-readout.accent-yellow { color: var(--color-accent-yellow); }
+.calc-readout.accent-magenta { color: var(--color-accent-magenta); }
+.calc-readout.accent-green { color: var(--color-accent-green); }
+.calc-readout.error { color: var(--color-accent-red); }
+
+/* ---- Range sliders ---- */
+
+.calc-slider {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 4px;
+  background: var(--color-base-700);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.calc-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-accent-cyan);
+  cursor: pointer;
+  border: 2px solid var(--color-base-50);
+  box-shadow: 0 0 0 1px var(--color-base-900);
+}
+
+.calc-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-accent-cyan);
+  cursor: pointer;
+  border: 2px solid var(--color-base-50);
+  box-shadow: 0 0 0 1px var(--color-base-900);
+}
+
+.calc-slider:focus::-webkit-slider-thumb {
+  background: var(--color-accent-yellow);
+}
+
+.calc-slider:focus::-moz-range-thumb {
+  background: var(--color-accent-yellow);
+}
+
+/* ---- Legend chips (below canvas) ---- */
+
+.calc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 12px;
+  background: color-mix(in srgb, var(--color-base-900) 50%, transparent);
+  border: 1px solid var(--color-base-600);
+  color: var(--color-base-100);
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+.calc-chip .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ---- Buttons (preset pickers, mode switches) ---- */
+
+.calc-btn {
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  background: var(--color-base-700);
+  border: 1px solid var(--color-base-600);
+  color: var(--color-base-50);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.calc-btn:hover {
+  background: color-mix(in srgb, var(--color-accent-cyan) 30%, transparent);
+  border-color: var(--color-accent-cyan);
+}
+
+.calc-btn.active {
+  background: color-mix(in srgb, var(--color-accent-cyan) 30%, transparent);
+  border-color: var(--color-accent-cyan);
+  color: var(--color-base-50);
+}
+
+.calc-btn.active-yellow {
+  background: color-mix(in srgb, var(--color-accent-yellow) 30%, transparent);
+  border-color: var(--color-accent-yellow);
+}

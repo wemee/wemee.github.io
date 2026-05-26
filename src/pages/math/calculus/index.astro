@@ -1,0 +1,135 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+const colorMap: Record<string, { bg: string; hover: string; border: string }> = {
+  primary: { bg: 'bg-accent-blue', hover: 'hover:bg-accent-blue/80', border: 'border-accent-blue' },
+  success: { bg: 'bg-accent-green', hover: 'hover:bg-accent-green/80', border: 'border-accent-green' },
+  info: { bg: 'bg-accent-cyan', hover: 'hover:bg-accent-cyan/80', border: 'border-accent-cyan' },
+  warning: { bg: 'bg-accent-yellow', hover: 'hover:bg-accent-yellow/80', border: 'border-accent-yellow' },
+  danger: { bg: 'bg-accent-red', hover: 'hover:bg-accent-red/80', border: 'border-accent-red' },
+};
+
+interface Tool {
+  title: string;
+  description: string;
+  href: string;
+  color: string;
+  ready: boolean;
+  chapter: string;
+}
+
+const tools: Tool[] = [
+  {
+    title: '📈 導數即斜率',
+    description: '導數到底在「測量」什麼？拖滑桿讓割線縮成切線 — 親眼看極限怎麼發生。',
+    href: '/math/calculus/slope-tangent',
+    color: 'primary',
+    ready: true,
+    chapter: 'Chapter 1 · 導數',
+  },
+  {
+    title: '🔗 鏈式法則',
+    description: '函式合成的微分：(g∘f)′(x) = g′(f(x))·f′(x) — 用兩條曲線並排看「斜率怎麼接力」。',
+    href: '/math/calculus/chain-rule',
+    color: 'primary',
+    ready: true,
+    chapter: 'Chapter 1 · 導數',
+  },
+  {
+    title: '📊 黎曼和',
+    description: '把曲線下的面積切成 n 個矩形 — 看看 n 多大時，矩形總和才會逼近真值。',
+    href: '/math/calculus/riemann',
+    color: 'success',
+    ready: true,
+    chapter: 'Chapter 2 · 積分',
+  },
+  {
+    title: '🔄 微積分基本定理',
+    description: '導數和積分是「互逆」的：上下兩個圖一起動，看面積累積函式 F(x) 的高度，等於 f(x) 的塗色面積。',
+    href: '/math/calculus/ftc',
+    color: 'success',
+    ready: true,
+    chapter: 'Chapter 2 · 積分',
+  },
+  {
+    title: '🎯 泰勒展開',
+    description: '任何（夠平滑的）函式都可以用多項式逼近。拖展開中心、加項數，看逼近半徑怎麼擴張。',
+    href: '/math/calculus/taylor',
+    color: 'warning',
+    ready: true,
+    chapter: 'Chapter 3 · 應用',
+  },
+  {
+    title: '🧭 梯度與方向導數',
+    description: '多變數函式：把 f(x,y) 畫成 3D 曲面，看梯度向量指向「最陡上升方向」。連結到機器學習的梯度下降。',
+    href: '/math/calculus/gradient',
+    color: 'danger',
+    ready: true,
+    chapter: 'Chapter 3 · 應用',
+  },
+];
+---
+<BaseLayout
+  currentPage="math"
+  title="微積分視覺化"
+  description="從導數到梯度 — 用互動式視覺化建立微積分直覺。承接 linalg 子站的教學風格。"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-16">
+    <header class="text-center mb-10">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">微積分專區</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-3">微積分 · 動手玩版本</h1>
+      <p class="text-base-400 max-w-2xl mx-auto">
+        從導數到梯度 — 不背公式、不算 ε–δ。每個概念都先用一個可拖動的圖建直覺，再上符號。
+      </p>
+    </header>
+
+    <section class="rounded-lg border border-base-600 bg-base-800/60 p-6 mb-10">
+      <h2 class="text-lg font-bold text-accent-blue mb-3">📍 為什麼學這個？</h2>
+      <div class="grid md:grid-cols-2 gap-4 text-base-300 text-sm leading-relaxed">
+        <div>
+          <p class="mb-2"><span class="text-base-50 font-semibold">機器學習</span> — 梯度下降、反向傳播都是「微積分基本定理 + 鏈式法則」</p>
+          <p class="mb-2"><span class="text-base-50 font-semibold">圖學 / 物理</span> — 速度、加速度、曲率，全是導數的不同包裝</p>
+          <p><span class="text-base-50 font-semibold">數值方法</span> — 黎曼和是所有數值積分的起點</p>
+        </div>
+        <div>
+          <p class="mb-2"><span class="text-base-50 font-semibold">訊號處理</span> — Fourier 級數 = 函式空間的「泰勒展開」</p>
+          <p class="mb-2"><span class="text-base-50 font-semibold">最佳化</span> — Newton 法、共軛梯度都依賴二階導數的直覺</p>
+          <p><span class="text-base-50 font-semibold">統計</span> — 累積分布函式 = 機率密度函式的積分</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {tools.map((tool) => {
+        const colors = colorMap[tool.color];
+        return (
+          <div class={`flex flex-col rounded-lg border ${colors.border} bg-base-800 h-full`}>
+            <div class="p-5 flex-1">
+              <p class="text-xs text-base-400 mb-1">{tool.chapter}</p>
+              <h5 class="text-lg font-semibold text-base-50 mb-2">{tool.title}</h5>
+              <p class="text-base-400 text-sm">{tool.description}</p>
+            </div>
+            <div class="px-5 pb-5">
+              {tool.ready ? (
+                <a
+                  href={tool.href}
+                  class={`block text-center px-4 py-2 rounded ${colors.bg} ${colors.hover} text-base-50 font-medium transition`}
+                >
+                  開始學習 →
+                </a>
+              ) : (
+                <span class="block text-center px-4 py-2 rounded border border-base-600 text-base-500 cursor-not-allowed">
+                  籌備中
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+    <section class="mt-12 text-center text-base-400 text-sm">
+      <p>對標 <a href="https://www.3blue1brown.com/topics/calculus" class="text-accent-blue hover:underline" target="_blank" rel="noopener">3Blue1Brown · Essence of Calculus</a> — 看影片建直覺，回這裡動手玩。</p>
+    </section>
+  </div>
+</BaseLayout>

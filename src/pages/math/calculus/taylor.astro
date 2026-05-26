@@ -1,0 +1,232 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import CalcPageNav from '@/components/CalcPageNav.astro';
+import { FUNCTION_PRESETS } from '@/lib/math/calculus/presets';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/calculus.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+
+// Only presets that ship a closed-form taylor coefficient generator.
+const presets = FUNCTION_PRESETS.filter((p) => typeof p.taylor === 'function');
+---
+<BaseLayout
+  currentPage="math"
+  title="泰勒展開 · 用多項式逼近任何函式"
+  description="任何夠平滑的函式都可以寫成多項式級數 — 拖展開中心、加項數，看逼近半徑怎麼擴張。"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
+    <a href="/math/calculus/" class="text-accent-blue hover:underline text-sm">← 回微積分專區</a>
+
+    <header class="mt-4 mb-6 text-center">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 3 · 應用</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🎯 泰勒展開</h1>
+      <p class="text-base-400 max-w-2xl mx-auto">把任何函式拆成「<strong>常數 + 一次項 + 二次項 + …</strong>」— 想要多準就加多少項。距離展開中心越遠，逼近越糟。</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2">
+        <canvas id="taylor-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 60vh; min-height: 420px;"></canvas>
+
+        <div class="mt-3 flex flex-wrap gap-2 text-xs">
+          <span class="calc-chip"><span class="dot" style="background:#00e5ff"></span> 原函式 f(x)</span>
+          <span class="calc-chip"><span class="dot" style="background:#ffd54f"></span> 泰勒多項式 Tₙ(x)</span>
+          <span class="calc-chip"><span class="dot" style="background:#ff6b9d"></span> 展開中心 a</span>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <!-- 函式 -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-blue text-sm">
+            🎯 選函式
+          </div>
+          <div class="p-3 grid grid-cols-1 gap-2" id="preset-list">
+            {presets.map((p) => (
+              <button data-preset={p.id} class="calc-btn text-left">
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <!-- a -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-magenta text-sm flex justify-between items-center">
+            <span>展開中心 <span set:html={tex('a')} /></span>
+            <span id="a-readout" class="text-base-50 font-mono">0.00</span>
+          </div>
+          <div class="p-3">
+            <input id="a-slider" type="range" class="calc-slider" min="-3" max="3" step="0.05" value="0">
+            <p class="text-xs text-base-400 mt-2">在這點，T_n 和 f 永遠完美吻合（連同 n 階導數）。</p>
+          </div>
+        </div>
+
+        <!-- n -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-yellow text-sm flex justify-between items-center">
+            <span>項數 <span set:html={tex('n')} /></span>
+            <span id="n-readout" class="text-base-50 font-mono">3</span>
+          </div>
+          <div class="p-3">
+            <input id="n-slider" type="range" class="calc-slider" min="0" max="15" step="1" value="3">
+            <p class="text-xs text-base-400 mt-2">加越多項，逼近範圍越廣。但某些函式（如 1/(1-x)）有收斂半徑限制。</p>
+          </div>
+        </div>
+
+        <!-- 結果 -->
+        <div class="rounded-lg border border-accent-cyan/40 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-accent-cyan/10 border-b border-accent-cyan/40 font-bold text-accent-cyan text-sm">
+            🧮 逼近誤差
+          </div>
+          <div class="p-4 space-y-2 text-sm font-mono">
+            <div class="flex justify-between items-center">
+              <span class="text-base-400" set:html={tex(`f(a) \\;=`)} />
+              <span id="fa" class="calc-readout accent-cyan w-24">—</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-base-400" set:html={tex(`T_n(a) \\;=`)} />
+              <span id="tna" class="calc-readout accent-yellow w-24">—</span>
+            </div>
+            <hr class="border-base-600 my-2">
+            <div class="flex justify-between items-center">
+              <span class="text-base-400">畫面內最大誤差</span>
+              <span id="maxerr" class="calc-readout w-24">—</span>
+            </div>
+            <p id="err-hint" class="text-xs text-base-400 mt-1 italic min-h-[1.2em]"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="mt-12 max-w-3xl mx-auto prose-content">
+      <h2 class="text-2xl font-bold text-base-50 mb-4">📖 為什麼可以這樣？</h2>
+
+      <div class="space-y-4 text-base-300 leading-relaxed">
+        <p>對一個夠平滑的函式 <span set:html={tex('f')} />，可以在某點 <span set:html={tex('a')} /> 把它寫成<strong class="text-base-50">無窮多項的多項式</strong>：</p>
+
+        <div class="my-4 flex justify-center" set:html={tex(`f(x) \\;=\\; \\sum_{k=0}^{\\infty} \\dfrac{f^{(k)}(a)}{k!} (x - a)^k`, true)} />
+
+        <p>截斷到第 <span set:html={tex('n')} /> 項就是<strong class="text-base-50">泰勒多項式</strong> <span set:html={tex('T_n(x)')} />。它的關鍵性質是：在 <span set:html={tex('a')} /> 這一點，<span set:html={tex('T_n')} /> 和 <span set:html={tex('f')} /> 的<strong class="text-base-50">前 n 階導數全部相等</strong>。</p>
+
+        <p>換句話說 — <span set:html={tex('T_1')} /> 是「跟 f 在 a 同位置、同斜率」的直線（也就是上一頁學的<strong class="text-base-50">切線</strong>）。<span set:html={tex('T_2')} /> 多加了曲率配對。<span set:html={tex('T_3')} /> 多加了曲率變化率。每加一階，誤差就「降一階小」。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+        <ol class="list-decimal list-inside space-y-2 ml-2">
+          <li>
+            預設：<span set:html={tex('\\sin(x)')} /> 在 <span set:html={tex('a = 0')} /> 展開。把 <span set:html={tex('n')} /> 從 0 加到 15。<span set:html={tex('n = 1')} /> 是 <span set:html={tex('x')} />（黃線是直線），<span set:html={tex('n = 3')} /> 是 <span set:html={tex('x - x^3/6')} />，<span set:html={tex('n = 7')} /> 已經能跟 sin 在 <span set:html={tex('[-\\pi, \\pi]')} /> 幾乎重合。
+          </li>
+          <li>
+            <span set:html={tex('n = 1')} /> 時，把 <span set:html={tex('a')} /> 滑來滑去 — 你會看到 <span set:html={tex('T_1')} /> 就是 sin 在那一點的切線。<strong class="text-base-50">這頁實際上把「切線」推廣成了「曲線」。</strong>
+          </li>
+          <li>
+            選 <span set:html={tex('e^x')} />、<span set:html={tex('a = 0')} />、<span set:html={tex('n = 5')} />。多項式是 <span set:html={tex('1 + x + x^2/2 + x^3/6 + x^4/24 + x^5/120')} />。試著把 <span set:html={tex('a')} /> 滑到 1，看多項式怎麼「換中心」。
+          </li>
+          <li>
+            選 <span set:html={tex('f(x) = 1/(1-x)')} />、<span set:html={tex('a = 0')} />。這是<strong class="text-base-50">幾何級數</strong>：<span set:html={tex('1 + x + x^2 + x^3 + \\ldots')} />。<strong class="text-base-50">關鍵觀察</strong>：不管加多少項，多項式在 <span set:html={tex('x = 1')} /> 之後都會失控 — 因為原函式在那裡有奇點。把 <span set:html={tex('n')} /> 拉高，<span set:html={tex('|x| < 1')} /> 內越來越準，<span set:html={tex('|x| \\geq 1')} /> 永遠不會收斂。
+          </li>
+        </ol>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">💡 收斂半徑：為什麼有「逼近極限」</h3>
+        <p>1/(1-x) 在 <span set:html={tex('x = 0')} /> 周圍的泰勒級數，<strong class="text-base-50">收斂半徑</strong>剛好是 1 — 因為距離 0 最近的奇點在 1。再遠就沒救了。</p>
+
+        <p>所以泰勒展開不是「萬能的逼近器」 — 它只在<strong class="text-base-50">展開中心附近一個圓盤內</strong>有效。圓盤的半徑取決於最近的奇點。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 為什麼這超有用</h3>
+        <ul class="list-disc list-inside space-y-1 ml-2">
+          <li><strong class="text-base-50">CPU/GPU 的 sin、cos、exp 怎麼算？</strong> — 把輸入縮到合理範圍後做泰勒展開（或更精緻的 minimax 多項式）。</li>
+          <li><strong class="text-base-50">物理近似</strong> — 「小角度近似」<span set:html={tex('\\sin\\theta \\approx \\theta')} />、「相對論低速近似」都是 <span set:html={tex('T_1')} /> 或 <span set:html={tex('T_2')} />。</li>
+          <li><strong class="text-base-50">數值最佳化</strong> — Newton 法在 <span set:html={tex(`f(x) = 0`)} /> 附近用 <span set:html={tex('T_1')} /> 逼近，每次迭代解線性方程。<strong class="text-base-50">機器學習的二階方法</strong>（如 L-BFGS）用 <span set:html={tex('T_2')} />。</li>
+          <li><strong class="text-base-50">特殊函式定義</strong> — <span set:html={tex('e^{i\\theta} = \\cos\\theta + i\\sin\\theta')} />（歐拉公式）就是把 <span set:html={tex('e^x')} />、<span set:html={tex('\\sin')} />、<span set:html={tex('\\cos')} /> 的泰勒級數對照看出來的。</li>
+        </ul>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🔍 與 Fourier 級數的對照</h3>
+        <p>泰勒：用<strong class="text-base-50">多項式</strong>逼近 — 在某一點精確、向外擴散。</p>
+        <p>Fourier：用<strong class="text-base-50">正弦/餘弦</strong>逼近 — 在整個區間平均地擬合，不偏袒任何點。</p>
+        <p>同樣是把函式拆解到一組「基底」上，只是基底不同。<strong class="text-base-50">本站的</strong> <a href="/math/fourier" class="text-accent-blue hover:underline">Fourier 互動頁</a> 可以對照看。</p>
+      </div>
+    </section>
+
+    <CalcPageNav slug="taylor" />
+  </div>
+
+  <script>
+    import { TaylorScene, type TaylorState } from '@/lib/math/calculus/TaylorScene';
+    import { FUNCTION_PRESETS } from '@/lib/math/calculus/presets';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const aSlider = document.getElementById('a-slider') as HTMLInputElement;
+      const nSlider = document.getElementById('n-slider') as HTMLInputElement;
+      const aReadout = document.getElementById('a-readout')!;
+      const nReadout = document.getElementById('n-readout')!;
+      const faEl = document.getElementById('fa')!;
+      const tnaEl = document.getElementById('tna')!;
+      const maxErrEl = document.getElementById('maxerr')!;
+      const errHint = document.getElementById('err-hint')!;
+      const presetList = document.getElementById('preset-list')!;
+
+      function renderState(state: TaylorState) {
+        aReadout.textContent = state.a.toFixed(2);
+        nReadout.textContent = String(state.n);
+        faEl.textContent = Number.isFinite(state.fx0) ? state.fx0.toFixed(3) : '—';
+        tnaEl.textContent = Number.isFinite(state.tnAtA) ? state.tnAtA.toFixed(3) : '—';
+        if (Number.isFinite(state.maxAbsErr)) {
+          maxErrEl.textContent = state.maxAbsErr < 0.001
+            ? state.maxAbsErr.toExponential(1)
+            : state.maxAbsErr.toFixed(3);
+          if (state.maxAbsErr < 0.05) {
+            maxErrEl.className = 'calc-readout accent-green w-24';
+            errHint.textContent = '✅ 泰勒多項式幾乎與 f 重合。';
+          } else if (state.maxAbsErr < 1) {
+            maxErrEl.className = 'calc-readout accent-yellow w-24';
+            errHint.textContent = '加更多項或縮小範圍會更貼合。';
+          } else {
+            maxErrEl.className = 'calc-readout error w-24';
+            errHint.textContent = '展開中心附近還可以，遠處發散明顯。';
+          }
+        } else {
+          maxErrEl.textContent = '—';
+          errHint.textContent = '';
+        }
+      }
+
+      function highlight(id: string) {
+        presetList.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((b) => {
+          b.classList.toggle('active', b.dataset.preset === id);
+        });
+      }
+
+      const scene = new TaylorScene({ canvasId: 'taylor-canvas', onUpdate: renderState });
+      const [xMin, xMax] = scene.getXRange();
+      aSlider.min = String(xMin);
+      aSlider.max = String(xMax);
+
+      aSlider.addEventListener('input', () => scene.setA(parseFloat(aSlider.value)));
+      nSlider.addEventListener('input', () => scene.setN(parseFloat(nSlider.value)));
+
+      presetList.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.preset!;
+          const preset = FUNCTION_PRESETS.find((p) => p.id === id);
+          if (!preset) return;
+          scene.setPreset(id);
+          const [lo, hi] = scene.getXRange();
+          aSlider.min = String(lo);
+          aSlider.max = String(hi);
+          const cur = parseFloat(aSlider.value);
+          if (cur < lo || cur > hi) {
+            aSlider.value = String((lo + hi) / 2);
+            scene.setA((lo + hi) / 2);
+          }
+          highlight(id);
+        });
+      });
+
+      highlight('sin');
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</BaseLayout>

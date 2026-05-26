@@ -1,0 +1,227 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import CalcPageNav from '@/components/CalcPageNav.astro';
+import { FUNCTION_PRESETS } from '@/lib/math/calculus/presets';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/calculus.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+
+const presets = FUNCTION_PRESETS.filter((p) =>
+  ['parabola', 'cubic', 'sin', 'cos', 'exp', 'gaussian'].includes(p.id),
+);
+---
+<BaseLayout
+  currentPage="math"
+  title="微積分基本定理 · 導數和積分是同一件事"
+  description="拖 x 看上面塗色面積增長，等於下面 F(x) 點的上升 — 親眼看 F′(x) = f(x)。"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
+    <a href="/math/calculus/" class="text-accent-blue hover:underline text-sm">← 回微積分專區</a>
+
+    <header class="mt-4 mb-6 text-center">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 2 · 積分</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🔄 微積分基本定理</h1>
+      <p class="text-base-400 max-w-2xl mx-auto">「面積累積函式」<span set:html={tex('F')} /> 的斜率 = 原函式 <span set:html={tex('f')} /> 的高度。上下兩個圖一起動，看這個等式怎麼<strong>視覺地</strong>成立。</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2">
+        <canvas id="ftc-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 65vh; min-height: 460px;"></canvas>
+
+        <div class="mt-3 flex flex-wrap gap-2 text-xs">
+          <span class="calc-chip"><span class="dot" style="background:#00e5ff"></span> f(t) · 塗色面積</span>
+          <span class="calc-chip"><span class="dot" style="background:#ffd54f"></span> F(x) · 累積積分</span>
+          <span class="calc-chip"><span class="dot" style="background:#ff6b9d"></span> F 的切線（斜率應 = f(x)）</span>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <!-- 函式 -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-blue text-sm">
+            🎯 選 f(t)
+          </div>
+          <div class="p-3 grid grid-cols-1 gap-2" id="preset-list">
+            {presets.map((p) => (
+              <button data-preset={p.id} class="calc-btn text-left">
+                {p.label.replace('f(x)', 'f(t)').replaceAll('x', 't')}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <!-- a -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-magenta text-sm flex justify-between items-center">
+            <span>下界 <span set:html={tex('a')} /></span>
+            <span id="a-readout" class="text-base-50 font-mono">-1.00</span>
+          </div>
+          <div class="p-3">
+            <input id="a-slider" type="range" class="calc-slider" min="-2" max="2" step="0.05" value="-1">
+            <p class="text-xs text-base-400 mt-2">F(a) = 0 — 累積積分的起點，下面 F 曲線會穿過 (a, 0)。</p>
+          </div>
+        </div>
+
+        <!-- x -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-yellow text-sm flex justify-between items-center">
+            <span>上界 <span set:html={tex('x')} /></span>
+            <span id="x-readout" class="text-base-50 font-mono">0.50</span>
+          </div>
+          <div class="p-3">
+            <input id="x-slider" type="range" class="calc-slider" min="-2" max="2" step="0.01" value="0.5">
+            <p class="text-xs text-base-400 mt-2">拖這個 — 上面塗色區會跟著伸縮，下面 F 點會沿曲線移動。</p>
+          </div>
+        </div>
+
+        <!-- 計算結果 -->
+        <div class="rounded-lg border border-accent-cyan/40 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-accent-cyan/10 border-b border-accent-cyan/40 font-bold text-accent-cyan text-sm">
+            🧮 對照看：高度 vs 斜率
+          </div>
+          <div class="p-4 space-y-2 text-sm font-mono">
+            <div class="flex justify-between items-center">
+              <span class="text-base-400" set:html={tex(`f(x) \\;=`)} />
+              <span id="fx" class="calc-readout accent-cyan w-24">—</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-base-400" set:html={tex(`F'(x) \\;=`)} />
+              <span id="topFpx" class="calc-readout accent-magenta w-24">—</span>
+            </div>
+            <hr class="border-base-600 my-2">
+            <div class="flex justify-between items-center">
+              <span class="text-base-400" set:html={tex(`F(x) \\;=`)} />
+              <span id="Fx" class="calc-readout accent-yellow w-24">—</span>
+            </div>
+            <p class="text-xs text-base-400 mt-2 italic">f(x) 和 F′(x) 應該永遠相等 — 這就是 FTC。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="mt-12 max-w-3xl mx-auto prose-content">
+      <h2 class="text-2xl font-bold text-base-50 mb-4">📖 上一頁的笨方法，遇到了奇蹟</h2>
+
+      <div class="space-y-4 text-base-300 leading-relaxed">
+        <p>上一頁我們用「切矩形再加」算出積分。但這太慢了 — 想算 <span set:html={tex(`\\int_0^1 x^2`)} /> 居然要加 200 個矩形才夠準。<strong class="text-base-50">微積分基本定理（FTC）</strong>給了一個捷徑。</p>
+
+        <p>把上界當變數，定義「面積累積函式」：</p>
+
+        <div class="my-4 flex justify-center" set:html={tex(`F(x) \\;=\\; \\int_a^x f(t)\\, dt`, true)} />
+
+        <p>注意這裡有兩個重點：</p>
+        <ul class="list-disc list-inside space-y-1 ml-2">
+          <li><span set:html={tex('a')} /> 是固定的起點 — F 在 <span set:html={tex('x = a')} /> 時值為 0。</li>
+          <li>變數叫 <span set:html={tex('t')} /> 不叫 <span set:html={tex('x')} /> — 因為 <span set:html={tex('x')} /> 已經被佔用在上界。這只是命名習慣，<span set:html={tex('t')} /> 是「啞變數」，會被積分掉。</li>
+        </ul>
+
+        <p>FTC 第一部分說的就是：</p>
+
+        <div class="my-4 flex justify-center" set:html={tex(`F'(x) \\;=\\; f(x)`, true)} />
+
+        <p>翻譯：<strong class="text-base-50">這個累積面積函式的瞬間增長率，就是當下被積函式的高度。</strong></p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+        <ol class="list-decimal list-inside space-y-2 ml-2">
+          <li>
+            把 <span set:html={tex('x')} /> 從 <span set:html={tex('a')} /> 往右滑。上面塗色區一點一點變大，下面 F 點往上爬。注意右邊面板的 <span set:html={tex('f(x)')} /> 和 <span set:html={tex(`F'(x)`)} /> 始終相等。
+          </li>
+          <li>
+            把 <span set:html={tex('x')} /> 滑到「<span set:html={tex('f(x)')} /> 跨過 0」的位置（例如 <span set:html={tex('\\sin')} /> 在 0、π、2π）。<span set:html={tex(`F'(x) = 0`)} /> 代表下面 F 曲線正好<strong class="text-base-50">水平</strong> — 那就是 F 的局部極值點。
+          </li>
+          <li>
+            選 <span set:html={tex('f(t) = \\sin(t)')} />、<span set:html={tex('a = 0')} />，把 <span set:html={tex('x')} /> 滑到 <span set:html={tex('\\pi \\approx 3.14')} />。結果應該是 <span set:html={tex('1 - \\cos(\\pi) = 2')} />。
+          </li>
+          <li>
+            把 <span set:html={tex('x')} /> 滑到比 <span set:html={tex('a')} /> 小（粉色塗色） — F 變成負值。這是因為「往回積分」要加負號：<span set:html={tex(`\\int_a^x = -\\int_x^a`)} />。
+          </li>
+        </ol>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">💡 為什麼這居然成立？</h3>
+        <p>直覺證明：考慮 <span set:html={tex('F(x+h) - F(x)')} /> — 就是從 <span set:html={tex('x')} /> 到 <span set:html={tex('x+h')} /> 多出來的那塊面積。如果 <span set:html={tex('h')} /> 很小，這塊面積就近似一個寬 <span set:html={tex('h')} /> 高 <span set:html={tex('f(x)')} /> 的長條，面積大約 <span set:html={tex('f(x) \\cdot h')} />。</p>
+
+        <p>所以：</p>
+
+        <div class="my-4 flex justify-center" set:html={tex(`F'(x) \\;=\\; \\lim_{h \\to 0} \\dfrac{F(x+h) - F(x)}{h} \\;\\approx\\; \\dfrac{f(x) \\cdot h}{h} \\;=\\; f(x)`, true)} />
+
+        <p>這就是 FTC 的全部證明骨架（嚴格版會處理「近似」的誤差，但骨架就是這個）。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 為什麼這超強</h3>
+        <p>FTC 第二部分（牛頓–萊布尼茲公式）說：要算 <span set:html={tex(`\\int_a^b f`)} />，只要找到任何一個 <span set:html={tex('G')} /> 使得 <span set:html={tex(`G' = f`)} />，然後算 <span set:html={tex('G(b) - G(a)')} /> 就好了。</p>
+
+        <div class="my-4 flex justify-center" set:html={tex(`\\int_a^b f(t)\\, dt \\;=\\; G(b) - G(a) \\quad \\text{where } G' = f`, true)} />
+
+        <p><strong class="text-base-50">這是高中積分的核心招式</strong> — 把「加 200 個矩形」變成「找原函式再相減」。例如 <span set:html={tex('\\int_0^1 x^2 = \\dfrac{1}{3} - 0 = \\dfrac{1}{3}')} />，因為 <span set:html={tex(`(x^3/3)' = x^2`)} />。從黎曼和的笨方法瞬間變優雅。</p>
+
+        <p>但別忘了：<strong class="text-base-50">不是每個函式都有「初等」原函式</strong>。<span set:html={tex('e^{-x^2}')} /> 就沒有 — 那種情況下還是要回去用黎曼和（或更好的數值積分法）。</p>
+      </div>
+    </section>
+
+    <CalcPageNav slug="ftc" />
+  </div>
+
+  <script>
+    import { FTCScene, type FTCState } from '@/lib/math/calculus/FTCScene';
+    import { FUNCTION_PRESETS } from '@/lib/math/calculus/presets';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const aSlider = document.getElementById('a-slider') as HTMLInputElement;
+      const xSlider = document.getElementById('x-slider') as HTMLInputElement;
+      const aReadout = document.getElementById('a-readout')!;
+      const xReadout = document.getElementById('x-readout')!;
+      const fxEl = document.getElementById('fx')!;
+      const topFpxEl = document.getElementById('topFpx')!;
+      const FxEl = document.getElementById('Fx')!;
+      const presetList = document.getElementById('preset-list')!;
+
+      function renderState(state: FTCState) {
+        aReadout.textContent = state.a.toFixed(2);
+        xReadout.textContent = state.x.toFixed(2);
+        fxEl.textContent = Number.isFinite(state.fx) ? state.fx.toFixed(3) : '—';
+        topFpxEl.textContent = Number.isFinite(state.topFpx) ? state.topFpx.toFixed(3) : '—';
+        FxEl.textContent = Number.isFinite(state.Fx) ? state.Fx.toFixed(3) : '—';
+      }
+
+      function highlight(id: string) {
+        presetList.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((b) => {
+          b.classList.toggle('active', b.dataset.preset === id);
+        });
+      }
+
+      const scene = new FTCScene({ canvasId: 'ftc-canvas', onUpdate: renderState });
+      const [xMin, xMax] = scene.getXRange();
+      aSlider.min = String(xMin);
+      aSlider.max = String(xMax);
+      xSlider.min = String(xMin);
+      xSlider.max = String(xMax);
+
+      aSlider.addEventListener('input', () => scene.setA(parseFloat(aSlider.value)));
+      xSlider.addEventListener('input', () => scene.setX(parseFloat(xSlider.value)));
+
+      presetList.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.preset!;
+          const preset = FUNCTION_PRESETS.find((p) => p.id === id);
+          if (!preset) return;
+          scene.setPreset(id);
+          // Resync sliders to new range.
+          const [lo, hi] = scene.getXRange();
+          aSlider.min = String(lo);
+          aSlider.max = String(hi);
+          xSlider.min = String(lo);
+          xSlider.max = String(hi);
+          aSlider.value = String(lo);
+          xSlider.value = String((lo + hi) / 2);
+          highlight(id);
+        });
+      });
+
+      highlight('parabola');
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</BaseLayout>

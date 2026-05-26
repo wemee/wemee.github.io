@@ -1,0 +1,281 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import CalcPageNav from '@/components/CalcPageNav.astro';
+import { FUNCTION_PRESETS_3D } from '@/lib/math/calculus/presets3d';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/calculus.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<BaseLayout
+  currentPage="math"
+  title="梯度與方向導數 · 多變數的「斜率」"
+  description="多變數函式的「斜率」其實是一個向量 — 它指向最陡上升方向。看 3D 曲面、梯度箭頭、和不同方向的瞬間變化率。"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
+    <a href="/math/calculus/" class="text-accent-blue hover:underline text-sm">← 回微積分專區</a>
+
+    <header class="mt-4 mb-6 text-center">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 3 · 應用</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🧭 梯度與方向導數</h1>
+      <p class="text-base-400 max-w-2xl mx-auto">把函式變成 3D 地形 — 站在某點，「<strong>哪個方向上坡最陡</strong>？」這個方向，就是梯度。拖滑鼠繞圈、改 (x₀, y₀)，看黃色箭頭怎麼指。</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2">
+        <div id="gradient-container" class="rounded-lg border border-base-600 bg-base-900 overflow-hidden shadow-lg" style="height: 65vh; min-height: 460px;"></div>
+
+        <div class="mt-3 flex flex-wrap gap-2 text-xs">
+          <span class="calc-chip"><span class="dot" style="background:#2aa198"></span> 曲面 z = f(x, y)</span>
+          <span class="calc-chip"><span class="dot" style="background:#ffffff"></span> 取樣點 (x₀, y₀)</span>
+          <span class="calc-chip"><span class="dot" style="background:#ffd54f"></span> 梯度 ∇f</span>
+          <span class="calc-chip"><span class="dot" style="background:#ff6b9d"></span> 自選方向 v + 變化率長條</span>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-blue text-sm">
+            🎯 選曲面
+          </div>
+          <div class="p-3 grid grid-cols-1 gap-2" id="preset-list">
+            {FUNCTION_PRESETS_3D.map((p) => (
+              <button data-preset={p.id} class="calc-btn text-left">
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-yellow text-sm">
+            📍 取樣點
+          </div>
+          <div class="p-3 space-y-3">
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-xs text-base-400" set:html={tex('x_0')} />
+                <span id="x0-readout" class="text-xs text-base-50 font-mono">0.70</span>
+              </div>
+              <input id="x0-slider" type="range" class="calc-slider" min="-2" max="2" step="0.01" value="0.7">
+            </div>
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-xs text-base-400" set:html={tex('y_0')} />
+                <span id="y0-readout" class="text-xs text-base-50 font-mono">0.40</span>
+              </div>
+              <input id="y0-slider" type="range" class="calc-slider" min="-2" max="2" step="0.01" value="0.4">
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-magenta text-sm flex justify-between items-center">
+            <span>自選方向 <span set:html={tex('\\theta')} /></span>
+            <span id="theta-readout" class="text-base-50 font-mono">45°</span>
+          </div>
+          <div class="p-3">
+            <input id="theta-slider" type="range" class="calc-slider" min="0" max="360" step="1" value="45">
+            <p class="text-xs text-base-400 mt-2">在 xy 平面上選一個方向，看那個方向的瞬間變化率（粉色長條）。</p>
+          </div>
+        </div>
+
+        <div class="rounded-lg border border-accent-cyan/40 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-accent-cyan/10 border-b border-accent-cyan/40 font-bold text-accent-cyan text-sm">
+            🧮 梯度與方向導數
+          </div>
+          <div class="p-4 space-y-2 text-sm font-mono">
+            <div class="flex justify-between items-center">
+              <span class="text-base-400" set:html={tex(`\\partial f / \\partial x \\;=`)} />
+              <span id="fx" class="calc-readout accent-cyan w-24">—</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-base-400" set:html={tex(`\\partial f / \\partial y \\;=`)} />
+              <span id="fy" class="calc-readout accent-cyan w-24">—</span>
+            </div>
+            <hr class="border-base-600 my-2">
+            <div class="flex justify-between items-center">
+              <span class="text-base-400" set:html={tex(`|\\nabla f| \\;=`)} />
+              <span id="mag" class="calc-readout accent-yellow w-24">—</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-base-400">梯度方向</span>
+              <span id="grad-angle" class="calc-readout accent-yellow w-24">—</span>
+            </div>
+            <hr class="border-base-600 my-2">
+            <div class="flex justify-between items-center">
+              <span class="text-base-400" set:html={tex(`D_v f \\;=`)} />
+              <span id="dvf" class="calc-readout accent-magenta w-24">—</span>
+            </div>
+            <p id="dvf-hint" class="text-xs text-base-400 mt-1 italic min-h-[1.2em]"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="mt-12 max-w-3xl mx-auto prose-content">
+      <h2 class="text-2xl font-bold text-base-50 mb-4">📖 多變數的「斜率」是什麼？</h2>
+
+      <div class="space-y-4 text-base-300 leading-relaxed">
+        <p>一變數函式 <span set:html={tex('f(x)')} /> 的斜率 <span set:html={tex(`f'(x)`)} /> 是一個數字。多變數函式 <span set:html={tex('f(x, y)')} /> 呢？站在某一點，往不同方向走 — <strong class="text-base-50">每個方向的瞬間變化率都不一樣</strong>。</p>
+
+        <p>最自然的兩個方向：沿 x 軸、沿 y 軸。這兩個變化率叫<strong class="text-base-50">偏導數</strong>：</p>
+
+        <div class="my-4 flex justify-center" set:html={tex(`\\dfrac{\\partial f}{\\partial x} = \\lim_{h\\to 0} \\dfrac{f(x+h, y) - f(x, y)}{h}, \\quad \\dfrac{\\partial f}{\\partial y} = \\lim_{h\\to 0} \\dfrac{f(x, y+h) - f(x, y)}{h}`, true)} />
+
+        <p>把這兩個數字塞進一個向量，就得到<strong class="text-base-50">梯度</strong>：</p>
+
+        <div class="my-4 flex justify-center" set:html={tex(`\\nabla f \\;=\\; \\left( \\dfrac{\\partial f}{\\partial x},\\, \\dfrac{\\partial f}{\\partial y} \\right)`, true)} />
+
+        <p>梯度的<strong class="text-base-50">幾何意義</strong>非常具體：在 (x₀, y₀) 那點，把曲面看成 3D 地形，<strong class="text-base-50">梯度向量指向「最陡上升方向」，長度就是那個方向的斜率</strong>。畫面上的黃色箭頭就是它（投影在 xy 平面上）。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🧭 方向導數</h3>
+        <p>選一個任意方向 <span set:html={tex('\\mathbf{v} = (\\cos\\theta, \\sin\\theta)')} />（單位向量），「沿這個方向走」的瞬間變化率是<strong class="text-base-50">方向導數</strong>：</p>
+
+        <div class="my-4 flex justify-center" set:html={tex(`D_v f \\;=\\; \\nabla f \\cdot \\mathbf{v} \\;=\\; \\dfrac{\\partial f}{\\partial x} \\cos\\theta + \\dfrac{\\partial f}{\\partial y} \\sin\\theta`, true)} />
+
+        <p>關鍵觀察：<strong class="text-base-50">這就是梯度向量和方向向量的內積</strong>。內積最大時，兩個向量同方向 — 確認了「梯度指向最陡上升方向」。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+        <ol class="list-decimal list-inside space-y-2 ml-2">
+          <li>
+            預設：<strong class="text-base-50">碗</strong> <span set:html={tex('f(x,y) = x^2 + y^2')} />。梯度是 <span set:html={tex('(2x, 2y)')} />，永遠指向<strong class="text-base-50">遠離原點</strong>。試把 (x₀, y₀) 拖到 (1, 1) — 黃色箭頭指向 (1, 1) 的延伸方向，長度是 <span set:html={tex('\\sqrt{8} \\approx 2.83')} />。
+          </li>
+          <li>
+            把方向滑桿 <span set:html={tex('\\theta')} /> 滑到與梯度<strong class="text-base-50">垂直</strong>的方向，<span set:html={tex(`D_v f`)} /> 應該變成 0 — 那條方向就是<strong class="text-base-50">等高線方向</strong>，地形不上升也不下降。
+          </li>
+          <li>
+            切到<strong class="text-base-50">鞍點</strong> <span set:html={tex('x^2 - y^2')} />。拖到 (0, 0) — 偏導都是 0，梯度長度是 0，<strong class="text-base-50">這是個臨界點</strong>。然後拖到 (1, 0)，梯度沿 x 方向；拖到 (0, 1)，梯度沿 −y 方向。
+          </li>
+          <li>
+            切到<strong class="text-base-50">漣漪</strong> <span set:html={tex('\\sin(x)\\cos(y)')} />。地形上有山有谷，梯度永遠從谷指向山。在峰頂或谷底，梯度 = 0。
+          </li>
+          <li>
+            切到<strong class="text-base-50">猴鞍</strong> <span set:html={tex('x^3 - 3xy^2')} />。原點是<strong class="text-base-50">高階臨界點</strong> — 不只一個方向往下、不只一個方向往上。Hessian 在這裡也是 0 矩陣，二階測試失效。
+          </li>
+        </ol>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 為什麼這就是機器學習的核心</h3>
+        <p>神經網路的<strong class="text-base-50">損失函式</strong> <span set:html={tex('L(\\theta_1, \\theta_2, \\ldots, \\theta_n)')} /> 是一個極高維的多變數函式。要找最小值，我們不能解析地求 <span set:html={tex(`\\nabla L = 0`)} />（解不開），但<strong class="text-base-50">能算梯度</strong>。算梯度後，往<strong class="text-base-50">梯度反方向</strong>走一步 — 因為那是「最陡下降方向」。重複幾百萬次：</p>
+
+        <div class="my-4 flex justify-center" set:html={tex(`\\theta_{\\text{new}} \\;=\\; \\theta_{\\text{old}} \\;-\\; \\eta \\cdot \\nabla L(\\theta_{\\text{old}})`, true)} />
+
+        <p>這就是<strong class="text-base-50">梯度下降（Gradient Descent）</strong>。<span set:html={tex('\\eta')} /> 是「學習率」(learning rate)。整個深度學習基本上就是這條公式 + 鏈式法則（用來算 ∇L）。</p>
+
+        <p>下一章（Ch4 神經網路應用，籌備中）會把這條公式跟<a href="/math/calculus/chain-rule" class="text-accent-blue hover:underline">鏈式法則</a>接起來 — 就是<strong class="text-base-50">反向傳播</strong>。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">💡 與線性代數的連結</h3>
+        <p>方向導數的內積形式 <span set:html={tex(`D_v f = \\nabla f \\cdot \\mathbf{v}`)} />，跟我們在 <a href="/math/dot-product" class="text-accent-blue hover:underline">向量內積</a> 學到的「兩向量的相似程度」是同一件事。Cauchy–Schwarz 不等式告訴我們 <span set:html={tex(`|\\nabla f \\cdot \\mathbf{v}| \\leq |\\nabla f| \\cdot |\\mathbf{v}|`)} />，取等號當兩向量平行 — 也就是「沿梯度方向走變化最快」的數學證明。</p>
+
+        <p>把 <span set:html={tex('\\nabla f')} /> 當作線性映射 <span set:html={tex('\\mathbb{R}^n \\to \\mathbb{R}')} />，這條映射就是「對輸入微小變化最敏感的方向」。從<a href="/math/linalg/" class="text-accent-blue hover:underline">線性代數專區</a> 學的方向 / 投影 / SVD 的觀點看，這就是最大奇異向量。</p>
+      </div>
+    </section>
+
+    <CalcPageNav slug="gradient" />
+  </div>
+
+  <script>
+    import { GradientScene, type GradientState } from '@/lib/math/calculus/GradientScene';
+    import { FUNCTION_PRESETS_3D } from '@/lib/math/calculus/presets3d';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Element refs first (avoid TDZ during scene's initial onUpdate emit).
+      const x0Slider = document.getElementById('x0-slider') as HTMLInputElement;
+      const y0Slider = document.getElementById('y0-slider') as HTMLInputElement;
+      const thetaSlider = document.getElementById('theta-slider') as HTMLInputElement;
+      const x0Readout = document.getElementById('x0-readout')!;
+      const y0Readout = document.getElementById('y0-readout')!;
+      const thetaReadout = document.getElementById('theta-readout')!;
+      const fxEl = document.getElementById('fx')!;
+      const fyEl = document.getElementById('fy')!;
+      const magEl = document.getElementById('mag')!;
+      const gradAngleEl = document.getElementById('grad-angle')!;
+      const dvfEl = document.getElementById('dvf')!;
+      const dvfHint = document.getElementById('dvf-hint')!;
+      const presetList = document.getElementById('preset-list')!;
+
+      const rad2deg = (r: number) => (r * 180) / Math.PI;
+
+      function renderState(state: GradientState) {
+        x0Readout.textContent = state.x0.toFixed(2);
+        y0Readout.textContent = state.y0.toFixed(2);
+        thetaReadout.textContent = `${Math.round(rad2deg(state.theta))}°`;
+        fxEl.textContent = state.fx.toFixed(3);
+        fyEl.textContent = state.fy.toFixed(3);
+        magEl.textContent = state.gradMagnitude.toFixed(3);
+        gradAngleEl.textContent = `${Math.round(rad2deg(state.gradAngle))}°`;
+        dvfEl.textContent = state.directionalDerivative.toFixed(3);
+
+        // Hint: how does v compare to ∇f direction?
+        const diff = Math.abs(((state.theta - state.gradAngle + Math.PI) % (2 * Math.PI)) - Math.PI);
+        const diffDeg = rad2deg(diff);
+        if (state.gradMagnitude < 0.001) {
+          dvfHint.textContent = '梯度幾乎為 0 — 這裡是臨界點。';
+        } else if (diffDeg < 10) {
+          dvfHint.textContent = '✅ 方向幾乎沿梯度 — 上升最快。';
+        } else if (diffDeg > 80 && diffDeg < 100) {
+          dvfHint.textContent = '⊥ 與梯度垂直 — 沿等高線走，z 幾乎不變。';
+        } else if (diffDeg > 170) {
+          dvfHint.textContent = '↓ 與梯度反向 — 下降最快（梯度下降走的方向）。';
+        } else {
+          dvfHint.textContent = '';
+        }
+      }
+
+      function highlight(id: string) {
+        presetList.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((b) => {
+          b.classList.toggle('active', b.dataset.preset === id);
+        });
+      }
+
+      const scene = new GradientScene({
+        containerId: 'gradient-container',
+        onUpdate: renderState,
+      });
+
+      const [lo, hi] = scene.getRange();
+      x0Slider.min = String(lo);
+      x0Slider.max = String(hi);
+      y0Slider.min = String(lo);
+      y0Slider.max = String(hi);
+
+      function commitPoint() {
+        scene.setPoint(parseFloat(x0Slider.value), parseFloat(y0Slider.value));
+      }
+      x0Slider.addEventListener('input', commitPoint);
+      y0Slider.addEventListener('input', commitPoint);
+      thetaSlider.addEventListener('input', () => {
+        scene.setTheta((parseFloat(thetaSlider.value) * Math.PI) / 180);
+      });
+
+      presetList.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.preset!;
+          const preset = FUNCTION_PRESETS_3D.find((p) => p.id === id);
+          if (!preset) return;
+          scene.setPreset(id);
+          const [pLo, pHi] = preset.range;
+          x0Slider.min = String(pLo);
+          x0Slider.max = String(pHi);
+          y0Slider.min = String(pLo);
+          y0Slider.max = String(pHi);
+          // Clamp slider values into new range.
+          if (parseFloat(x0Slider.value) < pLo || parseFloat(x0Slider.value) > pHi) {
+            x0Slider.value = String((pLo + pHi) / 2);
+          }
+          if (parseFloat(y0Slider.value) < pLo || parseFloat(y0Slider.value) > pHi) {
+            y0Slider.value = String((pLo + pHi) / 2);
+          }
+          commitPoint();
+          highlight(id);
+        });
+      });
+
+      highlight('bowl');
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</BaseLayout>
