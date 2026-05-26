@@ -114,6 +114,11 @@ export default function NotepadApp() {
 
     const editorRef = useRef<HTMLDivElement>(null);
     const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Snapshot of the content last written to IDB for the currently loaded
+    // note. performSave uses this to skip no-op writes so just *opening* a
+    // note (which also flushes the previous note's pending debounce) won't
+    // bump its updatedAt and silently re-order the sidebar.
+    const lastSavedContentRef = useRef<string>('');
     // Ref mirror so the copy handler always reads the latest toggle without
     // having to be re-bound (and re-attached to the editor) on every change.
     const keepStylesRef = useRef(keepStyles);
@@ -143,6 +148,7 @@ export default function NotepadApp() {
                     if (editorRef.current) {
                         editorRef.current.innerHTML = allNotes[0].content;
                     }
+                    lastSavedContentRef.current = allNotes[0].content;
                     setIsEmpty(isEditorEmpty(allNotes[0].content));
                 } else {
                     createNewNote(database, false);
@@ -161,6 +167,7 @@ export default function NotepadApp() {
         if (editorRef.current) {
             editorRef.current.innerHTML = '';
         }
+        lastSavedContentRef.current = '';
         setIsEmpty(true);
 
         if (shouldSave) {
@@ -173,18 +180,25 @@ export default function NotepadApp() {
         editorRef.current?.focus();
     }, []);
 
-    // Save current note
+    // Save current note. Skips the IDB write entirely when nothing has
+    // changed since the last load/save — keeps `updatedAt` stable so the
+    // sidebar doesn't reshuffle just because the user clicked between
+    // notes (which flushes the previous note's debounce).
     const performSave = useCallback(async () => {
         if (!db || !currentNoteId || !editorRef.current) return;
+
+        const content = editorRef.current.innerHTML;
+        if (content === lastSavedContentRef.current) return;
 
         setSaveStatus('saving');
         const note: Note = {
             id: currentNoteId,
-            content: editorRef.current.innerHTML,
+            content,
             updatedAt: Date.now(),
         };
 
         await saveNote(db, note);
+        lastSavedContentRef.current = content;
         const allNotes = await getAllNotes(db);
         setNotes(allNotes);
 
@@ -270,17 +284,22 @@ export default function NotepadApp() {
         document.execCommand('delete');
     }, [handleCopy]);
 
-    // Load note
-    const loadNote = useCallback(async (note: Note) => {
+    // Load note. `flushPending` controls what to do with a still-armed
+    // auto-save debounce: switching between notes wants to flush (don't
+    // lose unsaved keystrokes), but the delete path passes `false` —
+    // flushing there would re-write the just-deleted note back into IDB.
+    const loadNote = useCallback(async (note: Note, flushPending = true) => {
         if (saveTimeoutRef.current) {
             clearTimeout(saveTimeoutRef.current);
-            await performSave();
+            saveTimeoutRef.current = null;
+            if (flushPending) await performSave();
         }
 
         setCurrentNoteId(note.id);
         if (editorRef.current) {
             editorRef.current.innerHTML = note.content;
         }
+        lastSavedContentRef.current = note.content;
         setIsEmpty(isEditorEmpty(note.content));
 
         // Close sidebar on mobile
@@ -289,10 +308,19 @@ export default function NotepadApp() {
         }
     }, [performSave]);
 
-    // Delete note
+    // Delete note. Critical: cancel any pending auto-save first. If a
+    // debounced save is still queued (user typed in the last ~1s before
+    // hitting the trash), it would either fire mid-deletion or — worse —
+    // be flushed by loadNote() below with a closure pointing at the
+    // just-deleted id, silently undoing the delete.
     const handleDeleteNote = useCallback(async (id: string) => {
         if (!db) return;
         if (!confirm('確定要刪除這則筆記嗎？')) return;
+
+        if (currentNoteId === id && saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+            saveTimeoutRef.current = null;
+        }
 
         await deleteNote(db, id);
         const allNotes = await getAllNotes(db);
@@ -300,7 +328,7 @@ export default function NotepadApp() {
 
         if (currentNoteId === id) {
             if (allNotes.length > 0) {
-                loadNote(allNotes[0]);
+                loadNote(allNotes[0], false);
             } else {
                 createNewNote(db, false);
             }
@@ -404,7 +432,8 @@ export default function NotepadApp() {
                                             e.stopPropagation();
                                             handleDeleteNote(note.id);
                                         }}
-                                        className="text-accent-red hover:text-accent-red/80 opacity-0 group-hover:opacity-100 transition"
+                                        aria-label="刪除筆記"
+                                        className="text-accent-red/70 hover:text-accent-red transition shrink-0 px-1"
                                     >
                                         🗑️
                                     </button>
