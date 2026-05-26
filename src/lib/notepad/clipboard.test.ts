@@ -3,6 +3,7 @@ import {
     stripBackground,
     stripAllStyling,
     sanitizeFragmentToHtml,
+    sanitizePastedHtml,
     findSoleImage,
 } from './clipboard';
 
@@ -166,6 +167,60 @@ describe('sanitizeFragmentToHtml — input isolation', () => {
         sanitizeFragmentToHtml(f, true);
         const styleAfter = (f.firstChild as HTMLElement).getAttribute('style');
         expect(styleAfter).toBe(styleBefore);
+    });
+});
+
+describe('sanitizePastedHtml', () => {
+    it('strips inline color (the gsheet-black-on-dark-bg bug)', () => {
+        const html =
+            '<span style="color:#000000; background-color:#ffffff">cell</span>';
+        const out = sanitizePastedHtml(html);
+        expect(out).not.toMatch(/color/i);
+        expect(out).not.toMatch(/background/i);
+        expect(out).toContain('>cell<');
+    });
+
+    it('strips class attributes (MsoNormal etc.)', () => {
+        const out = sanitizePastedHtml('<p class="MsoNormal">x</p>');
+        expect(out).not.toContain('class=');
+        expect(out).toContain('<p');
+    });
+
+    it('removes <style>, <link>, <script>, <meta> entirely', () => {
+        const out = sanitizePastedHtml(
+            '<style>.a{color:red}</style>' +
+                '<link rel="stylesheet" href="x.css">' +
+                '<script>alert(1)</script>' +
+                '<meta charset="utf-8">' +
+                '<p>kept</p>'
+        );
+        expect(out).not.toMatch(/<style/i);
+        expect(out).not.toMatch(/<link/i);
+        expect(out).not.toMatch(/<script/i);
+        expect(out).not.toMatch(/<meta/i);
+        expect(out).toContain('<p>kept</p>');
+    });
+
+    it('preserves semantic structure (p, br, strong, em, ul, li)', () => {
+        const out = sanitizePastedHtml(
+            '<p style="color:red"><strong>bold</strong> and <em>italic</em></p>' +
+                '<ul><li>one</li><li>two</li></ul>'
+        );
+        expect(out).toContain('<p');
+        expect(out).toContain('<strong>bold</strong>');
+        expect(out).toContain('<em>italic</em>');
+        expect(out).toContain('<ul>');
+        expect(out).toContain('<li>one</li>');
+        expect(out).not.toContain('color');
+    });
+
+    it('preserves <img src> but drops its inline style', () => {
+        const out = sanitizePastedHtml(
+            '<img src="data:image/png;base64,X" style="width:99px" class="x">'
+        );
+        expect(out).toContain('src="data:image/png');
+        expect(out).not.toContain('style=');
+        expect(out).not.toContain('class=');
     });
 });
 

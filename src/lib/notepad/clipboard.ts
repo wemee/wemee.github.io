@@ -62,6 +62,32 @@ export function sanitizeFragmentToHtml(
     return container.innerHTML;
 }
 
+// Sanitize an HTML string coming from an external clipboard before we
+// insert it into the editor. External sources (Google Sheets, Word, web
+// pages) ship inline `color` / `background` / `font` declarations sized
+// for *their* surface — black text on white. The notepad runs a dark
+// theme, so honoring those styles makes pasted text invisible. We always
+// strip presentation, regardless of the keep-styles copy toggle.
+//
+// What survives: semantic tags (<p>, <br>, <strong>, <em>, <ul>, <li>,
+// <table>, <img>, …) and structural attributes like <img src>.
+// What gets dropped: every <style>/<link>/<script>/<meta> node, every
+// inline `style` attribute, every `class` attribute.
+export function sanitizePastedHtml(html: string): string {
+    const container = document.createElement('div');
+    container.innerHTML = html;
+
+    container
+        .querySelectorAll('style, link, script, meta')
+        .forEach((el) => el.remove());
+
+    container
+        .querySelectorAll<HTMLElement>('*')
+        .forEach((el) => stripAllStyling(el));
+
+    return container.innerHTML;
+}
+
 // Returns the `<img>` if the fragment is essentially just one image (no
 // other meaningful text content). Used to decide whether to additionally
 // write image/png to the clipboard.

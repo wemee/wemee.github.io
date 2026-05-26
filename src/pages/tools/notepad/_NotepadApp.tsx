@@ -4,6 +4,7 @@ import { buttonStyles, inputStyles } from '@/components/ui';
 import {
     KEEP_STYLES_KEY,
     sanitizeFragmentToHtml,
+    sanitizePastedHtml,
     findSoleImage,
     writeImageToClipboard,
 } from '@/lib/notepad/clipboard';
@@ -230,6 +231,35 @@ export default function NotepadApp() {
         }
     }, []);
 
+    // Intercept paste so external clipboards (Google Sheets, Word, web pages)
+    // can't override the notepad's dark theme with their own color/font
+    // declarations. The classic failure mode: gsheet's black-text cells get
+    // pasted with `color: #000` inline, rendering invisible against the
+    // editor's dark background. We sanitize HTML to drop all inline styling
+    // but keep structure; image-only pastes (screenshots) fall through to
+    // the browser's native handling so the <img> is inserted as-is.
+    const handlePaste = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
+        const dt = e.clipboardData;
+
+        for (let i = 0; i < dt.items.length; i++) {
+            if (dt.items[i].kind === 'file' && dt.items[i].type.startsWith('image/')) {
+                return;
+            }
+        }
+
+        const html = dt.getData('text/html');
+        const text = dt.getData('text/plain');
+        if (!html && !text) return;
+
+        e.preventDefault();
+        const payload = html ? sanitizePastedHtml(html) : text;
+        // execCommand is deprecated but remains the only cross-browser path
+        // to insert into a contentEditable while preserving the native undo
+        // stack. The notepad is small and pragmatic — accept the trade-off.
+        document.execCommand(html ? 'insertHTML' : 'insertText', false, payload);
+        handleEditorInput();
+    }, [handleEditorInput]);
+
     // Cut = copy + delete selection. preventDefault() in handleCopy suppresses
     // the native deletion too, so we restore it via execCommand to keep undo
     // history intact and fire the input event for auto-save.
@@ -392,6 +422,7 @@ export default function NotepadApp() {
                         onInput={handleEditorInput}
                         onCopy={handleCopy}
                         onCut={handleCut}
+                        onPaste={handlePaste}
                         className="flex-1 p-4 outline-none overflow-auto text-base-50"
                         spellCheck={false}
                         style={{ minHeight: 0 }}
