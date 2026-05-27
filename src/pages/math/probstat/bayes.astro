@@ -1,0 +1,213 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ProbStatPageNav from '@/components/ProbStatPageNav.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/probstat.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<BaseLayout
+  currentPage="math"
+  title="貝氏定理 · 看資料怎麼修正信念"
+  description="Beta-Binomial 共軛先驗：拉先驗、加觀測，後驗即時更新。看 Bayes 如何把資料變成新信念。"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
+    <a href="/math/probstat/" class="text-accent-blue hover:underline text-sm">← 回機率統計專區</a>
+
+    <header class="mt-4 mb-6 text-center">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 2 · 推論</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🔮 貝氏定理</h1>
+      <p class="text-base-400 max-w-2xl mx-auto">你對一枚硬幣的「正面機率 p」原本有看法（先驗）。看到資料後，看法會怎麼更新（後驗）？</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Canvas -->
+      <div class="lg:col-span-2">
+        <canvas id="bayes-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 65vh; min-height: 480px;"></canvas>
+        <div class="mt-3 flex flex-wrap gap-2 text-xs">
+          <span class="ps-chip"><span class="dot" style="background: rgba(38,139,210,0.7)"></span>先驗 Prior</span>
+          <span class="ps-chip"><span class="dot" style="background: rgba(220,50,47,0.95)"></span>後驗 Posterior</span>
+          <span class="ps-chip"><span class="dot" style="background: rgba(244,162,97,0.85)"></span>真值 p（隨機抽樣用）</span>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="space-y-4">
+        <!-- Prior -->
+        <div class="rounded-lg border border-accent-blue/40 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-accent-blue/10 border-b border-accent-blue/40 font-bold text-accent-blue text-sm">
+            🪞 先驗 Beta(α, β)
+          </div>
+          <div class="p-3">
+            <div class="flex justify-between text-sm mb-1">
+              <span set:html={tex('\\alpha')} /><span id="alpha-ro" class="text-base-50 font-mono">2.0</span>
+            </div>
+            <input id="alpha-slider" type="range" class="ps-slider" min="0.5" max="20" step="0.1" value="2">
+            <div class="flex justify-between text-sm mb-1 mt-3">
+              <span set:html={tex('\\beta')} /><span id="beta-ro" class="text-base-50 font-mono">2.0</span>
+            </div>
+            <input id="beta-slider" type="range" class="ps-slider" min="0.5" max="20" step="0.1" value="2">
+            <div class="mt-3 grid grid-cols-2 gap-2">
+              <button data-prior="uniform" class="ps-btn">無資訊 (1, 1)</button>
+              <button data-prior="weak-fair" class="ps-btn">弱「公平」(2, 2)</button>
+              <button data-prior="strong-fair" class="ps-btn">強「公平」(20, 20)</button>
+              <button data-prior="biased" class="ps-btn">偏正面 (8, 2)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add observations -->
+        <div class="rounded-lg border border-accent-yellow/40 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-accent-yellow/10 border-b border-accent-yellow/40 font-bold text-accent-yellow text-sm">
+            🪙 加觀測
+          </div>
+          <div class="p-3 space-y-2">
+            <div class="grid grid-cols-2 gap-2">
+              <button id="add-h-1" class="ps-btn">+1 正面</button>
+              <button id="add-t-1" class="ps-btn">+1 反面</button>
+              <button id="add-h-5" class="ps-btn">+5 正面</button>
+              <button id="add-t-5" class="ps-btn">+5 反面</button>
+            </div>
+            <hr class="border-base-600">
+            <div class="flex justify-between text-sm">
+              <span class="text-base-300">真值 p</span><span id="truep-ro" class="text-base-50 font-mono">0.70</span>
+            </div>
+            <input id="truep-slider" type="range" class="ps-slider" min="0" max="1" step="0.01" value="0.7">
+            <div class="grid grid-cols-2 gap-2">
+              <button id="sample-10" class="ps-btn">用真值抽 10 次</button>
+              <button id="reset-data" class="ps-btn">↻ 重設觀測</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="rounded-lg border border-accent-cyan/40 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-accent-cyan/10 border-b border-accent-cyan/40 font-bold text-accent-cyan text-sm">
+            🧮 即時統計
+          </div>
+          <div class="p-4 space-y-2 text-sm font-mono">
+            <div class="flex justify-between"><span class="text-base-400">觀測 H / T</span><span id="counts-ro" class="ps-readout w-28">0 / 0</span></div>
+            <div class="flex justify-between"><span class="text-base-400">經驗 H 比例</span><span id="rate-ro" class="ps-readout accent-yellow w-28">—</span></div>
+            <div class="flex justify-between"><span class="text-base-400">先驗平均</span><span id="prior-mean-ro" class="ps-readout accent-blue w-28">—</span></div>
+            <div class="flex justify-between"><span class="text-base-400">後驗平均</span><span id="post-mean-ro" class="ps-readout error w-28">—</span></div>
+            <div class="flex justify-between"><span class="text-base-400">後驗 Beta</span><span id="post-params-ro" class="ps-readout accent-magenta w-28">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Teaching -->
+    <section class="mt-12 max-w-3xl mx-auto prose-content">
+      <h2 class="text-2xl font-bold text-base-50 mb-4">📖 Bayes 公式在做什麼</h2>
+
+      <div class="space-y-4 text-base-300 leading-relaxed">
+        <p>Bayes 定理長這樣：</p>
+        <div class="my-4 flex justify-center" set:html={tex(`P(p \\mid \\text{data}) = \\dfrac{P(\\text{data} \\mid p)\\, P(p)}{P(\\text{data})}`, true)} />
+
+        <p>左邊是「<strong class="text-base-50">看完資料後，p 的分布</strong>」（後驗）。右邊由三塊組成：</p>
+        <ul class="list-disc list-inside space-y-1 ml-2">
+          <li><span set:html={tex('P(p)')} /> · 先驗 — 你對 p 一開始的想法</li>
+          <li><span set:html={tex('P(\\text{data} \\mid p)')} /> · 似然 — 「假設 p 是這個值，看到這筆資料的機率有多大」</li>
+          <li><span set:html={tex('P(\\text{data})')} /> · 邊際 — 把所有 p 加總後平均的似然（在這頁等價於歸一化常數）</li>
+        </ul>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎁 Beta-Binomial 共軛先驗的魔法</h3>
+        <p>當先驗是 <span set:html={tex('\\text{Beta}(\\alpha, \\beta)')} /> 且觀測是 Binomial（H 次正面、T 次反面），後驗剛好也是 Beta：</p>
+        <div class="my-4 flex justify-center" set:html={tex(`\\text{Posterior} = \\text{Beta}(\\alpha + H,\\; \\beta + T)`, true)} />
+        <p>這就是「<strong class="text-base-50">共軛先驗</strong>」(conjugate prior) — 先驗和後驗同一個家族。所以這頁不需要任何積分，後驗永遠是另一條 Beta 曲線，就是把參數加上資料計數而已。</p>
+
+        <p>白話翻譯：<strong class="text-accent-yellow">先驗的 α 可以理解成「幻想中事先看過 α-1 次正面」、β 是「幻想中事先看過 β-1 次反面」</strong>。資料來了之後，把幻想跟真實計數合在一起。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+        <ol class="list-decimal list-inside space-y-2 ml-2">
+          <li>點 <strong>無資訊 (1, 1)</strong> 先驗 — 是水平線。加 10 個正面、0 個反面 — 後驗就是 Beta(11, 1)，往右靠。</li>
+          <li>點 <strong>強「公平」(20, 20)</strong>，再加 10 個正面 — 後驗只稍微往右靠。<strong class="text-base-50">強先驗難說服</strong>，但資料量大到一定程度，還是會主宰。</li>
+          <li>把真值 p 拉到 0.8、按 <strong>用真值抽 10 次</strong> 幾次 — 看後驗逐漸往 0.8 靠。觀察「需要多少資料才能蓋過弱 / 強先驗」。</li>
+          <li>點 <strong>偏正面 (8, 2)</strong> 但實際上抽到 5 反 5 正 — 先驗會被資料拉回中間。</li>
+        </ol>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">💡 為什麼貝氏跟頻率派吵不完</h3>
+        <p>頻率學派說「p 是固定的，只是我不知道是多少」，貝氏說「p 本身就是個機率分布」。這個 <em>哲學</em> 差異導致兩派在估計、信賴區間、檢定上方法不同，但實務上：</p>
+        <ul class="list-disc list-inside space-y-1 ml-2">
+          <li>資料量大時，兩派結果幾乎一樣（LLN + CLT 把先驗壓平）</li>
+          <li>資料量少 / 先驗有意義時（醫療診斷、罕見事件），貝氏優勢大</li>
+          <li>機器學習基本上是貝氏的：L2 正則化 = 對權重的常態先驗，dropout = 變分推論</li>
+        </ul>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 之後會用到</h3>
+        <ul class="list-disc list-inside space-y-1 ml-2">
+          <li><strong class="text-base-50">最大似然估計</strong>（下一頁）— MLE 等價於「無資訊先驗下的後驗眾數」</li>
+          <li><strong class="text-base-50">MCMC</strong> — 後驗不像 Beta 這麼乾淨時的數值取樣法</li>
+        </ul>
+      </div>
+    </section>
+
+    <ProbStatPageNav slug="bayes" />
+  </div>
+
+  <script>
+    import { BayesScene, type BayesState } from '@/lib/math/probstat/BayesScene';
+    import { fmt } from '@/lib/math/probstat/mathHelpers';
+
+    const PRIORS: Record<string, [number, number]> = {
+      'uniform': [1, 1],
+      'weak-fair': [2, 2],
+      'strong-fair': [20, 20],
+      'biased': [8, 2],
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const alphaSlider = document.getElementById('alpha-slider') as HTMLInputElement;
+      const betaSlider = document.getElementById('beta-slider') as HTMLInputElement;
+      const truepSlider = document.getElementById('truep-slider') as HTMLInputElement;
+      const alphaRo = document.getElementById('alpha-ro')!;
+      const betaRo = document.getElementById('beta-ro')!;
+      const truepRo = document.getElementById('truep-ro')!;
+      const countsRo = document.getElementById('counts-ro')!;
+      const rateRo = document.getElementById('rate-ro')!;
+      const priorMeanRo = document.getElementById('prior-mean-ro')!;
+      const postMeanRo = document.getElementById('post-mean-ro')!;
+      const postParamsRo = document.getElementById('post-params-ro')!;
+
+      function renderState(s: BayesState) {
+        alphaSlider.value = String(s.priorAlpha);
+        betaSlider.value = String(s.priorBeta);
+        truepSlider.value = String(s.truePValue);
+        alphaRo.textContent = fmt(s.priorAlpha, 1);
+        betaRo.textContent = fmt(s.priorBeta, 1);
+        truepRo.textContent = fmt(s.truePValue, 2);
+        countsRo.textContent = `${s.heads} / ${s.tails}`;
+        rateRo.textContent = Number.isFinite(s.observedRate) ? s.observedRate.toFixed(3) : '—';
+        priorMeanRo.textContent = s.priorMean.toFixed(3);
+        postMeanRo.textContent = s.posteriorMean.toFixed(3);
+        postParamsRo.textContent = `(${fmt(s.posteriorAlpha, 1)}, ${fmt(s.posteriorBeta, 1)})`;
+      }
+
+      const scene = new BayesScene({ canvasId: 'bayes-canvas', onUpdate: renderState });
+
+      alphaSlider.addEventListener('input', () => scene.setPriorAlpha(parseFloat(alphaSlider.value)));
+      betaSlider.addEventListener('input', () => scene.setPriorBeta(parseFloat(betaSlider.value)));
+      truepSlider.addEventListener('input', () => scene.setTrueP(parseFloat(truepSlider.value)));
+
+      document.querySelectorAll<HTMLButtonElement>('[data-prior]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const key = btn.dataset.prior!;
+          const [a, b] = PRIORS[key];
+          scene.setPriorAlpha(a);
+          scene.setPriorBeta(b);
+        });
+      });
+
+      document.getElementById('add-h-1')!.addEventListener('click', () => scene.addHeads(1));
+      document.getElementById('add-t-1')!.addEventListener('click', () => scene.addTails(1));
+      document.getElementById('add-h-5')!.addEventListener('click', () => scene.addHeads(5));
+      document.getElementById('add-t-5')!.addEventListener('click', () => scene.addTails(5));
+      document.getElementById('sample-10')!.addEventListener('click', () => scene.sampleRandom(10));
+      document.getElementById('reset-data')!.addEventListener('click', () => scene.resetData());
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</BaseLayout>

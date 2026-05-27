@@ -1,0 +1,154 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ProbStatPageNav from '@/components/ProbStatPageNav.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/probstat.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<BaseLayout
+  currentPage="math"
+  title="熵與 KL 散度 · 機率分布之間的距離"
+  description="熵是「平均驚訝度」、KL 是「用錯分布要多付的 bits」— 兩條分布並排可動，看 cross-entropy loss 在算什麼。"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
+    <a href="/math/probstat/" class="text-accent-blue hover:underline text-sm">← 回機率統計專區</a>
+
+    <header class="mt-4 mb-6 text-center">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 3 · 模擬與資訊</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🔥 熵與 KL 散度</h1>
+      <p class="text-base-400 max-w-2xl mx-auto">資訊論的兩個基本量。熵衡量「一個分布的不確定性」、KL 衡量「兩個分布有多不同」。動手把兩個分布拉成各種樣子，看數字怎麼跑。</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2">
+        <canvas id="entropy-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 60vh; min-height: 420px; touch-action: none;"></canvas>
+        <div class="mt-3 flex flex-wrap gap-2 text-xs">
+          <span class="ps-chip"><span class="dot" style="background: rgba(38,139,210,0.85)"></span>p — 真實分布</span>
+          <span class="ps-chip"><span class="dot" style="background: rgba(220,50,47,0.85)"></span>q — 你用的近似</span>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Presets -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-blue text-sm">
+            🎴 預設組合
+          </div>
+          <div class="p-3 grid grid-cols-1 gap-2">
+            <button data-preset="uniform-vs-uniform" class="ps-btn text-left">兩個都均勻（KL = 0）</button>
+            <button data-preset="identical-concentrated" class="ps-btn text-left">兩個都集中、且相同</button>
+            <button data-preset="concentrated-vs-uniform" class="ps-btn text-left">p 集中、q 均勻</button>
+            <button data-preset="misaligned" class="ps-btn text-left">p、q 各偏一邊</button>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="rounded-lg border border-accent-cyan/40 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-accent-cyan/10 border-b border-accent-cyan/40 font-bold text-accent-cyan text-sm">
+            🧮 即時統計（bits）
+          </div>
+          <div class="p-4 space-y-2 text-sm font-mono">
+            <div class="flex justify-between"><span class="text-base-400" set:html={tex('H(p) =')} /><span id="hp-ro" class="ps-readout accent-blue w-28">—</span></div>
+            <div class="flex justify-between"><span class="text-base-400" set:html={tex('H(q) =')} /><span id="hq-ro" class="ps-readout error w-28">—</span></div>
+            <hr class="border-base-600 my-1">
+            <div class="flex justify-between"><span class="text-base-400" set:html={tex('H(p, q) =')} /><span id="ce-ro" class="ps-readout accent-yellow w-28">—</span></div>
+            <div class="flex justify-between"><span class="text-base-400" set:html={tex('D_{KL}(p \\| q) =')} /><span id="kl-pq-ro" class="ps-readout accent-magenta w-28">—</span></div>
+            <div class="flex justify-between"><span class="text-base-400" set:html={tex('D_{KL}(q \\| p) =')} /><span id="kl-qp-ro" class="ps-readout accent-magenta w-28">—</span></div>
+          </div>
+        </div>
+
+        <p class="text-xs text-base-400 leading-relaxed">
+          <strong class="text-base-200">提示：</strong>
+          KL 不是對稱的！把 q 拉到某個 p_i = 0 的位置 — KL(p||q) 不會爆，但 KL(q||p) 會。所以說「q 不能漏 p 有的地方」。
+        </p>
+      </div>
+    </div>
+
+    <!-- Teaching -->
+    <section class="mt-12 max-w-3xl mx-auto prose-content">
+      <h2 class="text-2xl font-bold text-base-50 mb-4">📖 三個量，一個故事</h2>
+
+      <div class="space-y-4 text-base-300 leading-relaxed">
+        <h3 class="text-lg font-bold text-base-50">🔵 熵 H(p) — 「平均驚訝度」</h3>
+        <p>對每個結果，「驚訝度」定義為 <span set:html={tex(`-\\log_2 p_i`)} />。機率越小、看到時越驚訝（罕見事件帶來大資訊）。熵就是這個驚訝度的期望值：</p>
+        <div class="my-3 flex justify-center" set:html={tex(`H(p) = -\\sum_i p_i \\log_2 p_i`, true)} />
+        <ul class="list-disc list-inside space-y-1 ml-2">
+          <li>均勻分布 → H 最大（K 個結果時 H = log₂ K）</li>
+          <li>集中分布 → H 接近 0（沒什麼好驚訝的）</li>
+          <li>單位是 bits — 表示「要用幾個是非問題才能識別結果」</li>
+        </ul>
+
+        <h3 class="text-lg font-bold text-base-50 mt-5">🔴 交叉熵 H(p, q) — 「用 q 預測的平均驚訝度」</h3>
+        <p>如果真實分布是 p、但你按 q 的機率去編碼，那每個事件的平均碼長是：</p>
+        <div class="my-3 flex justify-center" set:html={tex(`H(p, q) = -\\sum_i p_i \\log_2 q_i`, true)} />
+        <p>當 q = p，<span set:html={tex('H(p, q) = H(p)')} /> — 用對的分布、平均長度最短。當 q ≠ p、總是要付出代價。</p>
+        <p><strong class="text-accent-yellow">這就是分類任務的 cross-entropy loss</strong>：神經網路輸出 q，標籤是 one-hot 的 p，loss = H(p, q)。最小化 cross-entropy = MLE = 讓 q 盡量像 p。</p>
+
+        <h3 class="text-lg font-bold text-base-50 mt-5">🟣 KL 散度 — 「多付的那部分」</h3>
+        <p>把交叉熵減去真正的熵，剩下的就是「因為用了錯誤分布而多付的 bits」：</p>
+        <div class="my-3 flex justify-center" set:html={tex(`D_{KL}(p \\| q) = H(p, q) - H(p) = \\sum_i p_i \\log_2 \\dfrac{p_i}{q_i}`, true)} />
+        <p>性質：<strong class="text-base-50">總是 ≥ 0，且 = 0 當且僅當 p = q</strong>。是「分布之間的距離」（雖然不對稱、不滿足三角不等式 — 嚴格說是 divergence 不是 distance）。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+        <ol class="list-decimal list-inside space-y-2 ml-2">
+          <li><strong class="text-accent-blue">兩個都均勻</strong> — H(p) = H(q) = log₂(5) ≈ 2.32 bits、KL = 0。</li>
+          <li><strong class="text-accent-blue">把 p 的第一根拉到 0.8</strong>，q 維持均勻。看 H(p) 大幅下降（更確定），KL(p||q) 上升（你用「均勻」描述一個其實很集中的東西，要多付 bits）。</li>
+          <li><strong class="text-accent-blue">不對稱性</strong>：保持 p 集中在 bin 1，把 q 拉到集中在 bin 5。KL(p||q) 跟 KL(q||p) 都會很大、但<strong class="text-base-50">數值不一樣</strong>。</li>
+          <li><strong class="text-accent-blue">關鍵直覺</strong>：把 q 的某根（比如 q[1]）幾乎拉到 0，但 p[1] 仍然不小。KL(p||q) 會爆（用一個「不可能」的分布去解釋一個確實有的事件）。</li>
+        </ol>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 為什麼這頁是 ML 的核心</h3>
+        <ul class="list-disc list-inside space-y-1 ml-2">
+          <li><strong class="text-base-50">分類 loss</strong> — softmax + cross-entropy 直接最小化 <span set:html={tex(`H(p, q)`)} /></li>
+          <li><strong class="text-base-50">VAE / Diffusion</strong> — ELBO 裡的 KL term 控制 latent 分布接近先驗的程度</li>
+          <li><strong class="text-base-50">知識蒸餾</strong> — student 學 teacher 的分布，用 KL 當 loss</li>
+          <li><strong class="text-base-50">policy gradient (RL)</strong> — PPO 的 KL constraint 防止新舊策略偏太遠</li>
+          <li><strong class="text-base-50">語言模型</strong> — perplexity = 2^(cross-entropy)，是 H(p, q) 的指數</li>
+        </ul>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">📚 接下來</h3>
+        <p>這頁是這個專區的最後一頁。如果你還想繼續往下，方向：</p>
+        <ul class="list-disc list-inside space-y-1 ml-2">
+          <li><strong class="text-base-50">假設檢定、信賴區間</strong> — LLN/CLT 的工程應用</li>
+          <li><strong class="text-base-50">Bayesian inference at scale</strong> — Stan、PyMC、variational inference</li>
+          <li><strong class="text-base-50">資訊幾何</strong> — KL 散度 + Fisher information 的微分幾何視角</li>
+          <li><strong class="text-base-50">凸最佳化</strong> — MLE 求解的演算法面（梯度下降、Newton、L-BFGS）</li>
+        </ul>
+      </div>
+    </section>
+
+    <ProbStatPageNav slug="entropy" />
+  </div>
+
+  <script>
+    import { EntropyScene, type EntropyState } from '@/lib/math/probstat/EntropyScene';
+    import { fmt } from '@/lib/math/probstat/mathHelpers';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const hp = document.getElementById('hp-ro')!;
+      const hq = document.getElementById('hq-ro')!;
+      const ce = document.getElementById('ce-ro')!;
+      const klpq = document.getElementById('kl-pq-ro')!;
+      const klqp = document.getElementById('kl-qp-ro')!;
+
+      function renderState(s: EntropyState) {
+        hp.textContent = fmt(s.H_p, 3);
+        hq.textContent = fmt(s.H_q, 3);
+        ce.textContent = fmt(s.crossEntropy, 3);
+        klpq.textContent = fmt(s.klPQ, 3);
+        klqp.textContent = fmt(s.klQP, 3);
+      }
+
+      const scene = new EntropyScene({ canvasId: 'entropy-canvas', onUpdate: renderState });
+
+      document.querySelectorAll<HTMLButtonElement>('[data-preset]').forEach((btn) => {
+        btn.addEventListener('click', () => scene.applyPreset(btn.dataset.preset!));
+      });
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</BaseLayout>

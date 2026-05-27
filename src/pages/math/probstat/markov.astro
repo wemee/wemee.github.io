@@ -1,0 +1,177 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ProbStatPageNav from '@/components/ProbStatPageNav.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/probstat.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<BaseLayout
+  currentPage="math"
+  title="馬可夫鏈 + MCMC · 亂走也能畫出機率密度"
+  description="2D Metropolis-Hastings 取樣器：看一個亂跳的點，怎麼花一段時間把目標分布逐步「填」出來。"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
+    <a href="/math/probstat/" class="text-accent-blue hover:underline text-sm">← 回機率統計專區</a>
+
+    <header class="mt-4 mb-6 text-center">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 3 · 模擬與資訊</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🚶 馬可夫鏈與 MCMC</h1>
+      <p class="text-base-400 max-w-2xl mx-auto">沒有閉式解的後驗，怎麼畫？讓一個點按 Metropolis–Hastings 規則亂跳 — 它的軌跡會在長期下符合目標分布。</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2">
+        <div class="relative w-full rounded-md bg-base-900/60 border border-base-700" style="aspect-ratio: 4/3; min-height: 380px;">
+          <canvas id="markov-canvas" class="absolute inset-0 w-full h-full"></canvas>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2 text-xs">
+          <span class="ps-chip">熱圖：目標分布 p(x, y)</span>
+          <span class="ps-chip"><span class="dot" style="background: rgba(133,153,0,0.95)"></span>最近 200 步軌跡</span>
+          <span class="ps-chip"><span class="dot" style="background: rgba(255,255,255,0.45)"></span>累積樣本（白點）</span>
+          <span class="ps-chip"><span class="dot" style="background: rgba(220,50,47,1)"></span>目前位置</span>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Target picker -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-blue text-sm">
+            🎯 目標分布
+          </div>
+          <div class="p-3 grid grid-cols-1 gap-2" id="target-list">
+            <button data-target="gaussian" class="ps-btn text-left">單峰常態</button>
+            <button data-target="bimodal" class="ps-btn text-left active">雙峰</button>
+            <button data-target="banana" class="ps-btn text-left">香蕉形 (Rosenbrock)</button>
+            <button data-target="donut" class="ps-btn text-left">甜甜圈</button>
+          </div>
+        </div>
+
+        <!-- Proposal σ -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-yellow text-sm flex justify-between">
+            <span>提議步長 <span set:html={tex('\\sigma_q')} /></span>
+            <span id="prop-ro" class="text-base-50 font-mono">0.50</span>
+          </div>
+          <div class="p-3"><input id="prop-slider" type="range" class="ps-slider" min="0.05" max="2" step="0.05" value="0.5"></div>
+        </div>
+
+        <!-- Speed -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-cyan text-sm flex justify-between">
+            <span>速度（每 frame 步數）</span>
+            <span id="speed-ro" class="text-base-50 font-mono">4</span>
+          </div>
+          <div class="p-3"><input id="speed-slider" type="range" class="ps-slider" min="1" max="50" step="1" value="4"></div>
+        </div>
+
+        <!-- Run -->
+        <div class="grid grid-cols-3 gap-2">
+          <button id="run-btn" class="ps-btn primary col-span-1">▶ 開始</button>
+          <button id="step-btn" class="ps-btn col-span-1">+1 步</button>
+          <button id="reset-btn" class="ps-btn col-span-1">↻ 重設</button>
+        </div>
+
+        <!-- Stats -->
+        <div class="rounded-lg border border-accent-cyan/40 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-accent-cyan/10 border-b border-accent-cyan/40 font-bold text-accent-cyan text-sm">
+            🧮 即時統計
+          </div>
+          <div class="p-4 space-y-2 text-sm font-mono">
+            <div class="flex justify-between"><span class="text-base-400">總步數</span><span id="total-ro" class="ps-readout w-28">0</span></div>
+            <div class="flex justify-between"><span class="text-base-400">接受率</span><span id="acc-ro" class="ps-readout accent-yellow w-28">—</span></div>
+            <div class="flex justify-between"><span class="text-base-400">目前位置</span><span id="cur-ro" class="ps-readout accent-magenta w-28">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Teaching -->
+    <section class="mt-12 max-w-3xl mx-auto prose-content">
+      <h2 class="text-2xl font-bold text-base-50 mb-4">📖 為什麼亂跳會收斂到目標分布</h2>
+
+      <div class="space-y-4 text-base-300 leading-relaxed">
+        <p>很多時候我們知道一個機率密度<strong class="text-base-50">長什麼樣</strong>（用 Bayes 算出後驗），但<strong class="text-base-50">不知道怎麼從它抽樣</strong>。Beta-Binomial 那種共軛先驗很罕見，真實的後驗通常是奇形怪狀的。</p>
+
+        <p><strong class="text-base-50">Metropolis–Hastings (M-H)</strong> 演算法解這個問題。一個迴圈：</p>
+        <ol class="list-decimal list-inside space-y-1 ml-2">
+          <li>從目前位置 <span set:html={tex('x_t')} />，提議一個附近的新位置 <span set:html={tex(`y \\sim \\mathcal{N}(x_t,\\, \\sigma_q^2 I)`)} /></li>
+          <li>計算接受率 <span set:html={tex(`\\alpha = \\min\\!\\left(1, \\dfrac{p(y)}{p(x_t)}\\right)`)} /></li>
+          <li>以機率 α 接受新位置：<span set:html={tex(`x_{t+1} = y`)} />；否則留在原地 <span set:html={tex(`x_{t+1} = x_t`)} /></li>
+        </ol>
+
+        <p><strong class="text-base-50">為什麼這樣能對</strong>：規則設計上滿足 detailed balance — 機率密度高的地方比較容易停下，停留時間比例最終會等於目標機率比例。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+        <ol class="list-decimal list-inside space-y-2 ml-2">
+          <li>切到 <strong>單峰常態</strong>、按開始。看軌跡很快聚到峰附近，白點累積出鐘形雲。</li>
+          <li>切到 <strong>雙峰</strong>，看軌跡<strong class="text-base-50">在兩個峰之間「跳島」</strong>。如果提議步長 σ 太小、可能很久才跳一次。<strong class="text-accent-yellow">這就是 mode-collapse 問題的早期版本</strong>。</li>
+          <li>切到 <strong>香蕉形</strong>，把提議步長拉到 1.5 — 接受率會掉很多（提議跑出可行區域）。再拉到 0.2 — 接受率高但步太碎，要很久才能走完整個香蕉。<strong class="text-base-50">「step size 怎麼調」是 MCMC 的核心工程</strong>。</li>
+          <li>切到 <strong>甜甜圈</strong>，看軌跡<strong class="text-base-50">沿著高密度的環走</strong>，內部低密度區域幾乎沒人去。</li>
+        </ol>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">💡 接受率的「黃金值」</h3>
+        <p>實務上，2D-3D 的 random-walk M-H 接受率調到 <strong class="text-base-50">~25–40%</strong> 通常效果最好（Roberts–Gelman–Gilks 1997 的著名結果，高維是 0.234）。<strong class="text-base-50">太高表示步太小</strong>、樣本太相關；<strong class="text-base-50">太低表示步太大</strong>、提議常被拒絕。</p>
+
+        <p>觀察右上的「接受率」— 你可以靠拉步長把它推向那個範圍。</p>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 在現實中</h3>
+        <ul class="list-disc list-inside space-y-1 ml-2">
+          <li><strong class="text-base-50">Bayes 後驗推論</strong> — Stan、PyMC、JAGS 都靠 MCMC 取樣後驗</li>
+          <li><strong class="text-base-50">物理模擬</strong> — 統計物理裡的 Monte Carlo（Ising model、Boltzmann distribution）</li>
+          <li><strong class="text-base-50">生成模型</strong> — Diffusion models 反向過程其實是一種 Langevin MCMC</li>
+          <li><strong class="text-base-50">HMC / NUTS</strong>（PyMC 預設）是 M-H 的升級版，用梯度引導提議方向，接受率高得多</li>
+        </ul>
+      </div>
+    </section>
+
+    <ProbStatPageNav slug="markov" />
+  </div>
+
+  <script>
+    import { MarkovScene, type TargetKind, type MarkovState } from '@/lib/math/probstat/MarkovScene';
+    import { fmt } from '@/lib/math/probstat/mathHelpers';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const targetList = document.getElementById('target-list')!;
+      const propSlider = document.getElementById('prop-slider') as HTMLInputElement;
+      const speedSlider = document.getElementById('speed-slider') as HTMLInputElement;
+      const propRo = document.getElementById('prop-ro')!;
+      const speedRo = document.getElementById('speed-ro')!;
+      const runBtn = document.getElementById('run-btn') as HTMLButtonElement;
+      const stepBtn = document.getElementById('step-btn') as HTMLButtonElement;
+      const resetBtn = document.getElementById('reset-btn') as HTMLButtonElement;
+      const totalRo = document.getElementById('total-ro')!;
+      const accRo = document.getElementById('acc-ro')!;
+      const curRo = document.getElementById('cur-ro')!;
+
+      function renderState(s: MarkovState) {
+        targetList.querySelectorAll<HTMLButtonElement>('[data-target]').forEach((b) => {
+          b.classList.toggle('active', b.dataset.target === s.target);
+        });
+        propRo.textContent = fmt(s.proposalSigma, 2);
+        speedRo.textContent = String(s.speedStepsPerFrame);
+        runBtn.textContent = s.isRunning ? '⏸ 暫停' : '▶ 開始';
+        runBtn.classList.toggle('active-yellow', s.isRunning);
+        totalRo.textContent = s.totalSteps.toLocaleString('en-US');
+        accRo.textContent = Number.isFinite(s.acceptRate) ? `${(s.acceptRate * 100).toFixed(1)}%` : '—';
+        curRo.textContent = `(${s.current[0].toFixed(2)}, ${s.current[1].toFixed(2)})`;
+      }
+
+      const scene = new MarkovScene({ canvasId: 'markov-canvas', onUpdate: renderState });
+
+      targetList.querySelectorAll<HTMLButtonElement>('[data-target]').forEach((btn) => {
+        btn.addEventListener('click', () => scene.setTarget(btn.dataset.target as TargetKind));
+      });
+      propSlider.addEventListener('input', () => scene.setProposalSigma(parseFloat(propSlider.value)));
+      speedSlider.addEventListener('input', () => scene.setSpeed(parseInt(speedSlider.value, 10)));
+      runBtn.addEventListener('click', () => scene.toggleRun());
+      stepBtn.addEventListener('click', () => scene.step(1));
+      resetBtn.addEventListener('click', () => scene.reset());
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</BaseLayout>

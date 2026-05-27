@@ -1,0 +1,265 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ProbStatPageNav from '@/components/ProbStatPageNav.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/probstat.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<BaseLayout
+  currentPage="math"
+  title="機率分布動物園 · 5 個你會反覆遇到的分布"
+  description="常態、二項、Poisson、指數、均勻 — 拉滑桿改參數，PMF / PDF 跟 CDF 即時跟著動。"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
+    <a href="/math/probstat/" class="text-accent-blue hover:underline text-sm">← 回機率統計專區</a>
+
+    <header class="mt-4 mb-6 text-center">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 1 · 基礎</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">📦 機率分布動物園</h1>
+      <p class="text-base-400 max-w-2xl mx-auto">每個分布都有「自己的故事」。挑一個、拉參數、同時看 PDF/PMF 跟累積分布 — 它們不是孤立的公式，是描述世界的一種詞彙。</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Canvas -->
+      <div class="lg:col-span-2">
+        <canvas id="dist-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 70vh; min-height: 520px;"></canvas>
+        <div class="mt-3 flex flex-wrap gap-2 text-xs">
+          <span class="ps-chip"><span class="dot" style="background: rgba(38,139,210,0.95)"></span>機率密度 / 質量</span>
+          <span class="ps-chip"><span class="dot" style="background: rgba(133,153,0,0.95)"></span>累積分布 (CDF)</span>
+          <span class="ps-chip"><span class="dot" style="background: rgba(244,162,97,0.85)"></span>期望值 E[X]</span>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="space-y-4">
+        <!-- Distribution picker -->
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-blue text-sm">
+            🦒 選分布
+          </div>
+          <div class="p-3 grid grid-cols-1 gap-2" id="kind-list">
+            <button data-kind="normal" class="ps-btn text-left active">📊 常態 Normal (μ, σ)</button>
+            <button data-kind="binomial" class="ps-btn text-left">🎯 二項 Binomial (n, p)</button>
+            <button data-kind="poisson" class="ps-btn text-left">📬 Poisson (λ)</button>
+            <button data-kind="exponential" class="ps-btn text-left">⏱️ 指數 Exponential (λ)</button>
+            <button data-kind="uniform" class="ps-btn text-left">📏 均勻 Uniform (a, b)</button>
+          </div>
+        </div>
+
+        <!-- Params (each distribution shows its own block) -->
+        <div id="params-block" class="space-y-3">
+          <!-- Normal -->
+          <div data-params="normal" class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+            <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-cyan text-sm flex justify-between">
+              <span set:html={tex('\\mu')} />
+              <span id="normal-mu-ro" class="text-base-50 font-mono">0.00</span>
+            </div>
+            <div class="p-3"><input id="normal-mu" type="range" class="ps-slider" min="-3" max="3" step="0.05" value="0"></div>
+            <div class="px-4 py-3 bg-base-600/30 border-y border-base-600 font-bold text-accent-yellow text-sm flex justify-between">
+              <span set:html={tex('\\sigma')} />
+              <span id="normal-sigma-ro" class="text-base-50 font-mono">1.00</span>
+            </div>
+            <div class="p-3"><input id="normal-sigma" type="range" class="ps-slider" min="0.3" max="3" step="0.05" value="1"></div>
+          </div>
+
+          <!-- Binomial -->
+          <div data-params="binomial" class="rounded-lg border border-base-600 bg-base-800 overflow-hidden hidden">
+            <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-cyan text-sm flex justify-between">
+              <span set:html={tex('n')} />
+              <span id="binom-n-ro" class="text-base-50 font-mono">20</span>
+            </div>
+            <div class="p-3"><input id="binom-n" type="range" class="ps-slider" min="1" max="40" step="1" value="20"></div>
+            <div class="px-4 py-3 bg-base-600/30 border-y border-base-600 font-bold text-accent-yellow text-sm flex justify-between">
+              <span set:html={tex('p')} />
+              <span id="binom-p-ro" class="text-base-50 font-mono">0.40</span>
+            </div>
+            <div class="p-3"><input id="binom-p" type="range" class="ps-slider" min="0.01" max="0.99" step="0.01" value="0.4"></div>
+          </div>
+
+          <!-- Poisson -->
+          <div data-params="poisson" class="rounded-lg border border-base-600 bg-base-800 overflow-hidden hidden">
+            <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-cyan text-sm flex justify-between">
+              <span set:html={tex('\\lambda')} />
+              <span id="pois-l-ro" class="text-base-50 font-mono">4.00</span>
+            </div>
+            <div class="p-3"><input id="pois-l" type="range" class="ps-slider" min="0.5" max="15" step="0.1" value="4"></div>
+          </div>
+
+          <!-- Exponential -->
+          <div data-params="exponential" class="rounded-lg border border-base-600 bg-base-800 overflow-hidden hidden">
+            <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-cyan text-sm flex justify-between">
+              <span set:html={tex('\\lambda')} />
+              <span id="exp-l-ro" class="text-base-50 font-mono">1.00</span>
+            </div>
+            <div class="p-3"><input id="exp-l" type="range" class="ps-slider" min="0.3" max="3" step="0.05" value="1"></div>
+          </div>
+
+          <!-- Uniform -->
+          <div data-params="uniform" class="rounded-lg border border-base-600 bg-base-800 overflow-hidden hidden">
+            <div class="px-4 py-3 bg-base-600/30 border-b border-base-600 font-bold text-accent-cyan text-sm flex justify-between">
+              <span set:html={tex('a')} />
+              <span id="uni-a-ro" class="text-base-50 font-mono">0.00</span>
+            </div>
+            <div class="p-3"><input id="uni-a" type="range" class="ps-slider" min="-3" max="0" step="0.05" value="0"></div>
+            <div class="px-4 py-3 bg-base-600/30 border-y border-base-600 font-bold text-accent-yellow text-sm flex justify-between">
+              <span set:html={tex('b')} />
+              <span id="uni-b-ro" class="text-base-50 font-mono">2.00</span>
+            </div>
+            <div class="p-3"><input id="uni-b" type="range" class="ps-slider" min="0.1" max="4" step="0.05" value="2"></div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="rounded-lg border border-accent-cyan/40 bg-base-800 overflow-hidden">
+          <div class="px-4 py-3 bg-accent-cyan/10 border-b border-accent-cyan/40 font-bold text-accent-cyan text-sm">
+            🧮 統計量
+          </div>
+          <div class="p-4 space-y-2 text-sm font-mono">
+            <div class="flex justify-between"><span class="text-base-400" set:html={tex('E[X] =')} /><span id="stat-mean" class="ps-readout accent-yellow w-24">—</span></div>
+            <div class="flex justify-between"><span class="text-base-400" set:html={tex('Var(X) =')} /><span id="stat-var" class="ps-readout accent-cyan w-24">—</span></div>
+            <div class="flex justify-between"><span class="text-base-400" set:html={tex('SD(X) =')} /><span id="stat-sd" class="ps-readout accent-magenta w-24">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Teaching -->
+    <section class="mt-12 max-w-3xl mx-auto prose-content">
+      <h2 class="text-2xl font-bold text-base-50 mb-4">📖 5 個分布，5 個故事</h2>
+
+      <div class="space-y-6 text-base-300 leading-relaxed">
+        <div>
+          <h3 class="text-lg font-bold text-base-50">📊 常態分布 Normal — 「測量誤差會這樣分布」</h3>
+          <p>身高、考試分數、感測器讀數的誤差 — 任何「很多個小因素加起來」的東西，分布都會長這個鐘形。</p>
+          <p>這不是巧合，是 <strong class="text-accent-yellow">中央極限定理（下一頁）</strong> 在背後撐著：獨立隨機量相加，無論單一分布長怎樣，加起來的形狀都會收斂到常態。</p>
+          <div class="my-2 flex justify-center" set:html={tex(`f(x) = \\dfrac{1}{\\sigma\\sqrt{2\\pi}} \\exp\\!\\left(-\\dfrac{(x-\\mu)^2}{2\\sigma^2}\\right)`, true)} />
+        </div>
+
+        <div>
+          <h3 class="text-lg font-bold text-base-50">🎯 二項分布 Binomial — 「n 次硬幣裡，幾次正面」</h3>
+          <p>固定試驗次數 <span set:html={tex('n')} />、每次成功率 <span set:html={tex('p')} />，問成功幾次。A/B 測試、品管檢驗、垃圾信件判斷都是這個形狀。</p>
+          <p>把 <span set:html={tex('n')} /> 拉大、<span set:html={tex('p')} /> 維持不動 — 形狀會越來越像常態。再次 — 中央極限定理。</p>
+          <div class="my-2 flex justify-center" set:html={tex(`P(X = k) = \\binom{n}{k} p^k (1-p)^{n-k}`, true)} />
+        </div>
+
+        <div>
+          <h3 class="text-lg font-bold text-base-50">📬 Poisson 分布 — 「單位時間發生幾次」</h3>
+          <p>客服電話、伺服器請求、放射線粒子、棒球場上的全壘打 — 這些「稀疏、獨立、發生率穩定」的事件，每單位時間的次數會服從 Poisson。</p>
+          <p>它和指數分布是同一件事的兩面：Poisson 算「次數」，指數算「兩次之間的等待時間」。</p>
+          <div class="my-2 flex justify-center" set:html={tex(`P(X = k) = \\dfrac{\\lambda^k e^{-\\lambda}}{k!}`, true)} />
+        </div>
+
+        <div>
+          <h3 class="text-lg font-bold text-base-50">⏱️ 指數分布 Exponential — 「下一通電話什麼時候來」</h3>
+          <p>無記憶（memoryless）的等待時間分布。已經等了 5 分鐘、跟剛開始等的「再等多久」期望值，居然一樣。</p>
+          <p>這個「無記憶」是它最神奇的性質，也是它最常被誤用的地方 — 真實世界的人類耐心、機械疲勞，都不是無記憶的。</p>
+          <div class="my-2 flex justify-center" set:html={tex(`f(x) = \\lambda e^{-\\lambda x},\\quad x \\geq 0`, true)} />
+        </div>
+
+        <div>
+          <h3 class="text-lg font-bold text-base-50">📏 均勻分布 Uniform — 「我什麼都不知道」</h3>
+          <p>所有結果機率相等。看起來最「無聊」，但在貝氏分析裡是非常重要的「無知先驗」(uninformative prior)。</p>
+          <p>它也是亂數產生器的起點 — 大部分隨機程式庫的核心其實就是「<code>Math.random()</code> 產生 Uniform(0,1)」，所有其他分布都從它變換出來。</p>
+          <div class="my-2 flex justify-center" set:html={tex(`f(x) = \\dfrac{1}{b - a},\\quad a \\leq x \\leq b`, true)} />
+        </div>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+        <ol class="list-decimal list-inside space-y-2 ml-2">
+          <li>切到 <strong class="text-accent-blue">Binomial</strong>，把 <span set:html={tex('p')} /> 固定 0.5、<span set:html={tex('n')} /> 從 5 拉到 40 — 看形狀越來越「鐘形」。</li>
+          <li>切到 <strong class="text-accent-blue">Poisson</strong>，<span set:html={tex('\\lambda')} /> 從 0.5 拉到 15 — 小 λ 是右偏的、大 λ 又變鐘形。</li>
+          <li>切到 <strong class="text-accent-blue">Normal</strong>，注意 <span set:html={tex('Var = \\sigma^2')} />、<span set:html={tex('SD = \\sigma')} />。把 σ 加倍，曲線變矮兩倍、變寬兩倍、面積守恆。</li>
+          <li>切到 <strong class="text-accent-blue">Exponential</strong>，注意 <span set:html={tex('E[X] = 1/\\lambda')} /> — λ 越大、「平均等待時間」越短。</li>
+        </ol>
+
+        <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 之後會用到</h3>
+        <ul class="list-disc list-inside space-y-1 ml-2">
+          <li><strong class="text-base-50">大數法則 / 中央極限定理</strong>（下一頁）— Binomial 變鐘形、樣本均值變鐘形，都是同一件事</li>
+          <li><strong class="text-base-50">最大似然估計</strong>（後面幾頁）— 「假設資料來自常態」就會推出最小平方</li>
+          <li><strong class="text-base-50">熵與 KL 散度</strong> — 用熵衡量「這個分布有多不確定」、用 KL 衡量「兩個分布差多遠」</li>
+        </ul>
+      </div>
+    </section>
+
+    <ProbStatPageNav slug="distributions" />
+  </div>
+
+  <script>
+    import { DistributionScene, type DistributionKind, type DistributionState } from '@/lib/math/probstat/DistributionScene';
+    import { fmt } from '@/lib/math/probstat/mathHelpers';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Refs first — TDZ trap.
+      const kindList = document.getElementById('kind-list')!;
+      const paramsBlock = document.getElementById('params-block')!;
+      const meanEl = document.getElementById('stat-mean')!;
+      const varEl = document.getElementById('stat-var')!;
+      const sdEl = document.getElementById('stat-sd')!;
+
+      const readouts = {
+        'normal-mu': document.getElementById('normal-mu-ro')!,
+        'normal-sigma': document.getElementById('normal-sigma-ro')!,
+        'binom-n': document.getElementById('binom-n-ro')!,
+        'binom-p': document.getElementById('binom-p-ro')!,
+        'pois-l': document.getElementById('pois-l-ro')!,
+        'exp-l': document.getElementById('exp-l-ro')!,
+        'uni-a': document.getElementById('uni-a-ro')!,
+        'uni-b': document.getElementById('uni-b-ro')!,
+      };
+
+      function showParamsFor(kind: DistributionKind) {
+        paramsBlock.querySelectorAll<HTMLElement>('[data-params]').forEach((el) => {
+          el.classList.toggle('hidden', el.dataset.params !== kind);
+        });
+        kindList.querySelectorAll<HTMLButtonElement>('[data-kind]').forEach((b) => {
+          b.classList.toggle('active', b.dataset.kind === kind);
+        });
+      }
+
+      function renderState(s: DistributionState) {
+        meanEl.textContent = fmt(s.mean, 3);
+        varEl.textContent = fmt(s.variance, 3);
+        sdEl.textContent = fmt(Math.sqrt(s.variance), 3);
+        readouts['normal-mu'].textContent = fmt(s.params.mu);
+        readouts['normal-sigma'].textContent = fmt(s.params.sigma);
+        readouts['binom-n'].textContent = String(s.params.n);
+        readouts['binom-p'].textContent = fmt(s.params.p);
+        readouts['pois-l'].textContent = fmt(s.params.lambdaPois);
+        readouts['exp-l'].textContent = fmt(s.params.lambdaExp);
+        readouts['uni-a'].textContent = fmt(s.params.a);
+        readouts['uni-b'].textContent = fmt(s.params.b);
+      }
+
+      const scene = new DistributionScene({ canvasId: 'dist-canvas', onUpdate: renderState });
+
+      kindList.querySelectorAll<HTMLButtonElement>('[data-kind]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const kind = btn.dataset.kind as DistributionKind | undefined;
+          if (!kind) return;
+          showParamsFor(kind);
+          scene.setKind(kind);
+        });
+      });
+
+      const wire = (id: string, key: keyof import('@/lib/math/probstat/DistributionScene').DistributionParams) => {
+        const slider = document.getElementById(id) as HTMLInputElement;
+        slider.addEventListener('input', () => {
+          const v = parseFloat(slider.value);
+          scene.setParam(key, key === 'n' ? Math.round(v) : v);
+        });
+      };
+      wire('normal-mu', 'mu');
+      wire('normal-sigma', 'sigma');
+      wire('binom-n', 'n');
+      wire('binom-p', 'p');
+      wire('pois-l', 'lambdaPois');
+      wire('exp-l', 'lambdaExp');
+      wire('uni-a', 'a');
+      wire('uni-b', 'b');
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</BaseLayout>
