@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import RelatedNotes from '@/components/RelatedNotes.astro';
 import DigitRecognition from './_DigitRecognition';
 ---
 <BaseLayout currentPage="tools"
@@ -59,8 +58,6 @@ import DigitRecognition from './_DigitRecognition';
       </div>
     </div>
   </div>
-
-  <RelatedNotes currentPath="/tools/digit-recognition/" />
 </BaseLayout>
 
 <script is:inline src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>

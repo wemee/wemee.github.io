@@ -1,6 +1,7 @@
 ---
 import Footer from '@/components/Footer.astro';
 import Navbar from '@/components/Navbar.astro';
+import RelatedNotes from '@/components/RelatedNotes.astro';
 import '@/styles/global.css';
 
 interface Props {
@@ -118,6 +119,7 @@ const isArticle = !!articleDate;
 <body>
   <Navbar currentPage={currentPage} />
   <slot />
+  <RelatedNotes currentPath={Astro.url.pathname} />
   <Footer />
 
 </body>

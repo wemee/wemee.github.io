@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import RelatedNotes from '@/components/RelatedNotes.astro';
 import { SnakeGame } from '@/components/games/snake';
 ---
 
@@ -13,6 +12,4 @@ import { SnakeGame } from '@/components/games/snake';
         <h1 class="text-3xl font-bold text-base-50 mb-6">🐍 貪吃蛇</h1>
         <SnakeGame client:load />
     </div>
-
-    <RelatedNotes currentPath="/game/snake/" />
 </BaseLayout>

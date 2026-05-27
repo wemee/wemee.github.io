@@ -3,14 +3,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import { IDPhotoEditor } from '@/components/tools/IDPhoto';
 ---
 
-<BaseLayout currentPage="tools" 
-  title="省錢證件照製造機 | 挫屎勇的實用工具" 
+<BaseLayout currentPage="tools"
+  title="省錢證件照製造機 | 挫屎勇的實用工具"
   description="自己排版大頭照，去超商印一張 4x6 只要 6 塊錢！純瀏覽器處理，照片不上傳伺服器。"
 >
-  
+
   <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 pb-12">
     <h1 class="text-3xl font-bold text-base-50 mb-6">📷 省錢證件照製造機</h1>
-    
+
     <IDPhotoEditor client:load />
   </div>
 </BaseLayout>
