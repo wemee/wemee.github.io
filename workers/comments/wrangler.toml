@@ -1,0 +1,16 @@
+name = "wemee-comments"
+main = "src/index.ts"
+compatibility_date = "2025-05-01"
+
+# 允許的前端來源(逗號分隔)。正式站 + 本機 dev。
+[vars]
+ALLOWED_ORIGINS = "https://wemee.github.io,http://localhost:4321,http://localhost:4322,http://localhost:3000"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wemee-comments"
+database_id = "4edb5270-c250-4246-a0d1-fb8d80ffd737"
+
+# Secrets(不寫在這裡,用 `wrangler secret put` 設定):
+#   ADMIN_TOKEN       — 管理者刪留言用的 bearer token
+#   TURNSTILE_SECRET  — Cloudflare Turnstile 的 secret key
