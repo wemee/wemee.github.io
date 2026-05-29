@@ -20,9 +20,14 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "public" / "lab" / "python" / "matplotlib"
 OUT_DIR_ML = ROOT / "public" / "lab" / "ml" / "scikit-learn"
 OUT_DIR_BOOST = ROOT / "public" / "lab" / "ml" / "boosting"
+OUT_DIR_PT = ROOT / "public" / "lab" / "ml" / "pytorch"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_DIR_ML.mkdir(parents=True, exist_ok=True)
 OUT_DIR_BOOST.mkdir(parents=True, exist_ok=True)
+OUT_DIR_PT.mkdir(parents=True, exist_ok=True)
+
+# 重用 notebook 執行時下載的資料集（絕對路徑，不受 cwd 影響）
+PT_DATA = str(ROOT / "notebooks" / "ml" / "pytorch" / "data")
 
 # 卡片是 16:10；輸出夠清晰即可
 FIGSIZE = (10.24, 6.40)
@@ -558,6 +563,235 @@ def boost_08_kaggle() -> None:
     ax2.set_xlabel("importance"); ax2.set_title("Top features")
     fig.suptitle("End-to-end boosting pipeline", fontsize=18, fontweight="bold")
     save(fig, "08-kaggle", OUT_DIR_BOOST)
+
+
+# ═══════════════════════ 機器學習 / 深度學習 PyTorch ═══════════════════════
+
+
+def pt_01_tensors() -> None:
+    """autograd：在 x² 上畫梯度（往下走的方向）。"""
+    import torch
+
+    xs = torch.linspace(-3, 3, 9, requires_grad=True)
+    (xs ** 2).sum().backward()
+    xs_np, grads = xs.detach().numpy(), xs.grad.numpy()
+    cx = np.linspace(-3, 3, 100)
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    ax.plot(cx, cx ** 2, lw=2.4, label="f(x) = x²")
+    for xi, g in zip(xs_np, grads):
+        ax.arrow(xi, xi ** 2, -0.35 * np.sign(g), 0, head_width=0.35, color="red", alpha=0.7)
+    ax.set_title("Autograd: gradients of f(x)=x²", fontsize=17, fontweight="bold")
+    ax.legend(fontsize=12); ax.grid(True, alpha=0.3)
+    save(fig, "01-tensors-autograd", OUT_DIR_PT)
+
+
+def pt_02_first_network() -> None:
+    """two moons 資料。"""
+    from sklearn.datasets import make_moons
+
+    X, y = make_moons(n_samples=300, noise=0.2, random_state=0)
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    ax.scatter(X[:, 0], X[:, 1], c=y, cmap="coolwarm", edgecolor="k", s=40)
+    ax.set_title("Your first neural network: the two-moons task", fontsize=17, fontweight="bold")
+    ax.grid(True, alpha=0.3)
+    save(fig, "02-first-network", OUT_DIR_PT)
+
+
+def pt_03_training_loop() -> None:
+    """訓練後的決策邊界。"""
+    import torch
+    import torch.nn as nn
+    from sklearn.datasets import make_moons
+
+    torch.manual_seed(0)
+    Xn, yn = make_moons(n_samples=300, noise=0.2, random_state=0)
+    X = torch.tensor(Xn, dtype=torch.float32); y = torch.tensor(yn, dtype=torch.long)
+    net = nn.Sequential(nn.Linear(2, 16), nn.ReLU(), nn.Linear(16, 16), nn.ReLU(), nn.Linear(16, 2))
+    opt = torch.optim.Adam(net.parameters(), lr=0.05); crit = nn.CrossEntropyLoss()
+    for _ in range(200):
+        opt.zero_grad(); crit(net(X), y).backward(); opt.step()
+    xx, yy = np.meshgrid(np.linspace(-1.5, 2.5, 300), np.linspace(-1, 1.5, 300))
+    grid = torch.tensor(np.c_[xx.ravel(), yy.ravel()], dtype=torch.float32)
+    with torch.no_grad():
+        Z = net(grid).argmax(1).numpy().reshape(xx.shape)
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    ax.contourf(xx, yy, Z, alpha=0.3, cmap="coolwarm")
+    ax.scatter(Xn[:, 0], Xn[:, 1], c=yn, cmap="coolwarm", edgecolor="k", s=40)
+    ax.set_title("Training loop: the learned decision boundary", fontsize=17, fontweight="bold")
+    save(fig, "03-training-loop", OUT_DIR_PT)
+
+
+def _mnist_subset(n_tr, n_te):
+    import torch
+    from torch.utils.data import DataLoader, Subset
+    from torchvision import datasets, transforms
+
+    tfm = transforms.ToTensor()
+    tr = Subset(datasets.MNIST(PT_DATA, train=True, download=True, transform=tfm), range(n_tr))
+    te = Subset(datasets.MNIST(PT_DATA, train=False, download=True, transform=tfm), range(n_te))
+    return DataLoader(tr, batch_size=64, shuffle=True), DataLoader(te, batch_size=256), len(te)
+
+
+def pt_04_cnn() -> None:
+    """MLP vs CNN 準確率對比。"""
+    import torch
+    import torch.nn as nn
+
+    torch.manual_seed(0)
+    train_loader, test_loader, n_te = _mnist_subset(6000, 1500)
+
+    def run(model, epochs=2):
+        opt = torch.optim.Adam(model.parameters(), lr=1e-3); crit = nn.CrossEntropyLoss()
+        for _ in range(epochs):
+            for xb, yb in train_loader:
+                opt.zero_grad(); crit(model(xb), yb).backward(); opt.step()
+        c = 0
+        with torch.no_grad():
+            for xb, yb in test_loader:
+                c += (model(xb).argmax(1) == yb).sum().item()
+        return c / n_te
+
+    mlp = nn.Sequential(nn.Flatten(), nn.Linear(784, 128), nn.ReLU(), nn.Linear(128, 10))
+    cnn = nn.Sequential(nn.Conv2d(1, 16, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
+                        nn.Conv2d(16, 32, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
+                        nn.Flatten(), nn.Linear(32 * 7 * 7, 10))
+    accs = [run(mlp), run(cnn)]
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    bars = ax.bar(["Fully-connected\n(MLP)", "CNN"], accs, color=["tab:gray", "tab:orange"])
+    ax.set_ylim(0.8, 1.0); ax.set_ylabel("test accuracy")
+    ax.bar_label(bars, fmt="%.1%%" if False else "%.3f", fontsize=13)
+    ax.set_title("MLP vs CNN on MNIST", fontsize=17, fontweight="bold")
+    save(fig, "04-cnn", OUT_DIR_PT)
+
+
+def pt_05_regularization() -> None:
+    """過擬合：train vs test 準確率曲線。"""
+    import torch
+    import torch.nn as nn
+    from torch.utils.data import DataLoader, Subset
+    from torchvision import datasets, transforms
+
+    torch.manual_seed(0)
+    tfm = transforms.ToTensor()
+    tr = Subset(datasets.MNIST(PT_DATA, train=True, download=True, transform=tfm), range(500))
+    te = Subset(datasets.MNIST(PT_DATA, train=False, download=True, transform=tfm), range(2000))
+    trl = DataLoader(tr, batch_size=64, shuffle=True); tel = DataLoader(te, batch_size=512)
+
+    def acc(m, loader, n):
+        c = 0
+        with torch.no_grad():
+            for xb, yb in loader:
+                c += (m(xb).argmax(1) == yb).sum().item()
+        return c / n
+
+    model = nn.Sequential(nn.Flatten(), nn.Linear(784, 256), nn.ReLU(),
+                          nn.Linear(256, 256), nn.ReLU(), nn.Linear(256, 10))
+    opt = torch.optim.Adam(model.parameters(), lr=1e-3); crit = nn.CrossEntropyLoss()
+    tr_acc, te_acc = [], []
+    for _ in range(40):
+        for xb, yb in trl:
+            opt.zero_grad(); crit(model(xb), yb).backward(); opt.step()
+        tr_acc.append(acc(model, trl, 500)); te_acc.append(acc(model, tel, 2000))
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    ax.plot(tr_acc, lw=2.2, label="train accuracy")
+    ax.plot(te_acc, lw=2.2, label="test accuracy")
+    ax.set_xlabel("epoch"); ax.set_ylabel("accuracy"); ax.legend(fontsize=12)
+    ax.set_title("Overfitting: train ~100%, test lags behind", fontsize=17, fontweight="bold")
+    save(fig, "05-regularization", OUT_DIR_PT)
+
+
+def pt_06_gpu() -> None:
+    """概念示意：CPU 少數強核 vs GPU 海量小核的平行運算。"""
+    from matplotlib.patches import Rectangle
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=FIGSIZE)
+    for r in range(2):
+        for c in range(4):
+            ax1.add_patch(Rectangle((c, r), 0.88, 0.88, color="tab:blue", alpha=0.85))
+    ax1.set_xlim(-0.3, 4.2); ax1.set_ylim(-0.5, 2.6); ax1.set_aspect("equal"); ax1.axis("off")
+    ax1.set_title("CPU\n~8 powerful cores · sequential", fontsize=13)
+
+    rows, cols = 16, 30
+    for r in range(rows):
+        for c in range(cols):
+            ax2.add_patch(Rectangle((c, r), 0.82, 0.82, color="tab:orange", alpha=0.85))
+    ax2.set_xlim(-1, cols); ax2.set_ylim(-2, rows + 1); ax2.set_aspect("equal"); ax2.axis("off")
+    ax2.set_title("GPU\nthousands of small cores · parallel", fontsize=13)
+
+    fig.suptitle("Why GPUs win: massive parallelism", fontsize=18, fontweight="bold")
+    save(fig, "06-gpu", OUT_DIR_PT)
+
+
+def pt_07_transfer() -> None:
+    """遷移學習 vs 從零訓練（CIFAR-10 小資料）。"""
+    import torch
+    import torch.nn as nn
+    from torch.utils.data import DataLoader, Subset
+    from torchvision import datasets, models, transforms
+    from torchvision.models import ResNet18_Weights
+
+    torch.manual_seed(0)
+    w = ResNet18_Weights.DEFAULT
+    resnet = models.resnet18(weights=w).eval()
+    feat = nn.Sequential(*list(resnet.children())[:-1])
+    for p in feat.parameters():
+        p.requires_grad = False
+    tfm = transforms.Compose([transforms.Resize(64), transforms.ToTensor(),
+                              transforms.Normalize(w.transforms().mean, w.transforms().std)])
+    tr = Subset(datasets.CIFAR10(PT_DATA, train=True, download=True, transform=tfm), range(1000))
+    te = Subset(datasets.CIFAR10(PT_DATA, train=False, download=True, transform=tfm), range(400))
+
+    def extract(ds):
+        xs, ys = [], []
+        with torch.no_grad():
+            for xb, yb in DataLoader(ds, batch_size=64):
+                xs.append(feat(xb).flatten(1)); ys.append(yb)
+        return torch.cat(xs), torch.cat(ys)
+
+    Xtr, ytr = extract(tr); Xte, yte = extract(te)
+    lin = nn.Linear(512, 10); opt = torch.optim.Adam(lin.parameters(), lr=1e-3); crit = nn.CrossEntropyLoss()
+    for _ in range(80):
+        opt.zero_grad(); crit(lin(Xtr), ytr).backward(); opt.step()
+    with torch.no_grad():
+        transfer = (lin(Xte).argmax(1) == yte).float().mean().item()
+
+    raw = transforms.Compose([transforms.Resize(64), transforms.ToTensor()])
+    rtr = Subset(datasets.CIFAR10(PT_DATA, train=True, download=True, transform=raw), range(1000))
+    rte = Subset(datasets.CIFAR10(PT_DATA, train=False, download=True, transform=raw), range(400))
+    cnn = nn.Sequential(nn.Conv2d(3, 16, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
+                        nn.Conv2d(16, 32, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
+                        nn.Flatten(), nn.Linear(32 * 16 * 16, 10))
+    o = torch.optim.Adam(cnn.parameters(), lr=1e-3); c2 = nn.CrossEntropyLoss()
+    for _ in range(12):
+        for xb, yb in DataLoader(rtr, batch_size=64, shuffle=True):
+            o.zero_grad(); c2(cnn(xb), yb).backward(); o.step()
+    correct = 0
+    with torch.no_grad():
+        for xb, yb in DataLoader(rte, batch_size=128):
+            correct += (cnn(xb).argmax(1) == yb).sum().item()
+    scratch = correct / len(rte)
+
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    bars = ax.bar(["Transfer learning\n(frozen ResNet)", "From scratch\n(small CNN)"],
+                  [transfer, scratch], color=["tab:green", "tab:gray"])
+    ax.set_ylabel("test accuracy (CIFAR-10, 1000 imgs)")
+    ax.bar_label(bars, fmt="%.3f", fontsize=13)
+    ax.set_title("Transfer learning wins on small data", fontsize=17, fontweight="bold")
+    save(fig, "07-transfer-learning", OUT_DIR_PT)
+
+
+def pt_08_capstone() -> None:
+    """FashionMNIST 樣本網格。"""
+    from torchvision import datasets, transforms
+
+    ds = datasets.FashionMNIST(PT_DATA, train=True, download=True, transform=transforms.ToTensor())
+    classes = ["T-shirt", "Trouser", "Pullover", "Dress", "Coat",
+               "Sandal", "Shirt", "Sneaker", "Bag", "Ankle boot"]
+    fig, axes = plt.subplots(2, 6, figsize=FIGSIZE)
+    for ax, (img, label) in zip(axes.ravel(), ds):
+        ax.imshow(img.squeeze(), cmap="gray"); ax.set_title(classes[label], fontsize=10); ax.axis("off")
+    fig.suptitle("Deep learning capstone: FashionMNIST", fontsize=18, fontweight="bold")
+    save(fig, "08-capstone", OUT_DIR_PT)
 
 
 if __name__ == "__main__":

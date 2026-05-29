@@ -58,6 +58,13 @@ export const tracks: LabTrack[] = [
         description: 'XGBoost、LightGBM、early stopping、調參與 SHAP 解釋——表格資料競賽的王者',
         color: 'success',
       },
+      {
+        id: 'pytorch',
+        title: '深度學習入門（PyTorch）',
+        icon: '🔥',
+        description: '從 tensor、autograd 到 CNN、遷移學習與部署——親手搭神經網路，借 Colab 免費 GPU',
+        color: 'success',
+      },
     ],
   },
 ];

@@ -11,6 +11,12 @@ notebooks/__pycache__/
 notebooks/**/*.gif
 notebooks/**/*.mp4
 
+# lab notebook datasets downloaded locally when executing (MNIST/FashionMNIST etc.)
+notebooks/**/data/
+# saved model artifacts from notebook execution
+notebooks/**/*.pt
+notebooks/**/*.onnx
+
 # pw-agent session state — contains live cookies, never commit
 pw-state.json
 
