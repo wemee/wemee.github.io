@@ -119,39 +119,36 @@ notebooks/.venv/bin/python -m jupyter nbconvert --to notebook --execute --inplac
 
 ## 模組現況
 
-- **`python/matplotlib`**：8 課全上線且完整（01 入門 → 06 樣式與中文字型 → 07 動畫 → 08 與 pandas/numpy）。模組視為完成。
-- **`ml/scikit-learn`**：8 課全上線且完整（01 世界觀 → 02 分類/決策邊界 → 03 迴歸 → 04 前處理與 Pipeline → 05 評估 → 06 非監督 → 07 樹模型 → 08 完整流程實戰）。全課圖內英文（Plan A），無中文字型需求。模組視為完成。
+全部 8 課/模組，皆已上線完整：
 
-curriculum 與每課重點見各 `.md` frontmatter 與 module 頁。
+- **`python/matplotlib`**：01 入門 → 06 樣式與中文字型 → 07 動畫 → 08 與 pandas/numpy。
+- **`ml/scikit-learn`**：世界觀 → 分類/決策邊界 → 迴歸 → Pipeline → 評估 → 非監督 → 樹模型 → 端到端實戰。
+- **`ml/boosting`**：集成概念 → 梯度提升直覺 → XGBoost → early stopping → 調參 → LightGBM → SHAP → Kaggle 實戰。需 `xgboost`/`lightgbm`/`shap`。
+- **`ml/pytorch`**：tensor/autograd → 神經網路 → 訓練迴圈 → CNN → 正則化 → GPU → 遷移學習 → 部署。需 `torch`/`torchvision`；用 MNIST/CIFAR/FashionMNIST（執行時下載到 `notebooks/**/data/`，已 gitignore）。
+- **`llm/from-scratch`**（獨立 `llm` 軌道）：tokenization → 預測下一字 → 自注意力 → Transformer → 訓練 → KV cache → SFT → DPO。從零手刻迷你 GPT。共用素材在 `notebooks/_llm_shared.py`（唐詩語料 `CORPUS` + 模型原始碼 `GPT_SRC`，以字串注入各 notebook）。
+
+curriculum 與每課重點見各 `.md` frontmatter 與 module 頁。**下一步是 `agent` 軌道——需先與 owner 討論再動工。**
 
 ## Road map — AI/ML 教學線（2026-05-29 與 owner 拍板）
 
 教學弧線：**經典 ML → 深度學習 → 從零打造 LLM → AI Agent**。`ml` 軌道專注「模型訓練」主軸（M1–M3）；
 LLM 與 Agent 因為夠大、性質不同，**各自獨立成軌道**。每模組做完整版（~8 課），比照 sklearn。
-依序往下做，**下一個是 M2 梯度提升**。
+**M1–M3 與 `llm` 軌道皆已完成；下一個是 `agent` 軌道（需先與 owner 討論再動工）。**
 
-### `ml` 軌道（模型訓練主軸）
-- **M1 `scikit-learn` 入門** — 8 課，✅ 已上線完整。
-- **M2 `boosting` 梯度提升與集成學習** — 接續 M1 第 07 課（決策樹/隨機森林 bagging 已教過）。
-  主打 **boosting**（逐步糾錯 vs RF 並行投票）：概念 → XGBoost 上手 → early stopping/調參 →
-  LightGBM/CatBoost 比較 → SHAP 模型解釋 → Kaggle 風格實戰。約 8 課。
-- **M3 `pytorch` 深度學習入門** — tensor 與 autograd → 第一個神經網路 → 訓練迴圈 →
-  CNN/MNIST 影像辨識 → 過擬合與正則化 → 用 GPU → （選）匯出到 TF.js 在站上跑（呼應既有 TF.js agent）。
-  借 Colab 免費 GPU。約 8 課。
+### `ml` 軌道（模型訓練主軸）— ✅ 全部完成
+- **M1 `scikit-learn` 入門** — ✅ 已上線完整。
+- **M2 `boosting` 梯度提升與集成學習** — ✅ 已上線。接續 M1 第 07 課（決策樹/隨機森林 bagging 已教過），
+  主打 boosting：概念 → XGBoost → early stopping/調參 → LightGBM → SHAP → Kaggle 實戰。
+- **M3 `pytorch` 深度學習入門** — ✅ 已上線。tensor/autograd → 神經網路 → 訓練迴圈 →
+  CNN/MNIST → 正則化 → GPU → 遷移學習（CIFAR-10）→ 部署（save/load + ONNX/TF.js 概念）。
 
-### `llm` 軌道（從零打造迷你 GPT，再對齊它）— 獨立軌道
-Karpathy「build GPT from scratch」路線：**不求強，求徹底理解內部機制**。「功能很爛沒關係」是優勢——
-模型刻意小（字元級、~1–10M 參數），Colab 幾分鐘跑完。**依賴 M3（需先會 PyTorch）。**
-1. 斷詞 **Tokenization** — 字元級 → BPE，手刻 tokenizer、encode/decode
-2. **預測下一個字** — bigram 基線 + 採樣生成
-3. **自注意力 Self-Attention** — Q/K/V，注意力機制（LLM 的心臟）
-4. **組裝 Transformer** — multi-head attention + FFN + residual + LayerNorm
-5. **訓練迷你 GPT** — 中文小語料（唐詩/對話），讓它學會接字
-6. **生成與 KV Cache** — 自回歸解碼，手刻 KV cache 加速
-7. **對齊①：SFT 監督式微調** — 從接字到照指令回答
-8. **對齊②：RLHF/偏好對齊** — 講 RLHF 概念（reward model + 為何用 RL），動手實作走更簡單的 **DPO**
-- **決策**：對齊（7–8）套在「我們自己刻的迷你 GPT」上（from-scratch 純粹性 > 漂亮結果）；
-  第 8 課實作用 DPO（PPO/RLHF 只講概念）。
+### `llm` 軌道（從零打造迷你 GPT，再對齊它）— ✅ 已上線
+Karpathy「build GPT from scratch」路線：**不求強，求徹底理解內部機制**。模型刻意小（字元級、~30 萬參數），
+Colab/MPS 幾分鐘跑完。tokenization → 預測下一字 → 自注意力 → Transformer → 訓練（唐詩語料）→
+KV cache → SFT（單位數加法指令）→ DPO。
+- **決策落地**：對齊（7–8）套在自刻的迷你 GPT 上；第 8 課實作走 DPO（RLHF/PPO 只講概念）。
+- **實作要點**：共用素材在 `_llm_shared.py`；L6 的 KV-cache 模型 `block_size` 要 ≥ prompt+生成長度
+  （位置嵌入用絕對位置，否則 index 越界）；以 greedy 解碼驗證 naive 與 cached 輸出逐字相同。
 
 ### `agent` 軌道（AI Agent）— 獨立軌道
 自刻的迷你 GPT 太弱、無法 tool calling，故本軌道需「真正能用的模型」：

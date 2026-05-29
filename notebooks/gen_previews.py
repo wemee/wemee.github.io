@@ -21,10 +21,12 @@ OUT_DIR = ROOT / "public" / "lab" / "python" / "matplotlib"
 OUT_DIR_ML = ROOT / "public" / "lab" / "ml" / "scikit-learn"
 OUT_DIR_BOOST = ROOT / "public" / "lab" / "ml" / "boosting"
 OUT_DIR_PT = ROOT / "public" / "lab" / "ml" / "pytorch"
+OUT_DIR_LLM = ROOT / "public" / "lab" / "llm" / "from-scratch"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_DIR_ML.mkdir(parents=True, exist_ok=True)
 OUT_DIR_BOOST.mkdir(parents=True, exist_ok=True)
 OUT_DIR_PT.mkdir(parents=True, exist_ok=True)
+OUT_DIR_LLM.mkdir(parents=True, exist_ok=True)
 
 # 重用 notebook 執行時下載的資料集（絕對路徑，不受 cwd 影響）
 PT_DATA = str(ROOT / "notebooks" / "ml" / "pytorch" / "data")
@@ -792,6 +794,222 @@ def pt_08_capstone() -> None:
         ax.imshow(img.squeeze(), cmap="gray"); ax.set_title(classes[label], fontsize=10); ax.axis("off")
     fig.suptitle("Deep learning capstone: FashionMNIST", fontsize=18, fontweight="bold")
     save(fig, "08-capstone", OUT_DIR_PT)
+
+
+# ═══════════════════════ 大型語言模型 / 從零打造 GPT ═══════════════════════
+
+
+def _set_cjk():
+    f = _cjk_font()
+    if f:
+        plt.rcParams["font.sans-serif"] = [f]
+    plt.rcParams["axes.unicode_minus"] = False
+
+
+def _load_gpt():
+    """exec 共用的 GPT 原始碼，取出 MiniGPT 類別。"""
+    from _llm_shared import GPT_SRC
+
+    ns: dict = {}
+    exec(GPT_SRC, ns)
+    return ns["MiniGPT"]
+
+
+def llm_01_tokenization() -> None:
+    from _llm_shared import CORPUS
+
+    _set_cjk()
+    s = "床前明月光"
+    chars = sorted(set(CORPUS))
+    stoi = {c: i for i, c in enumerate(chars)}
+    ids = [stoi[c] for c in s]
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    for i, (c, d) in enumerate(zip(s, ids)):
+        ax.text(i, 1.0, c, fontsize=46, ha="center", va="center")
+        ax.annotate("", xy=(i, 0.5), xytext=(i, 0.82),
+                    arrowprops=dict(arrowstyle="-|>", color="tab:blue", lw=2))
+        ax.text(i, 0.32, str(d), fontsize=24, ha="center", va="center", color="tab:blue")
+    ax.set_xlim(-0.6, len(s) - 0.4); ax.set_ylim(0.1, 1.4); ax.axis("off")
+    ax.set_title("Tokenization：文字 → token id", fontsize=19, fontweight="bold")
+    save(fig, "01-tokenization", OUT_DIR_LLM)
+
+
+def llm_02_next_token() -> None:
+    import torch
+    import torch.nn as nn
+    from torch.nn import functional as F
+
+    from _llm_shared import CORPUS
+
+    _set_cjk()
+    torch.manual_seed(0)
+    chars = sorted(set(CORPUS)); stoi = {c: i for i, c in enumerate(chars)}; V = len(chars)
+    data = torch.tensor([stoi[c] for c in CORPUS])
+    table = nn.Embedding(V, V)
+    opt = torch.optim.AdamW(table.parameters(), lr=1e-2)
+    for _ in range(2000):
+        ix = torch.randint(len(data) - 1, (128,))
+        loss = F.cross_entropy(table(data[ix]), data[ix + 1])
+        opt.zero_grad(); loss.backward(); opt.step()
+    probs = F.softmax(table(torch.tensor(stoi["春"])), dim=-1)
+    top = torch.topk(probs, 8)
+    labels = [chars[i] for i in top.indices.tolist()]
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    ax.bar(labels, top.values.detach().numpy(), color="tab:purple")
+    ax.set_ylabel("P(next char)")
+    ax.set_title("給定「春」，模型預測的下一個字", fontsize=18, fontweight="bold")
+    save(fig, "02-next-token", OUT_DIR_LLM)
+
+
+def llm_03_attention() -> None:
+    import torch
+    import torch.nn as nn
+    from torch.nn import functional as F
+
+    torch.manual_seed(0)
+    T, C, hs = 8, 16, 16
+    x = torch.randn(1, T, C)
+    q, k = nn.Linear(C, hs, bias=False)(x), nn.Linear(C, hs, bias=False)(x)
+    att = q @ k.transpose(-2, -1) * hs ** -0.5
+    att = att.masked_fill(torch.tril(torch.ones(T, T)) == 0, float("-inf"))
+    att = F.softmax(att, dim=-1)[0].detach()
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    im = ax.imshow(att, cmap="viridis")
+    fig.colorbar(im, ax=ax, label="attention weight")
+    ax.set_xlabel("attends to (key position)"); ax.set_ylabel("query position")
+    ax.set_title("Causal self-attention weights", fontsize=18, fontweight="bold")
+    save(fig, "03-self-attention", OUT_DIR_LLM)
+
+
+def llm_04_transformer() -> None:
+    from matplotlib.patches import FancyArrowPatch, Rectangle
+
+    rows = [("Input embeddings", "tab:gray"),
+            ("LayerNorm", "tab:cyan"),
+            ("Multi-Head Self-Attention", "tab:red"),
+            ("⊕  residual", "tab:gray"),
+            ("LayerNorm", "tab:cyan"),
+            ("Feed-Forward (MLP)", "tab:green"),
+            ("⊕  residual", "tab:gray"),
+            ("→ next-token logits", "tab:blue")]
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    for i, (label, color) in enumerate(rows):
+        y = len(rows) - 1 - i
+        ax.add_patch(Rectangle((0, y), 6, 0.62, color=color, alpha=0.75))
+        ax.text(3, y + 0.31, label, ha="center", va="center", fontsize=13, color="white", fontweight="bold")
+        if i < len(rows) - 1:
+            ax.add_patch(FancyArrowPatch((3, y), (3, y - 0.38), arrowstyle="-|>", mutation_scale=14, color="black"))
+    ax.set_xlim(-0.5, 6.5); ax.set_ylim(-0.5, len(rows)); ax.axis("off")
+    ax.set_title("A Transformer block", fontsize=19, fontweight="bold")
+    save(fig, "04-transformer", OUT_DIR_LLM)
+
+
+def llm_05_train() -> None:
+    import torch
+
+    from _llm_shared import CORPUS
+
+    MiniGPT = _load_gpt()
+    torch.manual_seed(0)
+    chars = sorted(set(CORPUS)); stoi = {c: i for i, c in enumerate(chars)}
+    data = torch.tensor([stoi[c] for c in CORPUS]); V = len(chars)
+    bs, B = 64, 32
+    m = MiniGPT(V, n_embd=128, n_head=4, n_layer=3, block_size=bs)
+    opt = torch.optim.AdamW(m.parameters(), lr=3e-4)
+    losses = []
+    for _ in range(2500):
+        ix = torch.randint(len(data) - bs - 1, (B,))
+        x = torch.stack([data[i:i + bs] for i in ix]); y = torch.stack([data[i + 1:i + bs + 1] for i in ix])
+        _, loss = m(x, y)
+        opt.zero_grad(); loss.backward(); opt.step()
+        losses.append(loss.item())
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    ax.plot(losses, color="tab:red", alpha=0.8)
+    ax.set_xlabel("training step"); ax.set_ylabel("loss")
+    ax.set_title("Training a mini GPT from scratch", fontsize=18, fontweight="bold")
+    ax.grid(True, alpha=0.3)
+    save(fig, "05-train-gpt", OUT_DIR_LLM)
+
+
+def llm_06_kvcache() -> None:
+    n = np.arange(1, 201)
+    naive = np.cumsum(n) / np.cumsum(n)[-1]          # 累積成本 ~ O(n²)
+    cached = np.cumsum(np.ones_like(n)) / n[-1]      # ~ O(n)
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    ax.plot(n, naive, lw=2.4, label="naive  ~ O(n²)", color="tab:red")
+    ax.plot(n, cached, lw=2.4, label="with KV cache  ~ O(n)", color="tab:green")
+    ax.fill_between(n, cached, naive, alpha=0.12, color="tab:red")
+    ax.set_xlabel("tokens generated"); ax.set_ylabel("cumulative compute (relative)")
+    ax.legend(fontsize=13)
+    ax.set_title("KV cache turns O(n²) generation into O(n)", fontsize=17, fontweight="bold")
+    save(fig, "06-kv-cache", OUT_DIR_LLM)
+
+
+def llm_07_sft() -> None:
+    _set_cjk()
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    ax.axis("off")
+    ax.text(0.5, 0.9, "SFT：從胡謅到聽懂指令", ha="center", fontsize=20, fontweight="bold", transform=ax.transAxes)
+    ax.text(0.5, 0.72, "提示　問：3加4等於 答：", ha="center", fontsize=16, transform=ax.transAxes)
+    ax.text(0.06, 0.45, "Base 模型（只會接字）", fontsize=15, color="tab:red", fontweight="bold", transform=ax.transAxes)
+    ax.text(0.06, 0.33, "→  盡，唯見長江…（答非所問）", fontsize=16, color="tab:red", transform=ax.transAxes)
+    ax.text(0.06, 0.16, "SFT 之後（照指令回答）", fontsize=15, color="tab:green", fontweight="bold", transform=ax.transAxes)
+    ax.text(0.06, 0.04, "→  7。", fontsize=16, color="tab:green", transform=ax.transAxes)
+    save(fig, "07-sft", OUT_DIR_LLM)
+
+
+def llm_08_dpo() -> None:
+    import copy
+
+    import torch
+    import torch.nn.functional as F
+
+    from _llm_shared import CORPUS
+
+    MiniGPT = _load_gpt()
+    torch.manual_seed(0)
+    pairs = [(a, b) for a in range(10) for b in range(10)]
+    instr = "".join(f"問：{a}加{b}等於 答：{a + b}。\n" for a, b in pairs)
+    chars = sorted(set(CORPUS + instr)); stoi = {c: i for i, c in enumerate(chars)}; V = len(chars)
+    enc = lambda s: [stoi[c] for c in s]
+    bs = 48
+    idata = torch.tensor(enc(instr))
+    policy = MiniGPT(V, n_embd=128, n_head=4, n_layer=3, block_size=bs)
+    opt = torch.optim.AdamW(policy.parameters(), lr=3e-4)
+    for _ in range(2000):
+        ix = torch.randint(len(idata) - bs - 1, (32,))
+        x = torch.stack([idata[i:i + bs] for i in ix]); y = torch.stack([idata[i + 1:i + bs + 1] for i in ix])
+        _, loss = policy(x, y)
+        opt.zero_grad(); loss.backward(); opt.step()
+    ref = copy.deepcopy(policy)
+    for p in ref.parameters():
+        p.requires_grad = False
+    prefs = [(f"問：{a}加{b}等於 答：", f"{a + b}。", f"{(a + b + 3) % 19}。")
+             for a, b in [(2, 3), (4, 1), (5, 5), (7, 2), (6, 3), (1, 8), (3, 3), (9, 0)]]
+
+    def lp(model, full):
+        idx = torch.tensor([enc(full)])
+        logits, _ = model(idx[:, :-1])
+        return torch.log_softmax(logits, -1).gather(-1, idx[:, 1:].unsqueeze(-1)).squeeze().sum()
+
+    opt = torch.optim.AdamW(policy.parameters(), lr=1e-4)
+    margins = []
+    for _ in range(60):
+        total = 0.0; msum = 0.0
+        for pr, ch, rj in prefs:
+            pc, prj = lp(policy, pr + ch), lp(policy, pr + rj)
+            with torch.no_grad():
+                rc, rrj = lp(ref, pr + ch), lp(ref, pr + rj)
+            total = total - F.logsigmoid(0.1 * ((pc - rc) - (prj - rrj)))
+            msum += (pc - prj).item()
+        (total / len(prefs)).backward(); opt.step(); opt.zero_grad()
+        margins.append(msum / len(prefs))
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    ax.plot(margins, lw=2.6, color="tab:green")
+    ax.set_xlabel("DPO step"); ax.set_ylabel("logP(chosen) − logP(rejected)")
+    ax.set_title("DPO aligns the model to preferences", fontsize=18, fontweight="bold")
+    ax.grid(True, alpha=0.3)
+    save(fig, "08-dpo", OUT_DIR_LLM)
 
 
 if __name__ == "__main__":

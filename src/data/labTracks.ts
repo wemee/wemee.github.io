@@ -67,6 +67,22 @@ export const tracks: LabTrack[] = [
       },
     ],
   },
+  {
+    id: 'llm',
+    title: '大型語言模型',
+    icon: '💬',
+    description: '從零親手打造一個迷你 GPT——徹底搞懂 LLM 內部到底發生什麼事',
+    color: 'warning',
+    modules: [
+      {
+        id: 'from-scratch',
+        title: '從零打造迷你 GPT',
+        icon: '🛠️',
+        description: 'tokenization、自注意力、Transformer、訓練、KV cache，到 SFT 與 DPO 對齊',
+        color: 'warning',
+      },
+    ],
+  },
 ];
 
 export const getTrack = (id: string): LabTrack | undefined =>

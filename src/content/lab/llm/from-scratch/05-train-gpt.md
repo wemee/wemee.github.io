@@ -1,0 +1,27 @@
+---
+title: "訓練你的迷你 GPT"
+description: "把語料餵進 MiniGPT，真正訓練它，然後讓它接字。你會親眼看到它從亂碼進步到像那麼回事的中文。"
+track: llm
+module: from-scratch
+order: 5
+notebook: llm/from-scratch/05-train-gpt.ipynb
+preview: /lab/llm/from-scratch/05-train-gpt.webp
+difficulty: 進階
+tags: [llm, training, gpt, text-generation]
+---
+
+零件都備齊了——這堂課把語料餵進第 04 課的 `MiniGPT`,**真正訓練它**,然後讓它生成文字。雖然模型很小、語料很少,但你會親眼看到它從亂碼進步到「像那麼回事的中文」。
+
+## 這堂課你會學到
+
+- 寫出 GPT 的訓練迴圈(取 batch → 算 loss → 更新)
+- 訓練迷你 GPT,看 loss 下降
+- 讓它**接字**,從一個開頭續寫出唐詩風格的句子
+
+## 親手訓練出一個會接字的模型
+
+訓練迴圈跟 `ml/pytorch` 的第一個神經網路一模一樣,只是模型換成 GPT。預覽圖就是 loss 一路下降——模型越來越會預測下一個字。
+
+訓練完給它一個開頭「春」,它會一個字一個字續寫,生出有唐詩韻味的句子。比起第 02 課的 bigram 明顯更連貫,因為自注意力讓它記得住前文。它當然還是會胡謅(模型和語料都極小),但**「從零訓練出一個會接字的語言模型」這件事,你已經親手做到了**。
+
+> 👉 在 Colab(建議開 GPU)裡把 `temperature` 調到 0.3 和 1.2,看生成風格從保守變放飛;或把層數與訓練步數加大,看輸出有沒有變通順。
