@@ -1,0 +1,35 @@
+---
+import { getCollection, render } from 'astro:content';
+import LabLessonLayout from '@/components/lab/LabLessonLayout.astro';
+import { getTrack, getModule } from '@/data/labTracks';
+import { getLessons, lessonParams } from '@/lib/lab';
+
+export async function getStaticPaths() {
+  const all = await getCollection('lab');
+  const visible = all.filter((l) => !l.data.draft);
+
+  return visible.map((lesson) => {
+    const { track, module, lesson: lessonSlug } = lessonParams(lesson.id);
+    return {
+      params: { track, module, lesson: lessonSlug },
+      props: { lesson },
+    };
+  });
+}
+
+const { lesson } = Astro.props;
+const track = getTrack(lesson.data.track)!;
+const module = getModule(lesson.data.track, lesson.data.module)!;
+
+// 同模組課程，找上一課 / 下一課
+const siblings = await getLessons(lesson.data.track, lesson.data.module);
+const idx = siblings.findIndex((l) => l.id === lesson.id);
+const prev = idx > 0 ? siblings[idx - 1] : undefined;
+const next = idx < siblings.length - 1 ? siblings[idx + 1] : undefined;
+
+const { Content } = await render(lesson);
+---
+
+<LabLessonLayout lesson={lesson} track={track} module={module} prev={prev} next={next}>
+  <Content />
+</LabLessonLayout>

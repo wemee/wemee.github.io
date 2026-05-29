@@ -1,0 +1,53 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import LessonCard from '@/components/lab/LessonCard.astro';
+import LabBreadcrumb from '@/components/lab/LabBreadcrumb.astro';
+import { tracks, getTrack, getModule } from '@/data/labTracks';
+import { getLessons } from '@/lib/lab';
+
+export async function getStaticPaths() {
+  return tracks.flatMap((track) =>
+    track.modules.map((module) => ({
+      params: { track: track.id, module: module.id },
+    }))
+  );
+}
+
+const { track: trackId, module: moduleId } = Astro.params;
+const track = getTrack(trackId)!;
+const module = getModule(trackId, moduleId)!;
+const lessons = await getLessons(trackId, moduleId);
+---
+
+<BaseLayout
+  title={`${module.title}｜${track.title}`}
+  description={module.description}
+  currentPage="lab"
+>
+  <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+    <LabBreadcrumb
+      crumbs={[
+        { label: '🧪 程式實驗室', href: '/lab/' },
+        { label: `${track.icon} ${track.title}`, href: `/lab/${track.id}/` },
+        { label: `${module.icon} ${module.title}` },
+      ]}
+    />
+
+    <div class="mb-12">
+      <h1 class="mb-3 text-4xl font-bold text-base-50">{module.icon} {module.title}</h1>
+      <p class="max-w-2xl text-lg text-base-300">{module.description}</p>
+    </div>
+
+    {
+      lessons.length === 0 ? (
+        <p class="text-base-400">課程準備中，敬請期待 🚧</p>
+      ) : (
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {lessons.map((lesson) => (
+            <LessonCard lesson={lesson} />
+          ))}
+        </div>
+      )
+    }
+  </div>
+</BaseLayout>

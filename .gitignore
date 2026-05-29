@@ -3,6 +3,9 @@ dist/
 node_modules/
 .astro/
 
+# lab notebook preview-generation venv (local only)
+notebooks/.venv/
+
 # pw-agent session state — contains live cookies, never commit
 pw-state.json
 

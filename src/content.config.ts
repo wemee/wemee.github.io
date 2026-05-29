@@ -14,6 +14,24 @@ const blogCollection = defineCollection({
     }),
 });
 
+const labCollection = defineCollection({
+    loader: glob({ pattern: '**/*.md', base: './src/content/lab' }),
+    schema: z.object({
+        title: z.string(),
+        description: z.string(),
+        track: z.string(),
+        module: z.string(),
+        order: z.number(),
+        notebook: z.string(),
+        preview: z.string().optional(),
+        difficulty: z.enum(['入門', '進階', '專題']).default('入門'),
+        tags: z.array(z.string()).default([]),
+        updated: z.date().optional(),
+        draft: z.boolean().default(false),
+    }),
+});
+
 export const collections = {
     blog: blogCollection,
+    lab: labCollection,
 };

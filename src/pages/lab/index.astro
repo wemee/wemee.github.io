@@ -1,0 +1,24 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import TrackCard from '@/components/lab/TrackCard.astro';
+import { tracks } from '@/data/labTracks';
+---
+
+<BaseLayout
+  title="程式實驗室"
+  description="動手學程式——每堂課搭配可在 Google Colab 直接執行的 notebook。從 Python 資料視覺化開始。"
+  currentPage="lab"
+>
+  <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+    <div class="mb-12 text-center">
+      <h1 class="mb-3 text-4xl font-bold text-base-50">🧪 程式實驗室</h1>
+      <p class="mx-auto max-w-2xl text-lg text-base-300">
+        動手學程式。每堂課都附一個可在 <span class="text-accent-yellow">Google Colab</span> 直接執行的 notebook——看得到、改得動、跑得起來。
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {tracks.map((track) => <TrackCard track={track} />)}
+    </div>
+  </div>
+</BaseLayout>

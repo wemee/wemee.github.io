@@ -1,0 +1,28 @@
+---
+import type { LabModule } from '@/data/labTracks';
+import { colorMap } from '@/lib/lab';
+
+interface Props {
+  trackId: string;
+  module: LabModule;
+  lessonCount?: number;
+}
+const { trackId, module, lessonCount } = Astro.props;
+const c = colorMap[module.color] ?? colorMap.info;
+---
+
+<a
+  href={`/lab/${trackId}/${module.id}/`}
+  class={`group relative flex flex-col rounded-xl border border-base-700 bg-base-800 p-6 transition hover:-translate-y-1 ${c.hover}`}
+>
+  <div class="mb-3 flex items-center gap-3">
+    <span class="text-3xl">{module.icon}</span>
+    <h2 class={`text-xl font-semibold text-base-50 transition ${c.text}`}>{module.title}</h2>
+  </div>
+  <p class="flex-1 text-sm leading-relaxed text-base-400">{module.description}</p>
+  {
+    lessonCount !== undefined && (
+      <span class="mt-4 text-xs font-mono text-base-500">{lessonCount} 堂課</span>
+    )
+  }
+</a>

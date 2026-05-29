@@ -1,0 +1,47 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ModuleCard from '@/components/lab/ModuleCard.astro';
+import LabBreadcrumb from '@/components/lab/LabBreadcrumb.astro';
+import { tracks, getTrack } from '@/data/labTracks';
+import { getLessons } from '@/lib/lab';
+
+export async function getStaticPaths() {
+  return tracks.map((track) => ({ params: { track: track.id } }));
+}
+
+const { track: trackId } = Astro.params;
+const track = getTrack(trackId)!;
+
+// 各模組的課程數
+const counts = await Promise.all(
+  track.modules.map((m) => getLessons(track.id, m.id).then((ls) => ls.length))
+);
+---
+
+<BaseLayout
+  title={`${track.title}｜程式實驗室`}
+  description={track.description}
+  currentPage="lab"
+>
+  <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+    <LabBreadcrumb
+      crumbs={[
+        { label: '🧪 程式實驗室', href: '/lab/' },
+        { label: `${track.icon} ${track.title}` },
+      ]}
+    />
+
+    <div class="mb-12">
+      <h1 class="mb-3 text-4xl font-bold text-base-50">{track.icon} {track.title}</h1>
+      <p class="max-w-2xl text-lg text-base-300">{track.description}</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {
+        track.modules.map((module, i) => (
+          <ModuleCard trackId={track.id} module={module} lessonCount={counts[i]} />
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>

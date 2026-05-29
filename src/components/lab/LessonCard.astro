@@ -1,0 +1,47 @@
+---
+import type { LabLesson } from '@/lib/lab';
+import { lessonHref } from '@/lib/lab';
+
+interface Props {
+  lesson: LabLesson;
+}
+const { lesson } = Astro.props;
+const { title, description, order, difficulty, preview } = lesson.data;
+const num = String(order).padStart(2, '0');
+---
+
+<a
+  href={lessonHref(lesson.id)}
+  class="group flex flex-col overflow-hidden rounded-xl border border-base-700 bg-base-800 transition hover:-translate-y-1 hover:border-accent-cyan"
+>
+  <div class="relative aspect-[16/10] overflow-hidden bg-base-900">
+    {
+      preview ? (
+        <img
+          src={preview}
+          alt={`${title} 範例輸出`}
+          width="640"
+          height="400"
+          loading="lazy"
+          class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+        />
+      ) : (
+        <div class="flex h-full w-full items-center justify-center text-base-600">
+          <span class="text-4xl">📊</span>
+        </div>
+      )
+    }
+    <span class="absolute left-3 top-3 rounded-md bg-base-900/80 px-2 py-1 text-xs font-mono text-base-300 backdrop-blur">
+      {num}
+    </span>
+    <span class="absolute right-3 top-3 rounded-md bg-accent-cyan/90 px-2 py-1 text-xs font-medium text-base-900">
+      {difficulty}
+    </span>
+  </div>
+  <div class="flex flex-1 flex-col p-5">
+    <h3 class="mb-2 text-lg font-semibold text-base-50 transition group-hover:text-accent-cyan">
+      {title}
+    </h3>
+    <p class="text-sm leading-relaxed text-base-400">{description}</p>
+  </div>
+</a>

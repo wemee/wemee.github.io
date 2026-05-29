@@ -1,0 +1,115 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import LabBreadcrumb from './LabBreadcrumb.astro';
+import ColabBadge from './ColabBadge.astro';
+import type { LabLesson } from '@/lib/lab';
+import { lessonHref } from '@/lib/lab';
+import type { LabTrack, LabModule } from '@/data/labTracks';
+
+interface Props {
+  lesson: LabLesson;
+  track: LabTrack;
+  module: LabModule;
+  prev?: LabLesson;
+  next?: LabLesson;
+}
+const { lesson, track, module, prev, next } = Astro.props;
+const { title, description, notebook, preview, difficulty, order, tags } = lesson.data;
+const num = String(order).padStart(2, '0');
+---
+
+<BaseLayout title={`${title}｜${module.title}`} description={description} currentPage="lab">
+  <article class="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
+    <LabBreadcrumb
+      crumbs={[
+        { label: '🧪 程式實驗室', href: '/lab/' },
+        { label: `${track.icon} ${track.title}`, href: `/lab/${track.id}/` },
+        { label: `${module.icon} ${module.title}`, href: `/lab/${track.id}/${module.id}/` },
+        { label: title },
+      ]}
+    />
+
+    <!-- Hero -->
+    <header class="mb-8">
+      <div class="mb-3 flex items-center gap-3 text-sm">
+        <span class="font-mono text-base-500">{num}</span>
+        <span class="rounded-md bg-accent-cyan/90 px-2 py-0.5 text-xs font-medium text-base-900">{difficulty}</span>
+      </div>
+      <h1 class="mb-4 text-4xl font-bold text-base-50">{title}</h1>
+      <p class="text-lg leading-relaxed text-base-300">{description}</p>
+    </header>
+
+    {
+      preview && (
+        <img
+          src={preview}
+          alt={`${title} 範例輸出`}
+          width="768"
+          height="480"
+          class="mb-8 w-full rounded-xl border border-base-800"
+        />
+      )
+    }
+
+    <!-- Colab 行動呼籲 -->
+    <div class="mb-10 rounded-xl border border-base-700 bg-base-800/60 p-5">
+      <p class="mb-3 text-sm text-base-400">
+        這堂課的完整程式碼在 Jupyter notebook 裡。點下面按鈕在 Colab 開啟，就能直接執行、修改、實驗——你的修改不會動到原檔。
+      </p>
+      <ColabBadge notebook={notebook} />
+    </div>
+
+    <!-- 課程說明（markdown 內文） -->
+    <div
+      class="prose prose-invert prose-lg max-w-none
+      prose-headings:text-base-50 prose-headings:font-semibold
+      prose-p:text-base-300 prose-p:leading-relaxed
+      prose-a:text-accent-blue prose-a:no-underline hover:prose-a:underline
+      prose-strong:text-base-100
+      prose-code:text-accent-cyan prose-code:bg-base-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-[''] prose-code:after:content-['']
+      prose-pre:bg-base-900 prose-pre:border prose-pre:border-base-800
+      prose-img:rounded-lg prose-img:border prose-img:border-base-800
+      prose-blockquote:border-l-accent-blue prose-blockquote:text-base-400
+      prose-li:text-base-300 prose-li:marker:text-base-500
+      prose-table:text-base-300 prose-th:text-base-200"
+    >
+      <slot />
+    </div>
+
+    {
+      tags.length > 0 && (
+        <div class="mt-10 flex flex-wrap gap-2">
+          {tags.map((tag) => (
+            <span class="rounded-full border border-base-700 bg-base-800 px-3 py-1 text-xs text-base-300">
+              #{tag}
+            </span>
+          ))}
+        </div>
+      )
+    }
+
+    <!-- 上一課 / 下一課 -->
+    <nav class="mt-12 grid grid-cols-1 gap-4 border-t border-base-800 pt-8 sm:grid-cols-2">
+      {
+        prev ? (
+          <a href={lessonHref(prev.id)} class="group rounded-lg border border-base-700 bg-base-800 p-4 transition hover:border-accent-cyan">
+            <span class="text-xs text-base-500">← 上一課</span>
+            <p class="mt-1 text-sm font-medium text-base-200 group-hover:text-accent-cyan">{prev.data.title}</p>
+          </a>
+        ) : (
+          <span />
+        )
+      }
+      {
+        next ? (
+          <a href={lessonHref(next.id)} class="group rounded-lg border border-base-700 bg-base-800 p-4 text-right transition hover:border-accent-cyan">
+            <span class="text-xs text-base-500">下一課 →</span>
+            <p class="mt-1 text-sm font-medium text-base-200 group-hover:text-accent-cyan">{next.data.title}</p>
+          </a>
+        ) : (
+          <span />
+        )
+      }
+    </nav>
+  </article>
+</BaseLayout>

@@ -1,0 +1,23 @@
+---
+import type { LabTrack } from '@/data/labTracks';
+import { colorMap } from '@/lib/lab';
+
+interface Props {
+  track: LabTrack;
+}
+const { track } = Astro.props;
+const c = colorMap[track.color] ?? colorMap.info;
+const moduleCount = track.modules.length;
+---
+
+<a
+  href={`/lab/${track.id}/`}
+  class={`group relative flex flex-col rounded-xl border border-base-700 bg-base-800 p-6 transition hover:-translate-y-1 ${c.hover}`}
+>
+  <div class="mb-3 flex items-center gap-3">
+    <span class="text-3xl">{track.icon}</span>
+    <h2 class={`text-xl font-semibold text-base-50 transition ${c.text}`}>{track.title}</h2>
+  </div>
+  <p class="flex-1 text-sm leading-relaxed text-base-400">{track.description}</p>
+  <span class="mt-4 text-xs font-mono text-base-500">{moduleCount} 個模組</span>
+</a>
