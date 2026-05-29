@@ -2,6 +2,7 @@
 import Footer from '@/components/Footer.astro';
 import Navbar from '@/components/Navbar.astro';
 import RelatedNotes from '@/components/RelatedNotes.astro';
+import SearchPalette from '@/components/SearchPalette.astro';
 import '@/styles/global.css';
 
 interface Props {
@@ -118,9 +119,15 @@ const isArticle = !!articleDate;
 </head>
 <body>
   <Navbar currentPage={currentPage} />
-  <slot />
+  <!-- data-pagefind-body scopes site search to BaseLayout pages only; the
+       display:contents wrapper adds no box so it never affects layout. The
+       meta guarantees a clean result title even on pages without an <h1>. -->
+  <div data-pagefind-body data-pagefind-meta={`title:${title}`} style="display: contents;">
+    <slot />
+  </div>
   <RelatedNotes currentPath={Astro.url.pathname} />
   <Footer />
+  <SearchPalette />
 
 </body>
 </html>
