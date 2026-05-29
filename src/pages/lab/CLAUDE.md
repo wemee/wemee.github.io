@@ -109,9 +109,9 @@ notebooks/.venv/bin/python -m jupyter nbconvert --to notebook --execute --inplac
 
 ## 第一個模組現況
 
-`python/matplotlib`：6 課全上線（01 入門 → 06 樣式與中文字型）。curriculum 與每課重點見各 `.md` frontmatter 與 module 頁。
+`python/matplotlib`：**8 課全上線且完整**（01 入門 → 06 樣式與中文字型 → 07 動畫 → 08 與 pandas/numpy）。curriculum 與每課重點見各 `.md` frontmatter 與 module 頁。模組視為完成。
 
 ## 未來想加（backlog）
 
-- matplotlib：07 動畫 `FuncAnimation`、08 與 pandas/numpy 結合
-- 新軌道：web（HTML/CSS/JS）、git、llm/api 等。`/html-css-/` 是一個保留的舊網址轉址（被 iThome 文章外連），**勿刪**，與本區無關。
+- 新軌道：web（HTML/CSS/JS）、git、llm/api 等。骨架全部複用，照「如何新增一條軌道」做。
+- `/html-css-/` 是一個保留的舊網址轉址（被 iThome 文章外連），**勿刪**，與本區無關。

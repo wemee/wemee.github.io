@@ -179,6 +179,38 @@ def lesson_07_animation() -> None:
     save(fig, "07-animation")
 
 
+def lesson_08_pandas_numpy() -> None:
+    """左：pandas 風格多線時序；右：numpy 相關矩陣熱圖。代表接上真實資料。"""
+    rng = np.random.default_rng(0)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=FIGSIZE, constrained_layout=True)
+
+    months = np.arange(1, 13)
+    for name, color in [("Store A", "tab:blue"), ("Store B", "tab:orange"), ("Store C", "tab:green")]:
+        series = rng.integers(20, 90, 12).cumsum() / 10
+        ax1.plot(months, series, marker="o", color=color, label=name)
+    ax1.set_title("df.plot(): monthly revenue")
+    ax1.set_xlabel("Month")
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+
+    corr = np.array([
+        [1.0, 0.8, 0.1, -0.3, 0.0],
+        [0.8, 1.0, 0.2, -0.2, 0.1],
+        [0.1, 0.2, 1.0, 0.4, -0.5],
+        [-0.3, -0.2, 0.4, 1.0, 0.3],
+        [0.0, 0.1, -0.5, 0.3, 1.0],
+    ])
+    im = ax2.imshow(corr, cmap="coolwarm", vmin=-1, vmax=1)
+    fig.colorbar(im, ax=ax2, label="correlation", fraction=0.046)
+    labels = list("ABCDE")
+    ax2.set_xticks(range(5), labels)
+    ax2.set_yticks(range(5), labels)
+    ax2.set_title("numpy 2D: heatmap")
+
+    fig.suptitle("matplotlib + pandas / numpy", fontsize=18, fontweight="bold")
+    save(fig, "08-pandas-numpy")
+
+
 if __name__ == "__main__":
     print("產生預覽圖…")
     print("CJK 字型:", _cjk_font())
@@ -189,4 +221,5 @@ if __name__ == "__main__":
     lesson_05_axes_ticks()
     lesson_06_style_fonts()
     lesson_07_animation()
+    lesson_08_pandas_numpy()
     print("完成。")
