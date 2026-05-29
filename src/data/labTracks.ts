@@ -37,6 +37,22 @@ export const tracks: LabTrack[] = [
       },
     ],
   },
+  {
+    id: 'ml',
+    title: '機器學習',
+    icon: '🤖',
+    description: '用 scikit-learn 動手做監督式與非監督式學習——從第一個分類器到完整實戰流程',
+    color: 'success',
+    modules: [
+      {
+        id: 'scikit-learn',
+        title: 'scikit-learn 入門',
+        icon: '🧠',
+        description: '統一的 fit/predict 節奏、分類與迴歸、Pipeline、模型評估、樹模型到端到端實戰',
+        color: 'success',
+      },
+    ],
+  },
 ];
 
 export const getTrack = (id: string): LabTrack | undefined =>

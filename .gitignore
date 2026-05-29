@@ -5,6 +5,7 @@ node_modules/
 
 # lab notebook preview-generation venv (local only)
 notebooks/.venv/
+notebooks/__pycache__/
 
 # lab notebook output artifacts (gif/mp4 saved when executing notebooks locally)
 notebooks/**/*.gif

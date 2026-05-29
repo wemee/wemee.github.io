@@ -23,14 +23,21 @@
 
 ```
 notebooks/                          ← 真相來源，commit 進 repo（不進 dist）
-  .venv/                            ← 本機產預覽圖用的 venv（已 gitignore）
-  gen_previews.py                   ← 預覽圖產生腳本（每課一個函式）
+  .venv/                            ← 本機產預覽圖/執行 notebook 的 venv（已 gitignore）
+  gen_previews.py                   ← 預覽圖產生腳本（每課一個函式；save() 吃 out_dir 支援多軌道）
+  _nbgen.py                         ← notebook 產生器共用工具（build_notebook/md/code）
+  gen_sklearn_1to4.py               ← 用 _nbgen 組裝 sklearn 01–04 的 .ipynb
+  gen_sklearn_5to8.py               ← 同上，05–08
   python/matplotlib/
-    01-basics.ipynb … 06-style-fonts.ipynb
+    01-basics.ipynb … 08-pandas-numpy.ipynb
+  ml/scikit-learn/
+    01-worldview.ipynb … 08-end-to-end.ipynb
 
 src/content/lab/                    ← content collection（純 .md，frontmatter 驅動）
   python/matplotlib/
-    01-basics.md … 06-style-fonts.md
+    01-basics.md … 08-pandas-numpy.md
+  ml/scikit-learn/
+    01-worldview.md … 08-end-to-end.md
 
 src/data/labTracks.ts               ← 軌道/模組中介資料（title、icon、描述、color）
 src/lib/lab.ts                      ← colabUrl/githubUrl 組裝、getLessons、colorMap
@@ -49,6 +56,7 @@ src/pages/lab/
   [track]/[module]/[lesson].astro   ← render 課程 .md
 
 public/lab/python/matplotlib/       ← 預覽圖 webp（由 gen_previews.py 產出）
+public/lab/ml/scikit-learn/         ← 同上
 ```
 
 ## 內容 schema（`src/content.config.ts` 的 `lab` collection）
@@ -106,12 +114,18 @@ notebooks/.venv/bin/python -m jupyter nbconvert --to notebook --execute --inplac
 - **prose 樣式**：`LabLessonLayout` 用 Tailwind Typography 的 `prose prose-invert` + 一串 `prose-*` 覆寫，對齊站台暗色系。程式碼區塊靠站台既有的 Shiki（勿在此設 `pre` 背景，會重蹈 blog 白塊 bug）。
 - **部署**：push 到 `main` 自動觸發 GitHub Pages 部署。notebook 放 repo 根 `notebooks/`，不會進 dist。
 - **動畫 notebook 不要嵌輸出**：`FuncAnimation` 的 `to_jshtml()` 會把每幀 base64 內嵌，一個 notebook 可膨脹到 ~16MB。動畫課改用 `nbconvert --clear-output --inplace` 清掉輸出再 commit（動畫本來就該在 Colab 跑才看得到）。靜態圖課才用 `--execute` 嵌入輸出。GIF/mp4 產物已 gitignore（`notebooks/**/*.gif`、`*.mp4`）。
+- **多課用 builder 組 notebook，別手寫 JSON**：一次要產多個 notebook 時，別硬刻 `.ipynb` JSON（易錯、難 review）。用 `_nbgen.py` 的 `build_notebook([...cells], rel_path)`，每個 cell 用 `md("…")` / `code("…")` 描述，再跑 `nbconvert --execute --inplace` 嵌出輸出。sklearn 模組的 `gen_sklearn_1to4.py` / `5to8.py` 是範例。記得受 800 行寫檔上限約束，課程多時拆檔。
+- **sklearn 在 venv**：`uv pip install --python notebooks/.venv/bin/python scikit-learn`（venv 由 uv 管，沒有 pip，別用 `python -m pip`）。執行 notebook 時 kernelspec 寫 `python3` 即可，不必指定 `wemee-lab`。
 
-## 第一個模組現況
+## 模組現況
 
-`python/matplotlib`：**8 課全上線且完整**（01 入門 → 06 樣式與中文字型 → 07 動畫 → 08 與 pandas/numpy）。curriculum 與每課重點見各 `.md` frontmatter 與 module 頁。模組視為完成。
+- **`python/matplotlib`**：8 課全上線且完整（01 入門 → 06 樣式與中文字型 → 07 動畫 → 08 與 pandas/numpy）。模組視為完成。
+- **`ml/scikit-learn`**：8 課全上線且完整（01 世界觀 → 02 分類/決策邊界 → 03 迴歸 → 04 前處理與 Pipeline → 05 評估 → 06 非監督 → 07 樹模型 → 08 完整流程實戰）。全課圖內英文（Plan A），無中文字型需求。模組視為完成。
+
+curriculum 與每課重點見各 `.md` frontmatter 與 module 頁。
 
 ## 未來想加（backlog）
 
-- 新軌道：web（HTML/CSS/JS）、git、llm/api 等。骨架全部複用，照「如何新增一條軌道」做。
+- `ml` 軌道可再加模組：pytorch、llm/api 等（同軌道、新 module）。
+- 新軌道：web（HTML/CSS/JS）、git 等。骨架全部複用，照「如何新增一條軌道」做。
 - `/html-css-/` 是一個保留的舊網址轉址（被 iThome 文章外連），**勿刪**，與本區無關。
