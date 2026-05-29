@@ -164,6 +164,21 @@ def lesson_06_style_fonts() -> None:
         save(fig, "06-style-fonts")
 
 
+def lesson_07_animation() -> None:
+    """靜態縮圖用「殘影」暗示動畫：同一條波的多個相位疊加、由淡到深。"""
+    x = np.linspace(0, 2 * np.pi, 200)
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    n = 8
+    for k in range(n):
+        alpha = 0.12 + 0.88 * k / (n - 1)
+        ax.plot(x, np.sin(x + k * 0.35), color="tab:blue", alpha=alpha, lw=2.2)
+    ax.set_ylim(-1.3, 1.3)
+    ax.set_xlabel("x")
+    ax.grid(True, alpha=0.3)
+    ax.set_title("Animation: a traveling wave", fontsize=17, fontweight="bold")
+    save(fig, "07-animation")
+
+
 if __name__ == "__main__":
     print("產生預覽圖…")
     print("CJK 字型:", _cjk_font())
@@ -173,4 +188,5 @@ if __name__ == "__main__":
     lesson_04_subplots()
     lesson_05_axes_ticks()
     lesson_06_style_fonts()
+    lesson_07_animation()
     print("完成。")

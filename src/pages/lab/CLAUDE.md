@@ -105,6 +105,7 @@ notebooks/.venv/bin/python -m jupyter nbconvert --to notebook --execute --inplac
 - **內文用純 `.md`**（不是 MDX）：站上沒裝 `@astrojs/mdx`，blog 也是純 md。結構（hero/badge/預覽）由 `LabLessonLayout` 從 frontmatter 渲染，body 只放散文。若日後課程要在內文嵌互動元件，再評估加 mdx。
 - **prose 樣式**：`LabLessonLayout` 用 Tailwind Typography 的 `prose prose-invert` + 一串 `prose-*` 覆寫，對齊站台暗色系。程式碼區塊靠站台既有的 Shiki（勿在此設 `pre` 背景，會重蹈 blog 白塊 bug）。
 - **部署**：push 到 `main` 自動觸發 GitHub Pages 部署。notebook 放 repo 根 `notebooks/`，不會進 dist。
+- **動畫 notebook 不要嵌輸出**：`FuncAnimation` 的 `to_jshtml()` 會把每幀 base64 內嵌，一個 notebook 可膨脹到 ~16MB。動畫課改用 `nbconvert --clear-output --inplace` 清掉輸出再 commit（動畫本來就該在 Colab 跑才看得到）。靜態圖課才用 `--execute` 嵌入輸出。GIF/mp4 產物已 gitignore（`notebooks/**/*.gif`、`*.mp4`）。
 
 ## 第一個模組現況
 

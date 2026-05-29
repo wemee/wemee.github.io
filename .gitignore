@@ -6,6 +6,10 @@ node_modules/
 # lab notebook preview-generation venv (local only)
 notebooks/.venv/
 
+# lab notebook output artifacts (gif/mp4 saved when executing notebooks locally)
+notebooks/**/*.gif
+notebooks/**/*.mp4
+
 # pw-agent session state — contains live cookies, never commit
 pw-state.json
 
