@@ -1,0 +1,8 @@
+# Pagefind 站內搜尋設定。在 `astro build` 之後執行 `pagefind`,
+# 它會掃描 dist/ 裡所有帶 data-pagefind-body 的頁面(即所有走 BaseLayout
+# 的真實頁面),自動排除 public/ 底下的外來 HTML(yaya、asus_vm…)。
+site: dist
+
+# KaTeX 會在 HTML 裡留下 MathML 原始 LaTeX,索引進去會變成雜訊,整段排除。
+exclude_selectors:
+  - ".katex"

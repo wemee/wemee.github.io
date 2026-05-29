@@ -50,5 +50,13 @@ export default defineConfig({
 
   vite: {
     plugins: [tailwindcss(), publicDirIndexFallback()],
+    build: {
+      rollupOptions: {
+        // Pagefind's runtime bundle only exists in dist/ after `pagefind` runs
+        // post-build; keep the dynamic import external so Rollup doesn't try to
+        // resolve it at build time. It resolves natively in the browser.
+        external: [/^\/pagefind\//],
+      },
+    },
   },
 });

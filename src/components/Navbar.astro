@@ -142,9 +142,27 @@ const navItems = [
         ))}
       </div>
       
+      <!-- Right-side actions: search + mobile menu -->
+      <div class="tw-navbar-actions">
+      <!-- Search trigger (visible on all breakpoints) -->
+      <button
+        type="button"
+        class="tw-search-btn"
+        data-search-trigger
+        aria-label="搜尋網站"
+        aria-keyshortcuts="Meta+K Control+K"
+      >
+        <svg class="tw-search-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" stroke-width="2" />
+          <path d="m20 20-3.5-3.5" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <span class="tw-search-btn-label">搜尋</span>
+        <kbd class="tw-search-btn-kbd">⌘K</kbd>
+      </button>
+
       <!-- Mobile Menu Button -->
-      <button 
-        type="button" 
+      <button
+        type="button"
         class="tw-mobile-menu-btn"
         id="mobile-menu-button"
         aria-expanded="false"
@@ -159,6 +177,7 @@ const navItems = [
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
+      </div>
     </div>
   </div>
   
@@ -201,6 +220,71 @@ const navItems = [
     </div>
   </div>
 </nav>
+
+<style>
+  /* Right-side action cluster (search + hamburger) */
+  .tw-navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  /* On desktop, push the nav + actions to the right edge */
+  @media (min-width: 1024px) {
+    .tw-desktop-nav {
+      margin-left: auto;
+      margin-right: 0.5rem;
+    }
+  }
+
+  .tw-search-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.6rem;
+    color: #93a1a1;
+    background: rgba(88, 110, 117, 0.18);
+    border: 1px solid #586e75;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  }
+  .tw-search-btn:hover {
+    color: #fdf6e3;
+    background: rgba(88, 110, 117, 0.4);
+    border-color: #93a1a1;
+  }
+  .tw-search-btn-icon {
+    width: 1.05rem;
+    height: 1.05rem;
+    flex-shrink: 0;
+  }
+  /* Label + shortcut hint only on wider screens; icon-only on mobile */
+  .tw-search-btn-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: none;
+  }
+  .tw-search-btn-kbd {
+    font-size: 0.7rem;
+    font-family: 'Inter', sans-serif;
+    color: #839496;
+    background: rgba(0, 43, 54, 0.6);
+    border: 1px solid #586e75;
+    border-radius: 0.3rem;
+    padding: 0.05rem 0.3rem;
+    display: none;
+  }
+  @media (min-width: 640px) {
+    .tw-search-btn-label {
+      display: inline;
+    }
+  }
+  @media (min-width: 1024px) {
+    .tw-search-btn-kbd {
+      display: inline;
+    }
+  }
+</style>
 
 <script>
   // Mobile menu toggle

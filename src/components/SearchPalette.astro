@@ -1,0 +1,461 @@
+---
+// ⌘K 站內搜尋命令面板。
+// - 由 Pagefind 提供索引(build 時產生於 /pagefind/),執行期才延遲載入。
+// - 開啟方式:⌘K / Ctrl+K、或任何帶 data-search-trigger 的元素(見 Navbar)。
+// - 零 hydration:純 vanilla script,首屏不載入任何搜尋資源。
+// - dev 模式沒有索引(Pagefind 只跑在 build 後),會顯示友善提示。
+---
+
+<div class="sp-overlay" id="sp-overlay" hidden aria-hidden="true">
+  <div
+    class="sp-panel"
+    role="dialog"
+    aria-modal="true"
+    aria-label="站內搜尋"
+  >
+    <div class="sp-input-row">
+      <svg class="sp-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" stroke-width="2" />
+        <path d="m20 20-3.5-3.5" stroke-width="2" stroke-linecap="round" />
+      </svg>
+      <input
+        id="sp-input"
+        class="sp-input"
+        type="search"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="搜尋文章、課程、工具…"
+        aria-label="搜尋關鍵字"
+        aria-controls="sp-results"
+      />
+      <kbd class="sp-esc">ESC</kbd>
+    </div>
+
+    <div class="sp-results" id="sp-results" role="listbox" aria-label="搜尋結果">
+      <!-- states + results injected here -->
+    </div>
+
+    <div class="sp-footer">
+      <span><kbd>↑</kbd><kbd>↓</kbd> 移動</span>
+      <span><kbd>↵</kbd> 開啟</span>
+      <span><kbd>esc</kbd> 關閉</span>
+      <span class="sp-credit">Pagefind 站內搜尋</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  .sp-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: clamp(3rem, 12vh, 9rem) 1rem 1rem;
+    background: rgba(0, 20, 26, 0.62);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 160ms ease;
+  }
+  .sp-overlay.is-open {
+    opacity: 1;
+  }
+  .sp-overlay[hidden] {
+    display: none;
+  }
+
+  .sp-panel {
+    width: min(40rem, 100%);
+    max-height: min(70vh, 36rem);
+    display: flex;
+    flex-direction: column;
+    background: #073642;
+    border: 1px solid #586e75;
+    border-radius: 14px;
+    box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.7);
+    overflow: hidden;
+    transform: translateY(-10px) scale(0.98);
+    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .sp-overlay.is-open .sp-panel {
+    transform: translateY(0) scale(1);
+  }
+
+  .sp-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid rgba(88, 110, 117, 0.5);
+  }
+  .sp-search-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #93a1a1;
+    flex-shrink: 0;
+  }
+  .sp-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fdf6e3;
+    font-size: 1.05rem;
+    font-family: 'Inter', sans-serif;
+  }
+  .sp-input::placeholder {
+    color: #657b83;
+  }
+  /* hide native search clear button */
+  .sp-input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .sp-esc {
+    font-size: 0.65rem;
+    color: #93a1a1;
+    background: rgba(88, 110, 117, 0.3);
+    border: 1px solid #586e75;
+    border-radius: 5px;
+    padding: 0.15rem 0.4rem;
+    flex-shrink: 0;
+  }
+
+  .sp-results {
+    overflow-y: auto;
+    padding: 0.4rem;
+    flex: 1;
+  }
+
+  .sp-group-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #839496;
+    padding: 0.6rem 0.7rem 0.3rem;
+    text-transform: uppercase;
+  }
+
+  .sp-result {
+    display: block;
+    padding: 0.55rem 0.7rem;
+    border-radius: 9px;
+    color: #eee8d5;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .sp-result:hover,
+  .sp-result.is-active {
+    background: #268bd2;
+    color: #fdf6e3;
+  }
+  .sp-result-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .sp-result-excerpt {
+    font-size: 0.8rem;
+    color: #93a1a1;
+    margin-top: 0.15rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .sp-result.is-active .sp-result-excerpt,
+  .sp-result:hover .sp-result-excerpt {
+    color: #d6e6e2;
+  }
+  .sp-result :global(mark) {
+    background: transparent;
+    color: #b58900;
+    font-weight: 700;
+  }
+  .sp-result.is-active :global(mark),
+  .sp-result:hover :global(mark) {
+    color: #fdf6e3;
+    text-decoration: underline;
+  }
+
+  .sp-message {
+    padding: 2.2rem 1rem;
+    text-align: center;
+    color: #839496;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  .sp-message strong {
+    color: #93a1a1;
+  }
+  .sp-message code {
+    background: #002b36;
+    border: 1px solid #586e75;
+    border-radius: 5px;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.82rem;
+    color: #2aa198;
+  }
+
+  .sp-footer {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.55rem 1.1rem;
+    border-top: 1px solid rgba(88, 110, 117, 0.5);
+    font-size: 0.72rem;
+    color: #657b83;
+    flex-wrap: wrap;
+  }
+  .sp-footer kbd {
+    background: rgba(88, 110, 117, 0.3);
+    border: 1px solid #586e75;
+    border-radius: 4px;
+    padding: 0.05rem 0.3rem;
+    margin: 0 0.1rem;
+    color: #93a1a1;
+    font-family: 'Inter', sans-serif;
+  }
+  .sp-credit {
+    margin-left: auto;
+    color: #586e75;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sp-overlay,
+    .sp-panel {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  const SECTIONS: Record<string, string> = {
+    blog: '部落格',
+    lab: '程式實驗室',
+    math: '數學工具',
+    game: '遊戲',
+    tools: '實用工具',
+    about: '關於我',
+  };
+  const SECTION_ORDER = ['blog', 'lab', 'math', 'game', 'tools', 'about', 'other'];
+  const DEBOUNCE_MS = 160;
+  const MAX_RESULTS = 8;
+
+  type PagefindResult = { data: () => Promise<PagefindData> };
+  type PagefindData = { url: string; meta?: { title?: string }; excerpt?: string };
+  type Pagefind = { search: (q: string) => Promise<{ results: PagefindResult[] }> };
+
+  const overlay = document.getElementById('sp-overlay') as HTMLDivElement | null;
+  const input = document.getElementById('sp-input') as HTMLInputElement | null;
+  const resultsEl = document.getElementById('sp-results') as HTMLDivElement | null;
+  if (overlay && input && resultsEl) {
+    let pagefind: Pagefind | null = null;
+    let loadFailed = false;
+    let debounceId: number | undefined;
+    let lastFocused: HTMLElement | null = null;
+    let activeIndex = -1;
+
+    const sectionFromUrl = (url: string): string => {
+      const seg = url.replace(/^\//, '').split('/')[0] ?? '';
+      // /maze/ lives under the 遊戲 section conceptually
+      if (seg === 'maze') return 'game';
+      return seg in SECTIONS ? seg : 'other';
+    };
+
+    const normalizeUrl = (url: string): string =>
+      url.replace(/index\.html$/, '').replace(/\.html$/, '');
+
+    const showMessage = (html: string) => {
+      resultsEl.innerHTML = `<div class="sp-message">${html}</div>`;
+      activeIndex = -1;
+    };
+
+    const ensurePagefind = async (): Promise<Pagefind | null> => {
+      if (pagefind || loadFailed) return pagefind;
+      try {
+        // Path is resolved at runtime from the deployed site, not bundled by Vite.
+        const mod = (await import(/* @vite-ignore */ '/pagefind/pagefind.js')) as Pagefind;
+        pagefind = mod;
+        return pagefind;
+      } catch {
+        loadFailed = true;
+        return null;
+      }
+    };
+
+    const renderResults = (
+      items: { url: string; title: string; excerpt: string; section: string }[],
+    ) => {
+      if (items.length === 0) {
+        showMessage('找不到符合的結果，換個關鍵字試試。');
+        return;
+      }
+      const groups = new Map<string, typeof items>();
+      for (const it of items) {
+        const arr = groups.get(it.section) ?? [];
+        arr.push(it);
+        groups.set(it.section, arr);
+      }
+      let html = '';
+      let idx = 0;
+      for (const key of SECTION_ORDER) {
+        const arr = groups.get(key);
+        if (!arr || arr.length === 0) continue;
+        const label = key === 'other' ? '其他' : SECTIONS[key];
+        html += `<div class="sp-group-label">${label}</div>`;
+        for (const it of arr) {
+          html += `<a class="sp-result" role="option" data-idx="${idx}" href="${it.url}">
+            <div class="sp-result-title">${it.title}</div>
+            ${it.excerpt ? `<div class="sp-result-excerpt">${it.excerpt}</div>` : ''}
+          </a>`;
+          idx++;
+        }
+      }
+      resultsEl.innerHTML = html;
+      activeIndex = -1;
+    };
+
+    const runSearch = async (query: string) => {
+      const q = query.trim();
+      if (q.length === 0) {
+        showMessage('輸入關鍵字開始搜尋 — 涵蓋部落格、課程、數學工具與遊戲。');
+        return;
+      }
+      const pf = await ensurePagefind();
+      if (!pf) {
+        showMessage(
+          '搜尋索引僅在<strong>正式版</strong>提供。<br>本地預覽請執行 <code>npm run build && npm run preview</code>。',
+        );
+        return;
+      }
+      const search = await pf.search(q);
+      // input may have changed while awaiting — ignore stale responses
+      if (input.value.trim() !== q) return;
+      const top = search.results.slice(0, MAX_RESULTS);
+      const data = await Promise.all(top.map((r) => r.data()));
+      if (input.value.trim() !== q) return;
+      renderResults(
+        data.map((d) => ({
+          url: normalizeUrl(d.url),
+          title: d.meta?.title || d.url,
+          excerpt: d.excerpt || '',
+          section: sectionFromUrl(normalizeUrl(d.url)),
+        })),
+      );
+    };
+
+    const resultEls = (): HTMLAnchorElement[] =>
+      Array.from(resultsEl.querySelectorAll<HTMLAnchorElement>('.sp-result'));
+
+    const setActive = (next: number) => {
+      const els = resultEls();
+      if (els.length === 0) return;
+      activeIndex = (next + els.length) % els.length;
+      els.forEach((el, i) => el.classList.toggle('is-active', i === activeIndex));
+      els[activeIndex]?.scrollIntoView({ block: 'nearest' });
+    };
+
+    const open = () => {
+      if (!overlay.hidden) return;
+      lastFocused = document.activeElement as HTMLElement | null;
+      overlay.hidden = false;
+      overlay.setAttribute('aria-hidden', 'false');
+      requestAnimationFrame(() => overlay.classList.add('is-open'));
+      document.body.style.overflow = 'hidden';
+      input.value = '';
+      showMessage('輸入關鍵字開始搜尋 — 涵蓋部落格、課程、數學工具與遊戲。');
+      input.focus();
+      // warm up the index in the background
+      void ensurePagefind();
+    };
+
+    const close = () => {
+      if (overlay.hidden) return;
+      overlay.classList.remove('is-open');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      const finish = () => {
+        overlay.hidden = true;
+        overlay.removeEventListener('transitionend', finish);
+      };
+      overlay.addEventListener('transitionend', finish);
+      // fallback if transitionend doesn't fire (reduced motion)
+      window.setTimeout(() => {
+        if (!overlay.classList.contains('is-open')) overlay.hidden = true;
+      }, 220);
+      lastFocused?.focus();
+    };
+
+    // --- triggers ---
+    document.querySelectorAll('[data-search-trigger]').forEach((el) =>
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        open();
+      }),
+    );
+
+    const isTyping = (): boolean => {
+      const el = document.activeElement;
+      return (
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        (el instanceof HTMLElement && el.isContentEditable)
+      );
+    };
+
+    document.addEventListener('keydown', (e) => {
+      const isCmdK = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k';
+      // bare "/" opens search, but only when the palette is closed and the
+      // user isn't already typing into some other field
+      const isSlash = e.key === '/' && overlay.hidden && !isTyping();
+      if (isCmdK) {
+        e.preventDefault();
+        overlay.hidden ? open() : close();
+      } else if (isSlash) {
+        e.preventDefault();
+        open();
+      }
+    });
+
+    // --- input ---
+    input.addEventListener('input', () => {
+      window.clearTimeout(debounceId);
+      debounceId = window.setTimeout(() => void runSearch(input.value), DEBOUNCE_MS);
+    });
+
+    // --- keyboard nav within the palette ---
+    overlay.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActive(activeIndex + 1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActive(activeIndex - 1);
+      } else if (e.key === 'Enter') {
+        const els = resultEls();
+        const target = els[activeIndex] ?? els[0];
+        if (target) {
+          e.preventDefault();
+          window.location.href = target.href;
+        }
+      }
+    });
+
+    // pointer hover keeps the active index in sync
+    resultsEl.addEventListener('mousemove', (e) => {
+      const el = (e.target as HTMLElement).closest('.sp-result') as HTMLAnchorElement | null;
+      if (el) setActive(Number(el.dataset.idx));
+    });
+
+    // backdrop click closes
+    overlay.addEventListener('mousedown', (e) => {
+      if (e.target === overlay) close();
+    });
+  }
+</script>
