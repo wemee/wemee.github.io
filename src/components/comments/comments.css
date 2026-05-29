@@ -1,10 +1,11 @@
-/* 留言區樣式 — 沿用全站 Solarized(Solar)色票 */
+/* 留言區樣式 — 沿用全站 Solarized 深色底色票(body 背景 #002b36)。
+   標題與留言列表直接落在深色背景上,故用淺色字;表單在米色卡片上,維持深色字。 */
 
 .comments {
   max-width: 52rem;
   margin: 4rem auto 0;
   padding: 2rem 1.25rem 3rem;
-  border-top: 1px solid var(--color-base-300);
+  border-top: 1px solid var(--color-base-600);
 }
 
 .comments-title {
@@ -14,7 +15,7 @@
   margin: 0 0 1.5rem;
   font-size: 1.4rem;
   font-weight: 700;
-  color: var(--color-base-800);
+  color: var(--color-base-100);
 }
 
 .comments-count {
@@ -112,9 +113,9 @@
   font-size: 0.9rem;
 }
 
-/* ---- 留言列表 ---- */
+/* ---- 留言列表(在深色背景上,用淺色字)---- */
 .comment-status {
-  color: var(--color-base-600);
+  color: var(--color-base-400);
   font-size: 0.95rem;
 }
 
@@ -163,7 +164,7 @@
 
 .comment-nick {
   font-weight: 600;
-  color: var(--color-base-800);
+  color: var(--color-base-100);
   text-decoration: none;
 }
 
@@ -179,7 +180,7 @@ a.comment-nick:hover {
 
 .comment-content {
   margin: 0;
-  color: var(--color-base-700);
+  color: var(--color-base-300);
   line-height: 1.7;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
