@@ -3,6 +3,7 @@ import Footer from '@/components/Footer.astro';
 import Navbar from '@/components/Navbar.astro';
 import RelatedNotes from '@/components/RelatedNotes.astro';
 import SearchPalette from '@/components/SearchPalette.astro';
+import Comments from '@/components/comments/Comments.tsx';
 import '@/styles/global.css';
 
 interface Props {
@@ -14,6 +15,8 @@ interface Props {
   articleTags?: string[];
   /** Current page identifier for nav highlighting (home, math, game, tools, about, blog) */
   currentPage?: string;
+  /** 是否顯示留言區。預設開啟;全螢幕遊戲/工具頁可傳 false 關閉。 */
+  comments?: boolean;
 }
 
 const {
@@ -24,6 +27,7 @@ const {
   articleAuthor,
   articleTags = [],
   currentPage,
+  comments = true,
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
@@ -125,6 +129,7 @@ const isArticle = !!articleDate;
   <div data-pagefind-body data-pagefind-meta={`title:${title}`} style="display: contents;">
     <slot />
   </div>
+  {comments && <Comments page={Astro.url.pathname} client:visible />}
   <RelatedNotes currentPath={Astro.url.pathname} />
   <Footer />
   <SearchPalette />
