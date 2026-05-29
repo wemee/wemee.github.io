@@ -19,8 +19,10 @@ from matplotlib import font_manager
 ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "public" / "lab" / "python" / "matplotlib"
 OUT_DIR_ML = ROOT / "public" / "lab" / "ml" / "scikit-learn"
+OUT_DIR_BOOST = ROOT / "public" / "lab" / "ml" / "boosting"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_DIR_ML.mkdir(parents=True, exist_ok=True)
+OUT_DIR_BOOST.mkdir(parents=True, exist_ok=True)
 
 # 卡片是 16:10；輸出夠清晰即可
 FIGSIZE = (10.24, 6.40)
@@ -385,6 +387,177 @@ def ml_08_end_to_end() -> None:
     ax2.set_xlabel("importance"); ax2.set_title("Top features")
     fig.suptitle("End-to-end ML pipeline", fontsize=18, fontweight="bold")
     save(fig, "08-end-to-end", OUT_DIR_ML)
+
+
+# ═══════════════════════ 機器學習 / 梯度提升 boosting ═══════════════════════
+
+
+def boost_01_ensembles() -> None:
+    """單棵樹 vs bagging vs boosting 準確率對比。"""
+    from sklearn.datasets import load_breast_cancer
+    from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+    from sklearn.model_selection import cross_val_score
+    from sklearn.tree import DecisionTreeClassifier
+
+    X, y = load_breast_cancer(return_X_y=True)
+    names = ["Single tree", "Random Forest\n(bagging)", "Gradient Boosting\n(boosting)"]
+    models = [DecisionTreeClassifier(random_state=0),
+              RandomForestClassifier(n_estimators=200, random_state=0),
+              GradientBoostingClassifier(random_state=0)]
+    scores = [cross_val_score(m, X, y, cv=5).mean() for m in models]
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    bars = ax.bar(names, scores, color=["tab:gray", "tab:green", "tab:purple"])
+    ax.set_ylim(0.88, 1.0)
+    ax.set_ylabel("5-fold accuracy")
+    ax.bar_label(bars, fmt="%.3f", fontsize=12)
+    ax.set_title("Single tree vs bagging vs boosting", fontsize=17, fontweight="bold")
+    save(fig, "01-ensembles", OUT_DIR_BOOST)
+
+
+def boost_02_gradient_boosting() -> None:
+    """殘差擬合三連圖。"""
+    from sklearn.tree import DecisionTreeRegressor
+
+    rng = np.random.default_rng(0)
+    X = np.linspace(0, 10, 120).reshape(-1, 1)
+    y = np.sin(X).ravel() + 0.3 * X.ravel() + rng.normal(0, 0.3, 120)
+    pred = np.full_like(y, y.mean())
+    fig, axes = plt.subplots(1, 3, figsize=FIGSIZE, constrained_layout=True)
+    for step, ax in enumerate(axes):
+        stump = DecisionTreeRegressor(max_depth=2).fit(X, y - pred)
+        pred = pred + 0.5 * stump.predict(X)
+        ax.scatter(X, y, s=12, alpha=0.4)
+        ax.plot(X, pred, color="red", lw=2.4)
+        ax.set_title(f"After {step + 1} tree(s)")
+    fig.suptitle("Boosting: fitting residuals step by step", fontsize=17, fontweight="bold")
+    save(fig, "02-gradient-boosting", OUT_DIR_BOOST)
+
+
+def boost_03_xgboost() -> None:
+    """XGBoost 特徵重要性。"""
+    from sklearn.datasets import load_breast_cancer
+    from xgboost import XGBClassifier
+
+    data = load_breast_cancer()
+    m = XGBClassifier(n_estimators=300, max_depth=3, eval_metric="logloss", random_state=42)
+    m.fit(data.data, data.target)
+    imp = m.feature_importances_
+    order = np.argsort(imp)[::-1][:8]
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    ax.barh(range(len(order)), imp[order][::-1], color="tab:purple")
+    ax.set_yticks(range(len(order)))
+    ax.set_yticklabels(np.array(data.feature_names)[order][::-1], fontsize=10)
+    ax.set_xlabel("importance")
+    ax.set_title("XGBoost feature importances", fontsize=17, fontweight="bold")
+    save(fig, "03-xgboost", OUT_DIR_BOOST)
+
+
+def boost_04_overfitting() -> None:
+    """train vs val logloss + early stopping 線。"""
+    from sklearn.datasets import load_breast_cancer
+    from sklearn.model_selection import train_test_split
+    from xgboost import XGBClassifier
+
+    X, y = load_breast_cancer(return_X_y=True)
+    Xtr, Xv, ytr, yv = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
+    m = XGBClassifier(n_estimators=400, learning_rate=0.1, max_depth=3,
+                      eval_metric="logloss", early_stopping_rounds=20, random_state=42)
+    m.fit(Xtr, ytr, eval_set=[(Xtr, ytr), (Xv, yv)], verbose=False)
+    r = m.evals_result()
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    ax.plot(r["validation_0"]["logloss"], label="train", lw=2)
+    ax.plot(r["validation_1"]["logloss"], label="validation", lw=2)
+    ax.axvline(m.best_iteration, color="gray", ls="--", label="best iteration")
+    ax.set_xlabel("number of trees"); ax.set_ylabel("logloss"); ax.legend(fontsize=12)
+    ax.set_title("Early stopping at the validation valley", fontsize=17, fontweight="bold")
+    save(fig, "04-overfitting", OUT_DIR_BOOST)
+
+
+def boost_05_tuning() -> None:
+    """隨機搜尋的試驗分數散布。"""
+    from scipy.stats import randint, uniform
+    from sklearn.datasets import load_breast_cancer
+    from sklearn.model_selection import RandomizedSearchCV
+    from xgboost import XGBClassifier
+
+    X, y = load_breast_cancer(return_X_y=True)
+    dist = {"n_estimators": randint(100, 600), "max_depth": randint(2, 7),
+            "learning_rate": uniform(0.01, 0.3), "subsample": uniform(0.6, 0.4)}
+    s = RandomizedSearchCV(XGBClassifier(eval_metric="logloss", random_state=42),
+                           dist, n_iter=25, cv=5, scoring="roc_auc", random_state=42, n_jobs=-1)
+    s.fit(X, y)
+    means = s.cv_results_["mean_test_score"]
+    running = np.maximum.accumulate(means)
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    ax.scatter(range(len(means)), means, alpha=0.6, label="each trial")
+    ax.plot(running, color="tab:red", lw=2.4, label="best so far")
+    ax.set_xlabel("trial"); ax.set_ylabel("CV AUC"); ax.legend(fontsize=12)
+    ax.set_title("Randomized hyperparameter search", fontsize=17, fontweight="bold")
+    save(fig, "05-tuning", OUT_DIR_BOOST)
+
+
+def boost_06_lightgbm() -> None:
+    """XGBoost vs LightGBM 訓練時間對比。"""
+    import time
+
+    from lightgbm import LGBMClassifier
+    from sklearn.datasets import make_classification
+    from xgboost import XGBClassifier
+
+    X, y = make_classification(n_samples=40000, n_features=50, n_informative=15, random_state=42)
+    times = {}
+    for name, m in [("XGBoost", XGBClassifier(n_estimators=300, max_depth=6, eval_metric="logloss", random_state=42)),
+                    ("LightGBM", LGBMClassifier(n_estimators=300, max_depth=6, verbose=-1, random_state=42))]:
+        t = time.perf_counter(); m.fit(X, y); times[name] = time.perf_counter() - t
+    fig, ax = plt.subplots(figsize=FIGSIZE)
+    bars = ax.bar(list(times), list(times.values()), color=["tab:purple", "tab:green"])
+    ax.bar_label(bars, fmt="%.2f s", fontsize=13)
+    ax.set_ylabel("training time (s)")
+    ax.set_title("XGBoost vs LightGBM: training speed", fontsize=17, fontweight="bold")
+    save(fig, "06-lightgbm", OUT_DIR_BOOST)
+
+
+def boost_07_shap() -> None:
+    """SHAP beeswarm 摘要圖。"""
+    import shap
+    from sklearn.datasets import load_breast_cancer
+    from xgboost import XGBClassifier
+
+    data = load_breast_cancer()
+    m = XGBClassifier(n_estimators=200, max_depth=3, eval_metric="logloss", random_state=42)
+    m.fit(data.data, data.target)
+    sv = shap.TreeExplainer(m).shap_values(data.data)
+    shap.summary_plot(sv, data.data, feature_names=list(data.feature_names),
+                      max_display=10, show=False)
+    fig = plt.gcf()
+    fig.set_size_inches(*FIGSIZE)
+    fig.suptitle("SHAP: explaining every prediction", fontsize=15, fontweight="bold")
+    save(fig, "07-shap", OUT_DIR_BOOST)
+
+
+def boost_08_kaggle() -> None:
+    """實戰收尾：ROC + 特徵重要性。"""
+    from sklearn.datasets import make_classification
+    from sklearn.metrics import RocCurveDisplay
+    from sklearn.model_selection import train_test_split
+    from xgboost import XGBClassifier
+
+    X, y = make_classification(n_samples=8000, n_features=30, n_informative=12,
+                               n_redundant=6, weights=[0.7, 0.3], random_state=7)
+    Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.2, random_state=7, stratify=y)
+    m = XGBClassifier(n_estimators=300, max_depth=4, learning_rate=0.1,
+                      eval_metric="logloss", random_state=7).fit(Xtr, ytr)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=FIGSIZE, constrained_layout=True)
+    RocCurveDisplay.from_estimator(m, Xte, yte, ax=ax1)
+    ax1.plot([0, 1], [0, 1], "k--", alpha=0.4); ax1.set_title("ROC curve")
+    imp = m.feature_importances_
+    order = np.argsort(imp)[::-1][:8]
+    ax2.barh(range(len(order)), imp[order][::-1], color="tab:purple")
+    ax2.set_yticks(range(len(order)))
+    ax2.set_yticklabels([f"f{i}" for i in order][::-1], fontsize=9)
+    ax2.set_xlabel("importance"); ax2.set_title("Top features")
+    fig.suptitle("End-to-end boosting pipeline", fontsize=18, fontweight="bold")
+    save(fig, "08-kaggle", OUT_DIR_BOOST)
 
 
 if __name__ == "__main__":

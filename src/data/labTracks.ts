@@ -51,6 +51,13 @@ export const tracks: LabTrack[] = [
         description: '統一的 fit/predict 節奏、分類與迴歸、Pipeline、模型評估、樹模型到端到端實戰',
         color: 'success',
       },
+      {
+        id: 'boosting',
+        title: '梯度提升與集成學習',
+        icon: '🌲',
+        description: 'XGBoost、LightGBM、early stopping、調參與 SHAP 解釋——表格資料競賽的王者',
+        color: 'success',
+      },
     ],
   },
 ];
