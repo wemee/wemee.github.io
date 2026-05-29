@@ -124,8 +124,48 @@ notebooks/.venv/bin/python -m jupyter nbconvert --to notebook --execute --inplac
 
 curriculum 與每課重點見各 `.md` frontmatter 與 module 頁。
 
-## 未來想加（backlog）
+## Road map — AI/ML 教學線（2026-05-29 與 owner 拍板）
 
-- `ml` 軌道可再加模組：pytorch、llm/api 等（同軌道、新 module）。
+教學弧線：**經典 ML → 深度學習 → 從零打造 LLM → AI Agent**。`ml` 軌道專注「模型訓練」主軸（M1–M3）；
+LLM 與 Agent 因為夠大、性質不同，**各自獨立成軌道**。每模組做完整版（~8 課），比照 sklearn。
+依序往下做，**下一個是 M2 梯度提升**。
+
+### `ml` 軌道（模型訓練主軸）
+- **M1 `scikit-learn` 入門** — 8 課，✅ 已上線完整。
+- **M2 `boosting` 梯度提升與集成學習** — 接續 M1 第 07 課（決策樹/隨機森林 bagging 已教過）。
+  主打 **boosting**（逐步糾錯 vs RF 並行投票）：概念 → XGBoost 上手 → early stopping/調參 →
+  LightGBM/CatBoost 比較 → SHAP 模型解釋 → Kaggle 風格實戰。約 8 課。
+- **M3 `pytorch` 深度學習入門** — tensor 與 autograd → 第一個神經網路 → 訓練迴圈 →
+  CNN/MNIST 影像辨識 → 過擬合與正則化 → 用 GPU → （選）匯出到 TF.js 在站上跑（呼應既有 TF.js agent）。
+  借 Colab 免費 GPU。約 8 課。
+
+### `llm` 軌道（從零打造迷你 GPT，再對齊它）— 獨立軌道
+Karpathy「build GPT from scratch」路線：**不求強，求徹底理解內部機制**。「功能很爛沒關係」是優勢——
+模型刻意小（字元級、~1–10M 參數），Colab 幾分鐘跑完。**依賴 M3（需先會 PyTorch）。**
+1. 斷詞 **Tokenization** — 字元級 → BPE，手刻 tokenizer、encode/decode
+2. **預測下一個字** — bigram 基線 + 採樣生成
+3. **自注意力 Self-Attention** — Q/K/V，注意力機制（LLM 的心臟）
+4. **組裝 Transformer** — multi-head attention + FFN + residual + LayerNorm
+5. **訓練迷你 GPT** — 中文小語料（唐詩/對話），讓它學會接字
+6. **生成與 KV Cache** — 自回歸解碼，手刻 KV cache 加速
+7. **對齊①：SFT 監督式微調** — 從接字到照指令回答
+8. **對齊②：RLHF/偏好對齊** — 講 RLHF 概念（reward model + 為何用 RL），動手實作走更簡單的 **DPO**
+- **決策**：對齊（7–8）套在「我們自己刻的迷你 GPT」上（from-scratch 純粹性 > 漂亮結果）；
+  第 8 課實作用 DPO（PPO/RLHF 只講概念）。
+
+### `agent` 軌道（AI Agent）— 獨立軌道
+自刻的迷你 GPT 太弱、無法 tool calling，故本軌道需「真正能用的模型」：
+- **零金鑰優先**：Colab 本地 **Qwen2.5-1.5B/3B-Instruct**（4-bit 量化跑在免費 T4，中文開源最強，
+  支援 Hermes-style tool calling）。
+- **選修「接軌真實世界」**：免費 API — **Gemini 2.5 Flash 免費層**（1,500 req/天、免卡、支援 function
+  calling）或 **Groq**（Llama 3.3 70B）。每人各自申請 free key，非共用額度。
+- 課綱待設計：Agent 概念 → function/tool calling → ReAct 迴圈 → RAG agent → 多代理/實戰。約 8 課。
+
+### 免費資源研究結論（2026-05，已查證）
+- Colab 免費 T4 = **15GB VRAM**；BitsAndBytes 4-bit 砍 ~75% VRAM，Qwen 0.5B–3B 都裝得下；Qwen 在 CJK/中文是開源最強。
+- **Gemini 免費層** 支援 function calling、1,500 req/天、免信用卡、無到期；**Groq 免費層** 1,000 req/天、也支援 function calling。每人各自 key → 額度足夠教學。
+- 故 LLM 軌道走「從零自刻」（非用現成模型）；Agent 軌道用本地 Qwen 或免費 API，皆可行。
+
+### 其他 backlog
 - 新軌道：web（HTML/CSS/JS）、git 等。骨架全部複用，照「如何新增一條軌道」做。
 - `/html-css-/` 是一個保留的舊網址轉址（被 iThome 文章外連），**勿刪**，與本區無關。
