@@ -277,7 +277,10 @@
       if (pagefind || loadFailed) return pagefind;
       try {
         // Path is resolved at runtime from the deployed site, not bundled by Vite.
-        const mod = (await import(/* @vite-ignore */ '/pagefind/pagefind.js')) as Pagefind;
+        // A non-literal specifier keeps Vite's import-analysis from resolving it in
+        // dev (the index only exists after a build), while staying identical at runtime.
+        const pagefindUrl = '/pagefind/pagefind.js';
+        const mod = (await import(/* @vite-ignore */ pagefindUrl)) as Pagefind;
         pagefind = mod;
         return pagefind;
       } catch {
