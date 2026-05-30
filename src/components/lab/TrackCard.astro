@@ -19,5 +19,18 @@ const moduleCount = track.modules.length;
     <h2 class={`text-xl font-semibold text-base-50 transition ${c.text}`}>{track.title}</h2>
   </div>
   <p class="flex-1 text-sm leading-relaxed text-base-400">{track.description}</p>
-  <span class="mt-4 text-xs font-mono text-base-500">{moduleCount} 個模組</span>
+  <div class="mt-4 flex items-center justify-between gap-2">
+    <span class="text-xs font-mono text-base-500">{moduleCount} 個模組</span>
+    {
+      track.prereq ? (
+        <span class="rounded-full border border-base-700 px-2 py-0.5 text-[0.7rem] text-base-400">
+          {track.prereq}
+        </span>
+      ) : (
+        <span class={`rounded-full px-2 py-0.5 text-[0.7rem] ${c.text} text-base-400`}>
+          零基礎可上手
+        </span>
+      )
+    }
+  </div>
 </a>

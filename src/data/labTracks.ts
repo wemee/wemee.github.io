@@ -18,6 +18,17 @@ export interface LabTrack {
   description: string;
   color: string;
   modules: LabModule[];
+  /** 建議先學的軌道（顯示在卡片上的相依提示），沒有就是零基礎可上手 */
+  prereq?: string;
+}
+
+/** 學習階段：把軌道分成「基礎 → 核心 → 應用」三站，給 /lab 首頁當學習地圖 */
+export interface LearningStage {
+  id: string;
+  step: string;
+  title: string;
+  subtitle: string;
+  trackIds: string[];
 }
 
 export const tracks: LabTrack[] = [
@@ -85,6 +96,7 @@ export const tracks: LabTrack[] = [
   },
   {
     id: 'rl',
+    prereq: '建議先學 機器學習 · PyTorch',
     title: '強化學習',
     icon: '🎮',
     description: '讓 agent 在環境裡試錯學習——手刻 Q-learning、DQN、策略梯度，再用 stable-baselines3 加速，最後訓練它玩一個自製小遊戲',
@@ -101,6 +113,7 @@ export const tracks: LabTrack[] = [
   },
   {
     id: 'cv',
+    prereq: '建議先學 機器學習 · PyTorch',
     title: '電腦視覺',
     icon: '📷',
     description: '讓機器看懂影像——從影像張量、CNN，到遷移學習、物件偵測、影像分割與 Grad-CAM 可解釋性',
@@ -117,6 +130,7 @@ export const tracks: LabTrack[] = [
   },
   {
     id: 'llm',
+    prereq: '建議先學 機器學習 · PyTorch',
     title: '大型語言模型',
     icon: '💬',
     description: '從零親手打造一個迷你 GPT——徹底搞懂 LLM 內部到底發生什麼事',
@@ -133,6 +147,7 @@ export const tracks: LabTrack[] = [
   },
   {
     id: 'agent',
+    prereq: '建議先學 大型語言模型',
     title: 'AI Agent',
     icon: '🦾',
     description: '讓 LLM 不只會說話，還會用工具、做事情——手刻 ReAct 迴圈，跑在免費 Colab 的本地 Qwen 上',
@@ -149,6 +164,7 @@ export const tracks: LabTrack[] = [
   },
   {
     id: 'diffusion',
+    prereq: '建議先學 機器學習 · PyTorch',
     title: '生成式影像',
     icon: '🎨',
     description: '讓 AI 畫圖——手刻迷你擴散模型徹底搞懂加噪/去噪原理，再用 diffusers 跑 Stable Diffusion 文字生圖',
@@ -162,6 +178,31 @@ export const tracks: LabTrack[] = [
         color: 'primary',
       },
     ],
+  },
+];
+
+// 學習地圖：把 8 條軌道分成「基礎 → 核心 → 應用」三站，給 /lab 首頁當建議路徑。
+export const learningStages: LearningStage[] = [
+  {
+    id: 'foundations',
+    step: '第一站',
+    title: '打好基礎',
+    subtitle: '不用先懂 AI——從畫圖、看懂資料開始,零基礎可上手',
+    trackIds: ['python', 'ds'],
+  },
+  {
+    id: 'ml-core',
+    step: '第二站',
+    title: '機器學習核心',
+    subtitle: '從第一個分類器,到會在環境裡試錯學習的 agent',
+    trackIds: ['ml', 'rl'],
+  },
+  {
+    id: 'deep-applications',
+    step: '第三站',
+    title: '深度學習與生成式 AI',
+    subtitle: '影像、語言、agent、生圖——當代 AI 的四大應用',
+    trackIds: ['cv', 'llm', 'agent', 'diffusion'],
   },
 ];
 
