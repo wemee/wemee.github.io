@@ -25,6 +25,7 @@ OUT_DIR_LLM = ROOT / "public" / "lab" / "llm" / "from-scratch"
 OUT_DIR_AGENT = ROOT / "public" / "lab" / "agent" / "from-scratch"
 OUT_DIR_RL = ROOT / "public" / "lab" / "rl" / "from-scratch"
 OUT_DIR_CV = ROOT / "public" / "lab" / "cv" / "deep-vision"
+OUT_DIR_DS = ROOT / "public" / "lab" / "ds" / "data-analysis"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_DIR_ML.mkdir(parents=True, exist_ok=True)
 OUT_DIR_BOOST.mkdir(parents=True, exist_ok=True)
@@ -33,6 +34,7 @@ OUT_DIR_LLM.mkdir(parents=True, exist_ok=True)
 OUT_DIR_AGENT.mkdir(parents=True, exist_ok=True)
 OUT_DIR_RL.mkdir(parents=True, exist_ok=True)
 OUT_DIR_CV.mkdir(parents=True, exist_ok=True)
+OUT_DIR_DS.mkdir(parents=True, exist_ok=True)
 
 # 重用 notebook 執行時下載的資料集（絕對路徑，不受 cwd 影響）
 PT_DATA = str(ROOT / "notebooks" / "ml" / "pytorch" / "data")
@@ -1621,6 +1623,185 @@ def cv_08_project() -> None:
     ax.text(5, 0.6, "會用預訓練模型、懂遷移學習、能解釋與部署", ha="center",
             fontsize=14, fontweight="bold", color=_AC["red"])
     save(fig, "08-project", OUT_DIR_CV)
+
+
+# ── ds 軌道：資料科學概念圖（繁中；用真實 Titanic 數字增加說服力）──
+
+def ds_01_workflow() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "資料科學的流程：從問題到結論", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    steps = [
+        ("問問題", _AC["red"]), ("取得資料", _AC["blue"]), ("清理", _AC["cyan"]),
+        ("探索 EDA", _AC["green"]), ("視覺化", _AC["yellow"]), ("建模", _AC["violet"]),
+        ("溝通結論", _AC["red"]),
+    ]
+    xs = [0.95 + i * 1.35 for i in range(7)]
+    for x, (t, c) in zip(xs, steps):
+        _abox(ax, x, 3.2, 1.22, 1.5, t, c, fs=11)
+    for x0, x1 in zip(xs, xs[1:]):
+        _aarrow(ax, (x0 + 0.62, 3.2), (x1 - 0.62, 3.2), lw=1.8)
+    ax.text(5, 1.2, "清理 + 探索常佔 80% 時間——不是只有「跑模型」", ha="center",
+            fontsize=13.5, fontweight="bold", color=_AC["cyan"])
+    ax.text(5, 0.55, "用真實 Titanic 資料,回答:誰比較容易生還?", ha="center",
+            fontsize=13, color=_AC["gray"])
+    save(fig, "01-workflow", OUT_DIR_DS)
+
+
+def ds_02_data_cleaning() -> None:
+    _set_cjk()
+    from matplotlib.patches import Rectangle
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "資料清理：缺失值對症下藥", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    rows = [
+        ("deck", 0.77, "缺 77% → 刪欄", _AC["red"]),
+        ("age", 0.20, "缺 20% → 補中位數", _AC["yellow"]),
+        ("embarked", 0.02, "缺 2% → 補眾數", _AC["green"]),
+    ]
+    for i, (col, frac, action, c) in enumerate(rows):
+        y = 3.9 - i * 0.95
+        ax.text(1.6, y, col, ha="right", va="center", fontsize=13,
+                color="#93a1a1", fontweight="bold")
+        ax.add_patch(Rectangle((1.9, y - 0.22), 3.4, 0.44, fc="#073642",
+                               ec="#586e75", lw=1, zorder=1))
+        ax.add_patch(Rectangle((1.9, y - 0.22), 3.4 * frac, 0.44, fc=c, ec="none", zorder=2))
+        _aarrow(ax, (5.5, y), (6.4, y), c)
+        ax.text(6.55, y, action, ha="left", va="center", fontsize=12.5,
+                color=c, fontweight="bold")
+    ax.text(5, 0.7, "缺太多刪欄、重要的補中位數、少量補眾數——別無腦刪", ha="center",
+            fontsize=13, fontweight="bold", color=_AC["cyan"])
+    save(fig, "02-data-cleaning", OUT_DIR_DS)
+
+
+def _bars(ax, x0, vals, labels, color, w=0.5, scale=2.6, base=1.6):
+    from matplotlib.patches import Rectangle
+    for i, (v, lb) in enumerate(zip(vals, labels)):
+        x = x0 + i * (w + 0.32)
+        ax.add_patch(Rectangle((x, base), w, v * scale, fc=color, ec="none", zorder=2))
+        ax.text(x + w / 2, base + v * scale + 0.12, f"{v:.0%}", ha="center",
+                fontsize=10.5, color=color, fontweight="bold")
+        ax.text(x + w / 2, base - 0.22, lb, ha="center", va="top", fontsize=11, color="#93a1a1")
+
+
+def ds_03_eda() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "EDA：groupby 讓資料說話", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    ax.text(2.4, 4.7, "生還率 by 性別", ha="center", fontsize=13,
+            color=_AC["violet"], fontweight="bold")
+    _bars(ax, 1.3, [0.74, 0.19], ["female", "male"], _AC["violet"])
+    ax.text(7.0, 4.7, "生還率 by 艙等", ha="center", fontsize=13,
+            color=_AC["green"], fontweight="bold")
+    _bars(ax, 5.6, [0.63, 0.47, 0.24], ["1st", "2nd", "3rd"], _AC["green"])
+    ax.text(5, 0.6, "「婦孺與富人優先」——在數據裡一覽無遺", ha="center",
+            fontsize=13.5, fontweight="bold", color=_AC["red"])
+    save(fig, "03-eda", OUT_DIR_DS)
+
+
+def ds_04_visualization() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "視覺化說故事：數字不會說話,圖會", ha="center",
+            fontsize=18.5, fontweight="bold", color=_AC["gray"])
+    # 年齡分布雙峰示意(生還 vs 罹難)
+    import numpy as _np
+    xs = _np.linspace(1.2, 8.8, 200)
+    g1 = _np.exp(-((xs - 3.6) ** 2) / 1.6) * 2.3
+    g2 = _np.exp(-((xs - 5.8) ** 2) / 2.2) * 1.9
+    ax.fill_between(xs, 1.5, 1.5 + g1, color=_AC["green"], alpha=0.55, zorder=2)
+    ax.fill_between(xs, 1.5, 1.5 + g2, color=_AC["red"], alpha=0.5, zorder=2)
+    ax.plot([1.2, 8.8], [1.5, 1.5], color="#586e75", lw=1.5)
+    ax.text(3.6, 4.2, "生還", color=_AC["green"], fontsize=13, fontweight="bold", ha="center")
+    ax.text(6.2, 3.7, "罹難", color=_AC["red"], fontsize=13, fontweight="bold", ha="center")
+    ax.text(5, 0.95, "age 分布 by 結局", ha="center", fontsize=12, color="#93a1a1")
+    ax.text(5, 0.5, "seaborn 一行畫出帶統計意義的圖,讓洞見一眼就懂", ha="center",
+            fontsize=13, fontweight="bold", color=_AC["cyan"])
+    save(fig, "04-visualization", OUT_DIR_DS)
+
+
+def ds_05_feature_engineering() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "特徵工程：把欄位變成模型的養分", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    _abox(ax, 1.9, 3.3, 2.2, 1.2, "原始欄位\nsex, sibsp…", _AC["gray"], fs=12)
+    items = [
+        (4.4, "類別編碼\nfemale → 1", _AC["blue"]),
+        (3.3, "衍生特徵\nfamily_size", _AC["green"]),
+        (2.2, "數值縮放\nStandardScaler", _AC["yellow"]),
+    ]
+    for y, t, c in items:
+        _aarrow(ax, (3.05, 3.3), (6.0, y), _AC["gray"])
+        _abox(ax, 7.5, y, 3.2, 0.78, t, c, fs=11.5)
+    ax.text(5, 0.6, "好特徵勝過好模型——領域理解就濃縮在這裡", ha="center",
+            fontsize=13.5, fontweight="bold", color=_AC["red"])
+    save(fig, "05-feature-engineering", OUT_DIR_DS)
+
+
+def ds_06_statistical_testing() -> None:
+    _set_cjk()
+    import numpy as _np
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "統計檢定：差異是真的,還是運氣?", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    xs = _np.linspace(0.5, 9.5, 240)
+    g1 = _np.exp(-((xs - 3.6) ** 2) / 1.1) * 2.4
+    g2 = _np.exp(-((xs - 6.2) ** 2) / 1.1) * 2.4
+    ax.fill_between(xs, 1.7, 1.7 + g1, color=_AC["red"], alpha=0.5, zorder=2)
+    ax.fill_between(xs, 1.7, 1.7 + g2, color=_AC["green"], alpha=0.55, zorder=2)
+    ax.plot([0.5, 9.5], [1.7, 1.7], color="#586e75", lw=1.5)
+    ax.text(3.6, 4.35, "罹難者票價", color=_AC["red"], fontsize=12, fontweight="bold", ha="center")
+    ax.text(6.2, 4.35, "生還者票價", color=_AC["green"], fontsize=12, fontweight="bold", ha="center")
+    ax.text(5, 1.05, "p < 0.001", ha="center", fontsize=15, fontweight="bold", color=_AC["violet"])
+    ax.text(5, 0.5, "p 值小 → 差異不太可能只是運氣(但「顯著」≠「重要」)", ha="center",
+            fontsize=12.5, fontweight="bold", color=_AC["cyan"])
+    save(fig, "06-statistical-testing", OUT_DIR_DS)
+
+
+def ds_07_analysis_to_model() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "從分析到模型：第一個預測器", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    _abox(ax, 2.0, 3.3, 2.4, 1.4, "特徵\npclass, sex,\nage, fare…", _AC["blue"], fs=12)
+    _aarrow(ax, (3.25, 3.3), (4.3, 3.3))
+    _abox(ax, 5.5, 3.3, 2.0, 1.2, "邏輯迴歸\nfit / predict", _AC["violet"], fs=12.5)
+    _aarrow(ax, (6.55, 3.3), (7.6, 3.3))
+    _abox(ax, 8.7, 3.85, 1.9, 0.7, "生還 √", _AC["green"], fs=13)
+    _abox(ax, 8.7, 2.75, 1.9, 0.7, "罹難 ×", _AC["red"], fs=13)
+    ax.text(5, 1.25, "模型係數呼應 EDA:女性正向、艙等負向", ha="center",
+            fontsize=13, color=_AC["cyan"], fontweight="bold")
+    ax.text(5, 0.6, "分析直覺 ＋ 模型結果互相印證 → 才有信心", ha="center",
+            fontsize=13, fontweight="bold", color=_AC["red"])
+    save(fig, "07-analysis-to-model", OUT_DIR_DS)
+
+
+def ds_08_project() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "端到端：一份完整的分析報告", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    steps = [("清理", _AC["cyan"]), ("EDA", _AC["green"]), ("特徵", _AC["yellow"]),
+             ("隨機森林", _AC["violet"])]
+    xs = [1.6, 3.5, 5.4, 7.6]
+    for x, (t, c) in zip(xs, steps):
+        _abox(ax, x, 4.0, 1.7, 0.95, t, c, fs=12)
+    for x0, x1 in zip(xs, xs[1:]):
+        _aarrow(ax, (x0 + 0.9, 4.0), (x1 - 0.9, 4.0))
+    ax.text(9.2, 4.0, "≈80%\n準確率", ha="center", va="center", fontsize=11.5,
+            color=_AC["green"], fontweight="bold")
+    from matplotlib.patches import FancyBboxPatch
+    ax.add_patch(FancyBboxPatch((1.2, 1.3), 7.6, 1.4,
+                                boxstyle="round,pad=0.02,rounding_size=0.06",
+                                fc="#073642", ec=_AC["red"], lw=2, zorder=1))
+    ax.text(5, 2.0, "結論:生還由「性別、艙等、票價」決定", ha="center", va="center",
+            fontsize=14, color="#eee8d5", fontweight="bold", zorder=2)
+    ax.text(5, 0.6, "好分析的終點,是一句決策者聽得懂的話 ＋ 證據", ha="center",
+            fontsize=13, fontweight="bold", color=_AC["cyan"])
+    save(fig, "08-project", OUT_DIR_DS)
 
 
 if __name__ == "__main__":

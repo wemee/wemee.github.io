@@ -38,6 +38,22 @@ export const tracks: LabTrack[] = [
     ],
   },
   {
+    id: 'ds',
+    title: '資料科學',
+    icon: '📈',
+    description: '從真實資料集出發——清理、探索、視覺化說故事、特徵工程、統計檢定，到接上模型做出結論',
+    color: 'warning',
+    modules: [
+      {
+        id: 'data-analysis',
+        title: '資料分析實戰',
+        icon: '🔍',
+        description: '用 pandas 清理真實資料、EDA 找洞見、seaborn 說故事、特徵工程與統計檢定，最後接 sklearn 做完整分析',
+        color: 'warning',
+      },
+    ],
+  },
+  {
     id: 'ml',
     title: '機器學習',
     icon: '🤖',
@@ -128,6 +144,22 @@ export const tracks: LabTrack[] = [
         icon: '🔁',
         description: '從 tool calling、ReAct 迴圈、記憶，到 RAG 與多代理協作——零框架，全部親手刻',
         color: 'danger',
+      },
+    ],
+  },
+  {
+    id: 'diffusion',
+    title: '生成式影像',
+    icon: '🎨',
+    description: '讓 AI 畫圖——手刻迷你擴散模型徹底搞懂加噪/去噪原理，再用 diffusers 跑 Stable Diffusion 文字生圖',
+    color: 'primary',
+    modules: [
+      {
+        id: 'from-scratch',
+        title: '擴散模型生成影像',
+        icon: '🌫️',
+        description: '手刻 forward/reverse diffusion 在 MNIST 上生成數字，再用 diffusers 玩 Stable Diffusion 文生圖、img2img 與 LoRA',
+        color: 'primary',
       },
     ],
   },
