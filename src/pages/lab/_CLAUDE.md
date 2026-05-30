@@ -136,15 +136,15 @@ notebooks/.venv/bin/python -m jupyter nbconvert --to notebook --execute --inplac
   notebook **無輸出提交**，留 Colab 跑（裝 gymnasium/SB3 + 訓練）。**已上線**（feat 7598b2f）；owner Colab 驗證 02/03/08 皆成功。
 - **`cv/deep-vision`**（獨立 `cv` 軌道，2026-05-30 建置）：影像即張量 → CNN on CIFAR → 遷移學習 → 資料增強 →
   YOLO 物件偵測 → 影像分割 → Grad-CAM → 端到端分類器+部署。**業界現成套件取向**（ultralytics/timm/grad-cam）。
-  素材 `_cv_shared.py`、產生器 `gen_cv_1to4.py`/`gen_cv_5to8.py`。訓練吃 GPU → **無輸出提交**留 Colab。**待 Colab 驗證。**
+  素材 `_cv_shared.py`、產生器 `gen_cv_1to4.py`/`gen_cv_5to8.py`。訓練吃 GPU → **無輸出提交**留 Colab。**已 Colab 驗證 OK。**
 - **`ds/data-analysis`**（獨立 `ds` 軌道，2026-05-30 建置）：流程 → 清理 → EDA → 視覺化 → 特徵工程 → 統計檢定 →
   分析→模型 → 端到端報告。用 seaborn Titanic 資料,最輕量的軌道(Colab 全內建)。素材 `_ds_shared.py`、
-  產生器 `gen_ds_1to4.py`/`gen_ds_5to8.py`。**無輸出提交。待驗證。**
+  產生器 `gen_ds_1to4.py`/`gen_ds_5to8.py`。**無輸出提交。已驗證 OK。**
 - **`diffusion/from-scratch`**（獨立 `diffusion` 軌道，2026-05-30 建置）：世界觀 → 手刻 forward diffusion →
   手刻去噪 U-Net → DDPM/DDIM → 文字條件 CLIP → diffusers SD → img2img/inpainting/LoRA → 生成工具+上線。
   **手刻迷你 DDPM(MNIST)+ diffusers sd-turbo**。素材 `_diffusion_shared.py`(UNET/DDPM/TRAIN/DATA SRC)、
   產生器 `gen_diffusion_1to4.py`/`gen_diffusion_5to8.py`。手刻部分已本機 CPU smoke-test 過。訓練/SD 吃 GPU →
-  **無輸出提交**留 Colab。**待驗證。**
+  **無輸出提交**留 Colab。**已驗證 OK。**
 
 curriculum 與每課重點見各 `.md` frontmatter 與 module 頁。**`agent` 軌道已上線**（commit 2018d00 推 main、線上部署）；owner 在 Colab T4 驗證 01/03/06 三課皆成功跑出輸出（涵蓋最易出包點：Qwen 載入、ReAct 格式、RAG+sentence-transformers），其餘五課同模式視為全軌道可跑。
 
@@ -197,8 +197,8 @@ KV cache → SFT（單位數加法指令）→ DPO。
 建置順序與理由如下，每條 8 課、比照既有模式（GitHub-backed Colab + `gen_*.py` + 預覽圖，零新基礎建設）。
 
 **順序：RL → CV → 資料科學 → Diffusion**（owner 2026-05-30 確認）。
-**進度(2026-05-30):RL ✅ 上線驗證、CV ✅ 上線(待驗證)、資料科學 ✅ 上線(待驗證)、Diffusion ✅ 上線(待驗證)。
-四條全部建置完成、push main、build 過。owner 一次測全部(goal: 直接全部完成一起測)。**
+**進度(2026-05-30):RL / CV / 資料科學 / Diffusion 四條全部 ✅ 上線且 owner Colab 驗證 OK。
+整個 /lab = 8 軌道 × 8 課 = 64 課,AI/ML 弧線完整收尾。第二階段結案。**
 - RL 先：補齊 ML 第三支柱，且站上 `ml-training/`（stable-baselines3/gymnasium/GameCore/PyMiniRacer）現成，
   末課能訓練 agent 玩自家遊戲，綜效最大、趁 agent 脈絡尚熱。
 - CV 次：接 `pytorch` 軌道往視覺深挖，預覽圖最好做。
