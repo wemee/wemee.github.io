@@ -24,7 +24,7 @@ Live at https://wemee.github.io/math/linalg/
 ```
 src/
 ├── components/
-│   └── LinalgPageNav.astro       # prev/next + supplements; used by every page
+│   └── MathPageNav.astro       # prev/next + supplements; used by every page
 ├── styles/
 │   └── linalg.css                # Shared input/cell/button styles. Imported
 │                                 # by every page in this subsection. Defines
@@ -32,7 +32,7 @@ src/
 │                                 # .sigma-row, .phase-btn, .rank-btn etc.
 │                                 # Always edit here, not in page <style> blocks.
 ├── lib/math/linalg/
-│   ├── linalgPages.ts            # LINALG_PAGES (curriculum order) + SUPPLEMENTS (extensibility hook)
+│   ├── mathSections.ts            # MATH_SECTIONS.linalg.pages (curriculum order) + SUPPLEMENTS (extensibility hook)
 │   ├── MatrixMath.ts             # Pure math: 4×4 ops, det, inverse3, Jacobi eigen
 │   ├── MatrixScene3D.ts          # Deformable cube + arrows (transform, composition)
 │   ├── ProjectionScene.ts        # Plane/line + projection + residual
@@ -56,7 +56,7 @@ src/
 ## How to extend
 
 ### Add a supplementary reading to a page
-Edit `src/lib/math/linalg/linalgPages.ts`:
+Edit `src/lib/math/linalg/mathSections.ts`:
 ```typescript
 export const SUPPLEMENTS: Record<string, Supplement[]> = {
   projection: [
@@ -66,7 +66,7 @@ export const SUPPLEMENTS: Record<string, Supplement[]> = {
 };
 ```
 Entries show up automatically in a "📚 補充閱讀" box on the page (rendered
-by `LinalgPageNav`).
+by `MathPageNav`).
 
 ### Edit teaching content on a page
 Open the page's `.astro` file. Teaching content is in `<section class="mt-12 max-w-3xl mx-auto">`
@@ -88,11 +88,11 @@ re-render automatically.
 ### Add a brand-new page
 1. Create `src/pages/math/linalg/<slug>.astro` (copy structure from
    `eigen.astro` as the most complete reference)
-2. Add the entry to `LINALG_PAGES` in `linalgPages.ts` (controls prev/next order)
+2. Add the entry to `MATH_SECTIONS.linalg.pages` in `mathSections.ts` (controls prev/next order)
 3. Add `SUPPLEMENTS[slug] = []` to the map in same file
 4. Add a card to `src/pages/math/linalg/index.astro`
 5. Add a dropdown entry to `src/components/Navbar.astro`
-6. Include `<LinalgPageNav slug="..." />` at the bottom of the new page
+6. Include `<MathPageNav section="linalg" slug="..." />` at the bottom of the new page
 
 ### Add a new scene class
 If the new visualization is unlike existing ones, create
@@ -151,7 +151,7 @@ scenes. If a 6th scene appears, consider extracting an abstract base.
 4. Main grid: `lg:col-span-2` canvas on left, controls stack on right
 5. Legend chips below canvas
 6. Teaching content in `<section class="mt-12 max-w-3xl mx-auto">`
-7. `<LinalgPageNav slug="..." />`
+7. `<MathPageNav section="linalg" slug="..." />`
 
 ## What's intentionally NOT covered
 
@@ -185,10 +185,10 @@ Find the paragraph in the page's `.astro` file inside the
 `<section class="mt-12 max-w-3xl mx-auto">` block. Edit, commit, push.
 
 ### "Add a note linking to an external resource on page Z"
-Append to `SUPPLEMENTS['<z-slug>']` in `linalgPages.ts`.
+Append to `SUPPLEMENTS['<z-slug>']` in `mathSections.ts`.
 
 ### "Change the curriculum order"
-Reorder `LINALG_PAGES` in `linalgPages.ts`. `LinalgPageNav` recomputes
+Reorder `MATH_SECTIONS.linalg.pages` in `mathSections.ts`. `MathPageNav` recomputes
 prev/next automatically. Card order on `/math/linalg/` index is
 independent — edit `tools` array in `index.astro` separately if you
 want both in sync.
@@ -214,5 +214,5 @@ trace and det are computed from the eigenvalues array returned by
 - `920d6e9` — KaTeX, render-on-demand, composition page
 - `d926937` — projection page
 - `481764f` — change-of-basis page
-- `d17212d` — eigen + SVD pages + LinalgPageNav infrastructure
+- `d17212d` — eigen + SVD pages + MathPageNav infrastructure
 - `8db08cc` — retrofit nav on Chapter 1–2 pages + KaTeX overflow guard

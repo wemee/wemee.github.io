@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import CalcPageNav from '@/components/CalcPageNav.astro';
+import MathPageNav from '@/components/MathPageNav.astro';
 import { FUNCTION_PRESETS_3D } from '@/lib/math/calculus/presets3d';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -173,7 +173,7 @@ const tex = (s: string, display = false) =>
       </div>
     </section>
 
-    <CalcPageNav slug="gradient" />
+    <MathPageNav section="calculus" slug="gradient" />
   </div>
 
   <script>

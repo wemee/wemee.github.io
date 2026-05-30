@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import LinalgPageNav from '@/components/LinalgPageNav.astro';
+import MathPageNav from '@/components/MathPageNav.astro';
 import { BASIS_PRESETS } from '@/lib/math/linalg/basisPresets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -182,7 +182,7 @@ const tex = (s: string, display = false) =>
       </div>
     </section>
 
-    <LinalgPageNav slug="change-of-basis" />
+    <MathPageNav section="linalg" slug="change-of-basis" />
   </div>
 
 

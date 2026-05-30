@@ -1,15 +1,15 @@
 ---
-import { LINALG_PAGES, SUPPLEMENTS } from '@/lib/math/linalg/linalgPages';
+import { getSectionNav } from '@/lib/math/mathSections';
 
 interface Props {
+  /** section id: 'linalg' | 'calculus' | 'probstat' */
+  section: string;
+  /** current page slug */
   slug: string;
 }
 
-const { slug } = Astro.props;
-const idx = LINALG_PAGES.findIndex((p) => p.slug === slug);
-const prev = idx > 0 ? LINALG_PAGES[idx - 1] : null;
-const next = idx >= 0 && idx < LINALG_PAGES.length - 1 ? LINALG_PAGES[idx + 1] : null;
-const supplements = SUPPLEMENTS[slug] ?? [];
+const { section, slug } = Astro.props;
+const { prev, next, supplements, indexHref, indexLabel } = getSectionNav(section, slug);
 ---
 <section class="mt-12 max-w-3xl mx-auto">
   {supplements.length > 0 && (
@@ -38,9 +38,9 @@ const supplements = SUPPLEMENTS[slug] ?? [];
           <div class="text-base-50 font-bold">{prev.emoji} {prev.title}</div>
         </a>
       ) : (
-        <a href="/math/linalg/" class="block rounded-lg border border-base-600 hover:border-accent-blue bg-base-800 p-4 transition h-full">
+        <a href={indexHref} class="block rounded-lg border border-base-600 hover:border-accent-blue bg-base-800 p-4 transition h-full">
           <div class="text-xs text-base-400 mb-1">←</div>
-          <div class="text-base-50 font-bold">📚 線性代數專區</div>
+          <div class="text-base-50 font-bold">{indexLabel}</div>
         </a>
       )}
     </div>
@@ -51,9 +51,9 @@ const supplements = SUPPLEMENTS[slug] ?? [];
           <div class="text-base-50 font-bold">{next.emoji} {next.title}</div>
         </a>
       ) : (
-        <a href="/math/linalg/" class="block rounded-lg border border-base-600 hover:border-accent-blue bg-base-800 p-4 transition h-full text-right">
+        <a href={indexHref} class="block rounded-lg border border-base-600 hover:border-accent-blue bg-base-800 p-4 transition h-full text-right">
           <div class="text-xs text-base-400 mb-1">回專區 →</div>
-          <div class="text-base-50 font-bold">📚 線性代數專區</div>
+          <div class="text-base-50 font-bold">{indexLabel}</div>
         </a>
       )}
     </div>

@@ -30,14 +30,14 @@ Live at https://wemee.github.io/math/probstat/
 ```
 src/
 ├── components/
-│   └── ProbStatPageNav.astro       # prev/next + supplements; used by every page
+│   └── MathPageNav.astro       # prev/next + supplements; used by every page
 ├── styles/
 │   └── probstat.css                # Shared input/control styles. `.ps-` prefixed
 │                                   # to avoid colliding with .calc-* / .m-* in
 │                                   # the other two subsections. Imported by every
 │                                   # page including index.
 ├── lib/math/probstat/
-│   ├── probstatPages.ts            # PROBSTAT_PAGES (curriculum order) +
+│   ├── mathSections.ts            # MATH_SECTIONS.probstat.pages (curriculum order) +
 │   │                               # SUPPLEMENTS map (extensibility hook).
 │   ├── Canvas2DBase.ts             # DPR scaling, ResizeObserver, rAF-deduped
 │   │                               # render, destroy. Duplicated from calculus/
@@ -71,7 +71,7 @@ src/
 ## How to extend
 
 ### Add a supplementary reading to a page
-Edit `src/lib/math/probstat/probstatPages.ts`:
+Edit `src/lib/math/probstat/mathSections.ts`:
 ```typescript
 export const SUPPLEMENTS: Record<string, Supplement[]> = {
   bayes: [
@@ -80,7 +80,7 @@ export const SUPPLEMENTS: Record<string, Supplement[]> = {
   ],
 };
 ```
-Entries auto-render in the "📚 補充閱讀" box rendered by `ProbStatPageNav`.
+Entries auto-render in the "📚 補充閱讀" box rendered by `MathPageNav`.
 
 ### Edit teaching content on a page
 Inside the page's `.astro`, in the `<section class="mt-12 max-w-3xl mx-auto prose-content">`
@@ -103,12 +103,12 @@ block. KaTeX via `tex(s, displayMode)` helper, inject with `set:html`.
 1. Create `src/pages/math/probstat/<slug>.astro` (copy `distributions.astro` as the
    template most-isolated-from-shared-data; copy `mle.astro` if you need a shared
    model across multiple canvases).
-2. Add the entry to `PROBSTAT_PAGES` in `probstatPages.ts`.
+2. Add the entry to `MATH_SECTIONS.probstat.pages` in `mathSections.ts`.
 3. Add `SUPPLEMENTS[slug] = []` to the map.
 4. Add a card to `src/pages/math/probstat/index.astro`.
 5. Add a dropdown entry to `src/components/Navbar.astro` under the
    `🎲 機率統計專區` block.
-6. Include `<ProbStatPageNav slug="..." />` at the bottom.
+6. Include `<MathPageNav section="probstat" slug="..." />` at the bottom.
 
 ## Conventions
 
@@ -179,7 +179,7 @@ Same conventions as calculus:
 3. Main grid: `lg:col-span-2` canvas on left, controls stack on right
 4. Legend chips below canvas
 5. Teaching content in `<section class="mt-12 max-w-3xl mx-auto prose-content">`
-6. `<ProbStatPageNav slug="..." />`
+6. `<MathPageNav section="probstat" slug="..." />`
 
 ## What's intentionally NOT covered
 
@@ -225,7 +225,7 @@ is tuned for bimodal; suggest the user pull σ to ~0.2 for banana. Could also
 add a per-target default σ if it becomes a recurring confusion.
 
 ### "Reorder curriculum"
-Reorder `PROBSTAT_PAGES` in `probstatPages.ts`. ProbStatPageNav recomputes
+Reorder `MATH_SECTIONS.probstat.pages` in `mathSections.ts`. MathPageNav recomputes
 prev/next automatically. Card order on the index is independent — edit the
 `tools` array in `index.astro` separately if you want both in sync.
 

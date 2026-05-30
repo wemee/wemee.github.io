@@ -26,7 +26,7 @@ Live at https://wemee.github.io/math/calculus/
 ```
 src/
 ├── components/
-│   └── CalcPageNav.astro         # prev/next + supplements; used by every page
+│   └── MathPageNav.astro         # prev/next + supplements; used by every page
 ├── styles/
 │   └── calculus.css              # Shared input/control styles. Imported
 │                                 # by every page. Defines .calc-input,
@@ -36,9 +36,9 @@ src/
 │                                 # with linalg.css's .m-input etc.
 │                                 # Always edit here, not in page <style>.
 ├── lib/math/calculus/
-│   ├── calculusPages.ts          # CALCULUS_PAGES (curriculum order) +
+│   ├── mathSections.ts          # MATH_SECTIONS.calculus.pages (curriculum order) +
 │   │                             # SUPPLEMENTS (extensibility hook).
-│   │                             # Append to CALCULUS_PAGES when adding
+│   │                             # Append to MATH_SECTIONS.calculus.pages when adding
 │   │                             # Chapter 4 (NN applications).
 │   ├── Canvas2DBase.ts           # Abstract base: DPR scaling, ResizeObserver,
 │   │                             # rAF-deduped render, destroy cleanup.
@@ -73,7 +73,7 @@ src/
 ## How to extend
 
 ### Add a supplementary reading to a page
-Edit `src/lib/math/calculus/calculusPages.ts`:
+Edit `src/lib/math/calculus/mathSections.ts`:
 ```typescript
 export const SUPPLEMENTS: Record<string, Supplement[]> = {
   riemann: [
@@ -83,7 +83,7 @@ export const SUPPLEMENTS: Record<string, Supplement[]> = {
 };
 ```
 Entries show up automatically in a "📚 補充閱讀" box on the page (rendered
-by `CalcPageNav`).
+by `MathPageNav`).
 
 ### Edit teaching content on a page
 Open the page's `.astro` file. Teaching content is in `<section class="mt-12 max-w-3xl mx-auto prose-content">`
@@ -108,13 +108,13 @@ Each preset entry shape:
 ### Add a brand-new page (e.g. Chapter 4: 神經網路應用)
 1. Create `src/pages/math/calculus/<slug>.astro` (copy structure from
    `slope-tangent.astro` for 2D or `gradient.astro` for 3D)
-2. Add the entry to `CALCULUS_PAGES` in `calculusPages.ts` (controls
+2. Add the entry to `MATH_SECTIONS.calculus.pages` in `mathSections.ts` (controls
    prev/next order)
 3. Add `SUPPLEMENTS[slug] = []` to the map in same file
 4. Add a card to `src/pages/math/calculus/index.astro` (`tools` array)
 5. Add a dropdown entry to `src/components/Navbar.astro` under the
    `📐 微積分專區` block
-6. Include `<CalcPageNav slug="..." />` at the bottom of the new page
+6. Include `<MathPageNav section="calculus" slug="..." />` at the bottom of the new page
 
 ### Add a new Scene class
 If the new visualisation is unlike existing ones, create
@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
 3. Main grid: `lg:col-span-2` canvas/container on left, controls stack on right
 4. Legend chips below canvas
 5. Teaching content in `<section class="mt-12 max-w-3xl mx-auto prose-content">`
-6. `<CalcPageNav slug="..." />`
+6. `<MathPageNav section="calculus" slug="..." />`
 
 ## What's intentionally NOT covered
 
@@ -248,8 +248,8 @@ Discussed with the owner — to be added later. Three planned pages:
 - `activation-zoo` — sigmoid / ReLU / tanh / softmax + their derivatives
   side-by-side. (Canvas 2D, simpler)
 
-When shipping Ch4: append entries to `CALCULUS_PAGES`, add cards on the
-index, add to Navbar. The infrastructure (CalcPageNav, presets, base
+When shipping Ch4: append entries to `MATH_SECTIONS.calculus.pages`, add cards on the
+index, add to Navbar. The infrastructure (MathPageNav, presets, base
 classes) already supports adding pages without changes.
 
 ## Pages linked TO from this subsection
@@ -279,7 +279,7 @@ directly; the script overrides them at runtime from the preset's range
 anyway, so the HTML defaults only show for the initial preset.
 
 ### "Reorder curriculum"
-Reorder `CALCULUS_PAGES` in `calculusPages.ts`. `CalcPageNav` recomputes
+Reorder `MATH_SECTIONS.calculus.pages` in `mathSections.ts`. `MathPageNav` recomputes
 prev/next automatically. Card order on `/math/calculus/` index is
 independent — edit `tools` array in `index.astro` separately if you
 want both in sync.
@@ -303,7 +303,7 @@ want both in sync.
 ## Git history quick reference
 
 - Branch landed: `feat(calculus)/<TBD on commit>` — Step 1: foundations
-  (calculusPages.ts, CalcPageNav, Canvas2DBase, calculus.css, presets);
+  (mathSections.ts, MathPageNav, Canvas2DBase, calculus.css, presets);
   Step 2: slope-tangent + index (incl. TDZ bug discovery and fix);
   Steps 3a–d: chain-rule, riemann, ftc, taylor; Step 4: gradient (3D);
   Step 5: navbar + math/index wiring + this handoff.
