@@ -133,7 +133,7 @@ notebooks/.venv/bin/python -m jupyter nbconvert --to notebook --execute --inplac
 - **`rl/from-scratch`**（獨立 `rl` 軌道，2026-05-30 建置）：RL 世界觀 → 手刻 Q-learning → 手刻 DQN →
   stable-baselines3 → 手刻策略梯度 REINFORCE → 獎勵塑形/wrappers → 自訂環境(CatchEnv) → 端到端訓練 PPO。
   **手刻為主 + 必要時用 SB3。** 共用素材 `notebooks/_rl_shared.py`、產生器 `gen_rl_1to4.py`/`gen_rl_5to8.py`。
-  notebook **無輸出提交**，留 Colab 跑（裝 gymnasium/SB3 + 訓練）。**本機 build 已過；待 push main + Colab 驗證。**
+  notebook **無輸出提交**，留 Colab 跑（裝 gymnasium/SB3 + 訓練）。**已上線**（feat 7598b2f）；owner Colab 驗證 02/03/08 皆成功。
 
 curriculum 與每課重點見各 `.md` frontmatter 與 module 頁。**`agent` 軌道已上線**（commit 2018d00 推 main、線上部署）；owner 在 Colab T4 驗證 01/03/06 三課皆成功跑出輸出（涵蓋最易出包點：Qwen 載入、ReAct 格式、RAG+sentence-transformers），其餘五課同模式視為全軌道可跑。
 
@@ -185,7 +185,8 @@ KV cache → SFT（單位數加法指令）→ DPO。
 第一階段弧線（經典 ML → 深度學習 → 從零 LLM → AI Agent）完成後，owner 決定**四條全做、依序完成**。
 建置順序與理由如下，每條 8 課、比照既有模式（GitHub-backed Colab + `gen_*.py` + 預覽圖，零新基礎建設）。
 
-**順序：RL → CV → 資料科學 → Diffusion**（owner 2026-05-30 確認）
+**順序：RL → CV → 資料科學 → Diffusion**（owner 2026-05-30 確認）。
+**進度:RL ✅ 已上線驗證(2026-05-30);下一個 → CV 電腦視覺。**
 - RL 先：補齊 ML 第三支柱，且站上 `ml-training/`（stable-baselines3/gymnasium/GameCore/PyMiniRacer）現成，
   末課能訓練 agent 玩自家遊戲，綜效最大、趁 agent 脈絡尚熱。
 - CV 次：接 `pytorch` 軌道往視覺深挖，預覽圖最好做。
@@ -206,8 +207,13 @@ KV cache → SFT（單位數加法指令）→ DPO。
 - **提交策略**：notebook 比照 agent 走**無輸出提交**（`build_notebook` 只寫 JSON 不執行，天生無輸出，
   免 clear-output）。CartPole/FrozenLake 純 CPU 也能跑，但裝 gymnasium/SB3 + 訓練在 Colab 最省事，故統一
   留 Colab 驗證。本機僅產預覽圖（matplotlib 已有，免裝 gymnasium）。
-- **上線狀態**：本機 `npm run build` 已過（dist 生出 rl 兩個 index + 8 課 + 8 webp）。**待 push main +
-  Colab 驗證**（badge 寫死 main，未 push 前 404）。⚠️ 同樣別從 Colab 存回 GitHub。
+- **上線狀態**：**已上線**（feat 7598b2f push main、線上部署）；owner 在 Colab 驗證 **02/03/08** 三課皆成功
+  （涵蓋最易出包點：gymnasium 介面、torch 手刻 DQN 訓練迴圈、SB3 安裝 + PPO 訓練），其餘五課同模式視為全軌道可跑。
+  ⚠️ 同樣別從 Colab 存回 GitHub。
+- **L03 教學增補**（commit 23be175，owner 回報曲線崩潰後加）：03-dqn 的 notebook + 內容頁都加了一段
+  「曲線爬到頂又崩 = DQN 災難性遺忘,非 overfitting」sidebar（主因:replay buffer 被好回合洗掉失敗樣本、
+  Q 值過度估計、訓練過頭沒早停),當第 04 課 SB3 的鉤子。這是很受用的教學點,CV/後續軌道遇到類似「反直覺
+  但正確」的現象也值得這樣補。
 - **預覽圖雷**：`⇄`(U+21C4) 與 emoji `🎮`(U+1F3AE) 在 Heiti TC 缺字 → 改用純文字；沿用既有 √/× 替代 ✓/✗。
 
 ### 📷 CV 電腦視覺軌道
