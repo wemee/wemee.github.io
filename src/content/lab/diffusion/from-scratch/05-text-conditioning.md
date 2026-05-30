@@ -8,6 +8,7 @@ notebook: diffusion/from-scratch/05-text-conditioning.ipynb
 preview: /lab/diffusion/from-scratch/05-text-conditioning.webp
 difficulty: 進階
 tags: [diffusion, clip, text-conditioning, cross-attention]
+related: ["llm/from-scratch/03-self-attention"]
 ---
 
 到目前為止,我們的迷你擴散模型只會**隨機**生數字——沒辦法叫它「生一個 7」。真正的 Stable Diffusion 能聽懂「一隻在沙灘上的柯基」,靠的是**文字條件(text conditioning)**。

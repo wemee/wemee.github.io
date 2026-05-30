@@ -65,8 +65,15 @@ public/lab/ml/scikit-learn/         ← 同上
 title, description（TL;DR，同時餵 SEO 與卡片）,
 track, module, order（模組內排序）,
 notebook（相對 notebooks/ 的路徑）, preview（webp 路徑）,
-difficulty（入門|進階|專題）, tags[], updated?, draft?
+difficulty（入門|進階|專題）, tags[], updated?, draft?,
+related[]（跨軌道相關課程，值是其他課的 collection id，如 'cv/deep-vision/07-grad-cam'）
 ```
+
+**跨軌道交叉連結（`related`）**：課程 frontmatter 的 `related: ["<track>/<module>/<slug>", …]` 會在課程頁
+（`LabLessonLayout`）prev/next 上方長出「🔗 相關課程」區塊，自動解析成卡片（軌道 icon + 標題、連到該課）。
+連結**手動雙向維護**（兩課各自列對方）。改 related 對應請編 `src/content/lab/**/*.md` 的 frontmatter；
+務必確認 id 存在（不存在不會報錯，只是靜默略過）。已連的概念對：Grad-CAM↔SHAP、RL↔AI Agent、
+cross-attention↔self-attention、遷移學習/CNN/正則化(CV↔pytorch)、部署 08(CV↔RL↔Diffusion)、資料科學↔sklearn。
 
 軌道/模組的 metadata 不放 frontmatter，集中在 `labTracks.ts`。課程靠 `track`/`module` id 對應回去。
 

@@ -8,6 +8,7 @@ notebook: ml/scikit-learn/01-worldview.ipynb
 preview: /lab/ml/scikit-learn/01-worldview.webp
 difficulty: 入門
 tags: [scikit-learn, estimator, iris, train-test-split, KNN]
+related: ["ds/data-analysis/07-analysis-to-model"]
 ---
 
 學機器學習，很多人一頭栽進演算法細節，結果換個模型又從頭學一次。scikit-learn 最聰明的設計是：**所有模型都長一個樣子**。這堂課先不急著講演算法，而是把這套**統一的 API** 建立起來——之後每一課都是在這個骨架上長出來的。

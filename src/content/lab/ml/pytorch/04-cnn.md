@@ -8,6 +8,7 @@ notebook: ml/pytorch/04-cnn.ipynb
 preview: /lab/ml/pytorch/04-cnn.webp
 difficulty: 進階
 tags: [pytorch, cnn, convolution, mnist, image]
+related: ["cv/deep-vision/02-cnn-cifar"]
 ---
 
 這堂課處理真實影像——**MNIST 手寫數字**。先用全連接網路當基線,再升級到 **CNN(卷積神經網路)**,看看為什麼卷積特別適合影像。

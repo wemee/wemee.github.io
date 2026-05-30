@@ -8,6 +8,7 @@ notebook: ds/data-analysis/07-analysis-to-model.ipynb
 preview: /lab/ds/data-analysis/07-analysis-to-model.webp
 difficulty: 進階
 tags: [data-science, scikit-learn, logistic-regression, modeling]
+related: ["ml/scikit-learn/01-worldview"]
 ---
 
 前面六課我們**理解**了資料:誰容易生還、為什麼。最後一步,把理解變成**預測**——訓練一個模型,輸入乘客資料、輸出「會不會生還」。

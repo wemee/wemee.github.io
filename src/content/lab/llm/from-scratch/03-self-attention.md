@@ -8,6 +8,7 @@ notebook: llm/from-scratch/03-self-attention.ipynb
 preview: /lab/llm/from-scratch/03-self-attention.webp
 difficulty: 進階
 tags: [llm, self-attention, transformer, qkv, causal-mask]
+related: ["diffusion/from-scratch/05-text-conditioning"]
 ---
 
 bigram 笨在「只看前一個字」。**自注意力**讓每個位置能**回頭看前面所有字**,並自己決定「該注意誰」。這是 Transformer 的心臟,也是整個 LLM 革命的引擎。這堂課從零把單頭注意力刻出來。

@@ -8,6 +8,7 @@ notebook: ml/pytorch/05-regularization.ipynb
 preview: /lab/ml/pytorch/05-regularization.webp
 difficulty: 進階
 tags: [pytorch, overfitting, dropout, weight-decay, regularization]
+related: ["cv/deep-vision/04-data-augmentation"]
 ---
 
 神經網路參數多、能力強,所以特別容易**過擬合**——把訓練資料背得滾瓜爛熟,對沒看過的資料卻很差。這堂課先製造過擬合給你看,再用 **dropout** 和 **weight decay** 把它壓下去。

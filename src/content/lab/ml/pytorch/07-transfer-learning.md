@@ -8,6 +8,7 @@ notebook: ml/pytorch/07-transfer-learning.ipynb
 preview: /lab/ml/pytorch/07-transfer-learning.webp
 difficulty: 進階
 tags: [pytorch, transfer-learning, resnet, pretrained, fine-tuning]
+related: ["cv/deep-vision/03-transfer-learning"]
 ---
 
 從零訓練一個大模型要海量資料與算力。**遷移學習**讓你站在巨人肩膀上:拿一個在百萬張圖上預訓練好的模型,借用它學到的「視覺特徵」,只花少少資料就解決你自己的任務。

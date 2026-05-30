@@ -8,6 +8,7 @@ notebook: ds/data-analysis/01-workflow.ipynb
 preview: /lab/ds/data-analysis/01-workflow.webp
 difficulty: 入門
 tags: [data-science, pandas, titanic, eda]
+related: ["python/matplotlib/08-pandas-numpy"]
 ---
 
 歡迎來到 **資料科學 → 資料分析實戰**。

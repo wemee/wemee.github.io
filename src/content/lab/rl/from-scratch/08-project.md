@@ -8,6 +8,7 @@ notebook: rl/from-scratch/08-project.ipynb
 preview: /lab/rl/from-scratch/08-project.webp
 difficulty: 專題
 tags: [rl, ppo, stable-baselines3, project]
+related: ["cv/deep-vision/08-project", "diffusion/from-scratch/08-project"]
 ---
 
 整條軌道的收尾。我們把前面所有東西串起來:拿第 07 課親手刻的 **CatchEnv**,用 **stable-baselines3** 訓練一個真的會接水果的 agent,評估它、存檔,最後聊一件最有意思的事——**怎麼把訓練好的模型搬進瀏覽器**,讓它在網頁裡即時玩遊戲。這正是本站遊戲區 RL 的真實做法。

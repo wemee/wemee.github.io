@@ -8,6 +8,7 @@ notebook: python/matplotlib/01-basics.ipynb
 preview: /lab/python/matplotlib/01-basics.webp
 difficulty: 入門
 tags: [matplotlib, figure, axes, subplots]
+related: ["ds/data-analysis/04-visualization"]
 ---
 
 很多人學 matplotlib 是用「複製貼上、能跑就好」的方式，結果圖一變複雜就完全失控。這堂課反過來——先花十分鐘把**心智模型**建好，之後你不用背 API，也能推得出該怎麼畫。

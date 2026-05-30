@@ -8,6 +8,7 @@ notebook: ds/data-analysis/04-visualization.ipynb
 preview: /lab/ds/data-analysis/04-visualization.webp
 difficulty: 入門
 tags: [data-science, seaborn, visualization, storytelling]
+related: ["python/matplotlib/01-basics", "python/matplotlib/06-style-fonts"]
 ---
 
 上一課用數字找出了規律,但**數字不會說故事,圖會**。這課把 EDA 的發現畫成圖——一張好圖,能讓不懂資料的人也一眼看懂「誰比較容易生還」。

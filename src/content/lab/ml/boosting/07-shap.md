@@ -8,6 +8,7 @@ notebook: ml/boosting/07-shap.ipynb
 preview: /lab/ml/boosting/07-shap.webp
 difficulty: 進階
 tags: [shap, interpretability, xgboost, explainability]
+related: ["cv/deep-vision/07-grad-cam"]
 ---
 
 內建的 `feature_importances_` 只告訴你「整體哪些特徵重要」,但說不出**方向**,也無法解釋**單一一筆預測**為什麼是這個結果。**SHAP** 補上這塊——它是目前模型解釋的黃金標準。

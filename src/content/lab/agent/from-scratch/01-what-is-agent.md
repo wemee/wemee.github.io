@@ -8,6 +8,7 @@ notebook: agent/from-scratch/01-what-is-agent.ipynb
 preview: /lab/agent/from-scratch/01-what-is-agent.webp
 difficulty: 入門
 tags: [agent, llm, qwen, colab]
+related: ["rl/from-scratch/01-worldview"]
 ---
 
 歡迎來到 **AI Agent → 手刻 AI Agent**。

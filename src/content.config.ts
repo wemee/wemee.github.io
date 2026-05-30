@@ -28,6 +28,8 @@ const labCollection = defineCollection({
         tags: z.array(z.string()).default([]),
         updated: z.date().optional(),
         draft: z.boolean().default(false),
+        // 跨軌道相關課程（其他課的 collection id，例如 'cv/deep-vision/07-grad-cam'）
+        related: z.array(z.string()).default([]),
     }),
 });
 

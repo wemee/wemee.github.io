@@ -8,6 +8,7 @@ notebook: rl/from-scratch/03-dqn.ipynb
 preview: /lab/rl/from-scratch/03-dqn.webp
 difficulty: 進階
 tags: [rl, dqn, pytorch, cartpole]
+related: ["ml/pytorch/03-training-loop"]
 ---
 
 上一課的 Q 表有個過不去的坎:**狀態一多就爆**。CartPole 的觀察是 4 個**連續**數值,組合無限多,你永遠列不出一張表來。

@@ -8,6 +8,7 @@ notebook: cv/deep-vision/03-transfer-learning.ipynb
 preview: /lab/cv/deep-vision/03-transfer-learning.webp
 difficulty: 進階
 tags: [cv, transfer-learning, resnet, imagenet]
+related: ["ml/pytorch/07-transfer-learning"]
 ---
 
 上一課你體會了從零訓練 CNN 的成本。這課登場的是電腦視覺**最實用的一招**——遷移學習。

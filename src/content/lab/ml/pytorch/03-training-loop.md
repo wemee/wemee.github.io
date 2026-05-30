@@ -8,6 +8,7 @@ notebook: ml/pytorch/03-training-loop.ipynb
 preview: /lab/ml/pytorch/03-training-loop.webp
 difficulty: 入門
 tags: [pytorch, training, optimizer, loss, backprop]
+related: ["rl/from-scratch/03-dqn"]
 ---
 
 上一課的網路只會亂猜。這堂課寫出**訓練迴圈**——深度學習的心跳。記住這四拍,你就能訓練任何 PyTorch 模型。

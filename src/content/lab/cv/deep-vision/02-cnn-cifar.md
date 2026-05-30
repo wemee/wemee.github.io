@@ -8,6 +8,7 @@ notebook: cv/deep-vision/02-cnn-cifar.ipynb
 preview: /lab/cv/deep-vision/02-cnn-cifar.webp
 difficulty: 入門
 tags: [cv, cnn, cifar, batchnorm]
+related: ["ml/pytorch/04-cnn"]
 ---
 
 `ml/pytorch` 軌道你在灰階的 MNIST 上跑過 CNN。這課升級到**彩色、更難**的 CIFAR-10,並用上現代 CNN 的標準配備。目標不是衝 SOTA,而是讓你看到一個「像樣的」CNN 怎麼組、怎麼在真實彩色資料上學起來。

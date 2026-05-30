@@ -1,10 +1,11 @@
 ---
+import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import LabBreadcrumb from './LabBreadcrumb.astro';
 import ColabBadge from './ColabBadge.astro';
 import type { LabLesson } from '@/lib/lab';
 import { lessonHref } from '@/lib/lab';
-import type { LabTrack, LabModule } from '@/data/labTracks';
+import { getTrack, type LabTrack, type LabModule } from '@/data/labTracks';
 
 interface Props {
   lesson: LabLesson;
@@ -16,6 +17,16 @@ interface Props {
 const { lesson, track, module, prev, next } = Astro.props;
 const { title, description, notebook, preview, difficulty, order, tags } = lesson.data;
 const num = String(order).padStart(2, '0');
+
+// 跨軌道相關課程：把 related 裡的 collection id 解析成課程資料
+const relatedIds = lesson.data.related ?? [];
+let related: LabLesson[] = [];
+if (relatedIds.length > 0) {
+  const byId = new Map((await getCollection('lab')).map((l) => [l.id, l]));
+  related = relatedIds
+    .map((id) => byId.get(id))
+    .filter((l): l is LabLesson => !!l && !l.data.draft);
+}
 ---
 
 <BaseLayout title={`${title}｜${module.title}`} description={description} currentPage="lab">
@@ -85,6 +96,36 @@ const num = String(order).padStart(2, '0');
             </span>
           ))}
         </div>
+      )
+    }
+
+    <!-- 相關課程（跨軌道交叉連結） -->
+    {
+      related.length > 0 && (
+        <section class="mt-12 border-t border-base-800 pt-8">
+          <h2 class="mb-4 text-xs font-semibold uppercase tracking-wider text-base-400">
+            🔗 相關課程
+          </h2>
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {related.map((rl) => {
+              const rt = getTrack(rl.data.track);
+              return (
+                <a
+                  href={lessonHref(rl.id)}
+                  class="group flex items-start gap-3 rounded-lg border border-base-700 bg-base-800 p-4 transition hover:border-accent-blue"
+                >
+                  <span class="text-xl leading-none">{rt?.icon ?? '🔗'}</span>
+                  <span class="min-w-0">
+                    <span class="block text-xs text-base-500">{rt?.title ?? rl.data.track}</span>
+                    <span class="block text-sm font-medium text-base-200 group-hover:text-accent-blue">
+                      {rl.data.title}
+                    </span>
+                  </span>
+                </a>
+              );
+            })}
+          </div>
+        </section>
       )
     }
 

@@ -8,6 +8,7 @@ notebook: cv/deep-vision/04-data-augmentation.ipynb
 preview: /lab/cv/deep-vision/04-data-augmentation.webp
 difficulty: 進階
 tags: [cv, data-augmentation, overfitting, regularization]
+related: ["ml/pytorch/05-regularization"]
 ---
 
 模型在訓練集上很準、在測試集上卻爛掉——這就是**過擬合**:它把訓練圖「背」起來了,而不是學到通則。視覺領域對抗過擬合最有效的武器,就是**資料增強**。

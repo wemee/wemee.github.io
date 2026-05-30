@@ -8,6 +8,7 @@ notebook: ml/scikit-learn/04-preprocessing.ipynb
 preview: /lab/ml/scikit-learn/04-preprocessing.webp
 difficulty: 進階
 tags: [scikit-learn, preprocessing, pipeline, standardscaler, data-leakage]
+related: ["ds/data-analysis/05-feature-engineering"]
 ---
 
 模型的實力，常常卡在「資料沒整理好」。這堂課把三件讓專業流程與玩具程式碼分野的事情講清楚：**標準化**、**Pipeline**、以及新手最常掉進去的**資料洩漏**陷阱。

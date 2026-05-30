@@ -8,6 +8,7 @@ notebook: diffusion/from-scratch/08-project.ipynb
 preview: /lab/diffusion/from-scratch/08-project.webp
 difficulty: 專題
 tags: [diffusion, gradio, deployment, project]
+related: ["cv/deep-vision/08-project", "rl/from-scratch/08-project"]
 ---
 
 整條軌道的收尾,也是整個 AI/ML 教學弧線的最後一哩。把學到的東西包成一個**好用的小工具**:輸入一句 prompt,輸出一張圖,還能批次生成、挑最好的。最後聊怎麼把它**分享上線**。

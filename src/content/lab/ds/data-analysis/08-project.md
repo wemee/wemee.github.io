@@ -8,6 +8,7 @@ notebook: ds/data-analysis/08-project.ipynb
 preview: /lab/ds/data-analysis/08-project.webp
 difficulty: 專題
 tags: [data-science, random-forest, project, report]
+related: ["ml/scikit-learn/08-end-to-end", "ml/boosting/08-kaggle"]
 ---
 
 整條軌道的收尾。把**問題 → 資料 → 清理 → EDA → 特徵 → 模型 → 結論**走完整一輪,產出一份能交付的分析。這正是資料科學家的日常產出長相。

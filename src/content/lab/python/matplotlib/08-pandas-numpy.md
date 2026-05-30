@@ -8,6 +8,7 @@ notebook: python/matplotlib/08-pandas-numpy.ipynb
 preview: /lab/python/matplotlib/08-pandas-numpy.webp
 difficulty: 專題
 tags: [matplotlib, pandas, numpy, heatmap, contour]
+related: ["ds/data-analysis/01-workflow"]
 ---
 
 前面七課都用手刻的小資料。真實工作裡，資料幾乎都裝在 **pandas DataFrame** 或 **numpy 陣列**裡。這課把 matplotlib 接上它們——也是入門模組的收尾。

@@ -8,6 +8,7 @@ notebook: rl/from-scratch/01-worldview.ipynb
 preview: /lab/rl/from-scratch/01-worldview.webp
 difficulty: 入門
 tags: [rl, gymnasium, cartpole, reinforcement-learning]
+related: ["agent/from-scratch/01-what-is-agent"]
 ---
 
 歡迎來到 **強化學習 → 手刻強化學習**。

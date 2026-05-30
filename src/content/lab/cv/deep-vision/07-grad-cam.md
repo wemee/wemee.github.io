@@ -8,6 +8,7 @@ notebook: cv/deep-vision/07-grad-cam.ipynb
 preview: /lab/cv/deep-vision/07-grad-cam.webp
 difficulty: 進階
 tags: [cv, grad-cam, explainability, interpretability]
+related: ["ml/boosting/07-shap"]
 ---
 
 CNN 說「這是一隻狗」,信心 98%。但它是**看了狗的臉**才這樣判斷,還是**看了背景的草地**剛好猜對?分不清楚,你就不敢信任它——尤其在醫療、自駕這種出錯代價很高的場景。

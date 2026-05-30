@@ -8,6 +8,7 @@ notebook: cv/deep-vision/08-project.ipynb
 preview: /lab/cv/deep-vision/08-project.webp
 difficulty: 專題
 tags: [cv, transfer-learning, deployment, project]
+related: ["rl/from-scratch/08-project", "diffusion/from-scratch/08-project"]
 ---
 
 整條軌道的收尾。把前面學到的東西串成一個**完整流程**:遷移學習 + 資料增強訓練一個分類器,對單張圖做推論,存檔,最後聊怎麼**部署到瀏覽器**——呼應本站的做法。

@@ -8,6 +8,7 @@ notebook: ds/data-analysis/05-feature-engineering.ipynb
 preview: /lab/ds/data-analysis/05-feature-engineering.webp
 difficulty: 進階
 tags: [data-science, feature-engineering, encoding, scaling]
+related: ["ml/scikit-learn/04-preprocessing"]
 ---
 
 模型不會自己「看懂」原始資料。**特徵工程**就是把原始欄位加工成模型更好吃的形式——這往往**比換更厲害的模型還有效**。
