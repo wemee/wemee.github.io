@@ -1,0 +1,37 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import OracleDemo from '@/components/face/OracleDemo';
+---
+<BaseLayout
+  currentPage="oracle"
+  title="神諭 | 會表情的神祕石像臉"
+  description="一尊有生命感的低多邊形石雕神像。它循環喜怒哀樂、會呼吸、眼神跟著你的游標,戳一下還會有反應。純 SVG 參數化臉部骨架,平滑變形、無框架依賴。"
+>
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-20">
+    <header class="text-center mb-10">
+      <h1 class="text-3xl sm:text-4xl font-bold text-base-50 mb-3">🗿 神諭</h1>
+      <p class="text-base-400 max-w-xl mx-auto mb-0">
+        一尊沉睡千年的石像,如今有了喜怒哀樂。
+        它以同一套臉部骨架參數,在情緒之間平滑變形——
+        不是切換貼圖,而是真的「長」出表情。
+      </p>
+    </header>
+
+    <section aria-label="神諭石像" class="mb-8">
+      <OracleDemo client:load />
+    </section>
+
+    <section class="rounded-lg border border-base-600 bg-base-800 p-5 text-base-400 text-sm leading-relaxed">
+      <h2 class="text-base-50 font-semibold mb-2">它是怎麼動的?</h2>
+      <p class="mb-2">
+        五官(眼、眉、嘴、瞳孔)的形狀由一組數值參數決定;每種情緒就是這組參數的一份預設。
+        切換情緒時,程式在兩份參數之間做<strong class="text-base-100">補間(lerp + easing)</strong>,
+        約 400ms 平滑過渡,所以你看到的是連續變形而非硬切。
+      </p>
+      <p class="mb-0">
+        資料(情緒預設)、邏輯(補間與待機行為)、畫面(SVG 渲染)三層分開;
+        動畫只用 compositor-friendly 的 transform / opacity,並尊重系統的「減少動態效果」設定。
+      </p>
+    </section>
+  </div>
+</BaseLayout>

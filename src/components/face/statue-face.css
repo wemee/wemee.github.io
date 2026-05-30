@@ -1,0 +1,116 @@
+/* 神諭石像臉 — 元件樣式
+   配色全部走 global.css 的 @theme token(--color-*),不硬寫色碼。 */
+
+.oracle-stage {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  aspect-ratio: 400 / 480;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.oracle-face {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  overflow: visible;
+}
+
+/* 漂浮群組:transform 由控制器寫入,這裡只定錨點與 will-change */
+.oracle-float {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform;
+}
+
+/* 輝光 halo:opacity 由控制器脈動 */
+.oracle-glow {
+  will-change: opacity;
+}
+
+/* 石材表面 */
+.oracle-stone {
+  fill: url(#oracleStone);
+}
+
+/* 低多邊形facet:細線描邊 + 極淡填色,營造碎面石雕感 */
+.oracle-facet {
+  fill: var(--color-base-800);
+  fill-opacity: 0.18;
+  stroke: var(--color-accent-cyan);
+  stroke-opacity: 0.16;
+  stroke-width: 1;
+}
+.oracle-facet.alt {
+  fill: var(--color-base-700);
+  fill-opacity: 0.14;
+}
+
+/* 石材顆粒 grain */
+.oracle-grain {
+  mix-blend-mode: overlay;
+  opacity: 0.1;
+}
+
+/* 五官 */
+.oracle-brow {
+  fill: none;
+  stroke: var(--color-base-900);
+  stroke-width: 11;
+  stroke-linecap: round;
+}
+.oracle-eye {
+  fill: var(--color-base-900);
+  stroke: var(--color-accent-cyan);
+  stroke-opacity: 0.7;
+  stroke-width: 1.5;
+}
+.oracle-pupil {
+  fill: var(--color-accent-cyan);
+}
+.oracle-nose {
+  fill: var(--color-base-900);
+  fill-opacity: 0.28;
+}
+.oracle-mouth {
+  fill: var(--color-base-900);
+  stroke: var(--color-base-900);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.oracle-teeth {
+  fill: var(--color-base-100);
+  opacity: 0;
+}
+.oracle-tear {
+  fill: var(--color-accent-blue);
+  opacity: 0;
+}
+
+/* 背景星光 */
+.oracle-star {
+  fill: var(--color-base-100);
+  animation: oracle-twinkle var(--twinkle-dur, 4s) ease-in-out infinite;
+  animation-delay: var(--twinkle-delay, 0s);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes oracle-twinkle {
+  0%, 100% { opacity: 0.15; transform: scale(0.8); }
+  50% { opacity: 0.9; transform: scale(1.15); }
+}
+
+/* 尊重 prefers-reduced-motion:關閉星光動態(漂浮/脈動由控制器停掉) */
+@media (prefers-reduced-motion: reduce) {
+  .oracle-star {
+    animation: none;
+    opacity: 0.4;
+  }
+  .oracle-float {
+    will-change: auto;
+  }
+}
