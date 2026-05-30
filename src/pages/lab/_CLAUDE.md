@@ -130,7 +130,7 @@ notebooks/.venv/bin/python -m jupyter nbconvert --to notebook --execute --inplac
 
   ⚠️ **這軌道的 notebook 要載 Qwen（transformers + bitsandbytes 4-bit，CUDA-only），本機 Mac 跑不動。** 比照動畫課用 `--clear-output` 提交、留到 **Colab T4** 執行；提交時不嵌輸出。產生器：`gen_agent_1to4.py` / `gen_agent_5to8.py`（用 `_nbgen` builder）。預覽圖在 `gen_previews.py` 的 `agent_01`…`agent_08`（概念圖，本機 matplotlib 產，用繁中；✓/✗ 在 Heiti TC 缺字，改用 √/×）。
 
-curriculum 與每課重點見各 `.md` frontmatter 與 module 頁。**`agent` 軌道頁面/預覽/notebook 皆已建置；尚待 (1) 在 Colab T4 跑過每課驗證可執行、(2) push 到 main 讓 Colab badge 生效。**
+curriculum 與每課重點見各 `.md` frontmatter 與 module 頁。**`agent` 軌道已上線**（commit 2018d00 推 main、線上部署）；owner 在 Colab T4 驗證 01/03/06 三課皆成功跑出輸出（涵蓋最易出包點：Qwen 載入、ReAct 格式、RAG+sentence-transformers），其餘五課同模式視為全軌道可跑。
 
 ## Road map — AI/ML 教學線（2026-05-29 與 owner 拍板）
 
@@ -166,8 +166,9 @@ KV cache → SFT（單位數加法指令）→ DPO。
 - **檔案**：內容頁 `src/content/lab/agent/from-scratch/0[1-8]-*.md`；notebook 產生器
   `notebooks/gen_agent_1to4.py`、`gen_agent_5to8.py`＋共用 `notebooks/_agent_shared.py`；
   預覽 `gen_previews.py` 的 `agent_01`…`agent_08`。軌道註冊在 `src/data/labTracks.ts`、navbar 已加連結。
-- **剩餘兩步**：notebook 本機跑不動（CUDA-only），需在 **Colab T4 跑過每課**確認可執行（尤其 tool-call
-  解析、Qwen 輸出格式），再 **push 到 main** 讓 Colab badge 生效。
+- **上線狀態**：notebook 本機跑不動（CUDA-only），**無輸出提交**留 Colab T4 跑。已 push main（2018d00）、
+  線上部署；owner 已在 Colab T4 驗證 01/03/06（最易出包點）皆成功。⚠️ 別從 Colab「儲存回 GitHub」——
+  會嵌輸出、覆蓋無輸出版、與 `gen_agent_*.py` 產生 drift 且讓本機 main 落後。
 
 ### 免費資源研究結論（2026-05，已查證）
 - Colab 免費 T4 = **15GB VRAM**；BitsAndBytes 4-bit 砍 ~75% VRAM，Qwen 0.5B–3B 都裝得下；Qwen 在 CJK/中文是開源最強。
