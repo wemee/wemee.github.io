@@ -26,6 +26,7 @@ OUT_DIR_AGENT = ROOT / "public" / "lab" / "agent" / "from-scratch"
 OUT_DIR_RL = ROOT / "public" / "lab" / "rl" / "from-scratch"
 OUT_DIR_CV = ROOT / "public" / "lab" / "cv" / "deep-vision"
 OUT_DIR_DS = ROOT / "public" / "lab" / "ds" / "data-analysis"
+OUT_DIR_DIFF = ROOT / "public" / "lab" / "diffusion" / "from-scratch"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_DIR_ML.mkdir(parents=True, exist_ok=True)
 OUT_DIR_BOOST.mkdir(parents=True, exist_ok=True)
@@ -35,6 +36,7 @@ OUT_DIR_AGENT.mkdir(parents=True, exist_ok=True)
 OUT_DIR_RL.mkdir(parents=True, exist_ok=True)
 OUT_DIR_CV.mkdir(parents=True, exist_ok=True)
 OUT_DIR_DS.mkdir(parents=True, exist_ok=True)
+OUT_DIR_DIFF.mkdir(parents=True, exist_ok=True)
 
 # 重用 notebook 執行時下載的資料集（絕對路徑，不受 cwd 影響）
 PT_DATA = str(ROOT / "notebooks" / "ml" / "pytorch" / "data")
@@ -1802,6 +1804,191 @@ def ds_08_project() -> None:
     ax.text(5, 0.6, "好分析的終點,是一句決策者聽得懂的話 ＋ 證據", ha="center",
             fontsize=13, fontweight="bold", color=_AC["cyan"])
     save(fig, "08-project", OUT_DIR_DS)
+
+
+# ── diffusion 軌道：生成式影像概念圖（繁中；用噪聲圖塊增加說服力）──
+
+_DIFF_RNG = np.random.default_rng(7)
+
+
+def _noise_patch(ax, cx, cy, s=0.78, signal=0.0):
+    """畫一塊噪聲圖。signal=0 純雪花、=1 接近平滑(代表清晰)。"""
+    img = (1 - signal) * _DIFF_RNG.random((18, 18)) + signal * 0.5
+    ax.imshow(img, cmap="gray", vmin=0, vmax=1, aspect="auto",
+              extent=[cx - s, cx + s, cy - s, cy + s], zorder=2)
+    ax.add_patch(__import__("matplotlib").patches.Rectangle(
+        (cx - s, cy - s), 2 * s, 2 * s, fc="none", ec="#586e75", lw=1.2, zorder=3))
+
+
+def diff_01_worldview() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "擴散：加噪是固定的,去噪才是生成", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    # 前向
+    _abox(ax, 2.0, 4.1, 1.9, 1.0, "清晰\n影像", _AC["green"], fs=13)
+    _aarrow(ax, (3.0, 4.1), (6.9, 4.1), _AC["red"])
+    ax.text(5.0, 4.55, "前向加噪(固定、不用學)", ha="center", fontsize=12, color=_AC["red"])
+    _noise_patch(ax, 8.1, 4.1, signal=0.0)
+    # 反向
+    _noise_patch(ax, 2.0, 1.9, signal=0.0)
+    _aarrow(ax, (3.0, 1.9), (6.9, 1.9), _AC["green"])
+    ax.text(5.0, 2.35, "反向去噪(學這個)", ha="center", fontsize=12, color=_AC["green"])
+    _abox(ax, 8.1, 1.9, 1.9, 1.0, "生成的\n新影像", _AC["violet"], fs=13)
+    ax.text(5, 0.55, "會去噪 → 餵純雪花反覆去噪 → 長出全新的圖", ha="center",
+            fontsize=13.5, fontweight="bold", color=_AC["cyan"])
+    save(fig, "01-worldview", OUT_DIR_DIFF)
+
+
+def diff_02_forward_diffusion() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "Forward Diffusion：一步到位的加噪公式", ha="center",
+            fontsize=18.5, fontweight="bold", color=_AC["gray"])
+    ax.text(5, 4.85, r"$x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,\epsilon$",
+            ha="center", fontsize=20, color=_AC["violet"])
+    cfg = [(1.3, 0.95, "t=0"), (3.05, 0.7, "t=50"), (4.8, 0.45, "t=100"),
+           (6.55, 0.2, "t=150"), (8.3, 0.02, "t=199")]
+    for cx, sig, lab in cfg:
+        _noise_patch(ax, cx, 2.9, s=0.72, signal=sig)
+        ax.text(cx, 1.95, lab, ha="center", fontsize=11.5, color="#93a1a1")
+    ax.text(5, 0.95, "原圖係數從 ~1 降到 ~0:雜訊越來越多", ha="center", fontsize=12.5, color=_AC["cyan"])
+    ax.text(5, 0.45, "任一步都能從原圖一步算出 → 訓練才高效", ha="center",
+            fontsize=13, fontweight="bold", color=_AC["red"])
+    save(fig, "02-forward-diffusion", OUT_DIR_DIFF)
+
+
+def diff_03_denoising_unet() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "去噪 U-Net：預測加進去的噪聲 ε", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    nodes = {
+        "in": (1.3, 4.3, "x_t + t", _AC["blue"]),
+        "d1": (2.7, 3.5, "down", _AC["cyan"]),
+        "d2": (4.0, 2.6, "down", _AC["cyan"]),
+        "mid": (5.0, 1.9, "mid", _AC["gray"]),
+        "u2": (6.0, 2.6, "up", _AC["green"]),
+        "u1": (7.3, 3.5, "up", _AC["green"]),
+        "out": (8.7, 4.3, "ε 噪聲", _AC["violet"]),
+    }
+    for k, (x, y, t, c) in nodes.items():
+        _abox(ax, x, y, 1.2, 0.7, t, c, fs=11.5)
+    seq = ["in", "d1", "d2", "mid", "u2", "u1", "out"]
+    for a, b in zip(seq, seq[1:]):
+        _aarrow(ax, (nodes[a][0], nodes[a][1]), (nodes[b][0], nodes[b][1]), lw=1.8)
+    # skip 連接(虛線)
+    for a, b in [("d1", "u1"), ("d2", "u2")]:
+        ax.add_patch(__import__("matplotlib").patches.FancyArrowPatch(
+            (nodes[a][0], nodes[a][1] + 0.4), (nodes[b][0], nodes[b][1] + 0.4),
+            arrowstyle="-", ls="--", lw=1.4, color=_AC["yellow"],
+            connectionstyle="arc3,rad=-0.35", zorder=1))
+    ax.text(5, 0.65, "下採樣抓全局、上採樣回細節、skip 保留細節", ha="center",
+            fontsize=13, fontweight="bold", color=_AC["cyan"])
+    save(fig, "03-denoising-unet", OUT_DIR_DIFF)
+
+
+def diff_04_sampling() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "取樣：DDPM(慢) vs DDIM(快)", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    for (y, n, lab, c) in [(4.0, 28, "DDPM　200 步", _AC["red"]),
+                           (2.0, 6, "DDIM　20 步", _AC["green"])]:
+        _noise_patch(ax, 1.4, y, s=0.62, signal=0.0)
+        _abox(ax, 8.6, y, 1.5, 1.0, "清晰圖", _AC["violet"], fs=12)
+        xs = np.linspace(2.2, 7.7, n)
+        for i, x in enumerate(xs):
+            ax.plot([x, x], [y - 0.18, y + 0.18], color=c, lw=1.4, zorder=2)
+        _aarrow(ax, (2.1, y), (7.85, y), c, lw=1.6)
+        ax.text(5.0, y + 0.55, lab, ha="center", fontsize=12.5, color=c, fontweight="bold")
+    ax.text(5, 0.6, "同一個模型,DDIM 跳步取樣:快約 10 倍、品質接近", ha="center",
+            fontsize=13.5, fontweight="bold", color=_AC["cyan"])
+    save(fig, "04-sampling", OUT_DIR_DIFF)
+
+
+def diff_05_text_conditioning() -> None:
+    _set_cjk()
+    from matplotlib.patches import Circle
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "CLIP：文字與影像在同一向量空間", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    _abox(ax, 1.7, 4.2, 2.0, 0.85, "「a cat」", _AC["blue"], fs=13)
+    _abox(ax, 1.7, 2.4, 2.0, 0.85, "貓的圖片", _AC["green"], fs=13)
+    _abox(ax, 4.4, 3.3, 1.5, 1.4, "CLIP", _AC["violet"], fs=14)
+    _aarrow(ax, (2.75, 4.2), (3.65, 3.6))
+    _aarrow(ax, (2.75, 2.4), (3.65, 3.0))
+    _aarrow(ax, (5.2, 3.3), (6.3, 3.3))
+    ax.add_patch(Circle((8.0, 3.3), 1.5, fc="#073642", ec=_AC["cyan"], lw=1.8, ls="--", zorder=1))
+    ax.add_patch(Circle((7.7, 3.5), 0.13, fc=_AC["blue"], ec="none", zorder=3))
+    ax.add_patch(Circle((8.1, 3.1), 0.13, fc=_AC["green"], ec="none", zorder=3))
+    ax.text(8.0, 4.55, "共享向量空間", ha="center", fontsize=11.5, color=_AC["cyan"])
+    ax.text(5, 0.6, "對應的圖文,向量會靠在一起 → 文字生圖的地基", ha="center",
+            fontsize=13.5, fontweight="bold", color=_AC["red"])
+    save(fig, "05-text-conditioning", OUT_DIR_DIFF)
+
+
+def diff_06_stable_diffusion() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "Stable Diffusion 管線：學過的零件組起來", ha="center",
+            fontsize=18, fontweight="bold", color=_AC["gray"])
+    steps = [("prompt", _AC["blue"]), ("CLIP\n文字編碼", _AC["violet"]),
+             ("U-Net\n反覆去噪", _AC["cyan"]), ("VAE\n解碼", _AC["green"]), ("影像", _AC["yellow"])]
+    xs = [1.3, 3.1, 5.0, 6.9, 8.6]
+    for x, (t, c) in zip(xs, steps):
+        _abox(ax, x, 3.4, 1.65, 1.1, t, c, fs=11.5)
+    for x0, x1 in zip(xs, xs[1:]):
+        _aarrow(ax, (x0 + 0.85, 3.4), (x1 - 0.85, 3.4))
+    ax.text(5, 1.5, "你前五課手刻的東西(02–05),正是這條管線的內部", ha="center",
+            fontsize=13, color=_AC["cyan"], fontweight="bold")
+    ax.text(5, 0.6, "diffusers 幾行就跑起來——sd-turbo 單步、免費 T4 也順", ha="center",
+            fontsize=13, fontweight="bold", color=_AC["red"])
+    save(fig, "06-stable-diffusion", OUT_DIR_DIFF)
+
+
+def diff_07_control() -> None:
+    _set_cjk()
+    from matplotlib.patches import Rectangle
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "控制生成：img2img · inpainting · LoRA", ha="center",
+            fontsize=18, fontweight="bold", color=_AC["gray"])
+    panels = [
+        (2.0, "img2img", "起始圖上變化\n保構圖換風格", _AC["blue"]),
+        (5.0, "inpainting", "遮罩指定局部\n只重繪那塊", _AC["green"]),
+        (8.0, "LoRA", "小外掛(幾 MB)\n穩定產出風格", _AC["yellow"]),
+    ]
+    for cx, title, desc, c in panels:
+        ax.add_patch(Rectangle((cx - 1.35, 1.7), 2.7, 2.7, fc="#073642",
+                               ec=c, lw=1.8, zorder=1))
+        ax.text(cx, 3.95, title, ha="center", fontsize=14, color=c, fontweight="bold")
+        ax.text(cx, 2.7, desc, ha="center", va="center", fontsize=11.5, color="#93a1a1")
+    ax.text(5, 0.6, "把擲骰子般的生成,變成可控的創作工具", ha="center",
+            fontsize=13.5, fontweight="bold", color=_AC["cyan"])
+    save(fig, "07-control", OUT_DIR_DIFF)
+
+
+def diff_08_project() -> None:
+    _set_cjk()
+    from matplotlib.patches import Rectangle
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "端到端：做一個生成小工具並上線", ha="center",
+            fontsize=18.5, fontweight="bold", color=_AC["gray"])
+    _abox(ax, 1.7, 3.9, 2.0, 0.9, "prompt", _AC["blue"], fs=13)
+    _aarrow(ax, (2.75, 3.9), (3.6, 3.9))
+    _abox(ax, 4.6, 3.9, 1.9, 0.9, "generate()", _AC["violet"], fs=12.5)
+    # gallery
+    for i in range(4):
+        ax.add_patch(Rectangle((6.0 + i * 0.78, 3.45), 0.68, 0.9,
+                               fc="#073642", ec=_AC["green"], lw=1.3, zorder=2))
+    ax.text(7.55, 4.6, "gallery", ha="center", fontsize=11, color=_AC["green"])
+    _aarrow(ax, (5.0, 3.4), (5.0, 2.6), _AC["gray"])
+    _abox(ax, 5.0, 2.1, 5.6, 0.9, "Gradio 介面 → Hugging Face Spaces 上線", _AC["red"], fs=13)
+    ax.text(5, 0.75, "把模型變成別人能用的東西——同 cv/rl 的上線精神", ha="center",
+            fontsize=13, color=_AC["cyan"], fontweight="bold")
+    ax.text(5, 0.3, "AI/ML 八軌道弧線到此完成", ha="center",
+            fontsize=12.5, fontweight="bold", color=_AC["violet"])
+    save(fig, "08-project", OUT_DIR_DIFF)
 
 
 if __name__ == "__main__":

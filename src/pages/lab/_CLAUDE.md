@@ -137,6 +137,14 @@ notebooks/.venv/bin/python -m jupyter nbconvert --to notebook --execute --inplac
 - **`cv/deep-vision`**（獨立 `cv` 軌道，2026-05-30 建置）：影像即張量 → CNN on CIFAR → 遷移學習 → 資料增強 →
   YOLO 物件偵測 → 影像分割 → Grad-CAM → 端到端分類器+部署。**業界現成套件取向**（ultralytics/timm/grad-cam）。
   素材 `_cv_shared.py`、產生器 `gen_cv_1to4.py`/`gen_cv_5to8.py`。訓練吃 GPU → **無輸出提交**留 Colab。**待 Colab 驗證。**
+- **`ds/data-analysis`**（獨立 `ds` 軌道，2026-05-30 建置）：流程 → 清理 → EDA → 視覺化 → 特徵工程 → 統計檢定 →
+  分析→模型 → 端到端報告。用 seaborn Titanic 資料,最輕量的軌道(Colab 全內建)。素材 `_ds_shared.py`、
+  產生器 `gen_ds_1to4.py`/`gen_ds_5to8.py`。**無輸出提交。待驗證。**
+- **`diffusion/from-scratch`**（獨立 `diffusion` 軌道，2026-05-30 建置）：世界觀 → 手刻 forward diffusion →
+  手刻去噪 U-Net → DDPM/DDIM → 文字條件 CLIP → diffusers SD → img2img/inpainting/LoRA → 生成工具+上線。
+  **手刻迷你 DDPM(MNIST)+ diffusers sd-turbo**。素材 `_diffusion_shared.py`(UNET/DDPM/TRAIN/DATA SRC)、
+  產生器 `gen_diffusion_1to4.py`/`gen_diffusion_5to8.py`。手刻部分已本機 CPU smoke-test 過。訓練/SD 吃 GPU →
+  **無輸出提交**留 Colab。**待驗證。**
 
 curriculum 與每課重點見各 `.md` frontmatter 與 module 頁。**`agent` 軌道已上線**（commit 2018d00 推 main、線上部署）；owner 在 Colab T4 驗證 01/03/06 三課皆成功跑出輸出（涵蓋最易出包點：Qwen 載入、ReAct 格式、RAG+sentence-transformers），其餘五課同模式視為全軌道可跑。
 
@@ -189,7 +197,8 @@ KV cache → SFT（單位數加法指令）→ DPO。
 建置順序與理由如下，每條 8 課、比照既有模式（GitHub-backed Colab + `gen_*.py` + 預覽圖，零新基礎建設）。
 
 **順序：RL → CV → 資料科學 → Diffusion**（owner 2026-05-30 確認）。
-**進度:RL ✅ 已上線驗證、CV ✅ 已建置(待 Colab 驗證)(皆 2026-05-30);下一個 → 資料科學。**
+**進度(2026-05-30):RL ✅ 上線驗證、CV ✅ 上線(待驗證)、資料科學 ✅ 上線(待驗證)、Diffusion ✅ 上線(待驗證)。
+四條全部建置完成、push main、build 過。owner 一次測全部(goal: 直接全部完成一起測)。**
 - RL 先：補齊 ML 第三支柱，且站上 `ml-training/`（stable-baselines3/gymnasium/GameCore/PyMiniRacer）現成，
   末課能訓練 agent 玩自家遊戲，綜效最大、趁 agent 脈絡尚熱。
 - CV 次：接 `pytorch` 軌道往視覺深挖，預覽圖最好做。
@@ -234,18 +243,30 @@ KV cache → SFT（單位數加法指令）→ DPO。
 - **提交策略**：訓練吃 GPU → notebook **無輸出提交**留 Colab T4 跑（同 agent/rl）。本機僅產預覽圖。
 - **上線狀態**：本機 `npm run build` 已過（dist 生 cv 兩個 index + 8 課 + 8 webp）。**待 push main + Colab 驗證。**
 
-### 📊 資料科學實戰軌道
-入門坡道，橋接 `matplotlib` → `sklearn`，服務最廣受眾、門檻最低。
-- 課綱：① 資料科學流程/載入真實公開資料 ② 資料清理（缺失/型別/離群）③ EDA（groupby/pivot/相關）
-  ④ 視覺化說故事（接 matplotlib）⑤ 特徵工程 ⑥ 統計檢定/A-B test 直覺 ⑦ 分析 → sklearn baseline
-  ⑧ 端到端：真實資料集從問題到結論完整報告。
+### 📊 資料科學實戰軌道 — ✅ 已建置（2026-05-30）
+軌道 id `ds`、模組 `data-analysis`、色 `warning`（yellow）、icon 📈。**入門坡道**,橋接 `matplotlib` → `sklearn`,
+display 順序刻意排在 python 之後。資料集用 **seaborn 內建 Titanic**(有缺值/類別/二元目標,經典)。
+- **8 課課綱**：① 流程/載入 Titanic ② 資料清理(缺失對症下藥) ③ EDA(groupby/pivot/corr) ④ 視覺化(seaborn)
+  ⑤ 特徵工程(編碼/衍生/縮放) ⑥ 統計檢定(t 檢定/卡方/p 值/A-B 直覺) ⑦ 分析→sklearn LogisticRegression
+  ⑧ 端到端 RandomForest + 一句話結論。
+- **檔案**：素材 `_ds_shared.py`（INSTALL + `LOAD_TITANIC`）;產生器 `gen_ds_1to4.py`/`gen_ds_5to8.py`
+  (5to8 有 `CLEAN_SRC` 共用清理);預覽 `ds_01`…`ds_08`(用真實 Titanic 數字:女 74%/男 19% 等)。
+- **最輕的軌道**:pandas/seaborn/sklearn Colab 全內建,純 CPU。仍 **無輸出提交**(seaborn 載資料需連網)。**待驗證。**
 
-### 🎨 Diffusion 生成式影像軌道
-**手刻迷你版 + diffusers 實用**並行，沿用「功能爛沒關係、重在機制」哲學。
-- 課綱：① 生成模型世界觀（VAE/GAN → diffusion）② 手刻 forward diffusion 加噪（MNIST）③ 手刻迷你
-  U-Net 去噪生成 ④ 取樣 DDPM/DDIM ⑤ 文字條件 CLIP/text embedding（概念）⑥ diffusers 跑 SD text2img
-  ⑦ img2img/inpainting/LoRA 概念 ⑧ 端到端：自製圖像生成小工具。
-- 注意：手刻 MNIST 迷你版可本機/T4 跑；SD 推論 CUDA-only，比照 agent 走無輸出提交、留 Colab T4。
+### 🎨 Diffusion 生成式影像軌道 — ✅ 已建置（2026-05-30）
+軌道 id `diffusion`、模組 `from-scratch`、色 `primary`（blue）、icon 🎨。**手刻迷你版 + diffusers 實用**並行,
+沿用「功能爛沒關係、重在機制」哲學(同 llm)。display 排最後(generative 壓軸)。
+- **8 課課綱**：① 世界觀(VAE/GAN→diffusion) ② 手刻 forward diffusion(closed-form q_sample) ③ 手刻迷你
+  U-Net 去噪 + 訓練生成 MNIST ④ DDPM vs DDIM 取樣 + 去噪軌跡 ⑤ 文字條件(CLIP 對齊 demo) ⑥ diffusers
+  跑 **sd-turbo** text2img ⑦ img2img(實作)/inpainting/LoRA(概念) ⑧ 端到端生成工具 + Gradio/Spaces 上線。
+- **手刻 DDPM**：`_diffusion_shared.py` 的 `UNET_SRC`(TinyUNet ~46 萬參數,GroupNorm(8,·) 需 channel 整除 8、
+  base=32 滿足)、`DDPM_SRC`(排程 + q_sample + ddpm_sample + ddim_sample)、`DATA_SRC`(MNIST→32×32→[-1,1])、
+  `TRAIN_SRC`、`SHOWGEN_SRC`。**已本機 CPU smoke-test 過**(forward/train step/ddim 形狀都對)。
+- **diffusers**：用 **sd-turbo**(免 gating、單步、T4 順):text2img `num_inference_steps=1,guidance_scale=0.0`;
+  img2img 用 `AutoPipelineForImage2Image` + sd-turbo(strength×steps≥1)。CLIP 用 `openai/clip-vit-base-patch32`。
+- **檔案**：產生器 `gen_diffusion_1to4.py`/`gen_diffusion_5to8.py`;預覽 `diff_01`…`diff_08`(noise patch + mathtext
+  公式;ᾱ/x₀ 純文字會在 Heiti TC 缺字,公式用 mathtext OK、純文字 caption 避開)。
+- 訓練/SD 吃 GPU → **無輸出提交**留 Colab T4。**待驗證。**
 
 ### 其他 backlog
 - 新軌道：web（HTML/CSS/JS）、git 等。骨架全部複用，照「如何新增一條軌道」做。
