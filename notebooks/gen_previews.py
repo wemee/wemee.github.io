@@ -24,6 +24,7 @@ OUT_DIR_PT = ROOT / "public" / "lab" / "ml" / "pytorch"
 OUT_DIR_LLM = ROOT / "public" / "lab" / "llm" / "from-scratch"
 OUT_DIR_AGENT = ROOT / "public" / "lab" / "agent" / "from-scratch"
 OUT_DIR_RL = ROOT / "public" / "lab" / "rl" / "from-scratch"
+OUT_DIR_CV = ROOT / "public" / "lab" / "cv" / "deep-vision"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_DIR_ML.mkdir(parents=True, exist_ok=True)
 OUT_DIR_BOOST.mkdir(parents=True, exist_ok=True)
@@ -31,6 +32,7 @@ OUT_DIR_PT.mkdir(parents=True, exist_ok=True)
 OUT_DIR_LLM.mkdir(parents=True, exist_ok=True)
 OUT_DIR_AGENT.mkdir(parents=True, exist_ok=True)
 OUT_DIR_RL.mkdir(parents=True, exist_ok=True)
+OUT_DIR_CV.mkdir(parents=True, exist_ok=True)
 
 # 重用 notebook 執行時下載的資料集（絕對路徑，不受 cwd 影響）
 PT_DATA = str(ROOT / "notebooks" / "ml" / "pytorch" / "data")
@@ -1438,6 +1440,187 @@ def rl_08_project() -> None:
     ax.text(5, 0.6, "你手刻的每一塊，都是這條上線流程的縮影", ha="center",
             fontsize=14, fontweight="bold", color=_AC["red"])
     save(fig, "08-project", OUT_DIR_RL)
+
+
+# ── cv 軌道：電腦視覺概念圖（繁中；避用 emoji/罕見字，缺字改純文字）──
+
+def cv_01_images_as_tensors() -> None:
+    _set_cjk()
+    from matplotlib.patches import Rectangle
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "影像 = [C, H, W] 張量", ha="center",
+            fontsize=20, fontweight="bold", color=_AC["gray"])
+    for k, (c, name) in enumerate([("#dc322f", "R"), ("#859900", "G"), ("#268bd2", "B")]):
+        ox, oy = 1.4 + k * 0.4, 2.5 + k * 0.4
+        ax.add_patch(Rectangle((ox, oy), 1.9, 1.9, fc=c, ec="white", lw=2,
+                               alpha=0.9, zorder=2 + k))
+        ax.text(ox + 0.28, oy + 1.55, name, color="white", fontsize=15,
+                fontweight="bold", zorder=10)
+    _aarrow(ax, (4.3, 3.4), (5.6, 3.4))
+    _abox(ax, 7.0, 3.4, 2.4, 1.0, "張量\n(3, H, W)", _AC["violet"], fs=15)
+    ax.text(5, 1.15, "RGB 三通道 × 高 × 寬,每格一個像素值", ha="center",
+            fontsize=14, fontweight="bold", color=_AC["cyan"])
+    save(fig, "01-images-as-tensors", OUT_DIR_CV)
+
+
+def cv_02_cnn_cifar() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "CNN：卷積區塊一路濃縮特徵", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    blocks = [
+        (1.3, 1.5, "影像\n32²", _AC["blue"]),
+        (3.1, 1.25, "conv\n16²", _AC["green"]),
+        (4.8, 1.0, "conv\n8²", _AC["green"]),
+        (6.3, 0.78, "conv\n4²", _AC["green"]),
+        (8.4, 1.3, "分類\n10 類", _AC["violet"]),
+    ]
+    xs = [b[0] for b in blocks]
+    for (x, h, t, c) in blocks:
+        _abox(ax, x, 3.1, 1.25, h, t, c, fs=12)
+    for x0, x1 in zip(xs, xs[1:]):
+        _aarrow(ax, (x0 + 0.65, 3.1), (x1 - 0.65, 3.1))
+    ax.text(5.0, 1.5, "每個區塊:Conv → BatchNorm → ReLU → MaxPool", ha="center",
+            fontsize=12.5, color=_AC["cyan"])
+    ax.text(5, 0.7, "尺寸越縮越小,語意越來越濃", ha="center",
+            fontsize=13.5, fontweight="bold", color=_AC["red"])
+    save(fig, "02-cnn-cifar", OUT_DIR_CV)
+
+
+def cv_03_transfer_learning() -> None:
+    _set_cjk()
+    from matplotlib.patches import Rectangle
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "遷移學習：凍結 backbone，只換新頭", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    # 凍結的 backbone（灰、上鎖）
+    ax.add_patch(Rectangle((1.0, 2.4), 5.4, 1.5, fc="#073642", ec=_AC["gray"],
+                           lw=2, zorder=2))
+    ax.text(3.7, 3.4, "ImageNet 預訓練 backbone", ha="center", va="center",
+            color="#93a1a1", fontsize=14, fontweight="bold", zorder=3)
+    ax.text(3.7, 2.75, "(凍結 · 不訓練)", ha="center", va="center",
+            color=_AC["blue"], fontsize=12, zorder=3)
+    _aarrow(ax, (6.5, 3.15), (7.3, 3.15))
+    _abox(ax, 8.4, 3.15, 2.2, 1.5, "新分類頭\n(只訓練這個)", _AC["green"], fs=13)
+    ax.text(5, 1.3, "借用通用視覺特徵 → 只教它「你的類別叫什麼」", ha="center",
+            fontsize=13.5, color=_AC["cyan"], fontweight="bold")
+    ax.text(5, 0.6, "又快又準、又省資料——業界做分類的預設起手式", ha="center",
+            fontsize=13.5, fontweight="bold", color=_AC["red"])
+    save(fig, "03-transfer-learning", OUT_DIR_CV)
+
+
+def cv_04_data_augmentation() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "資料增強：同一張圖的隨機變體", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    _abox(ax, 2.0, 3.2, 2.1, 1.3, "原圖\n(一隻貓)", _AC["violet"], fs=14)
+    variants = [
+        (4.7, "隨機裁切", _AC["green"]),
+        (3.6, "水平翻轉", _AC["blue"]),
+        (2.4, "調亮度/對比", _AC["yellow"]),
+        (1.3, "顏色抖動", _AC["cyan"]),
+    ]
+    for y, t, c in variants:
+        _aarrow(ax, (3.1, 3.2), (6.3, y), _AC["gray"])
+        _abox(ax, 7.8, y, 3.0, 0.7, t, c, fs=12.5)
+    ax.text(5, 0.55, "每個 epoch 看到不同變體 → 被迫學穩健特徵,而非背圖", ha="center",
+            fontsize=13, fontweight="bold", color=_AC["red"])
+    save(fig, "04-data-augmentation", OUT_DIR_CV)
+
+
+def cv_05_object_detection() -> None:
+    _set_cjk()
+    from matplotlib.patches import Rectangle
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "物件偵測：是什麼 ＋ 在哪裡", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    # 場景框
+    ax.add_patch(Rectangle((2.4, 1.1), 5.2, 3.5, fc="#073642", ec=_AC["gray"],
+                           lw=1.5, zorder=1))
+    # 幾個偵測框
+    boxes = [
+        (3.0, 1.5, 1.6, 1.2, "person 0.94", _AC["green"]),
+        (5.0, 2.4, 2.2, 1.5, "bus 0.88", _AC["yellow"]),
+        (3.2, 3.2, 1.3, 0.9, "car 0.71", _AC["cyan"]),
+    ]
+    for (x, y, w, h, lab, c) in boxes:
+        ax.add_patch(Rectangle((x, y), w, h, fc="none", ec=c, lw=2.5, zorder=3))
+        ax.text(x, y + h + 0.04, lab, color=c, fontsize=11, fontweight="bold", zorder=4)
+    ax.text(5, 0.55, "每個物件:邊界框 ＋ 類別 ＋ 信心分數", ha="center",
+            fontsize=13.5, fontweight="bold", color=_AC["red"])
+    save(fig, "05-object-detection", OUT_DIR_CV)
+
+
+def cv_06_segmentation() -> None:
+    _set_cjk()
+    from matplotlib.patches import Rectangle, Circle
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "定位精細度：標籤 → 框 → 像素輪廓", ha="center",
+            fontsize=18.5, fontweight="bold", color=_AC["gray"])
+    panels = [(1.9, "分類", _AC["blue"]), (5.0, "偵測", _AC["yellow"]), (8.1, "分割", _AC["green"])]
+    for (cx, title, c) in panels:
+        ax.add_patch(Rectangle((cx - 1.3, 1.6), 2.6, 2.6, fc="#073642",
+                               ec=_AC["gray"], lw=1.4, zorder=1))
+        ax.text(cx, 4.55, title, ha="center", fontsize=14, color=c, fontweight="bold")
+    # 分類:整片一個標籤
+    ax.text(1.9, 2.9, "cat", ha="center", va="center", color=_AC["blue"],
+            fontsize=15, fontweight="bold", zorder=3)
+    # 偵測:一個框
+    ax.add_patch(Rectangle((4.3, 2.1), 1.5, 1.6, fc="none", ec=_AC["yellow"], lw=2.5, zorder=3))
+    # 分割:像素輪廓（用圓近似貓的輪廓）
+    ax.add_patch(Circle((8.1, 2.9), 0.95, fc=_AC["green"], ec="none", alpha=0.55, zorder=3))
+    ax.add_patch(Circle((8.1, 3.6), 0.5, fc=_AC["green"], ec="none", alpha=0.55, zorder=3))
+    ax.text(5, 0.6, "語意分割(同類合一)　vs　實例分割(同類分個體)", ha="center",
+            fontsize=13.5, fontweight="bold", color=_AC["red"])
+    save(fig, "06-segmentation", OUT_DIR_CV)
+
+
+def cv_07_grad_cam() -> None:
+    _set_cjk()
+    from matplotlib.patches import Rectangle, Circle
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "Grad-CAM：模型到底在看哪裡?", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    # 左：原圖
+    ax.add_patch(Rectangle((1.2, 1.7), 3.0, 2.6, fc="#073642", ec=_AC["gray"], lw=1.4, zorder=1))
+    ax.text(2.7, 4.05, "原圖", ha="center", fontsize=13, color=_AC["gray"])
+    ax.text(2.7, 2.9, "狗", ha="center", va="center", color="#93a1a1",
+            fontsize=16, fontweight="bold", zorder=2)
+    _aarrow(ax, (4.4, 3.0), (5.5, 3.0))
+    # 右：熱力圖
+    ax.add_patch(Rectangle((5.8, 1.7), 3.0, 2.6, fc="#073642", ec=_AC["gray"], lw=1.4, zorder=1))
+    ax.text(7.3, 4.05, "Grad-CAM 熱力圖", ha="center", fontsize=13, color=_AC["gray"])
+    for r, a in [(0.95, 0.25), (0.62, 0.45), (0.32, 0.85)]:
+        ax.add_patch(Circle((7.0, 2.85), r, fc=_AC["red"], ec="none", alpha=a, zorder=2))
+    ax.text(7.0, 2.85, "看這裡", ha="center", va="center", color="white",
+            fontsize=11, fontweight="bold", zorder=3)
+    ax.text(5, 0.6, "紅 = 對這個預測貢獻最大的區域(看對地方,還是靠背景瞎猜?)",
+            ha="center", fontsize=12.5, fontweight="bold", color=_AC["cyan"])
+    save(fig, "07-grad-cam", OUT_DIR_CV)
+
+
+def cv_08_project() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "端到端：從 Colab 訓練到瀏覽器", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    steps = [
+        ("影像資料\n+ 增強", _AC["blue"]),
+        ("遷移學習\n訓練(Colab)", _AC["green"]),
+        ("匯出\nONNX / TF.js", _AC["yellow"]),
+        ("瀏覽器\n即時推論", _AC["violet"]),
+    ]
+    xs = [1.7, 4.0, 6.3, 8.6]
+    for (x, (t, c)) in zip(xs, steps):
+        _abox(ax, x, 3.3, 2.0, 1.3, t, c, fs=12.5)
+    for x0, x1 in zip(xs, xs[1:]):
+        _aarrow(ax, (x0 + 1.05, 3.3), (x1 - 1.05, 3.3))
+    ax.text(5, 1.4, "本站 MNIST 手寫辨識就是這樣搬上瀏覽器:不上傳、零延遲", ha="center",
+            fontsize=13, color=_AC["cyan"], fontweight="bold")
+    ax.text(5, 0.6, "會用預訓練模型、懂遷移學習、能解釋與部署", ha="center",
+            fontsize=14, fontweight="bold", color=_AC["red"])
+    save(fig, "08-project", OUT_DIR_CV)
 
 
 if __name__ == "__main__":

@@ -84,6 +84,22 @@ export const tracks: LabTrack[] = [
     ],
   },
   {
+    id: 'cv',
+    title: '電腦視覺',
+    icon: '📷',
+    description: '讓機器看懂影像——從影像張量、CNN，到遷移學習、物件偵測、影像分割與 Grad-CAM 可解釋性',
+    color: 'info',
+    modules: [
+      {
+        id: 'deep-vision',
+        title: '深度電腦視覺',
+        icon: '👁️',
+        description: '假設你已會 CNN 基礎，直接做視覺進階主題：遷移學習、資料增強、YOLO 物件偵測、影像分割、Grad-CAM',
+        color: 'info',
+      },
+    ],
+  },
+  {
     id: 'llm',
     title: '大型語言模型',
     icon: '💬',

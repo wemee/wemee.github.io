@@ -134,6 +134,9 @@ notebooks/.venv/bin/python -m jupyter nbconvert --to notebook --execute --inplac
   stable-baselines3 → 手刻策略梯度 REINFORCE → 獎勵塑形/wrappers → 自訂環境(CatchEnv) → 端到端訓練 PPO。
   **手刻為主 + 必要時用 SB3。** 共用素材 `notebooks/_rl_shared.py`、產生器 `gen_rl_1to4.py`/`gen_rl_5to8.py`。
   notebook **無輸出提交**，留 Colab 跑（裝 gymnasium/SB3 + 訓練）。**已上線**（feat 7598b2f）；owner Colab 驗證 02/03/08 皆成功。
+- **`cv/deep-vision`**（獨立 `cv` 軌道，2026-05-30 建置）：影像即張量 → CNN on CIFAR → 遷移學習 → 資料增強 →
+  YOLO 物件偵測 → 影像分割 → Grad-CAM → 端到端分類器+部署。**業界現成套件取向**（ultralytics/timm/grad-cam）。
+  素材 `_cv_shared.py`、產生器 `gen_cv_1to4.py`/`gen_cv_5to8.py`。訓練吃 GPU → **無輸出提交**留 Colab。**待 Colab 驗證。**
 
 curriculum 與每課重點見各 `.md` frontmatter 與 module 頁。**`agent` 軌道已上線**（commit 2018d00 推 main、線上部署）；owner 在 Colab T4 驗證 01/03/06 三課皆成功跑出輸出（涵蓋最易出包點：Qwen 載入、ReAct 格式、RAG+sentence-transformers），其餘五課同模式視為全軌道可跑。
 
@@ -186,7 +189,7 @@ KV cache → SFT（單位數加法指令）→ DPO。
 建置順序與理由如下，每條 8 課、比照既有模式（GitHub-backed Colab + `gen_*.py` + 預覽圖，零新基礎建設）。
 
 **順序：RL → CV → 資料科學 → Diffusion**（owner 2026-05-30 確認）。
-**進度:RL ✅ 已上線驗證(2026-05-30);下一個 → CV 電腦視覺。**
+**進度:RL ✅ 已上線驗證、CV ✅ 已建置(待 Colab 驗證)(皆 2026-05-30);下一個 → 資料科學。**
 - RL 先：補齊 ML 第三支柱，且站上 `ml-training/`（stable-baselines3/gymnasium/GameCore/PyMiniRacer）現成，
   末課能訓練 agent 玩自家遊戲，綜效最大、趁 agent 脈絡尚熱。
 - CV 次：接 `pytorch` 軌道往視覺深挖，預覽圖最好做。
@@ -216,11 +219,20 @@ KV cache → SFT（單位數加法指令）→ DPO。
   但正確」的現象也值得這樣補。
 - **預覽圖雷**：`⇄`(U+21C4) 與 emoji `🎮`(U+1F3AE) 在 Heiti TC 缺字 → 改用純文字；沿用既有 √/× 替代 ✓/✗。
 
-### 📷 CV 電腦視覺軌道
-假設已學 `pytorch`，直接做視覺專屬內容（避免與 pytorch 的 CNN 基礎重疊）。
-- 課綱：① 影像即張量/torchvision transforms ② 手刻 CNN（CIFAR-10）③ 遷移學習（預訓練 ResNet 微調）
-  ④ 資料增強 & 過擬合 ⑤ 物件偵測入門（YOLO 現成模型推論）⑥ 影像分割概念 + 預訓練模型 ⑦ Grad-CAM
-  可解釋性（呼應 sklearn 的 SHAP）⑧ 端到端：自選資料集影像分類器 + 推論 demo。
+### 📷 CV 電腦視覺軌道 — ✅ 已建置（2026-05-30）
+軌道 id `cv`、模組 `deep-vision`、色 `info`（cyan，與 python 重用但不同區）。**假設已學 `pytorch`**，
+直接做視覺進階主題（避免與 pytorch 的 CNN 基礎重疊）。owner 選**業界標準現成套件**取向。
+- **8 課課綱**：① 影像即張量/torchvision transforms ② CNN on CIFAR-10（現代 BN/Dropout）③ 遷移學習
+  （凍結 ResNet-18 backbone + 換頭）④ 資料增強 & 過擬合 ⑤ 物件偵測（**ultralytics YOLO** 推論）
+  ⑥ 影像分割（YOLO-seg 實例分割 + deeplabv3 語意分割概念）⑦ **Grad-CAM** 可解釋性（呼應 sklearn SHAP）
+  ⑧ 端到端：遷移學習分類器 + Top-3 推論 + ONNX/TF.js 部署橋接（呼應站上 MNIST 手寫辨識）。
+- **新套件（都 Colab 一鍵 pip）**：`ultralytics`(L05/06)、`timm`(L03 提及)、`grad-cam`(L07,import 名
+  `pytorch_grad_cam`)。L05/06 用 `yolov8n.pt`/`yolov8n-seg.pt`（穩、自動下載權重）;L07 用 grad-cam repo 自帶
+  的 both.png（貓+狗,穩定 URL）+ `ResNet50_Weights.DEFAULT.meta["categories"]` 取類別名。
+- **檔案**：素材 `_cv_shared.py`（install 字串、`CIFAR_SRC` 類別/正規化常數、`SHOW_SRC` grid 顯示、
+  `LOAD_IMAGE_SRC`）;產生器 `gen_cv_1to4.py`/`gen_cv_5to8.py`;預覽 `gen_previews.py` 的 `cv_01`…`cv_08`。
+- **提交策略**：訓練吃 GPU → notebook **無輸出提交**留 Colab T4 跑（同 agent/rl）。本機僅產預覽圖。
+- **上線狀態**：本機 `npm run build` 已過（dist 生 cv 兩個 index + 8 課 + 8 webp）。**待 push main + Colab 驗證。**
 
 ### 📊 資料科學實戰軌道
 入門坡道，橋接 `matplotlib` → `sklearn`，服務最廣受眾、門檻最低。
