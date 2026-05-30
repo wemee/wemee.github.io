@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { ThreeSceneBase } from "./ThreeSceneBase";
 import {
   type Matrix4,
   type Vector3,
@@ -40,13 +40,7 @@ const EDGES: [number, number][] = [
   [0, 4], [1, 5], [2, 6], [3, 7],
 ];
 
-export class BasisScene {
-  private container: HTMLElement;
-  private scene: THREE.Scene;
-  private camera: THREE.PerspectiveCamera;
-  private renderer: THREE.WebGLRenderer;
-  private controls: OrbitControls;
-
+export class BasisScene extends ThreeSceneBase {
   private parallelepipedLines: THREE.LineSegments;
   private b1Arrow: THREE.ArrowHelper | null = null;
   private b2Arrow: THREE.ArrowHelper | null = null;
@@ -62,42 +56,15 @@ export class BasisScene {
   private vector: Vector3 = [1, 1, 1];
 
   private onUpdate?: (state: BasisUpdate) => void;
-  private resizeObserver: ResizeObserver;
-  private rafScheduled = false;
-  private destroyed = false;
 
   constructor(options: BasisSceneOptions) {
-    const container = document.getElementById(options.containerId);
-    if (!container) throw new Error(`Container #${options.containerId} not found`);
-    this.container = container;
+    super({
+      containerId: options.containerId,
+      cameraPosition: [3.5, 3, 4.5],
+      target: [0.5, 0.5, 0.5],
+      axesSize: 2.2,
+    });
     this.onUpdate = options.onUpdate;
-
-    this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x0a0a0a);
-
-    const { clientWidth: w, clientHeight: h } = container;
-    this.camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
-    this.camera.position.set(3.5, 3, 4.5);
-    this.camera.lookAt(0.5, 0.5, 0.5);
-
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setSize(w, h);
-    container.appendChild(this.renderer.domElement);
-
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.08;
-    this.controls.target.set(0.5, 0.5, 0.5);
-    this.controls.addEventListener("change", () => this.scheduleRender());
-
-    this.scene.add(new THREE.GridHelper(10, 10, 0x333333, 0x1f1f1f));
-    this.scene.add(new THREE.AxesHelper(2.2));
-
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    const dir = new THREE.DirectionalLight(0xffffff, 0.6);
-    dir.position.set(5, 10, 7);
-    this.scene.add(dir);
 
     // Transformed parallelepiped — wireframe edges of unit cube under B
     this.parallelepipedLines = new THREE.LineSegments(
@@ -105,9 +72,6 @@ export class BasisScene {
       new THREE.LineBasicMaterial({ color: 0xe1bee7, transparent: true, opacity: 0.55 })
     );
     this.scene.add(this.parallelepipedLines);
-
-    this.resizeObserver = new ResizeObserver(() => this.handleResize());
-    this.resizeObserver.observe(container);
 
     this.applyChanges();
     this.scheduleRender();
@@ -130,24 +94,6 @@ export class BasisScene {
 
   public getBasis(): Matrix4 {
     return this.basis.map((row) => [...row]);
-  }
-
-  public destroy(): void {
-    this.destroyed = true;
-    this.resizeObserver.disconnect();
-    this.controls.dispose();
-    this.scene.traverse((obj) => {
-      if (obj instanceof THREE.Mesh || obj instanceof THREE.LineSegments || obj instanceof THREE.Line) {
-        obj.geometry.dispose();
-        const material = obj.material;
-        if (Array.isArray(material)) material.forEach((m) => m.dispose());
-        else material.dispose();
-      }
-    });
-    this.renderer.dispose();
-    if (this.renderer.domElement.parentElement === this.container) {
-      this.container.removeChild(this.renderer.domElement);
-    }
   }
 
   private applyChanges(): void {
@@ -238,24 +184,5 @@ export class BasisScene {
       determinant: det,
       basisVectors: [b1, b2, b3],
     });
-  }
-
-  private scheduleRender(): void {
-    if (this.rafScheduled || this.destroyed) return;
-    this.rafScheduled = true;
-    requestAnimationFrame(() => {
-      this.rafScheduled = false;
-      if (this.destroyed) return;
-      this.controls.update();
-      this.renderer.render(this.scene, this.camera);
-    });
-  }
-
-  private handleResize(): void {
-    const { clientWidth: w, clientHeight: h } = this.container;
-    this.camera.aspect = w / h;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(w, h);
-    this.scheduleRender();
   }
 }

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { ThreeSceneBase } from "./ThreeSceneBase";
 import { jacobiEigenSymmetric3, applyMatrix3ToVec3 } from "./MatrixMath";
 
 export interface EigenUpdate {
@@ -22,13 +22,7 @@ const POS_COLOR = 0xff80ab;
 const NEG_COLOR = 0x4dd0e1;
 const ZERO_COLOR = 0xaaaaaa;
 
-export class EigenScene {
-  private container: HTMLElement;
-  private scene: THREE.Scene;
-  private camera: THREE.PerspectiveCamera;
-  private renderer: THREE.WebGLRenderer;
-  private controls: OrbitControls;
-
+export class EigenScene extends ThreeSceneBase {
   private referenceSphere: THREE.LineSegments;
   private ellipsoidMesh: THREE.Mesh;
   private ellipsoidWire: THREE.LineSegments;
@@ -44,41 +38,10 @@ export class EigenScene {
   private basePositions: Float32Array;
 
   private onUpdate?: (state: EigenUpdate) => void;
-  private resizeObserver: ResizeObserver;
-  private rafScheduled = false;
-  private destroyed = false;
 
   constructor(options: EigenSceneOptions) {
-    const container = document.getElementById(options.containerId);
-    if (!container) throw new Error(`Container #${options.containerId} not found`);
-    this.container = container;
+    super({ containerId: options.containerId });
     this.onUpdate = options.onUpdate;
-
-    this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x0a0a0a);
-
-    const { clientWidth: w, clientHeight: h } = container;
-    this.camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
-    this.camera.position.set(4, 3, 5);
-    this.camera.lookAt(0, 0, 0);
-
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setSize(w, h);
-    container.appendChild(this.renderer.domElement);
-
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.08;
-    this.controls.addEventListener("change", () => this.scheduleRender());
-
-    this.scene.add(new THREE.GridHelper(10, 10, 0x333333, 0x1f1f1f));
-    this.scene.add(new THREE.AxesHelper(3));
-
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    const dir = new THREE.DirectionalLight(0xffffff, 0.6);
-    dir.position.set(5, 10, 7);
-    this.scene.add(dir);
 
     // Reference unit sphere — faint wireframe to show "what shape would we have if A=I"
     const refGeo = new THREE.WireframeGeometry(new THREE.SphereGeometry(1, 12, 8));
@@ -110,9 +73,6 @@ export class EigenScene {
     );
     this.scene.add(this.ellipsoidWire);
 
-    this.resizeObserver = new ResizeObserver(() => this.handleResize());
-    this.resizeObserver.observe(container);
-
     this.applyChanges();
     this.scheduleRender();
   }
@@ -127,24 +87,6 @@ export class EigenScene {
     // Keep symmetric: mirror to the transpose entry.
     if (row !== col) this.matrix[col][row] = value;
     this.applyChanges();
-  }
-
-  public destroy(): void {
-    this.destroyed = true;
-    this.resizeObserver.disconnect();
-    this.controls.dispose();
-    this.scene.traverse((obj) => {
-      if (obj instanceof THREE.Mesh || obj instanceof THREE.LineSegments || obj instanceof THREE.Line) {
-        obj.geometry.dispose();
-        const material = obj.material;
-        if (Array.isArray(material)) material.forEach((m) => m.dispose());
-        else material.dispose();
-      }
-    });
-    this.renderer.dispose();
-    if (this.renderer.domElement.parentElement === this.container) {
-      this.container.removeChild(this.renderer.domElement);
-    }
   }
 
   private applyChanges(): void {
@@ -210,25 +152,6 @@ export class EigenScene {
       });
     }
 
-    this.scheduleRender();
-  }
-
-  private scheduleRender(): void {
-    if (this.rafScheduled || this.destroyed) return;
-    this.rafScheduled = true;
-    requestAnimationFrame(() => {
-      this.rafScheduled = false;
-      if (this.destroyed) return;
-      this.controls.update();
-      this.renderer.render(this.scene, this.camera);
-    });
-  }
-
-  private handleResize(): void {
-    const { clientWidth: w, clientHeight: h } = this.container;
-    this.camera.aspect = w / h;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(w, h);
     this.scheduleRender();
   }
 }
