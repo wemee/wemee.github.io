@@ -1,6 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import MathPageNav from '@/components/MathPageNav.astro';
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
 import { FUNCTION_PRESETS } from '@/lib/math/calculus/presets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -12,19 +11,13 @@ const tex = (s: string, display = false) =>
 // Only presets that ship a closed-form taylor coefficient generator.
 const presets = FUNCTION_PRESETS.filter((p) => typeof p.taylor === 'function');
 ---
-<BaseLayout
-  currentPage="math"
-  title="泰勒展開 · 用多項式逼近任何函式"
-  description="任何夠平滑的函式都可以寫成多項式級數 — 拖展開中心、加項數，看逼近半徑怎麼擴張。"
+<MathLessonLayout
+  section="calculus"
+  slug="taylor"
+  seoTitle="泰勒展開 · 用多項式逼近任何函式"
+  seoDescription="任何夠平滑的函式都可以寫成多項式級數 — 拖展開中心、加項數，看逼近半徑怎麼擴張。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-    <a href="/math/calculus/" class="text-accent-blue hover:underline text-sm">← 回微積分專區</a>
-
-    <header class="mt-4 mb-6 text-center">
-      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 3 · 應用</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🎯 泰勒展開</h1>
-      <p class="text-base-400 max-w-2xl mx-auto">把任何函式拆成「<strong>常數 + 一次項 + 二次項 + …</strong>」— 想要多準就加多少項。距離展開中心越遠，逼近越糟。</p>
-    </header>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">把任何函式拆成「<strong>常數 + 一次項 + 二次項 + …</strong>」— 想要多準就加多少項。距離展開中心越遠，逼近越糟。</p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="lg:col-span-2">
@@ -149,9 +142,6 @@ const presets = FUNCTION_PRESETS.filter((p) => typeof p.taylor === 'function');
       </div>
     </section>
 
-    <MathPageNav section="calculus" slug="taylor" />
-  </div>
-
   <script>
     import { TaylorScene, type TaylorState } from '@/lib/math/calculus/TaylorScene';
     import { FUNCTION_PRESETS } from '@/lib/math/calculus/presets';
@@ -229,4 +219,4 @@ const presets = FUNCTION_PRESETS.filter((p) => typeof p.taylor === 'function');
       window.addEventListener('beforeunload', () => scene.destroy());
     });
   </script>
-</BaseLayout>
+</MathLessonLayout>

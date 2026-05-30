@@ -1,6 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import MathPageNav from '@/components/MathPageNav.astro';
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
 import { PRESETS } from '@/lib/math/linalg/presets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -9,19 +8,13 @@ import '@/styles/linalg.css';
 const tex = (s: string, display = false) =>
   katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
 ---
-<BaseLayout
-  currentPage="math"
-  title="矩陣組合 (A · B)"
-  description="兩個矩陣怎麼疊起來？順序為什麼這麼重要？拖拉兩個 preset 看 A·B 跟 B·A 差在哪。"
+<MathLessonLayout
+  section="linalg"
+  slug="composition"
+  seoTitle="矩陣組合 (A · B)"
+  seoDescription="兩個矩陣怎麼疊起來？順序為什麼這麼重要？拖拉兩個 preset 看 A·B 跟 B·A 差在哪。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-    <a href="/math/linalg/" class="text-accent-blue hover:underline text-sm">← 回線性代數專區</a>
-
-    <header class="mt-4 mb-6 text-center">
-      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 1 · 直覺基礎</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🔗 矩陣組合</h1>
-      <p class="text-base-400 max-w-2xl mx-auto">「先轉再平移」跟「先平移再轉」結果不一樣 — 矩陣的順序是會說話的。</p>
-    </header>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">「先轉再平移」跟「先平移再轉」結果不一樣 — 矩陣的順序是會說話的。</p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- 左：3D 視覺化 -->
@@ -124,8 +117,6 @@ const tex = (s: string, display = false) =>
       </div>
     </section>
 
-    <MathPageNav section="linalg" slug="composition" />
-  </div>
 
   <!-- This page packs A + B + result side-by-side (3 × 16 cells in one row).
        Shrink padding/font from the shared linalg.css baseline so they fit. -->
@@ -280,4 +271,4 @@ const tex = (s: string, display = false) =>
       window.addEventListener('beforeunload', () => scene.destroy());
     });
   </script>
-</BaseLayout>
+</MathLessonLayout>

@@ -1,6 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import MathPageNav from '@/components/MathPageNav.astro';
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import '@/styles/probstat.css';
@@ -8,19 +7,13 @@ import '@/styles/probstat.css';
 const tex = (s: string, display = false) =>
   katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
 ---
-<BaseLayout
-  currentPage="math"
-  title="最大似然估計 · 最小平方為什麼是 MLE"
-  description="拖資料點，看 NLL 等高線移動，MLE 解析解即時跟上。理解線性迴歸背後的高斯假設。"
+<MathLessonLayout
+  section="probstat"
+  slug="mle"
+  seoTitle="最大似然估計 · 最小平方為什麼是 MLE"
+  seoDescription="拖資料點，看 NLL 等高線移動，MLE 解析解即時跟上。理解線性迴歸背後的高斯假設。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-    <a href="/math/probstat/" class="text-accent-blue hover:underline text-sm">← 回機率統計專區</a>
-
-    <header class="mt-4 mb-6 text-center">
-      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 2 · 推論</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">📏 最大似然估計</h1>
-      <p class="text-base-400 max-w-2xl mx-auto">「最小平方」其實是「假設誤差是常態」下的最大似然。拖點，看損失曲面變形，看擬合線跟著最佳化。</p>
-    </header>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">「最小平方」其實是「假設誤差是常態」下的最大似然。拖點，看損失曲面變形，看擬合線跟著最佳化。</p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="lg:col-span-2 space-y-6">
@@ -122,8 +115,6 @@ const tex = (s: string, display = false) =>
       </div>
     </section>
 
-    <MathPageNav section="probstat" slug="mle" />
-  </div>
 
   <script>
     import { MLEModel, MLEScatterScene, MLEContourScene, type MLEState } from '@/lib/math/probstat/MLEScene';
@@ -156,4 +147,4 @@ const tex = (s: string, display = false) =>
       window.addEventListener('beforeunload', () => { scatter.destroy(); contour.destroy(); });
     });
   </script>
-</BaseLayout>
+</MathLessonLayout>

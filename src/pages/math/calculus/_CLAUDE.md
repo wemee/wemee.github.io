@@ -107,14 +107,19 @@ Each preset entry shape:
 
 ### Add a brand-new page (e.g. Chapter 4: 神經網路應用)
 1. Create `src/pages/math/calculus/<slug>.astro` (copy structure from
-   `slope-tangent.astro` for 2D or `gradient.astro` for 3D)
-2. Add the entry to `MATH_SECTIONS.calculus.pages` in `mathSections.ts` (controls
-   prev/next order)
-3. Add `SUPPLEMENTS[slug] = []` to the map in same file
+   `slope-tangent.astro` for 2D or `gradient.astro` for 3D). The page wraps its
+   body in `<MathLessonLayout section="calculus" slug="<slug>" seoTitle="..."
+   seoDescription="...">` with a `<p slot="tagline" ...>` lede — the layout
+   renders the breadcrumb, chapter eyebrow, emoji+title and the trailing
+   MathPageNav from the registry, so the page only supplies the widget + prose.
+2. Add the entry to `MATH_SECTIONS.calculus.pages` in `mathSections.ts` — single
+   source of truth for prev/next order, visible title/emoji and the chapter
+   eyebrow (`parts` map). Set `displayTitle` only if the `<h1>` should differ
+   from the short nav `title`.
+3. Add `SUPPLEMENTS[slug] = []` to the section in same file
 4. Add a card to `src/pages/math/calculus/index.astro` (`tools` array)
 5. Add a dropdown entry to `src/components/Navbar.astro` under the
    `📐 微積分專區` block
-6. Include `<MathPageNav section="calculus" slug="..." />` at the bottom of the new page
 
 ### Add a new Scene class
 If the new visualisation is unlike existing ones, create
@@ -197,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
   `scheduleRender` — so damping easing keeps ticking without a free loop.
 
 ### Astro
-- Every page uses `<BaseLayout currentPage="math" title="..." description="...">`.
+- Every page uses `<MathLessonLayout section="calculus" slug="..." seoTitle="..." seoDescription="...">` (which itself wraps `BaseLayout currentPage="math"`).
 - Page-level `<script>` uses ESM imports from `@/lib/math/calculus/...`.
 - KaTeX is SSR-only: `import katex from 'katex'` in frontmatter,
   `katex.renderToString(s, { displayMode })`, inject via `set:html`.
@@ -216,12 +221,14 @@ document.addEventListener('DOMContentLoaded', () => {
 - KaTeX equations use `\\dfrac` for inline-ish fractions.
 
 ### Page sections (top to bottom)
-1. Back link to `/math/calculus/`
-2. Hero (chapter label + title + tagline)
+`MathLessonLayout` provides 1, 2 and 6 from the registry; the page body is 3–5
+plus the `tagline` slot for 2.
+1. Back link to `/math/calculus/` *(layout)*
+2. Hero — chapter eyebrow + emoji/title *(layout)*; tagline via `slot="tagline"` *(page)*
 3. Main grid: `lg:col-span-2` canvas/container on left, controls stack on right
 4. Legend chips below canvas
 5. Teaching content in `<section class="mt-12 max-w-3xl mx-auto prose-content">`
-6. `<MathPageNav section="calculus" slug="..." />`
+6. MathPageNav *(layout)*
 
 ## What's intentionally NOT covered
 

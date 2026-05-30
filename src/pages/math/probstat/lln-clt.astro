@@ -1,6 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import MathPageNav from '@/components/MathPageNav.astro';
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import '@/styles/probstat.css';
@@ -8,19 +7,13 @@ import '@/styles/probstat.css';
 const tex = (s: string, display = false) =>
   katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
 ---
-<BaseLayout
-  currentPage="math"
-  title="大數法則 與 中央極限定理 · 兩個機率最重要的定理"
-  description="LLN：抽越多次、平均越接近真值。CLT：那個收斂的形狀本身是常態。兩個都動手看一次。"
+<MathLessonLayout
+  section="probstat"
+  slug="lln-clt"
+  seoTitle="大數法則 與 中央極限定理 · 兩個機率最重要的定理"
+  seoDescription="LLN：抽越多次、平均越接近真值。CLT：那個收斂的形狀本身是常態。兩個都動手看一次。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-    <a href="/math/probstat/" class="text-accent-blue hover:underline text-sm">← 回機率統計專區</a>
-
-    <header class="mt-4 mb-6 text-center">
-      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 1 · 基礎</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🎯 大數法則 與 中央極限定理</h1>
-      <p class="text-base-400 max-w-2xl mx-auto">兩個定理回答兩個問題：「抽夠多次平均會收斂嗎？」「收斂得多快、長什麼樣？」</p>
-    </header>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">兩個定理回答兩個問題：「抽夠多次平均會收斂嗎？」「收斂得多快、長什麼樣？」</p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Canvas -->
@@ -138,8 +131,6 @@ const tex = (s: string, display = false) =>
       </div>
     </section>
 
-    <MathPageNav section="probstat" slug="lln-clt" />
-  </div>
 
   <script>
     import { LLNCLTScene, type LLNCLTMode, type SourceKind, type LLNCLTState } from '@/lib/math/probstat/LLNCLTScene';
@@ -213,4 +204,4 @@ const tex = (s: string, display = false) =>
       window.addEventListener('beforeunload', () => scene.destroy());
     });
   </script>
-</BaseLayout>
+</MathLessonLayout>

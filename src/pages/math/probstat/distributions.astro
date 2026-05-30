@@ -1,6 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import MathPageNav from '@/components/MathPageNav.astro';
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import '@/styles/probstat.css';
@@ -8,19 +7,13 @@ import '@/styles/probstat.css';
 const tex = (s: string, display = false) =>
   katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
 ---
-<BaseLayout
-  currentPage="math"
-  title="機率分布動物園 · 5 個你會反覆遇到的分布"
-  description="常態、二項、Poisson、指數、均勻 — 拉滑桿改參數，PMF / PDF 跟 CDF 即時跟著動。"
+<MathLessonLayout
+  section="probstat"
+  slug="distributions"
+  seoTitle="機率分布動物園 · 5 個你會反覆遇到的分布"
+  seoDescription="常態、二項、Poisson、指數、均勻 — 拉滑桿改參數，PMF / PDF 跟 CDF 即時跟著動。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-    <a href="/math/probstat/" class="text-accent-blue hover:underline text-sm">← 回機率統計專區</a>
-
-    <header class="mt-4 mb-6 text-center">
-      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 1 · 基礎</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">📦 機率分布動物園</h1>
-      <p class="text-base-400 max-w-2xl mx-auto">每個分布都有「自己的故事」。挑一個、拉參數、同時看 PDF/PMF 跟累積分布 — 它們不是孤立的公式，是描述世界的一種詞彙。</p>
-    </header>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">每個分布都有「自己的故事」。挑一個、拉參數、同時看 PDF/PMF 跟累積分布 — 它們不是孤立的公式，是描述世界的一種詞彙。</p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Canvas -->
@@ -183,8 +176,6 @@ const tex = (s: string, display = false) =>
       </div>
     </section>
 
-    <MathPageNav section="probstat" slug="distributions" />
-  </div>
 
   <script>
     import { DistributionScene, type DistributionKind, type DistributionState } from '@/lib/math/probstat/DistributionScene';
@@ -262,4 +253,4 @@ const tex = (s: string, display = false) =>
       window.addEventListener('beforeunload', () => scene.destroy());
     });
   </script>
-</BaseLayout>
+</MathLessonLayout>

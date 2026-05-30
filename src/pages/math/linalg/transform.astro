@@ -1,6 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import MathPageNav from '@/components/MathPageNav.astro';
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
 import { PRESETS } from '@/lib/math/linalg/presets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -9,19 +8,13 @@ import '@/styles/linalg.css';
 const tex = (s: string, display = false) =>
   katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
 ---
-<BaseLayout
-  currentPage="math"
-  title="4×4 矩陣變換視覺化"
-  description="把矩陣當作動詞 — 即時改變每個分量，看立方體與向量如何被拉伸、旋轉、平移。"
+<MathLessonLayout
+  section="linalg"
+  slug="transform"
+  seoTitle="4×4 矩陣變換視覺化"
+  seoDescription="把矩陣當作動詞 — 即時改變每個分量，看立方體與向量如何被拉伸、旋轉、平移。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-    <a href="/math/linalg/" class="text-accent-blue hover:underline text-sm">← 回線性代數專區</a>
-
-    <header class="mt-4 mb-6 text-center">
-      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 1 · 直覺基礎</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🧊 4×4 矩陣變換</h1>
-      <p class="text-base-400 max-w-2xl mx-auto">「矩陣不是一堆數字 — 它是一個動作。」拖滑鼠繞圈看立方體，動手改數字試試。</p>
-    </header>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">「矩陣不是一堆數字 — 它是一個動作。」拖滑鼠繞圈看立方體，動手改數字試試。</p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- 左側：3D 畫布 -->
@@ -172,8 +165,6 @@ const tex = (s: string, display = false) =>
       </div>
     </section>
 
-    <MathPageNav section="linalg" slug="transform" />
-  </div>
 
   <script>
     import { MatrixScene3D } from '@/lib/math/linalg/MatrixScene3D';
@@ -297,4 +288,4 @@ const tex = (s: string, display = false) =>
       window.addEventListener('beforeunload', () => scene.destroy());
     });
   </script>
-</BaseLayout>
+</MathLessonLayout>

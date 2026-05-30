@@ -1,6 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import MathPageNav from '@/components/MathPageNav.astro';
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import '@/styles/probstat.css';
@@ -8,19 +7,13 @@ import '@/styles/probstat.css';
 const tex = (s: string, display = false) =>
   katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
 ---
-<BaseLayout
-  currentPage="math"
-  title="貝氏定理 · 看資料怎麼修正信念"
-  description="Beta-Binomial 共軛先驗：拉先驗、加觀測，後驗即時更新。看 Bayes 如何把資料變成新信念。"
+<MathLessonLayout
+  section="probstat"
+  slug="bayes"
+  seoTitle="貝氏定理 · 看資料怎麼修正信念"
+  seoDescription="Beta-Binomial 共軛先驗：拉先驗、加觀測，後驗即時更新。看 Bayes 如何把資料變成新信念。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-    <a href="/math/probstat/" class="text-accent-blue hover:underline text-sm">← 回機率統計專區</a>
-
-    <header class="mt-4 mb-6 text-center">
-      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 2 · 推論</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🔮 貝氏定理</h1>
-      <p class="text-base-400 max-w-2xl mx-auto">你對一枚硬幣的「正面機率 p」原本有看法（先驗）。看到資料後，看法會怎麼更新（後驗）？</p>
-    </header>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">你對一枚硬幣的「正面機率 p」原本有看法（先驗）。看到資料後，看法會怎麼更新（後驗）？</p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Canvas -->
@@ -144,8 +137,6 @@ const tex = (s: string, display = false) =>
       </div>
     </section>
 
-    <MathPageNav section="probstat" slug="bayes" />
-  </div>
 
   <script>
     import { BayesScene, type BayesState } from '@/lib/math/probstat/BayesScene';
@@ -210,4 +201,4 @@ const tex = (s: string, display = false) =>
       window.addEventListener('beforeunload', () => scene.destroy());
     });
   </script>
-</BaseLayout>
+</MathLessonLayout>

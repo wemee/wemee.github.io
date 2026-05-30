@@ -1,6 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import MathPageNav from '@/components/MathPageNav.astro';
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
 import { FUNCTION_PRESETS_3D } from '@/lib/math/calculus/presets3d';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -9,19 +8,13 @@ import '@/styles/calculus.css';
 const tex = (s: string, display = false) =>
   katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
 ---
-<BaseLayout
-  currentPage="math"
-  title="梯度與方向導數 · 多變數的「斜率」"
-  description="多變數函式的「斜率」其實是一個向量 — 它指向最陡上升方向。看 3D 曲面、梯度箭頭、和不同方向的瞬間變化率。"
+<MathLessonLayout
+  section="calculus"
+  slug="gradient"
+  seoTitle="梯度與方向導數 · 多變數的「斜率」"
+  seoDescription="多變數函式的「斜率」其實是一個向量 — 它指向最陡上升方向。看 3D 曲面、梯度箭頭、和不同方向的瞬間變化率。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-    <a href="/math/calculus/" class="text-accent-blue hover:underline text-sm">← 回微積分專區</a>
-
-    <header class="mt-4 mb-6 text-center">
-      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 3 · 應用</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🧭 梯度與方向導數</h1>
-      <p class="text-base-400 max-w-2xl mx-auto">把函式變成 3D 地形 — 站在某點，「<strong>哪個方向上坡最陡</strong>？」這個方向，就是梯度。拖滑鼠繞圈、改 (x₀, y₀)，看黃色箭頭怎麼指。</p>
-    </header>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">把函式變成 3D 地形 — 站在某點，「<strong>哪個方向上坡最陡</strong>？」這個方向，就是梯度。拖滑鼠繞圈、改 (x₀, y₀)，看黃色箭頭怎麼指。</p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="lg:col-span-2">
@@ -173,8 +166,6 @@ const tex = (s: string, display = false) =>
       </div>
     </section>
 
-    <MathPageNav section="calculus" slug="gradient" />
-  </div>
 
   <script>
     import { GradientScene, type GradientState } from '@/lib/math/calculus/GradientScene';
@@ -278,4 +269,4 @@ const tex = (s: string, display = false) =>
       window.addEventListener('beforeunload', () => scene.destroy());
     });
   </script>
-</BaseLayout>
+</MathLessonLayout>

@@ -1,6 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import MathPageNav from '@/components/MathPageNav.astro';
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
 import { FUNCTION_PRESETS } from '@/lib/math/calculus/presets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -13,19 +12,13 @@ const tex = (s: string, display = false) =>
 const presetSubset = ['parabola', 'cubic', 'sin', 'exp', 'gaussian'];
 const presets = FUNCTION_PRESETS.filter((p) => presetSubset.includes(p.id));
 ---
-<BaseLayout
-  currentPage="math"
-  title="導數即斜率 · 從割線到切線"
-  description="導數到底在測量什麼？拖滑桿讓割線縮成切線，親眼看極限怎麼發生。"
+<MathLessonLayout
+  section="calculus"
+  slug="slope-tangent"
+  seoTitle="導數即斜率 · 從割線到切線"
+  seoDescription="導數到底在測量什麼？拖滑桿讓割線縮成切線，親眼看極限怎麼發生。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-    <a href="/math/calculus/" class="text-accent-blue hover:underline text-sm">← 回微積分專區</a>
-
-    <header class="mt-4 mb-6 text-center">
-      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 1 · 導數</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">📈 導數即斜率</h1>
-      <p class="text-base-400 max-w-2xl mx-auto">當兩個點靠得夠近，連接它們的「割線」就變成切線。把 <code>h</code> 滑到接近 0 — 那個極限，就是導數。</p>
-    </header>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">當兩個點靠得夠近，連接它們的「割線」就變成切線。把 <code>h</code> 滑到接近 0 — 那個極限，就是導數。</p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- 左側：Canvas -->
@@ -148,8 +141,6 @@ const presets = FUNCTION_PRESETS.filter((p) => presetSubset.includes(p.id));
       </div>
     </section>
 
-    <MathPageNav section="calculus" slug="slope-tangent" />
-  </div>
 
   <script>
     import { SlopeTangentScene, type SlopeTangentState } from '@/lib/math/calculus/SlopeTangentScene';
@@ -238,4 +229,4 @@ const presets = FUNCTION_PRESETS.filter((p) => presetSubset.includes(p.id));
       window.addEventListener('beforeunload', () => scene.destroy());
     });
   </script>
-</BaseLayout>
+</MathLessonLayout>

@@ -1,0 +1,43 @@
+---
+/**
+ * Shared shell for every /math/ lesson page (linalg, calculus, probstat).
+ *
+ * Owns the parts that were copy-pasted across all 18 lessons: the BaseLayout
+ * wrapper, the outer container, the "← 回X專區" breadcrumb, the centered
+ * header (chapter eyebrow + emoji/title), and the trailing MathPageNav — all
+ * derived from the MATH_SECTIONS registry via `section` + `slug`.
+ *
+ * Each page supplies only what is genuinely its own:
+ *   - `seoTitle` / `seoDescription` — the richer <head> metadata
+ *   - a `tagline` slot — the one-line lede under the title (may contain KaTeX)
+ *   - the default slot — the interactive widget + prose body (+ its <script>)
+ */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import MathPageNav from '@/components/MathPageNav.astro';
+import { getLessonHeader } from '@/lib/math/mathSections';
+
+interface Props {
+  section: string;
+  slug: string;
+  seoTitle: string;
+  seoDescription: string;
+}
+
+const { section, slug, seoTitle, seoDescription } = Astro.props;
+const header = getLessonHeader(section, slug);
+---
+<BaseLayout currentPage="math" title={seoTitle} description={seoDescription}>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
+    <a href={header.indexHref} class="text-accent-blue hover:underline text-sm">← {header.backLabel}</a>
+
+    <header class="mt-4 mb-6 text-center">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">{header.eyebrow}</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">{header.emoji} {header.title}</h1>
+      <slot name="tagline" />
+    </header>
+
+    <slot />
+
+    <MathPageNav section={section} slug={slug} />
+  </div>
+</BaseLayout>
