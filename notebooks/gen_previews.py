@@ -23,12 +23,14 @@ OUT_DIR_BOOST = ROOT / "public" / "lab" / "ml" / "boosting"
 OUT_DIR_PT = ROOT / "public" / "lab" / "ml" / "pytorch"
 OUT_DIR_LLM = ROOT / "public" / "lab" / "llm" / "from-scratch"
 OUT_DIR_AGENT = ROOT / "public" / "lab" / "agent" / "from-scratch"
+OUT_DIR_RL = ROOT / "public" / "lab" / "rl" / "from-scratch"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_DIR_ML.mkdir(parents=True, exist_ok=True)
 OUT_DIR_BOOST.mkdir(parents=True, exist_ok=True)
 OUT_DIR_PT.mkdir(parents=True, exist_ok=True)
 OUT_DIR_LLM.mkdir(parents=True, exist_ok=True)
 OUT_DIR_AGENT.mkdir(parents=True, exist_ok=True)
+OUT_DIR_RL.mkdir(parents=True, exist_ok=True)
 
 # 重用 notebook 執行時下載的資料集（絕對路徑，不受 cwd 影響）
 PT_DATA = str(ROOT / "notebooks" / "ml" / "pytorch" / "data")
@@ -1220,6 +1222,222 @@ def agent_08_project() -> None:
         _aarrow(ax, (cx + 1.0 * np.cos(a), cy + 0.55 * np.sin(a)),
                 (x - 0.55 * np.cos(a), y - 0.4 * np.sin(a)), style="<|-|>", lw=1.8)
     save(fig, "08-project", OUT_DIR_AGENT)
+
+
+# ── rl 軌道：強化學習概念圖（繁中；✓/✗ 在 Heiti TC 缺字，改用 √/×）──
+
+def rl_01_worldview() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.8, "Agent 與 Environment 的試錯迴圈", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    _abox(ax, 2.6, 3.1, 2.9, 1.4, "Agent\n(學策略)", _AC["violet"], fs=15)
+    _abox(ax, 7.4, 3.1, 2.9, 1.4, "Environment\n(遊戲／世界)", _AC["green"], fs=15)
+    _aarrow(ax, (4.1, 3.7), (5.9, 3.7), _AC["blue"])
+    ax.text(5, 4.15, "動作 action", ha="center", fontsize=13.5, color=_AC["blue"])
+    _aarrow(ax, (5.9, 2.5), (4.1, 2.5), _AC["yellow"])
+    ax.text(5, 1.75, "新狀態 state ＋ 獎勵 reward", ha="center",
+            fontsize=13.5, color=_AC["yellow"])
+    ax.text(5, 0.7, "目標：最大化長期累積獎勵", ha="center",
+            fontsize=15, fontweight="bold", color=_AC["red"])
+    save(fig, "01-worldview", OUT_DIR_RL)
+
+
+def rl_02_q_learning() -> None:
+    _set_cjk()
+    from matplotlib.patches import Rectangle
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "Q-learning：一張表，學會走迷宮", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    # FrozenLake 4×4：S 起點、G 終點、H 冰洞，其餘畫學到的策略箭頭
+    grid = ["SFFF", "FHFH", "FFFH", "HFFG"]
+    policy = ["→↓↓↓", "↓  ↓ ", "→→↓ ", " →→★"]
+    cell = 0.92
+    gx, gy = 5 - 2 * cell, 4.6
+    for r in range(4):
+        for c in range(4):
+            kind = grid[r][c]
+            x, y = gx + c * cell, gy - r * cell
+            fc = {"S": "#859900", "G": "#b58900", "H": "#dc322f"}.get(kind, "#073642")
+            ax.add_patch(Rectangle((x, y - cell), cell * 0.92, cell * 0.92,
+                                   fc=fc, ec="#586e75", lw=1.2, zorder=2))
+            label = {"S": "S", "G": "G", "H": "×"}.get(kind, policy[r][c])
+            tc = "white" if kind in ("S", "G", "H") else "#93a1a1"
+            ax.text(x + cell * 0.46, y - cell * 0.5, label, ha="center", va="center",
+                    color=tc, fontsize=16, fontweight="bold", zorder=3)
+    ax.text(8.0, 2.6, "Q[狀態,動作]\n挑最大的走", ha="center", fontsize=13,
+            color=_AC["violet"], fontweight="bold")
+    ax.text(5, 0.55, "× = 冰洞　S = 起點　G = 終點", ha="center",
+            fontsize=12.5, color=_AC["gray"])
+    save(fig, "02-q-learning", OUT_DIR_RL)
+
+
+def rl_03_dqn() -> None:
+    _set_cjk()
+    from matplotlib.patches import Circle, Rectangle
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "從 Q 表到 DQN：用神經網路逼近 Q", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    # 左：爆炸的 Q 表
+    for i in range(5):
+        for j in range(4):
+            ax.add_patch(Rectangle((0.7 + j * 0.42, 3.4 - i * 0.34), 0.38, 0.30,
+                                   fc="#073642", ec="#586e75", lw=0.8, zorder=2))
+    ax.text(1.55, 4.15, "Q 表", ha="center", fontsize=14,
+            color=_AC["gray"], fontweight="bold")
+    ax.text(1.55, 1.55, "狀態太多 → 列不完 ×", ha="center", fontsize=12.5,
+            color=_AC["red"], fontweight="bold")
+    _aarrow(ax, (3.3, 3.0), (4.5, 3.0), _AC["blue"])
+    # 右：小神經網路
+    layers = [(6.2, 3), (7.6, 4), (9.0, 2)]
+    pts = []
+    for lx, n in layers:
+        ys = np.linspace(3.9, 2.1, n)
+        pts.append([(lx, y) for y in ys])
+        for (x, y) in pts[-1]:
+            ax.add_patch(Circle((x, y), 0.16, fc=_AC["cyan"], ec="none", zorder=3))
+    for a, b in zip(pts, pts[1:]):
+        for (x1, y1) in a:
+            for (x2, y2) in b:
+                ax.plot([x1, x2], [y1, y2], color="#586e75", lw=0.6, alpha=0.5, zorder=1)
+    ax.text(7.6, 4.5, "Q 網路", ha="center", fontsize=14,
+            color=_AC["cyan"], fontweight="bold")
+    ax.text(7.6, 1.4, "輸入狀態 → 輸出每個動作的 Q 值 √", ha="center",
+            fontsize=12.5, color=_AC["green"], fontweight="bold")
+    save(fig, "03-dqn", OUT_DIR_RL)
+
+
+def rl_04_stable_baselines3() -> None:
+    _set_cjk()
+    from matplotlib.patches import Rectangle
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "站在巨人肩上：一行取代整個迴圈", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    # 左：手刻一堆零件
+    ax.text(2.4, 4.6, "手刻", ha="center", fontsize=14,
+            color=_AC["gray"], fontweight="bold")
+    for i, t in enumerate(["replay buffer", "target network",
+                           "epsilon 衰減", "梯度更新迴圈", "..."]):
+        ax.add_patch(Rectangle((0.7, 3.9 - i * 0.6), 3.4, 0.46,
+                               fc="#073642", ec="#586e75", lw=1.0, zorder=2))
+        ax.text(2.4, 4.13 - i * 0.6, t, ha="center", va="center",
+                color="#93a1a1", fontsize=12, zorder=3)
+    _aarrow(ax, (4.4, 3.0), (5.7, 3.0), _AC["blue"])
+    # 右：一行
+    _abox(ax, 7.8, 3.4, 4.0, 1.0, "model.learn()", _AC["green"], fs=16)
+    ax.text(7.8, 2.4, "PPO / DQN 換一個名字\n就換演算法", ha="center",
+            fontsize=12.5, color=_AC["violet"])
+    ax.text(5, 0.6, "懂原理(手刻) ＋ 做得快(SB3)，兩個都要會", ha="center",
+            fontsize=14, fontweight="bold", color=_AC["red"])
+    save(fig, "04-stable-baselines3", OUT_DIR_RL)
+
+
+def rl_05_policy_gradient() -> None:
+    _set_cjk()
+    from matplotlib.patches import Rectangle
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "策略梯度：直接學一個策略 π(a|s)", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    _abox(ax, 1.9, 3.2, 2.0, 1.0, "狀態 s", _AC["blue"], fs=14)
+    _aarrow(ax, (2.95, 3.2), (3.9, 3.2))
+    _abox(ax, 5.0, 3.2, 2.0, 1.1, "策略網路\nπ(a|s)", _AC["violet"], fs=14)
+    _aarrow(ax, (6.1, 3.2), (7.0, 3.2))
+    # 右：動作機率長條
+    probs = [0.15, 0.7, 0.15]
+    labels = ["左", "右", "停"]
+    bx = 7.5
+    for i, (p, lb) in enumerate(zip(probs, labels)):
+        h = p * 2.4
+        col = _AC["green"] if p == max(probs) else "#586e75"
+        ax.add_patch(Rectangle((bx + i * 0.62, 2.1), 0.5, h, fc=col, ec="none", zorder=2))
+        ax.text(bx + i * 0.62 + 0.25, 2.0, lb, ha="center", va="top",
+                fontsize=12, color="#93a1a1")
+    ax.text(8.45, 4.85, "動作機率", ha="center", fontsize=12.5,
+            color=_AC["green"], fontweight="bold")
+    ax.text(5, 0.7, "高報酬的動作 → 機率推高；低報酬 → 壓低", ha="center",
+            fontsize=14, fontweight="bold", color=_AC["red"])
+    save(fig, "05-policy-gradient", OUT_DIR_RL)
+
+
+def rl_06_reward_shaping() -> None:
+    _set_cjk()
+    from matplotlib.patches import Rectangle
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "獎勵塑形：把稀疏訊號變稠密", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    # 上排：原始稀疏
+    ax.text(1.5, 4.35, "原始", ha="center", fontsize=13,
+            color=_AC["gray"], fontweight="bold")
+    cells = [("0", "#586e75"), ("0", "#586e75"), ("0", "#586e75"),
+             ("0", "#586e75"), ("+1", "#859900")]
+    for i, (t, c) in enumerate(cells):
+        ax.add_patch(Rectangle((2.6 + i * 1.1, 4.0), 0.95, 0.7, fc=c, ec="none", zorder=2))
+        ax.text(2.6 + i * 1.1 + 0.47, 4.35, t, ha="center", va="center",
+                color="white", fontsize=14, fontweight="bold", zorder=3)
+    ax.text(8.4, 3.55, "幾乎收不到訊號 → 學不動 ×", ha="right",
+            fontsize=12, color=_AC["red"], fontweight="bold")
+    # 下排：塑形後稠密
+    ax.text(1.5, 2.35, "塑形後", ha="center", fontsize=13,
+            color=_AC["gray"], fontweight="bold")
+    grad = [("+.1", "#3a5f3a"), ("+.3", "#557a2e"), ("+.5", "#6e8c1f"),
+            ("+.7", "#7d9510"), ("+1", "#859900")]
+    for i, (t, c) in enumerate(grad):
+        ax.add_patch(Rectangle((2.6 + i * 1.1, 2.0), 0.95, 0.7, fc=c, ec="none", zorder=2))
+        ax.text(2.6 + i * 1.1 + 0.47, 2.35, t, ha="center", va="center",
+                color="white", fontsize=13, fontweight="bold", zorder=3)
+    ax.text(8.4, 1.55, "中途就有訊號 → 學得動 √", ha="right",
+            fontsize=12, color=_AC["green"], fontweight="bold")
+    ax.text(5, 0.6, "wrapper：像洋蔥一層層套在環境外改行為", ha="center",
+            fontsize=13.5, fontweight="bold", color=_AC["violet"])
+    save(fig, "06-reward-shaping", OUT_DIR_RL)
+
+
+def rl_07_custom_env() -> None:
+    _set_cjk()
+    from matplotlib.patches import Circle
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "自訂環境：gym.Env 的五件套", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    cx, cy = 5, 3.0
+    ax.add_patch(Circle((cx, cy), 1.95, fc="none", ec=_AC["cyan"], lw=2.0, ls="--", zorder=1))
+    _abox(ax, cx, cy, 2.1, 1.0, "CatchEnv\n接水果", _AC["violet"], fs=14)
+    parts = [
+        (90, "observation\n_space", _AC["blue"]),
+        (162, "action\n_space", _AC["blue"]),
+        (234, "reset()", _AC["green"]),
+        (306, "step()", _AC["green"]),
+        (18, "render()", _AC["yellow"]),
+    ]
+    for ang, name, c in parts:
+        a = np.deg2rad(ang)
+        x, y = cx + 3.0 * np.cos(a), cy + 2.0 * np.sin(a)
+        _abox(ax, x, y, 1.85, 0.8, name, c, fs=11.5)
+        _aarrow(ax, (cx + 1.05 * np.cos(a), cy + 0.55 * np.sin(a)),
+                (x - 0.6 * np.cos(a), y - 0.42 * np.sin(a)), style="<|-|>", lw=1.7)
+    save(fig, "07-custom-env", OUT_DIR_RL)
+
+
+def rl_08_project() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "端到端：從 Colab 訓練到瀏覽器", ha="center",
+            fontsize=19, fontweight="bold", color=_AC["gray"])
+    steps = [
+        ("自訂環境\nCatchEnv", _AC["violet"]),
+        ("PPO 訓練\n(Colab)", _AC["green"]),
+        ("匯出權重\nJSON / TF.js", _AC["yellow"]),
+        ("瀏覽器\n即時推論", _AC["blue"]),
+    ]
+    xs = [1.7, 4.0, 6.3, 8.6]
+    for (x, (t, c)) in zip(xs, steps):
+        _abox(ax, x, 3.3, 2.0, 1.3, t, c, fs=12.5)
+    for x0, x1 in zip(xs, xs[1:]):
+        _aarrow(ax, (x0 + 1.05, 3.3), (x1 - 1.05, 3.3))
+    ax.text(5, 1.4, "遊戲邏輯只寫一份(TypeScript)，訓練與線上 100% 一致", ha="center",
+            fontsize=13, color=_AC["cyan"], fontweight="bold")
+    ax.text(5, 0.6, "你手刻的每一塊，都是這條上線流程的縮影", ha="center",
+            fontsize=14, fontweight="bold", color=_AC["red"])
+    save(fig, "08-project", OUT_DIR_RL)
 
 
 if __name__ == "__main__":

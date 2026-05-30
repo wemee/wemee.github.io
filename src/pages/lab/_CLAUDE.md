@@ -130,6 +130,11 @@ notebooks/.venv/bin/python -m jupyter nbconvert --to notebook --execute --inplac
 
   ⚠️ **這軌道的 notebook 要載 Qwen（transformers + bitsandbytes 4-bit，CUDA-only），本機 Mac 跑不動。** 比照動畫課用 `--clear-output` 提交、留到 **Colab T4** 執行；提交時不嵌輸出。產生器：`gen_agent_1to4.py` / `gen_agent_5to8.py`（用 `_nbgen` builder）。預覽圖在 `gen_previews.py` 的 `agent_01`…`agent_08`（概念圖，本機 matplotlib 產，用繁中；✓/✗ 在 Heiti TC 缺字，改用 √/×）。
 
+- **`rl/from-scratch`**（獨立 `rl` 軌道，2026-05-30 建置）：RL 世界觀 → 手刻 Q-learning → 手刻 DQN →
+  stable-baselines3 → 手刻策略梯度 REINFORCE → 獎勵塑形/wrappers → 自訂環境(CatchEnv) → 端到端訓練 PPO。
+  **手刻為主 + 必要時用 SB3。** 共用素材 `notebooks/_rl_shared.py`、產生器 `gen_rl_1to4.py`/`gen_rl_5to8.py`。
+  notebook **無輸出提交**，留 Colab 跑（裝 gymnasium/SB3 + 訓練）。**本機 build 已過；待 push main + Colab 驗證。**
+
 curriculum 與每課重點見各 `.md` frontmatter 與 module 頁。**`agent` 軌道已上線**（commit 2018d00 推 main、線上部署）；owner 在 Colab T4 驗證 01/03/06 三課皆成功跑出輸出（涵蓋最易出包點：Qwen 載入、ReAct 格式、RAG+sentence-transformers），其餘五課同模式視為全軌道可跑。
 
 ## Road map — AI/ML 教學線（2026-05-29 與 owner 拍板）
@@ -174,6 +179,55 @@ KV cache → SFT（單位數加法指令）→ DPO。
 - Colab 免費 T4 = **15GB VRAM**；BitsAndBytes 4-bit 砍 ~75% VRAM，Qwen 0.5B–3B 都裝得下；Qwen 在 CJK/中文是開源最強。
 - **Gemini 免費層** 支援 function calling、1,500 req/天、免信用卡、無到期；**Groq 免費層** 1,000 req/天、也支援 function calling。每人各自 key → 額度足夠教學。
 - 故 LLM 軌道走「從零自刻」（非用現成模型）；Agent 軌道用本地 Qwen 或免費 API，皆可行。
+
+## Road map — 第二階段：補完機器學習地圖（2026-05-30 與 owner 拍板）
+
+第一階段弧線（經典 ML → 深度學習 → 從零 LLM → AI Agent）完成後，owner 決定**四條全做、依序完成**。
+建置順序與理由如下，每條 8 課、比照既有模式（GitHub-backed Colab + `gen_*.py` + 預覽圖，零新基礎建設）。
+
+**順序：RL → CV → 資料科學 → Diffusion**（owner 2026-05-30 確認）
+- RL 先：補齊 ML 第三支柱，且站上 `ml-training/`（stable-baselines3/gymnasium/GameCore/PyMiniRacer）現成，
+  末課能訓練 agent 玩自家遊戲，綜效最大、趁 agent 脈絡尚熱。
+- CV 次：接 `pytorch` 軌道往視覺深挖，預覽圖最好做。
+- 資料科學三：當整個 lab 入門坡道，橋接 `matplotlib` → `sklearn`，做完深水區再鋪入口。
+- Diffusion 壓軸：最進階、算力最吃緊、領域變最快，放最後最新鮮。
+
+### 🎮 RL 強化學習軌道 — ✅ 已建置（2026-05-30）
+取向比照其他軌道：**手刻為主 + 必要時用 SB3**。tabular 先手刻、深度 RL 用 stable-baselines3。
+- **8 課課綱**：① RL 世界觀/CartPole ② 手刻 Q-learning（FrozenLake）③ Q-table → DQN（手刻簡版）
+  ④ stable-baselines3 DQN/PPO + TensorBoard ⑤ 策略梯度：手刻 REINFORCE ⑥ 獎勵塑形 & gym wrappers
+  ⑦ 自訂環境（CatchEnv 接水果）⑧ 端到端：訓練 PPO 玩接水果 + 上線思路（呼應 `ml-training/` 流程）。
+- **L07/L08 自訂環境決策**：原規劃「把站上遊戲包成 env（接 `GameCore`/PyMiniRacer）」改為**純 Python 自刻
+  CatchEnv（接水果）**——Colab 連 live JS 太脆弱（要 host 編譯後的 GameCore.js）。改用自成一體的小遊戲教
+  `gym.Env` 五件套，L08 prose 再講真實版（PyMiniRacer 跑同份 JS + TF.js 匯出）銜接遊戲區。共用素材
+  `_rl_shared.py`（`INSTALL_GYM`/`INSTALL_SB3`、`PLOT_SRC` 學習曲線、`CATCH_ENV_SRC`）；產生器
+  `gen_rl_1to4.py`/`gen_rl_5to8.py`；預覽 `gen_previews.py` 的 `rl_01`…`rl_08`。
+- **顏色**：軌道用 `primary`（blue，先前未被任何軌道用過）。軌道在 `labTracks.ts`、navbar 已加連結。
+- **提交策略**：notebook 比照 agent 走**無輸出提交**（`build_notebook` 只寫 JSON 不執行，天生無輸出，
+  免 clear-output）。CartPole/FrozenLake 純 CPU 也能跑，但裝 gymnasium/SB3 + 訓練在 Colab 最省事，故統一
+  留 Colab 驗證。本機僅產預覽圖（matplotlib 已有，免裝 gymnasium）。
+- **上線狀態**：本機 `npm run build` 已過（dist 生出 rl 兩個 index + 8 課 + 8 webp）。**待 push main +
+  Colab 驗證**（badge 寫死 main，未 push 前 404）。⚠️ 同樣別從 Colab 存回 GitHub。
+- **預覽圖雷**：`⇄`(U+21C4) 與 emoji `🎮`(U+1F3AE) 在 Heiti TC 缺字 → 改用純文字；沿用既有 √/× 替代 ✓/✗。
+
+### 📷 CV 電腦視覺軌道
+假設已學 `pytorch`，直接做視覺專屬內容（避免與 pytorch 的 CNN 基礎重疊）。
+- 課綱：① 影像即張量/torchvision transforms ② 手刻 CNN（CIFAR-10）③ 遷移學習（預訓練 ResNet 微調）
+  ④ 資料增強 & 過擬合 ⑤ 物件偵測入門（YOLO 現成模型推論）⑥ 影像分割概念 + 預訓練模型 ⑦ Grad-CAM
+  可解釋性（呼應 sklearn 的 SHAP）⑧ 端到端：自選資料集影像分類器 + 推論 demo。
+
+### 📊 資料科學實戰軌道
+入門坡道，橋接 `matplotlib` → `sklearn`，服務最廣受眾、門檻最低。
+- 課綱：① 資料科學流程/載入真實公開資料 ② 資料清理（缺失/型別/離群）③ EDA（groupby/pivot/相關）
+  ④ 視覺化說故事（接 matplotlib）⑤ 特徵工程 ⑥ 統計檢定/A-B test 直覺 ⑦ 分析 → sklearn baseline
+  ⑧ 端到端：真實資料集從問題到結論完整報告。
+
+### 🎨 Diffusion 生成式影像軌道
+**手刻迷你版 + diffusers 實用**並行，沿用「功能爛沒關係、重在機制」哲學。
+- 課綱：① 生成模型世界觀（VAE/GAN → diffusion）② 手刻 forward diffusion 加噪（MNIST）③ 手刻迷你
+  U-Net 去噪生成 ④ 取樣 DDPM/DDIM ⑤ 文字條件 CLIP/text embedding（概念）⑥ diffusers 跑 SD text2img
+  ⑦ img2img/inpainting/LoRA 概念 ⑧ 端到端：自製圖像生成小工具。
+- 注意：手刻 MNIST 迷你版可本機/T4 跑；SD 推論 CUDA-only，比照 agent 走無輸出提交、留 Colab T4。
 
 ### 其他 backlog
 - 新軌道：web（HTML/CSS/JS）、git 等。骨架全部複用，照「如何新增一條軌道」做。

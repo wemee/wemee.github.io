@@ -68,6 +68,22 @@ export const tracks: LabTrack[] = [
     ],
   },
   {
+    id: 'rl',
+    title: '強化學習',
+    icon: '🎮',
+    description: '讓 agent 在環境裡試錯學習——手刻 Q-learning、DQN、策略梯度，再用 stable-baselines3 加速，最後訓練它玩一個自製小遊戲',
+    color: 'primary',
+    modules: [
+      {
+        id: 'from-scratch',
+        title: '手刻強化學習',
+        icon: '🕹️',
+        description: '從 Q-table 到 DQN 與策略梯度全部親手刻，理解每一步；再借 stable-baselines3 加速，最後訓練 agent 玩自製接水果遊戲',
+        color: 'primary',
+      },
+    ],
+  },
+  {
     id: 'llm',
     title: '大型語言模型',
     icon: '💬',
