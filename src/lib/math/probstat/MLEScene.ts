@@ -1,4 +1,4 @@
-import { Canvas2DBase, type Canvas2DBaseOptions } from './Canvas2DBase';
+import { Canvas2DBase, type Canvas2DBaseOptions } from '../Canvas2DBase';
 import { randNormal } from './mathHelpers';
 
 export interface MLEPoint { x: number; y: number; }
