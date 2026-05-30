@@ -126,14 +126,17 @@ notebooks/.venv/bin/python -m jupyter nbconvert --to notebook --execute --inplac
 - **`ml/boosting`**：集成概念 → 梯度提升直覺 → XGBoost → early stopping → 調參 → LightGBM → SHAP → Kaggle 實戰。需 `xgboost`/`lightgbm`/`shap`。
 - **`ml/pytorch`**：tensor/autograd → 神經網路 → 訓練迴圈 → CNN → 正則化 → GPU → 遷移學習 → 部署。需 `torch`/`torchvision`；用 MNIST/CIFAR/FashionMNIST（執行時下載到 `notebooks/**/data/`，已 gitignore）。
 - **`llm/from-scratch`**（獨立 `llm` 軌道）：tokenization → 預測下一字 → 自注意力 → Transformer → 訓練 → KV cache → SFT → DPO。從零手刻迷你 GPT。共用素材在 `notebooks/_llm_shared.py`（唐詩語料 `CORPUS` + 模型原始碼 `GPT_SRC`，以字串注入各 notebook）。
+- **`agent/from-scratch`**（獨立 `agent` 軌道）：什麼是 agent/載入 Qwen → tool calling 本質 → 手刻 ReAct 迴圈 → 多工具與路由 → 記憶與摘要 → RAG agent → 多代理(planner+executor) → 實戰專案+免費 API sidebar。**手刻為主、本地 Qwen 為主、零框架。** 共用素材在 `notebooks/_agent_shared.py`（`LOAD_SRC` Qwen 4-bit 載入 + `chat()` 助手、`KB_SRC` 台灣常識 RAG 知識庫、`INSTALL`，以字串注入各 notebook）。
 
-curriculum 與每課重點見各 `.md` frontmatter 與 module 頁。**下一步是 `agent` 軌道——需先與 owner 討論再動工。**
+  ⚠️ **這軌道的 notebook 要載 Qwen（transformers + bitsandbytes 4-bit，CUDA-only），本機 Mac 跑不動。** 比照動畫課用 `--clear-output` 提交、留到 **Colab T4** 執行；提交時不嵌輸出。產生器：`gen_agent_1to4.py` / `gen_agent_5to8.py`（用 `_nbgen` builder）。預覽圖在 `gen_previews.py` 的 `agent_01`…`agent_08`（概念圖，本機 matplotlib 產，用繁中；✓/✗ 在 Heiti TC 缺字，改用 √/×）。
+
+curriculum 與每課重點見各 `.md` frontmatter 與 module 頁。**`agent` 軌道頁面/預覽/notebook 皆已建置；尚待 (1) 在 Colab T4 跑過每課驗證可執行、(2) push 到 main 讓 Colab badge 生效。**
 
 ## Road map — AI/ML 教學線（2026-05-29 與 owner 拍板）
 
 教學弧線：**經典 ML → 深度學習 → 從零打造 LLM → AI Agent**。`ml` 軌道專注「模型訓練」主軸（M1–M3）；
 LLM 與 Agent 因為夠大、性質不同，**各自獨立成軌道**。每模組做完整版（~8 課），比照 sklearn。
-**M1–M3 與 `llm` 軌道皆已完成；下一個是 `agent` 軌道（需先與 owner 討論再動工）。**
+**M1–M3、`llm`、`agent` 四條軌道皆已建置完成（整條弧線到位）。`agent` 僅剩 Colab 執行驗證 + push 兩步。**
 
 ### `ml` 軌道（模型訓練主軸）— ✅ 全部完成
 - **M1 `scikit-learn` 入門** — ✅ 已上線完整。
@@ -150,13 +153,21 @@ KV cache → SFT（單位數加法指令）→ DPO。
 - **實作要點**：共用素材在 `_llm_shared.py`；L6 的 KV-cache 模型 `block_size` 要 ≥ prompt+生成長度
   （位置嵌入用絕對位置，否則 index 越界）；以 greedy 解碼驗證 naive 與 cached 輸出逐字相同。
 
-### `agent` 軌道（AI Agent）— 獨立軌道
-自刻的迷你 GPT 太弱、無法 tool calling，故本軌道需「真正能用的模型」：
-- **零金鑰優先**：Colab 本地 **Qwen2.5-1.5B/3B-Instruct**（4-bit 量化跑在免費 T4，中文開源最強，
-  支援 Hermes-style tool calling）。
-- **選修「接軌真實世界」**：免費 API — **Gemini 2.5 Flash 免費層**（1,500 req/天、免卡、支援 function
-  calling）或 **Groq**（Llama 3.3 70B）。每人各自申請 free key，非共用額度。
-- 課綱待設計：Agent 概念 → function/tool calling → ReAct 迴圈 → RAG agent → 多代理/實戰。約 8 課。
+### `agent` 軌道（AI Agent）— ✅ 已建置（2026-05-30）
+自刻的迷你 GPT 太弱、無法 tool calling，故本軌道用「真正能用的模型」。與 owner 拍板的取向：
+**手刻為主（零框架，自寫 ReAct/路由/記憶/RAG）＋ 本地 Qwen 為主（零金鑰）。**
+- **主線模型**：Colab 本地 **Qwen2.5-1.5B-Instruct**（4-bit `bitsandbytes` 跑免費 T4；想更強換 3B）。
+- **選修「接軌真實世界」**（第 8 課 sidebar）：**Gemini 2.5 Flash 免費層**（1,500 req/天、免卡、function
+  calling）或 **Groq**。各自申請 free key、用 secrets/env 帶入，**別寫死**。因一切走 `chat()` 抽象，換模型只改該函式。
+- **8 課課綱**：① 什麼是 agent/載入 Qwen ② tool calling 本質 ③ 手刻 ReAct 迴圈 ④ 多工具與路由
+  ⑤ 記憶與摘要 ⑥ RAG agent ⑦ 多代理(planner+executor，reflection 留 sidebar) ⑧ 實戰專案+免費 API。
+- **L06 RAG 決策**：用內嵌台灣常識知識庫(`KB_SRC`，零下載、帶具體數字凸顯幻覺)＋ `sentence-transformers`
+  多語 embedding ＋ 手刻 numpy 餘弦檢索。**未用唐詩語料**（詩不適合事實檢索）。
+- **檔案**：內容頁 `src/content/lab/agent/from-scratch/0[1-8]-*.md`；notebook 產生器
+  `notebooks/gen_agent_1to4.py`、`gen_agent_5to8.py`＋共用 `notebooks/_agent_shared.py`；
+  預覽 `gen_previews.py` 的 `agent_01`…`agent_08`。軌道註冊在 `src/data/labTracks.ts`、navbar 已加連結。
+- **剩餘兩步**：notebook 本機跑不動（CUDA-only），需在 **Colab T4 跑過每課**確認可執行（尤其 tool-call
+  解析、Qwen 輸出格式），再 **push 到 main** 讓 Colab badge 生效。
 
 ### 免費資源研究結論（2026-05，已查證）
 - Colab 免費 T4 = **15GB VRAM**；BitsAndBytes 4-bit 砍 ~75% VRAM，Qwen 0.5B–3B 都裝得下；Qwen 在 CJK/中文是開源最強。

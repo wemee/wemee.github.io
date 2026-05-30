@@ -83,6 +83,22 @@ export const tracks: LabTrack[] = [
       },
     ],
   },
+  {
+    id: 'agent',
+    title: 'AI Agent',
+    icon: '🦾',
+    description: '讓 LLM 不只會說話，還會用工具、做事情——手刻 ReAct 迴圈，跑在免費 Colab 的本地 Qwen 上',
+    color: 'danger',
+    modules: [
+      {
+        id: 'from-scratch',
+        title: '手刻 AI Agent',
+        icon: '🔁',
+        description: '從 tool calling、ReAct 迴圈、記憶，到 RAG 與多代理協作——零框架，全部親手刻',
+        color: 'danger',
+      },
+    ],
+  },
 ];
 
 export const getTrack = (id: string): LabTrack | undefined =>

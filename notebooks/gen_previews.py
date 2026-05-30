@@ -22,11 +22,13 @@ OUT_DIR_ML = ROOT / "public" / "lab" / "ml" / "scikit-learn"
 OUT_DIR_BOOST = ROOT / "public" / "lab" / "ml" / "boosting"
 OUT_DIR_PT = ROOT / "public" / "lab" / "ml" / "pytorch"
 OUT_DIR_LLM = ROOT / "public" / "lab" / "llm" / "from-scratch"
+OUT_DIR_AGENT = ROOT / "public" / "lab" / "agent" / "from-scratch"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_DIR_ML.mkdir(parents=True, exist_ok=True)
 OUT_DIR_BOOST.mkdir(parents=True, exist_ok=True)
 OUT_DIR_PT.mkdir(parents=True, exist_ok=True)
 OUT_DIR_LLM.mkdir(parents=True, exist_ok=True)
+OUT_DIR_AGENT.mkdir(parents=True, exist_ok=True)
 
 # 重用 notebook 執行時下載的資料集（絕對路徑，不受 cwd 影響）
 PT_DATA = str(ROOT / "notebooks" / "ml" / "pytorch" / "data")
@@ -1010,6 +1012,214 @@ def llm_08_dpo() -> None:
     ax.set_title("DPO aligns the model to preferences", fontsize=18, fontweight="bold")
     ax.grid(True, alpha=0.3)
     save(fig, "08-dpo", OUT_DIR_LLM)
+
+
+# ───────────────────────── agent 軌道（手刻 AI Agent）─────────────────────────
+# 概念圖：方框 + 箭頭。預覽圖在本機產（CJK 字型可用），用繁中。
+
+_AC = {
+    "blue": "#268bd2", "green": "#859900", "yellow": "#b58900",
+    "red": "#dc322f", "cyan": "#2aa198", "gray": "#586e75", "violet": "#6c71c4",
+}
+
+
+def _abox(ax, x, y, w, h, text, fc, tc="white", fs=13, weight="bold"):
+    from matplotlib.patches import FancyBboxPatch
+
+    ax.add_patch(FancyBboxPatch(
+        (x - w / 2, y - h / 2), w, h,
+        boxstyle="round,pad=0.012,rounding_size=0.04",
+        fc=fc, ec="none", zorder=2))
+    ax.text(x, y, text, ha="center", va="center", color=tc,
+            fontsize=fs, fontweight=weight, zorder=3)
+
+
+def _aarrow(ax, p1, p2, color=None, style="-|>", lw=2.3):
+    from matplotlib.patches import FancyArrowPatch
+
+    ax.add_patch(FancyArrowPatch(
+        p1, p2, arrowstyle=style, mutation_scale=18, lw=lw,
+        color=color or _AC["gray"], zorder=1, shrinkA=2, shrinkB=2))
+
+
+def _ablank(figsize=FIGSIZE):
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 6.25)
+    ax.axis("off")
+    return fig, ax
+
+
+def agent_01_what_is_agent() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.8, "模型的極限，就是工具的起點", ha="center",
+            fontsize=20, fontweight="bold", color=_AC["gray"])
+    # 左：背過的答得出來
+    _abox(ax, 2.6, 4.2, 3.6, 0.9, "問：2 的 10 次方？", _AC["blue"], fs=14)
+    _aarrow(ax, (2.6, 3.7), (2.6, 3.0), _AC["green"])
+    _abox(ax, 2.6, 2.5, 3.6, 0.9, "1024 √", _AC["green"], fs=15)
+    ax.text(2.6, 1.7, "背過 → 答得出來", ha="center", fontsize=13, color=_AC["green"])
+    # 右：碰不到的世界只能瞎掰
+    _abox(ax, 7.4, 4.2, 3.6, 0.9, "問：現在幾點？", _AC["blue"], fs=14)
+    _aarrow(ax, (7.4, 3.7), (7.4, 3.0), _AC["red"])
+    _abox(ax, 7.4, 2.5, 3.6, 0.9, "瞎掰一個時間 ×", _AC["red"], fs=15)
+    ax.text(7.4, 1.7, "沒有時鐘 → 需要工具", ha="center", fontsize=13, color=_AC["red"])
+    ax.text(5, 0.6, "Agent = LLM（推理引擎）＋ 工具 ＋ 迴圈",
+            ha="center", fontsize=15, fontweight="bold", color=_AC["violet"])
+    save(fig, "01-what-is-agent", OUT_DIR_AGENT)
+
+
+def agent_02_tool_calling() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.8, "Tool Calling 的本質：結構化文字 ＋ 你寫的解析器",
+            ha="center", fontsize=17, fontweight="bold", color=_AC["gray"])
+    steps = [
+        (1.5, "① 描述工具\n(system prompt)", _AC["gray"]),
+        (3.7, "② 模型吐\nAction 文字", _AC["blue"]),
+        (6.0, "③ 我們解析\n＋執行 Python", _AC["green"]),
+        (8.4, "④ 結果餵回\n→ 最終答案", _AC["violet"]),
+    ]
+    for x, t, c in steps:
+        _abox(ax, x, 3.4, 1.9, 1.3, t, c, fs=12.5)
+    for x0, x1 in [(2.45, 2.75), (4.65, 4.95), (6.95, 7.35)]:
+        _aarrow(ax, (x0, 3.4), (x1, 3.4))
+    ax.text(5, 1.6, "模型永遠只是吐文字；真正碰到時鐘、碰到世界的，是步驟 ③ 你寫的 Python。",
+            ha="center", fontsize=13.5, color=_AC["red"])
+    save(fig, "02-tool-calling", OUT_DIR_AGENT)
+
+
+def agent_03_react_loop() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.9, "ReAct 迴圈：Thought → Action → Observation", ha="center",
+            fontsize=17, fontweight="bold", color=_AC["gray"])
+    rows = [
+        ("Thought：我得先知道現在幾點", _AC["yellow"]),
+        ("Action：get_current_time()", _AC["blue"]),
+        ("Observation：14:00", _AC["cyan"]),
+        ("Thought：算到 15:00 的差", _AC["yellow"]),
+        ("Action：calculator(\"15-14\")", _AC["blue"]),
+        ("Observation：1", _AC["cyan"]),
+        ("Final Answer：還有 1 小時", _AC["green"]),
+    ]
+    y = 5.1
+    for i, (t, c) in enumerate(rows):
+        _abox(ax, 5, y, 6.6, 0.62, t, c, fs=13)
+        if i < len(rows) - 1:
+            _aarrow(ax, (5, y - 0.31), (5, y - 0.55))
+        y -= 0.74
+    save(fig, "03-react-loop", OUT_DIR_AGENT)
+
+
+def agent_04_tool_routing() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "工具路由：模型自己選，registry 對應到函式",
+            ha="center", fontsize=17, fontweight="bold", color=_AC["gray"])
+    _abox(ax, 2.1, 3.1, 2.4, 1.1, "模型\n(選哪支)", _AC["violet"], fs=14)
+    tools = [
+        (5.1, "calculator", _AC["green"]),
+        (4.1, "get_time", _AC["green"]),
+        (3.1, "word_count", _AC["green"]),
+        (1.9, "search", _AC["green"]),
+        (0.8, "不存在的工具 ×", _AC["red"]),
+    ]
+    for y, name, c in tools:
+        _aarrow(ax, (3.35, 3.1), (6.4, y), c if c == _AC["red"] else _AC["gray"])
+        _abox(ax, 7.7, y, 3.1, 0.62, name, c, fs=12.5)
+    ax.text(7.7, 0.05, "錯誤也是 Observation → 模型自我修正",
+            ha="center", fontsize=12, color=_AC["red"])
+    save(fig, "04-tool-routing", OUT_DIR_AGENT)
+
+
+def agent_05_memory() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "記憶與 context 管理：太長就摘要，騰出空間",
+            ha="center", fontsize=17, fontweight="bold", color=_AC["gray"])
+    # context 軌道
+    from matplotlib.patches import Rectangle
+
+    ax.add_patch(Rectangle((0.6, 2.6), 8.0, 1.2, fc="#eee8d5", ec=_AC["gray"], lw=1.5, zorder=1))
+    ax.text(8.9, 3.2, "context\n上限", ha="center", va="center",
+            fontsize=12, color=_AC["red"], fontweight="bold")
+    ax.plot([8.62, 8.62], [2.55, 3.85], color=_AC["red"], lw=3, zorder=2)
+    # 摘要塊 + 逐字對話塊
+    _abox(ax, 1.6, 3.2, 1.6, 0.9, "摘要\n(舊對話)", _AC["violet"], fs=12)
+    for i, x in enumerate([3.2, 4.4, 5.6, 6.8, 7.9]):
+        _abox(ax, x, 3.2, 1.0, 0.8, f"回合\n{i+1}", _AC["blue"], fs=11)
+    _aarrow(ax, (4.0, 1.9), (1.9, 2.7), _AC["violet"])
+    ax.text(5.0, 1.6, "舊的逐字對話 → 壓縮成一塊摘要 → 新對話繼續進來",
+            ha="center", fontsize=13.5, color=_AC["violet"])
+    save(fig, "05-memory", OUT_DIR_AGENT)
+
+
+def agent_06_rag() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "RAG：先檢索、再 grounding", ha="center",
+            fontsize=18, fontweight="bold", color=_AC["gray"])
+    # 左：沒 RAG
+    ax.text(2.5, 5.0, "沒有 RAG", ha="center", fontsize=14, fontweight="bold", color=_AC["red"])
+    _abox(ax, 2.5, 4.1, 3.4, 0.8, "玉山多高？", _AC["blue"], fs=13)
+    _aarrow(ax, (2.5, 3.65), (2.5, 3.05), _AC["red"])
+    _abox(ax, 2.5, 2.55, 3.4, 0.85, "自信地瞎掰 ×", _AC["red"], fs=13)
+    # 右：有 RAG
+    ax.text(7.5, 5.0, "有 RAG", ha="center", fontsize=14, fontweight="bold", color=_AC["green"])
+    _abox(ax, 7.5, 4.1, 3.4, 0.8, "玉山多高？", _AC["blue"], fs=13)
+    _aarrow(ax, (7.5, 3.65), (7.5, 3.25), _AC["cyan"])
+    _abox(ax, 7.5, 2.95, 3.4, 0.5, "檢索 2 張卡片", _AC["cyan"], fs=11.5)
+    _aarrow(ax, (7.5, 2.68), (7.5, 2.28), _AC["green"])
+    _abox(ax, 7.5, 1.95, 3.4, 0.7, "3952 公尺 √ [1]", _AC["green"], fs=13)
+    ax.text(5, 0.7, "同一顆模型、同一個問題，差別只在「答之前有沒有先查」。",
+            ha="center", fontsize=13.5, color=_AC["gray"])
+    save(fig, "06-rag", OUT_DIR_AGENT)
+
+
+def agent_07_multi_agent() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "多代理：planner 拆 · executor 做 · orchestrator 合",
+            ha="center", fontsize=16.5, fontweight="bold", color=_AC["gray"])
+    _abox(ax, 5, 4.9, 5.0, 0.8, "複雜任務", _AC["violet"], fs=14)
+    xs = [2.2, 5.0, 7.8]
+    for i, x in enumerate(xs, 1):
+        _aarrow(ax, (5, 4.5), (x, 3.75))
+        _abox(ax, x, 3.4, 2.2, 0.75, f"步驟 {i}\n(planner)", _AC["yellow"], fs=12)
+        _aarrow(ax, (x, 3.0), (x, 2.45))
+        _abox(ax, x, 2.1, 2.2, 0.75, "executor\n(ReAct)", _AC["blue"], fs=12)
+        _aarrow(ax, (x, 1.7), (5, 1.15))
+    _abox(ax, 5, 0.8, 5.0, 0.75, "彙整 → 最終答案", _AC["green"], fs=14)
+    save(fig, "07-multi-agent", OUT_DIR_AGENT)
+
+
+def agent_08_project() -> None:
+    _set_cjk()
+    fig, ax = _ablank()
+    ax.text(5, 5.85, "完整 agent：所有零件，由 ReAct 迴圈串起來轉動",
+            ha="center", fontsize=16.5, fontweight="bold", color=_AC["gray"])
+    import numpy as np
+    from matplotlib.patches import Circle
+
+    cx, cy = 5, 3.1
+    ax.add_patch(Circle((cx, cy), 1.85, fc="none", ec=_AC["cyan"], lw=2.2, ls="--", zorder=1))
+    ax.text(cx + 1.55, cy + 1.35, "ReAct 迴圈", fontsize=12, color=_AC["cyan"], fontweight="bold")
+    _abox(ax, cx, cy, 2.0, 1.0, "LLM\n引擎", _AC["violet"], fs=14)
+    parts = [
+        (90, "記憶", _AC["blue"]),
+        (162, "工具箱", _AC["green"]),
+        (234, "RAG\n知識庫", _AC["yellow"]),
+        (306, "規劃器", _AC["red"]),
+    ]
+    for ang, name, c in parts:
+        a = np.deg2rad(ang)
+        x, y = cx + 2.9 * np.cos(a), cy + 1.95 * np.sin(a)
+        _abox(ax, x, y, 1.7, 0.75, name, c, fs=12.5)
+        _aarrow(ax, (cx + 1.0 * np.cos(a), cy + 0.55 * np.sin(a)),
+                (x - 0.55 * np.cos(a), y - 0.4 * np.sin(a)), style="<|-|>", lw=1.8)
+    save(fig, "08-project", OUT_DIR_AGENT)
 
 
 if __name__ == "__main__":
