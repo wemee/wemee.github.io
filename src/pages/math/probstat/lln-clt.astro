@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import ProbStatPageNav from '@/components/ProbStatPageNav.astro';
+import MathPageNav from '@/components/MathPageNav.astro';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import '@/styles/probstat.css';
@@ -138,7 +138,7 @@ const tex = (s: string, display = false) =>
       </div>
     </section>
 
-    <ProbStatPageNav slug="lln-clt" />
+    <MathPageNav section="probstat" slug="lln-clt" />
   </div>
 
   <script>

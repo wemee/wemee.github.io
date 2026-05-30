@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import CalcPageNav from '@/components/CalcPageNav.astro';
+import MathPageNav from '@/components/MathPageNav.astro';
 import { FUNCTION_PRESETS } from '@/lib/math/calculus/presets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -149,7 +149,7 @@ const presets = FUNCTION_PRESETS.filter((p) => typeof p.taylor === 'function');
       </div>
     </section>
 
-    <CalcPageNav slug="taylor" />
+    <MathPageNav section="calculus" slug="taylor" />
   </div>
 
   <script>

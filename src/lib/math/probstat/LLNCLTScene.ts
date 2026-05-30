@@ -1,4 +1,4 @@
-import { Canvas2DBase, type Canvas2DBaseOptions } from './Canvas2DBase';
+import { Canvas2DBase, type Canvas2DBaseOptions } from '../Canvas2DBase';
 import { randUniform, randExponential, randNormal, normalPDF } from './mathHelpers';
 
 export type LLNCLTMode = 'lln' | 'clt';

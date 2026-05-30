@@ -1,4 +1,4 @@
-import { Canvas2DBase, type Canvas2DBaseOptions } from './Canvas2DBase';
+import { Canvas2DBase, type Canvas2DBaseOptions } from '../Canvas2DBase';
 import { betaPDF } from './mathHelpers';
 
 export interface BayesState {

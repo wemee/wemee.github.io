@@ -1,18 +1,18 @@
 /**
- * Canvas2DBase — shared base class for /math/probstat/ 2D visualizations.
- *
- * Duplicated from /math/calculus/Canvas2DBase.ts. Kept per-subsection for now;
- * if a third 2D-canvas subsection appears, extract to src/lib/math/Canvas2DBase.ts
- * and update both imports.
+ * Canvas2DBase — shared base class for all /math/ 2D canvas visualizations
+ * (calculus, probstat, and any future 2D subsection).
  *
  * Responsibilities:
- *   - devicePixelRatio scaling
- *   - ResizeObserver on the canvas (handles flex-grid resizing)
- *   - Render-on-demand via requestAnimationFrame, deduplicated
- *   - destroy() cleanup
+ *   - devicePixelRatio scaling so lines stay crisp on Retina displays
+ *   - ResizeObserver on the canvas element (handles flex-grid resizing,
+ *     not just window resize — important when the right-hand control
+ *     panel collapses to a second row on narrow screens)
+ *   - Render-on-demand via requestAnimationFrame, deduplicated so calling
+ *     scheduleRender() multiple times per frame coalesces into one draw
+ *   - destroy() cleanup so SPA-style nav doesn't leak observers
  *
  * Subclasses implement draw() using `this.ctx`, `this.width`, `this.height`
- * (CSS pixels — DPR is already applied to the context transform).
+ * (all in CSS pixels — DPR is already applied to the context transform).
  * Subclasses call this.scheduleRender() whenever state changes.
  */
 export interface Canvas2DBaseOptions {
@@ -51,6 +51,11 @@ export abstract class Canvas2DBase {
     this.resizeObserver.observe(canvas);
   }
 
+  /**
+   * Apply devicePixelRatio scaling. Called on init and whenever the canvas
+   * element resizes. Reads CSS dimensions from getBoundingClientRect so the
+   * stylesheet controls sizing (responsive aspect-ratio etc.).
+   */
   protected setupCanvas(): void {
     const dpr = window.devicePixelRatio || 1;
     const rect = this.canvas.getBoundingClientRect();
@@ -67,6 +72,12 @@ export abstract class Canvas2DBase {
     this.ctx.scale(dpr, dpr);
   }
 
+  /**
+   * Queue a redraw on the next animation frame. Multiple calls per frame
+   * coalesce into a single draw — safe to call from input handlers, slider
+   * change events, and ResizeObserver callbacks without worrying about
+   * over-drawing.
+   */
   public scheduleRender(): void {
     if (this.renderQueued || this.destroyed) return;
     this.renderQueued = true;
@@ -78,6 +89,10 @@ export abstract class Canvas2DBase {
     });
   }
 
+  /**
+   * Implemented by each scene. The context is already clearRect'd and
+   * DPR-scaled — draw in CSS-pixel coordinates.
+   */
   protected abstract draw(): void;
 
   public destroy(): void {

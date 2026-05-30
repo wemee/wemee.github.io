@@ -24,7 +24,7 @@ Live at https://wemee.github.io/math/linalg/
 ```
 src/
 ├── components/
-│   └── LinalgPageNav.astro       # prev/next + supplements; used by every page
+│   └── MathPageNav.astro       # prev/next + supplements; used by every page
 ├── styles/
 │   └── linalg.css                # Shared input/cell/button styles. Imported
 │                                 # by every page in this subsection. Defines
@@ -32,8 +32,9 @@ src/
 │                                 # .sigma-row, .phase-btn, .rank-btn etc.
 │                                 # Always edit here, not in page <style> blocks.
 ├── lib/math/linalg/
-│   ├── linalgPages.ts            # LINALG_PAGES (curriculum order) + SUPPLEMENTS (extensibility hook)
+│   ├── (curriculum data lives in the shared src/lib/math/mathSections.ts → MATH_SECTIONS.linalg)
 │   ├── MatrixMath.ts             # Pure math: 4×4 ops, det, inverse3, Jacobi eigen
+│   ├── ThreeSceneBase.ts         # Shared Three.js scaffolding — every 3D scene below extends this
 │   ├── MatrixScene3D.ts          # Deformable cube + arrows (transform, composition)
 │   ├── ProjectionScene.ts        # Plane/line + projection + residual
 │   ├── BasisScene.ts             # Parallelepiped + three basis arrows
@@ -56,7 +57,7 @@ src/
 ## How to extend
 
 ### Add a supplementary reading to a page
-Edit `src/lib/math/linalg/linalgPages.ts`:
+Edit `src/lib/math/linalg/mathSections.ts`:
 ```typescript
 export const SUPPLEMENTS: Record<string, Supplement[]> = {
   projection: [
@@ -66,7 +67,7 @@ export const SUPPLEMENTS: Record<string, Supplement[]> = {
 };
 ```
 Entries show up automatically in a "📚 補充閱讀" box on the page (rendered
-by `LinalgPageNav`).
+by `MathPageNav`).
 
 ### Edit teaching content on a page
 Open the page's `.astro` file. Teaching content is in `<section class="mt-12 max-w-3xl mx-auto">`
@@ -88,18 +89,22 @@ re-render automatically.
 ### Add a brand-new page
 1. Create `src/pages/math/linalg/<slug>.astro` (copy structure from
    `eigen.astro` as the most complete reference)
-2. Add the entry to `LINALG_PAGES` in `linalgPages.ts` (controls prev/next order)
+2. Add the entry to `MATH_SECTIONS.linalg.pages` in `mathSections.ts` (controls prev/next order)
 3. Add `SUPPLEMENTS[slug] = []` to the map in same file
 4. Add a card to `src/pages/math/linalg/index.astro`
 5. Add a dropdown entry to `src/components/Navbar.astro`
-6. Include `<LinalgPageNav slug="..." />` at the bottom of the new page
+6. Include `<MathPageNav section="linalg" slug="..." />` at the bottom of the new page
 
 ### Add a new scene class
 If the new visualization is unlike existing ones, create
-`src/lib/math/linalg/<Name>Scene.ts`. Copy any existing `*Scene.ts` —
-the boilerplate (Three.js setup, OrbitControls, on-demand render loop,
-ResizeObserver, destroy) is roughly 80 lines that repeat across all 5
-scenes. If a 6th scene appears, consider extracting an abstract base.
+`src/lib/math/linalg/<Name>Scene.ts` that **extends `ThreeSceneBase`**.
+The base owns all the shared scaffolding (scene/camera/renderer,
+OrbitControls + damping, grid/axes/lights, render-on-demand RAF,
+ResizeObserver, dispose). Your subclass just: calls `super({ containerId,
+… })` (override `cameraPosition` / `target` / `axesSize` only if needed),
+adds its own meshes in the constructor, implements its update logic, and
+calls `this.scheduleRender()` whenever state changes. Don't re-implement
+the Three.js boot — that's the whole point of the base.
 
 ## Conventions
 
@@ -119,9 +124,10 @@ scenes. If a 6th scene appears, consider extracting an abstract base.
   σ=0 cases.
 
 ### Three.js
-- All scenes use `OrbitControls` with damping.
+- All scenes extend `ThreeSceneBase`, which sets up `OrbitControls` with
+  damping. Don't duplicate the setup per scene.
 - Render-on-demand pattern: rAF only fires when state changes or
-  controls move. Never run a free 60fps loop. See `scheduleRender`.
+  controls move. Never run a free 60fps loop. See `ThreeSceneBase.scheduleRender`.
 - ResizeObserver on container, not `window.resize`, so the canvas
   stays correctly sized inside the flex grid.
 
@@ -151,7 +157,7 @@ scenes. If a 6th scene appears, consider extracting an abstract base.
 4. Main grid: `lg:col-span-2` canvas on left, controls stack on right
 5. Legend chips below canvas
 6. Teaching content in `<section class="mt-12 max-w-3xl mx-auto">`
-7. `<LinalgPageNav slug="..." />`
+7. `<MathPageNav section="linalg" slug="..." />`
 
 ## What's intentionally NOT covered
 
@@ -185,10 +191,10 @@ Find the paragraph in the page's `.astro` file inside the
 `<section class="mt-12 max-w-3xl mx-auto">` block. Edit, commit, push.
 
 ### "Add a note linking to an external resource on page Z"
-Append to `SUPPLEMENTS['<z-slug>']` in `linalgPages.ts`.
+Append to `SUPPLEMENTS['<z-slug>']` in `mathSections.ts`.
 
 ### "Change the curriculum order"
-Reorder `LINALG_PAGES` in `linalgPages.ts`. `LinalgPageNav` recomputes
+Reorder `MATH_SECTIONS.linalg.pages` in `mathSections.ts`. `MathPageNav` recomputes
 prev/next automatically. Card order on `/math/linalg/` index is
 independent — edit `tools` array in `index.astro` separately if you
 want both in sync.
@@ -214,5 +220,5 @@ trace and det are computed from the eigenvalues array returned by
 - `920d6e9` — KaTeX, render-on-demand, composition page
 - `d926937` — projection page
 - `481764f` — change-of-basis page
-- `d17212d` — eigen + SVD pages + LinalgPageNav infrastructure
+- `d17212d` — eigen + SVD pages + MathPageNav infrastructure
 - `8db08cc` — retrofit nav on Chapter 1–2 pages + KaTeX overflow guard
