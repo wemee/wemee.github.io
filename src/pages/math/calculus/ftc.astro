@@ -1,6 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import MathPageNav from '@/components/MathPageNav.astro';
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
 import { FUNCTION_PRESETS } from '@/lib/math/calculus/presets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -13,19 +12,13 @@ const presets = FUNCTION_PRESETS.filter((p) =>
   ['parabola', 'cubic', 'sin', 'cos', 'exp', 'gaussian'].includes(p.id),
 );
 ---
-<BaseLayout
-  currentPage="math"
-  title="微積分基本定理 · 導數和積分是同一件事"
-  description="拖 x 看上面塗色面積增長，等於下面 F(x) 點的上升 — 親眼看 F′(x) = f(x)。"
+<MathLessonLayout
+  section="calculus"
+  slug="ftc"
+  seoTitle="微積分基本定理 · 導數和積分是同一件事"
+  seoDescription="拖 x 看上面塗色面積增長，等於下面 F(x) 點的上升 — 親眼看 F′(x) = f(x)。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-    <a href="/math/calculus/" class="text-accent-blue hover:underline text-sm">← 回微積分專區</a>
-
-    <header class="mt-4 mb-6 text-center">
-      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 2 · 積分</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🔄 微積分基本定理</h1>
-      <p class="text-base-400 max-w-2xl mx-auto">「面積累積函式」<span set:html={tex('F')} /> 的斜率 = 原函式 <span set:html={tex('f')} /> 的高度。上下兩個圖一起動，看這個等式怎麼<strong>視覺地</strong>成立。</p>
-    </header>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">「面積累積函式」<span set:html={tex('F')} /> 的斜率 = 原函式 <span set:html={tex('f')} /> 的高度。上下兩個圖一起動，看這個等式怎麼<strong>視覺地</strong>成立。</p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="lg:col-span-2">
@@ -160,8 +153,6 @@ const presets = FUNCTION_PRESETS.filter((p) =>
       </div>
     </section>
 
-    <MathPageNav section="calculus" slug="ftc" />
-  </div>
 
   <script>
     import { FTCScene, type FTCState } from '@/lib/math/calculus/FTCScene';
@@ -224,4 +215,4 @@ const presets = FUNCTION_PRESETS.filter((p) =>
       window.addEventListener('beforeunload', () => scene.destroy());
     });
   </script>
-</BaseLayout>
+</MathLessonLayout>

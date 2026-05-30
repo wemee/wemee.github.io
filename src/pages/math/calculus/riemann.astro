@@ -1,6 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import MathPageNav from '@/components/MathPageNav.astro';
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
 import { FUNCTION_PRESETS } from '@/lib/math/calculus/presets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -13,19 +12,13 @@ const presets = FUNCTION_PRESETS.filter((p) =>
   ['parabola', 'cubic', 'sin', 'cos', 'exp', 'gaussian'].includes(p.id),
 );
 ---
-<BaseLayout
-  currentPage="math"
-  title="黎曼和 · 用矩形逼近積分"
-  description="把曲線下的面積切成 n 個矩形 — 看看 n 多大時，矩形總和才會逼近真值。"
+<MathLessonLayout
+  section="calculus"
+  slug="riemann"
+  seoTitle="黎曼和 · 用矩形逼近積分"
+  seoDescription="把曲線下的面積切成 n 個矩形 — 看看 n 多大時，矩形總和才會逼近真值。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-    <a href="/math/calculus/" class="text-accent-blue hover:underline text-sm">← 回微積分專區</a>
-
-    <header class="mt-4 mb-6 text-center">
-      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 2 · 積分</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">📊 黎曼和</h1>
-      <p class="text-base-400 max-w-2xl mx-auto">積分的定義其實很笨：「<strong>把面積切成超多矩形然後加起來</strong>」。看 n 從 4 升到 200，矩形怎麼逐漸貼合曲線。</p>
-    </header>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">積分的定義其實很笨：「<strong>把面積切成超多矩形然後加起來</strong>」。看 n 從 4 升到 200，矩形怎麼逐漸貼合曲線。</p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="lg:col-span-2">
@@ -163,8 +156,6 @@ const presets = FUNCTION_PRESETS.filter((p) =>
       </div>
     </section>
 
-    <MathPageNav section="calculus" slug="riemann" />
-  </div>
 
   <script>
     import { RiemannScene, type RiemannState, type RiemannMode } from '@/lib/math/calculus/RiemannScene';
@@ -252,4 +243,4 @@ const presets = FUNCTION_PRESETS.filter((p) =>
       window.addEventListener('beforeunload', () => scene.destroy());
     });
   </script>
-</BaseLayout>
+</MathLessonLayout>

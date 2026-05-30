@@ -1,6 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import MathPageNav from '@/components/MathPageNav.astro';
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
 import { FUNCTION_PRESETS } from '@/lib/math/calculus/presets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -14,19 +13,13 @@ const presets = FUNCTION_PRESETS.filter((p) =>
   ['parabola', 'cubic', 'sin', 'cos', 'exp', 'gaussian'].includes(p.id),
 );
 ---
-<BaseLayout
-  currentPage="math"
-  title="鏈式法則 · 兩個斜率的相乘"
-  description="函式合成的微分：(g∘f)′(x) = g′(f(x))·f′(x) — 用兩條曲線並排看斜率怎麼「接力」。"
+<MathLessonLayout
+  section="calculus"
+  slug="chain-rule"
+  seoTitle="鏈式法則 · 兩個斜率的相乘"
+  seoDescription="函式合成的微分：(g∘f)′(x) = g′(f(x))·f′(x) — 用兩條曲線並排看斜率怎麼「接力」。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-    <a href="/math/calculus/" class="text-accent-blue hover:underline text-sm">← 回微積分專區</a>
-
-    <header class="mt-4 mb-6 text-center">
-      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 1 · 導數</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🔗 鏈式法則</h1>
-      <p class="text-base-400 max-w-2xl mx-auto">把兩個函式串起來變一個 — 它的斜率不是相加，而是<strong>相乘</strong>。把 x 拖看看，上下兩條切線的斜率對著看。</p>
-    </header>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">把兩個函式串起來變一個 — 它的斜率不是相加，而是<strong>相乘</strong>。把 x 拖看看，上下兩條切線的斜率對著看。</p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="lg:col-span-2">
@@ -146,8 +139,6 @@ const presets = FUNCTION_PRESETS.filter((p) =>
       </div>
     </section>
 
-    <MathPageNav section="calculus" slug="chain-rule" />
-  </div>
 
   <script>
     import { ChainRuleScene, type ChainRuleState } from '@/lib/math/calculus/ChainRuleScene';
@@ -224,4 +215,4 @@ const presets = FUNCTION_PRESETS.filter((p) =>
       window.addEventListener('beforeunload', () => scene.destroy());
     });
   </script>
-</BaseLayout>
+</MathLessonLayout>

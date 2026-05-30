@@ -102,13 +102,19 @@ block. KaTeX via `tex(s, displayMode)` helper, inject with `set:html`.
 ### Add a brand-new page (e.g., Chapter 4: Hypothesis testing, Information geometry)
 1. Create `src/pages/math/probstat/<slug>.astro` (copy `distributions.astro` as the
    template most-isolated-from-shared-data; copy `mle.astro` if you need a shared
-   model across multiple canvases).
-2. Add the entry to `MATH_SECTIONS.probstat.pages` in `mathSections.ts`.
-3. Add `SUPPLEMENTS[slug] = []` to the map.
+   model across multiple canvases). The page wraps its body in
+   `<MathLessonLayout section="probstat" slug="<slug>" seoTitle="..."
+   seoDescription="...">` with a `<p slot="tagline" ...>` lede — the layout
+   renders the breadcrumb, chapter eyebrow, emoji+title and the trailing
+   MathPageNav from the registry, so the page only supplies the widget + prose.
+2. Add the entry to `MATH_SECTIONS.probstat.pages` in `mathSections.ts` — single
+   source of truth for prev/next order, visible title/emoji and the chapter
+   eyebrow (`parts` map). Set `displayTitle` only if the `<h1>` should differ
+   from the short nav `title`.
+3. Add `SUPPLEMENTS[slug] = []` to the section.
 4. Add a card to `src/pages/math/probstat/index.astro`.
 5. Add a dropdown entry to `src/components/Navbar.astro` under the
    `🎲 機率統計專區` block.
-6. Include `<MathPageNav section="probstat" slug="..." />` at the bottom.
 
 ## Conventions
 
@@ -174,12 +180,14 @@ Same conventions as calculus:
 - KaTeX equations: `\\dfrac` for inline-friendly fractions.
 
 ### Page sections (top to bottom)
-1. Back link to `/math/probstat/`
-2. Hero (chapter label + title + tagline)
+`MathLessonLayout` provides 1, 2 and 6 from the registry; the page body is 3–5
+plus the `tagline` slot for 2.
+1. Back link to `/math/probstat/` *(layout)*
+2. Hero — chapter eyebrow + emoji/title *(layout)*; tagline via `slot="tagline"` *(page)*
 3. Main grid: `lg:col-span-2` canvas on left, controls stack on right
 4. Legend chips below canvas
 5. Teaching content in `<section class="mt-12 max-w-3xl mx-auto prose-content">`
-6. `<MathPageNav section="probstat" slug="..." />`
+6. MathPageNav *(layout)*
 
 ## What's intentionally NOT covered
 

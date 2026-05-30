@@ -88,12 +88,18 @@ re-render automatically.
 
 ### Add a brand-new page
 1. Create `src/pages/math/linalg/<slug>.astro` (copy structure from
-   `eigen.astro` as the most complete reference)
-2. Add the entry to `MATH_SECTIONS.linalg.pages` in `mathSections.ts` (controls prev/next order)
-3. Add `SUPPLEMENTS[slug] = []` to the map in same file
+   `eigen.astro` as the most complete reference). The page wraps its body in
+   `<MathLessonLayout section="linalg" slug="<slug>" seoTitle="..."
+   seoDescription="...">` with a `<p slot="tagline" ...>` lede — the layout
+   renders the breadcrumb, chapter eyebrow, emoji+title and the trailing
+   MathPageNav from the registry, so the page only supplies the widget + prose.
+2. Add the entry to `MATH_SECTIONS.linalg.pages` in `mathSections.ts` — single
+   source of truth for prev/next order, visible title/emoji and the chapter
+   eyebrow (`parts` map). Set `displayTitle` only if the `<h1>` should differ
+   from the short nav `title` (e.g. SVD keeps `奇異值分解 SVD`).
+3. Add `SUPPLEMENTS[slug] = []` to the section in same file
 4. Add a card to `src/pages/math/linalg/index.astro`
 5. Add a dropdown entry to `src/components/Navbar.astro`
-6. Include `<MathPageNav section="linalg" slug="..." />` at the bottom of the new page
 
 ### Add a new scene class
 If the new visualization is unlike existing ones, create
@@ -132,7 +138,7 @@ the Three.js boot — that's the whole point of the base.
   stays correctly sized inside the flex grid.
 
 ### Astro
-- Every page uses `<BaseLayout currentPage="math" title="..." description="...">`.
+- Every page uses `<MathLessonLayout section="linalg" slug="..." seoTitle="..." seoDescription="...">` (which wraps `BaseLayout currentPage="math"`). The breadcrumb, header and MathPageNav come from the layout + registry.
 - Page-level `<script>` uses ESM imports from `@/lib/math/linalg/...`.
   These are bundled per-page; Three.js does NOT get hoisted globally.
 - KaTeX is SSR-only: `import katex from 'katex'` in frontmatter,
@@ -151,13 +157,15 @@ the Three.js boot — that's the whole point of the base.
 - KaTeX matrices use `\\begin{bmatrix}...\\end{bmatrix}`.
 
 ### Page sections (top to bottom)
-1. Back link to `/math/linalg/`
-2. Hero (chapter label + title + tagline)
+`MathLessonLayout` provides 1, 2 and 7 from the registry; the page body is 3–6
+plus the `tagline` slot for 2.
+1. Back link to `/math/linalg/` *(layout)*
+2. Hero — chapter eyebrow + emoji/title *(layout)*; tagline via `slot="tagline"` *(page)*
 3. Optional info banner (e.g., "本頁限定對稱矩陣")
 4. Main grid: `lg:col-span-2` canvas on left, controls stack on right
 5. Legend chips below canvas
 6. Teaching content in `<section class="mt-12 max-w-3xl mx-auto">`
-7. `<MathPageNav section="linalg" slug="..." />`
+7. MathPageNav *(layout)*
 
 ## What's intentionally NOT covered
 

@@ -1,6 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import MathPageNav from '@/components/MathPageNav.astro';
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import '@/styles/probstat.css';
@@ -8,19 +7,13 @@ import '@/styles/probstat.css';
 const tex = (s: string, display = false) =>
   katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
 ---
-<BaseLayout
-  currentPage="math"
-  title="熵與 KL 散度 · 機率分布之間的距離"
-  description="熵是「平均驚訝度」、KL 是「用錯分布要多付的 bits」— 兩條分布並排可動，看 cross-entropy loss 在算什麼。"
+<MathLessonLayout
+  section="probstat"
+  slug="entropy"
+  seoTitle="熵與 KL 散度 · 機率分布之間的距離"
+  seoDescription="熵是「平均驚訝度」、KL 是「用錯分布要多付的 bits」— 兩條分布並排可動，看 cross-entropy loss 在算什麼。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-    <a href="/math/probstat/" class="text-accent-blue hover:underline text-sm">← 回機率統計專區</a>
-
-    <header class="mt-4 mb-6 text-center">
-      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 3 · 模擬與資訊</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🔥 熵與 KL 散度</h1>
-      <p class="text-base-400 max-w-2xl mx-auto">資訊論的兩個基本量。熵衡量「一個分布的不確定性」、KL 衡量「兩個分布有多不同」。動手把兩個分布拉成各種樣子，看數字怎麼跑。</p>
-    </header>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">資訊論的兩個基本量。熵衡量「一個分布的不確定性」、KL 衡量「兩個分布有多不同」。動手把兩個分布拉成各種樣子，看數字怎麼跑。</p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="lg:col-span-2">
@@ -120,8 +113,6 @@ const tex = (s: string, display = false) =>
       </div>
     </section>
 
-    <MathPageNav section="probstat" slug="entropy" />
-  </div>
 
   <script>
     import { EntropyScene, type EntropyState } from '@/lib/math/probstat/EntropyScene';
@@ -151,4 +142,4 @@ const tex = (s: string, display = false) =>
       window.addEventListener('beforeunload', () => scene.destroy());
     });
   </script>
-</BaseLayout>
+</MathLessonLayout>

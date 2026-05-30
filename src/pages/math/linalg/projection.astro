@@ -1,6 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import MathPageNav from '@/components/MathPageNav.astro';
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import '@/styles/linalg.css';
@@ -15,19 +14,13 @@ const PLANE_PRESETS = [
   { id: 'tilted', label: '斜面', hint: '法向量 = (1, 1, 1) — 跟三軸都不平行的平面', normal: [1, 1, 1] },
 ];
 ---
-<BaseLayout
-  currentPage="math"
-  title="投影 (Projection)"
-  description="把一個向量「壓」到一條線或一個平面上 — 線性回歸與 PCA 的幾何基礎。"
+<MathLessonLayout
+  section="linalg"
+  slug="projection"
+  seoTitle="投影 (Projection)"
+  seoDescription="把一個向量「壓」到一條線或一個平面上 — 線性回歸與 PCA 的幾何基礎。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-    <a href="/math/linalg/" class="text-accent-blue hover:underline text-sm">← 回線性代數專區</a>
-
-    <header class="mt-4 mb-6 text-center">
-      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 2 · 核心工具</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">📐 投影 (Projection)</h1>
-      <p class="text-base-400 max-w-2xl mx-auto">在牆上拉一個影子。投影就是找「最接近的影子」— 線性回歸與壓縮演算法的幾何核心。</p>
-    </header>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">在牆上拉一個影子。投影就是找「最接近的影子」— 線性回歸與壓縮演算法的幾何核心。</p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- 左：3D 視覺化 -->
@@ -181,8 +174,6 @@ const PLANE_PRESETS = [
       </div>
     </section>
 
-    <MathPageNav section="linalg" slug="projection" />
-  </div>
 
   <script>
     import { ProjectionScene, type Vector3 } from '@/lib/math/linalg/ProjectionScene';
@@ -280,4 +271,4 @@ const PLANE_PRESETS = [
       window.addEventListener('beforeunload', () => scene.destroy());
     });
   </script>
-</BaseLayout>
+</MathLessonLayout>

@@ -1,6 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import MathPageNav from '@/components/MathPageNav.astro';
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
 import { BASIS_PRESETS } from '@/lib/math/linalg/basisPresets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -9,19 +8,13 @@ import '@/styles/linalg.css';
 const tex = (s: string, display = false) =>
   katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
 ---
-<BaseLayout
-  currentPage="math"
-  title="換基底 Change of Basis"
-  description="同一個向量，在不同座標系裡長得不一樣 — 圖學、PCA、Fourier 的共同骨幹。"
+<MathLessonLayout
+  section="linalg"
+  slug="change-of-basis"
+  seoTitle="換基底 Change of Basis"
+  seoDescription="同一個向量，在不同座標系裡長得不一樣 — 圖學、PCA、Fourier 的共同骨幹。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-    <a href="/math/linalg/" class="text-accent-blue hover:underline text-sm">← 回線性代數專區</a>
-
-    <header class="mt-4 mb-6 text-center">
-      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 2 · 核心工具</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🔄 換基底 Change of Basis</h1>
-      <p class="text-base-400 max-w-2xl mx-auto">向量是物件，座標是描述方式。同一支箭頭，兩個人用不同的尺量會得到不同的數字。</p>
-    </header>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">向量是物件，座標是描述方式。同一支箭頭，兩個人用不同的尺量會得到不同的數字。</p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- 左：3D 視覺化 -->
@@ -182,8 +175,6 @@ const tex = (s: string, display = false) =>
       </div>
     </section>
 
-    <MathPageNav section="linalg" slug="change-of-basis" />
-  </div>
 
 
   <script>
@@ -336,4 +327,4 @@ const tex = (s: string, display = false) =>
       window.addEventListener('beforeunload', () => scene.destroy());
     });
   </script>
-</BaseLayout>
+</MathLessonLayout>

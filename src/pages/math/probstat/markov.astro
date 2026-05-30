@@ -1,6 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import MathPageNav from '@/components/MathPageNav.astro';
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import '@/styles/probstat.css';
@@ -8,19 +7,13 @@ import '@/styles/probstat.css';
 const tex = (s: string, display = false) =>
   katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
 ---
-<BaseLayout
-  currentPage="math"
-  title="馬可夫鏈 + MCMC · 亂走也能畫出機率密度"
-  description="2D Metropolis-Hastings 取樣器：看一個亂跳的點，怎麼花一段時間把目標分布逐步「填」出來。"
+<MathLessonLayout
+  section="probstat"
+  slug="markov"
+  seoTitle="馬可夫鏈 + MCMC · 亂走也能畫出機率密度"
+  seoDescription="2D Metropolis-Hastings 取樣器：看一個亂跳的點，怎麼花一段時間把目標分布逐步「填」出來。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-    <a href="/math/probstat/" class="text-accent-blue hover:underline text-sm">← 回機率統計專區</a>
-
-    <header class="mt-4 mb-6 text-center">
-      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 3 · 模擬與資訊</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🚶 馬可夫鏈與 MCMC</h1>
-      <p class="text-base-400 max-w-2xl mx-auto">沒有閉式解的後驗，怎麼畫？讓一個點按 Metropolis–Hastings 規則亂跳 — 它的軌跡會在長期下符合目標分布。</p>
-    </header>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">沒有閉式解的後驗，怎麼畫？讓一個點按 Metropolis–Hastings 規則亂跳 — 它的軌跡會在長期下符合目標分布。</p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="lg:col-span-2">
@@ -127,8 +120,6 @@ const tex = (s: string, display = false) =>
       </div>
     </section>
 
-    <MathPageNav section="probstat" slug="markov" />
-  </div>
 
   <script>
     import { MarkovScene, type TargetKind, type MarkovState } from '@/lib/math/probstat/MarkovScene';
@@ -174,4 +165,4 @@ const tex = (s: string, display = false) =>
       window.addEventListener('beforeunload', () => scene.destroy());
     });
   </script>
-</BaseLayout>
+</MathLessonLayout>

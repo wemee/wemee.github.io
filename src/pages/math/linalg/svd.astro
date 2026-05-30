@@ -1,6 +1,5 @@
 ---
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import MathPageNav from '@/components/MathPageNav.astro';
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
 import { SVD_PRESETS } from '@/lib/math/linalg/svdPresets';
 import katex from 'katex';
 import 'katex/dist/katex.min.css';
@@ -9,19 +8,13 @@ import '@/styles/linalg.css';
 const tex = (s: string, display = false) =>
   katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
 ---
-<BaseLayout
-  currentPage="math"
-  title="奇異值分解 SVD"
-  description="任何矩陣都能拆成「旋轉 → 拉伸 → 旋轉」三步 — CS 線代的最高峰。"
+<MathLessonLayout
+  section="linalg"
+  slug="svd"
+  seoTitle="奇異值分解 SVD"
+  seoDescription="任何矩陣都能拆成「旋轉 → 拉伸 → 旋轉」三步 — CS 線代的最高峰。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-    <a href="/math/linalg/" class="text-accent-blue hover:underline text-sm">← 回線性代數專區</a>
-
-    <header class="mt-4 mb-6 text-center">
-      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">Chapter 3 · 分解與譜論</p>
-      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-2">🔱 奇異值分解 SVD</h1>
-      <p class="text-base-400 max-w-2xl mx-auto" set:html={'任何矩陣 ' + tex('A = U \\Sigma V^\\top') + ' — 不必方陣、不必可逆、不必對稱。三個步驟：先旋轉、再沿軸拉伸、再旋轉。'}></p>
-    </header>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto" set:html={'任何矩陣 ' + tex('A = U \\Sigma V^\\top') + ' — 不必方陣、不必可逆、不必對稱。三個步驟：先旋轉、再沿軸拉伸、再旋轉。'}></p>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- 左：3D 視覺化 -->
@@ -187,8 +180,6 @@ const tex = (s: string, display = false) =>
       </div>
     </section>
 
-    <MathPageNav section="linalg" slug="svd" />
-  </div>
 
   <script>
     import { SVDScene } from '@/lib/math/linalg/SVDScene';
@@ -377,4 +368,4 @@ const tex = (s: string, display = false) =>
       window.addEventListener('beforeunload', () => scene.destroy());
     });
   </script>
-</BaseLayout>
+</MathLessonLayout>
