@@ -32,8 +32,9 @@ src/
 │                                 # .sigma-row, .phase-btn, .rank-btn etc.
 │                                 # Always edit here, not in page <style> blocks.
 ├── lib/math/linalg/
-│   ├── mathSections.ts            # MATH_SECTIONS.linalg.pages (curriculum order) + SUPPLEMENTS (extensibility hook)
+│   ├── (curriculum data lives in the shared src/lib/math/mathSections.ts → MATH_SECTIONS.linalg)
 │   ├── MatrixMath.ts             # Pure math: 4×4 ops, det, inverse3, Jacobi eigen
+│   ├── ThreeSceneBase.ts         # Shared Three.js scaffolding — every 3D scene below extends this
 │   ├── MatrixScene3D.ts          # Deformable cube + arrows (transform, composition)
 │   ├── ProjectionScene.ts        # Plane/line + projection + residual
 │   ├── BasisScene.ts             # Parallelepiped + three basis arrows
@@ -96,10 +97,14 @@ re-render automatically.
 
 ### Add a new scene class
 If the new visualization is unlike existing ones, create
-`src/lib/math/linalg/<Name>Scene.ts`. Copy any existing `*Scene.ts` —
-the boilerplate (Three.js setup, OrbitControls, on-demand render loop,
-ResizeObserver, destroy) is roughly 80 lines that repeat across all 5
-scenes. If a 6th scene appears, consider extracting an abstract base.
+`src/lib/math/linalg/<Name>Scene.ts` that **extends `ThreeSceneBase`**.
+The base owns all the shared scaffolding (scene/camera/renderer,
+OrbitControls + damping, grid/axes/lights, render-on-demand RAF,
+ResizeObserver, dispose). Your subclass just: calls `super({ containerId,
+… })` (override `cameraPosition` / `target` / `axesSize` only if needed),
+adds its own meshes in the constructor, implements its update logic, and
+calls `this.scheduleRender()` whenever state changes. Don't re-implement
+the Three.js boot — that's the whole point of the base.
 
 ## Conventions
 
@@ -119,9 +124,10 @@ scenes. If a 6th scene appears, consider extracting an abstract base.
   σ=0 cases.
 
 ### Three.js
-- All scenes use `OrbitControls` with damping.
+- All scenes extend `ThreeSceneBase`, which sets up `OrbitControls` with
+  damping. Don't duplicate the setup per scene.
 - Render-on-demand pattern: rAF only fires when state changes or
-  controls move. Never run a free 60fps loop. See `scheduleRender`.
+  controls move. Never run a free 60fps loop. See `ThreeSceneBase.scheduleRender`.
 - ResizeObserver on container, not `window.resize`, so the canvas
   stays correctly sized inside the flex grid.
 
