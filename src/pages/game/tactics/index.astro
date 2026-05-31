@@ -1,0 +1,248 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+    currentPage="game"
+    title="推演 - 戰術地城"
+    description="用 Phaser 3 打造的預告式戰術解謎地城《推演》：敵人預告下一步，你靠走位、推拉與精準攻擊讓攻擊落空、誤傷或踩進陷阱。完全資訊、純單局永久死亡，越闖越深。"
+>
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-12">
+        <header class="text-center mb-6">
+            <a href="/game" class="inline-block mb-3 text-sm text-accent-green hover:text-accent-green/80 transition">
+                ← 返回遊戲列表
+            </a>
+            <h1 class="text-3xl font-bold text-base-50 mb-1">🗺️ 推演</h1>
+            <p class="text-base-400 text-sm">敵人已預告下一步，想清楚再走每一格</p>
+        </header>
+
+        <div class="grid gap-6 lg:grid-cols-[1fr_300px]">
+            <!-- 棋局 -->
+            <div class="flex flex-col gap-3">
+                <div class="rounded-2xl bg-base-900 border border-base-600 p-2 shadow-lg shadow-accent-cyan/5">
+                    <div
+                        id="tac-canvas"
+                        class="rounded-xl overflow-hidden mx-auto"
+                        style="aspect-ratio: 4 / 3; max-width: 640px;"
+                    >
+                    </div>
+                </div>
+                <!-- 提示列 -->
+                <div
+                    id="tac-hint"
+                    class="text-center text-sm text-base-300 min-h-[1.5rem] transition"
+                >
+                    你的回合：點藍色格移動、或選一個行動
+                </div>
+            </div>
+
+            <!-- HUD 側欄 -->
+            <aside class="flex flex-col gap-4">
+                <!-- 狀態列 -->
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="rounded-lg border border-base-600 bg-base-800 p-3 text-center">
+                        <div class="text-xs text-base-400">生命</div>
+                        <div id="tac-hp" class="text-lg font-bold text-accent-red">0</div>
+                    </div>
+                    <div class="rounded-lg border border-base-600 bg-base-800 p-3 text-center">
+                        <div class="text-xs text-base-400">層數</div>
+                        <div id="tac-depth" class="text-lg font-bold text-accent-cyan">0</div>
+                    </div>
+                    <div class="rounded-lg border border-base-600 bg-base-800 p-3 text-center">
+                        <div class="text-xs text-base-400">敵人</div>
+                        <div id="tac-enemies" class="text-lg font-bold text-accent-yellow">0</div>
+                    </div>
+                </div>
+
+                <!-- 行動 -->
+                <div class="rounded-lg border border-base-600 bg-base-800 p-4">
+                    <h2 class="text-sm font-bold text-base-300 mb-3">行動（每回合 1 次）</h2>
+                    <div id="tac-actions" class="flex flex-col gap-2"></div>
+                    <button
+                        id="tac-end"
+                        class="mt-3 w-full px-4 py-2.5 rounded bg-accent-cyan hover:bg-accent-cyan/80 text-base-900 font-bold transition disabled:opacity-40"
+                    >結束回合</button>
+                </div>
+
+                <!-- 圖例 -->
+                <div class="rounded-lg border border-base-600 bg-base-800 p-4 text-xs text-base-400 space-y-1.5 mt-auto">
+                    <div class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-sm bg-accent-red"></span> 敵人攻擊預告（會打到的格）</div>
+                    <div class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-sm border-2 border-accent-yellow"></span> 敵人移動目標</div>
+                    <div class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-sm bg-accent-blue/40"></span> 你可移動的格</div>
+                    <div class="flex items-center gap-2"><span class="inline-block w-3 h-3 rounded-sm bg-accent-green/50"></span> 行動可選目標</div>
+                    <div class="pt-1 border-t border-base-700 text-base-500">把敵人推進深坑或推上尖刺；讓它的紅格落空或誤傷同伴。</div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- 層間獎勵 overlay -->
+        <div
+            id="tac-reward"
+            class="fixed inset-0 z-50 hidden items-center justify-center bg-base-900/80 backdrop-blur-sm"
+        >
+            <div class="rounded-2xl border border-base-600 bg-base-800 p-8 text-center max-w-md mx-4">
+                <h2 class="text-2xl font-bold text-accent-green mb-1">層已清空 ✦ 選擇增益</h2>
+                <p class="text-base-400 text-sm mb-6">挑一個帶進更深的樓層</p>
+                <div id="tac-reward-opts" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+            </div>
+        </div>
+
+        <!-- 死亡 overlay -->
+        <div
+            id="tac-overlay"
+            class="fixed inset-0 z-50 hidden items-center justify-center bg-base-900/80 backdrop-blur-sm"
+        >
+            <div class="rounded-2xl border border-base-600 bg-base-800 p-8 text-center max-w-sm mx-4">
+                <h2 class="text-2xl font-bold text-accent-red mb-2">💀 倒下了</h2>
+                <p id="tac-overlay-msg" class="text-base-400 mb-6"></p>
+                <button
+                    id="tac-restart"
+                    class="px-6 py-2.5 rounded bg-accent-cyan hover:bg-accent-cyan/80 text-base-900 font-bold transition"
+                >再闖一次</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        import { initTacticsGame } from '@/lib/games/phaser/games/tactics';
+        import type {
+            TacticsSnapshot,
+            RewardChoice,
+            ActionId,
+            ActionDef,
+        } from '@/lib/games/phaser/games/tactics';
+
+        const $ = (id: string) => document.getElementById(id)!;
+        const DEFAULT_HINT = '你的回合：點藍色格移動、或選一個行動';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const hpEl = $('tac-hp');
+            const depthEl = $('tac-depth');
+            const enemiesEl = $('tac-enemies');
+            const actionsEl = $('tac-actions');
+            const endBtn = $('tac-end') as HTMLButtonElement;
+            const hintEl = $('tac-hint');
+            const rewardEl = $('tac-reward');
+            const rewardOptsEl = $('tac-reward-opts');
+            const overlay = $('tac-overlay');
+            const overlayMsg = $('tac-overlay-msg');
+            const restartBtn = $('tac-restart') as HTMLButtonElement;
+
+            let selectedAction: ActionId | null = null;
+            const actionBtns = new Map<ActionId, HTMLButtonElement>();
+
+            const setHint = (msg: string) => {
+                hintEl.textContent = msg;
+            };
+
+            const updateActionStyles = () => {
+                for (const [id, btn] of actionBtns) {
+                    const on = id === selectedAction;
+                    btn.classList.toggle('ring-2', on);
+                    btn.classList.toggle('ring-accent-green', on);
+                }
+            };
+
+            const render = (s: TacticsSnapshot) => {
+                // 點目標前若無事發生（needs-target）不會走到 render；走到這裡代表回合已推進
+                selectedAction = null;
+
+                hpEl.textContent = '❤'.repeat(Math.max(0, s.hp)) || '—';
+                hpEl.classList.toggle('text-base-500', s.hp <= 0);
+                depthEl.textContent = `${s.depth}`;
+                enemiesEl.textContent = `${s.enemiesLeft}`;
+
+                rebuildActions(s.actions, s.status === 'playing');
+                endBtn.disabled = s.status !== 'playing';
+                if (s.status === 'playing') setHint(DEFAULT_HINT);
+
+                if (s.status === 'dead') {
+                    overlayMsg.textContent = `闖到第 ${s.depth} 層。最深紀錄：第 ${s.bestDepth} 層`;
+                    overlay.classList.remove('hidden');
+                    overlay.classList.add('flex');
+                } else {
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('flex');
+                }
+            };
+
+            const rebuildActions = (actions: ActionDef[], enabled: boolean) => {
+                actionsEl.innerHTML = '';
+                actionBtns.clear();
+                for (const a of actions) {
+                    const btn = document.createElement('button');
+                    btn.className =
+                        'text-left rounded-md bg-base-700/60 hover:bg-base-700 p-2.5 transition ' +
+                        'disabled:opacity-40 disabled:cursor-not-allowed';
+                    btn.disabled = !enabled;
+                    btn.innerHTML =
+                        `<div class="text-sm font-bold text-base-100">${a.name}</div>` +
+                        `<div class="text-[11px] text-base-400 mt-0.5 leading-snug">${a.desc}</div>`;
+                    btn.addEventListener('click', () => onActionClick(a.id));
+                    actionsEl.appendChild(btn);
+                    actionBtns.set(a.id, btn);
+                }
+                updateActionStyles();
+            };
+
+            const onActionClick = (id: ActionId) => {
+                if (selectedAction === id) {
+                    game.cancelAction();
+                    selectedAction = null;
+                    setHint(DEFAULT_HINT);
+                    updateActionStyles();
+                    return;
+                }
+                const needsTarget = game.selectAction(id);
+                if (needsTarget) {
+                    selectedAction = id;
+                    setHint('點選棋盤上的綠色目標（再按一次行動可取消）');
+                    updateActionStyles();
+                } else {
+                    selectedAction = null;
+                    updateActionStyles();
+                }
+            };
+
+            const showReward = (choice: RewardChoice) => {
+                rewardOptsEl.innerHTML = '';
+                for (const a of choice.options) {
+                    const btn = document.createElement('button');
+                    btn.className =
+                        'text-left rounded-lg border border-base-600 bg-base-700/60 hover:bg-base-700 ' +
+                        'hover:border-accent-green p-3 transition';
+                    btn.innerHTML =
+                        `<div class="text-sm font-bold text-accent-green">${a.name}</div>` +
+                        `<div class="text-xs text-base-400 mt-1 leading-snug">${a.desc}</div>`;
+                    btn.addEventListener('click', () => {
+                        game.chooseReward(a.id);
+                        rewardEl.classList.add('hidden');
+                        rewardEl.classList.remove('flex');
+                    });
+                    rewardOptsEl.appendChild(btn);
+                }
+                rewardEl.classList.remove('hidden');
+                rewardEl.classList.add('flex');
+            };
+
+            const log = (msg: string) => setHint(msg);
+
+            const game = initTacticsGame('tac-canvas', {
+                onStateChange: render,
+                onRewardOffer: showReward,
+                onLog: log,
+            });
+
+            endBtn.addEventListener('click', () => game.endTurn());
+            restartBtn.addEventListener('click', () => {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+                game.restart();
+            });
+
+            window.addEventListener('beforeunload', () => game.destroy());
+
+            if (import.meta.env.DEV) (window as any).__tac = game;
+        });
+    </script>
+</BaseLayout>
