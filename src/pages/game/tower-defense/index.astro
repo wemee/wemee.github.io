@@ -1,0 +1,276 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+    currentPage="game"
+    title="防線 - 塔防遊戲"
+    description="用 Phaser 3 打造的塔防遊戲《防線》：佈署機槍塔、加農炮與緩速塔，組出火力網擋下一波波敵人。"
+>
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-12">
+        <header class="text-center mb-6">
+            <a href="/game" class="inline-block mb-3 text-sm text-accent-green hover:text-accent-green/80 transition">
+                ← 返回遊戲列表
+            </a>
+            <h1 class="text-3xl font-bold text-base-50 mb-1">🏰 防線</h1>
+            <p class="text-base-400 text-sm">佈署塔防火力網，擋下每一波敵人</p>
+        </header>
+
+        <div class="grid gap-6 lg:grid-cols-[1fr_280px]">
+            <!-- 戰場 -->
+            <div class="rounded-2xl bg-base-900 border border-base-600 p-2 shadow-lg shadow-accent-cyan/5">
+                <div
+                    id="td-canvas"
+                    class="rounded-xl overflow-hidden mx-auto"
+                    style="aspect-ratio: 5 / 3; max-width: 720px;"
+                >
+                </div>
+            </div>
+
+            <!-- HUD 側欄 -->
+            <aside class="flex flex-col gap-4">
+                <!-- 狀態列 -->
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="rounded-lg border border-base-600 bg-base-800 p-3 text-center">
+                        <div class="text-xs text-base-400">金幣</div>
+                        <div id="td-gold" class="text-lg font-bold text-accent-yellow">0</div>
+                    </div>
+                    <div class="rounded-lg border border-base-600 bg-base-800 p-3 text-center">
+                        <div class="text-xs text-base-400">生命</div>
+                        <div id="td-lives" class="text-lg font-bold text-accent-red">0</div>
+                    </div>
+                    <div class="rounded-lg border border-base-600 bg-base-800 p-3 text-center">
+                        <div class="text-xs text-base-400">波次</div>
+                        <div id="td-wave" class="text-lg font-bold text-accent-cyan">0/0</div>
+                    </div>
+                </div>
+
+                <!-- 塔商店 -->
+                <div class="rounded-lg border border-base-600 bg-base-800 p-4">
+                    <h2 class="text-sm font-bold text-base-300 mb-3">建造塔</h2>
+                    <div id="td-shop" class="flex flex-col gap-2"></div>
+                </div>
+
+                <!-- 選取塔面板（動態顯示） -->
+                <div id="td-tower-panel" class="rounded-lg border border-base-600 bg-base-800 p-4 hidden">
+                    <h2 id="td-tower-name" class="text-sm font-bold text-base-300 mb-2"></h2>
+                    <div id="td-tower-stats" class="text-xs text-base-400 space-y-1 mb-3"></div>
+                    <div class="flex gap-2">
+                        <button
+                            id="td-upgrade-btn"
+                            class="flex-1 px-3 py-2 rounded bg-accent-green hover:bg-accent-green/80 text-base-50 text-sm font-medium transition disabled:opacity-40"
+                        >升級</button>
+                        <button
+                            id="td-sell-btn"
+                            class="flex-1 px-3 py-2 rounded bg-base-700 hover:bg-base-600 text-base-100 text-sm font-medium transition"
+                        >賣出</button>
+                    </div>
+                </div>
+
+                <!-- 控制 -->
+                <div class="rounded-lg border border-base-600 bg-base-800 p-4 flex flex-col gap-3 mt-auto">
+                    <button
+                        id="td-wave-btn"
+                        class="w-full px-4 py-2.5 rounded bg-accent-cyan hover:bg-accent-cyan/80 text-base-900 font-bold transition"
+                    >開始下一波</button>
+                    <label class="flex items-center gap-2 text-sm text-base-300 cursor-pointer select-none">
+                        <input id="td-auto" type="checkbox" class="w-4 h-4 accent-accent-cyan" />
+                        自動進行下一波
+                    </label>
+                    <div class="flex gap-2">
+                        <button
+                            id="td-speed-btn"
+                            class="flex-1 px-3 py-2 rounded bg-base-700 hover:bg-base-600 text-base-100 text-sm font-medium transition"
+                        >速度 1x</button>
+                        <button
+                            id="td-pause-btn"
+                            class="flex-1 px-3 py-2 rounded bg-base-700 hover:bg-base-600 text-base-100 text-sm font-medium transition"
+                        >暫停</button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- 結算 overlay -->
+        <div
+            id="td-overlay"
+            class="fixed inset-0 z-50 hidden items-center justify-center bg-base-900/80 backdrop-blur-sm"
+        >
+            <div class="rounded-2xl border border-base-600 bg-base-800 p-8 text-center max-w-sm mx-4">
+                <h2 id="td-overlay-title" class="text-2xl font-bold mb-2"></h2>
+                <p id="td-overlay-msg" class="text-base-400 mb-6"></p>
+                <button
+                    id="td-restart-btn"
+                    class="px-6 py-2.5 rounded bg-accent-cyan hover:bg-accent-cyan/80 text-base-900 font-bold transition"
+                >再玩一次</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        import { initTowerDefenseGame, TOWER_TYPES, TOWER_DEFS, buildCost, SPEEDS } from '@/lib/games/phaser/games/towerdefense';
+        import type { GameStateSnapshot, SelectedTowerInfo, TowerType } from '@/lib/games/phaser/games/towerdefense';
+
+        const $ = (id: string) => document.getElementById(id)!;
+        // 完整字面類名（避免 Tailwind purge 掉動態組出的 class）
+        const BORDER: Record<TowerType, string> = {
+            gun: 'border-accent-cyan',
+            cannon: 'border-accent-red',
+            frost: 'border-accent-blue',
+        };
+        const RING: Record<TowerType, string> = {
+            gun: 'ring-accent-cyan',
+            cannon: 'ring-accent-red',
+            frost: 'ring-accent-blue',
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const goldEl = $('td-gold');
+            const livesEl = $('td-lives');
+            const waveEl = $('td-wave');
+            const waveBtn = $('td-wave-btn') as HTMLButtonElement;
+            const speedBtn = $('td-speed-btn') as HTMLButtonElement;
+            const pauseBtn = $('td-pause-btn') as HTMLButtonElement;
+            const overlay = $('td-overlay');
+            const overlayTitle = $('td-overlay-title');
+            const overlayMsg = $('td-overlay-msg');
+            const restartBtn = $('td-restart-btn') as HTMLButtonElement;
+            const shopEl = $('td-shop');
+            const panelEl = $('td-tower-panel');
+            const panelName = $('td-tower-name');
+            const panelStats = $('td-tower-stats');
+            const upgradeBtn = $('td-upgrade-btn') as HTMLButtonElement;
+            const sellBtn = $('td-sell-btn') as HTMLButtonElement;
+            const autoEl = $('td-auto') as HTMLInputElement;
+
+            let placing: TowerType | null = null;
+            let lastGold = 0;
+            let curSpeed = 1;
+
+            const render = (s: GameStateSnapshot) => {
+                lastGold = s.gold;
+                goldEl.textContent = String(s.gold);
+                livesEl.textContent = String(s.lives);
+                waveEl.innerHTML =
+                    s.cycle > 0
+                        ? `${s.wave}<span class="block text-[10px] text-base-400 font-normal">第 ${s.cycle + 1} 輪</span>`
+                        : String(s.wave);
+                refreshShopAffordability(s.gold);
+
+                if (s.waveInProgress) {
+                    waveBtn.textContent = '進行中…';
+                    waveBtn.disabled = true;
+                } else if (s.status === 'ready') {
+                    waveBtn.textContent = '開始第 1 波';
+                    waveBtn.disabled = false;
+                } else if (s.status === 'playing') {
+                    waveBtn.textContent = `開始第 ${s.wave + 1} 波`;
+                    waveBtn.disabled = false;
+                } else {
+                    waveBtn.disabled = true;
+                }
+
+                curSpeed = s.speed;
+                speedBtn.textContent = `速度 ${s.speed}x`;
+
+                if (s.status === 'won' || s.status === 'lost') {
+                    overlayTitle.textContent = s.status === 'won' ? '🎉 守住了！' : '💥 防線失守';
+                    overlayTitle.className =
+                        'text-2xl font-bold mb-2 ' +
+                        (s.status === 'won' ? 'text-accent-green' : 'text-accent-red');
+                    overlayMsg.textContent =
+                        s.status === 'won'
+                            ? `你擋下了全部 ${s.totalWaves} 波攻勢！`
+                            : `撐到第 ${s.wave} 波。最佳紀錄：第 ${s.bestWave} 波`;
+                    overlay.classList.remove('hidden');
+                    overlay.classList.add('flex');
+                } else {
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('flex');
+                }
+            };
+
+            // 塔選取面板
+            const showPanel = (info: SelectedTowerInfo | null) => {
+                if (!info) {
+                    panelEl.classList.add('hidden');
+                    return;
+                }
+                panelEl.classList.remove('hidden');
+                panelName.textContent = `${info.name}　Lv.${info.level}/${info.maxLevel}`;
+                panelStats.innerHTML =
+                    `<div>傷害：<span class="text-base-100">${info.damage}</span></div>` +
+                    `<div>射程：<span class="text-base-100">${info.range}</span></div>`;
+                if (info.upgradeCost === null) {
+                    upgradeBtn.textContent = '已滿級';
+                    upgradeBtn.disabled = true;
+                } else {
+                    upgradeBtn.textContent = `升級 ($${info.upgradeCost})`;
+                    upgradeBtn.disabled = lastGold < info.upgradeCost;
+                }
+                sellBtn.textContent = `賣出 (+$${info.sellValue})`;
+            };
+
+            const shopBtns: { type: TowerType; el: HTMLButtonElement }[] = [];
+            // 依目前建築模式塔種更新商店高亮（場內取消時也會經此同步）
+            const applyPlacingHighlight = (type: TowerType | null) => {
+                placing = type;
+                for (const b of shopBtns) {
+                    b.el.classList.toggle('ring-2', b.type === type);
+                    b.el.classList.toggle(RING[b.type], b.type === type);
+                }
+            };
+
+            const game = initTowerDefenseGame('td-canvas', {
+                onStateChange: render,
+                onTowerSelected: showPanel,
+                onPlacingChanged: applyPlacingHighlight,
+            });
+
+            // 建造塔商店
+            const setPlacing = (type: TowerType | null) => game.selectTower(type);
+            for (const type of TOWER_TYPES) {
+                const def = TOWER_DEFS[type];
+                const cost = buildCost(type);
+                const btn = document.createElement('button');
+                btn.className =
+                    `text-left rounded-md border-l-4 ${BORDER[type]} bg-base-700/60 hover:bg-base-700 ` +
+                    `p-2.5 transition`;
+                btn.innerHTML =
+                    `<div class="flex items-center justify-between">` +
+                    `<span class="text-sm font-bold text-base-100">${def.name}</span>` +
+                    `<span class="text-xs font-mono text-accent-yellow">$${cost}</span></div>` +
+                    `<div class="text-[11px] text-base-400 mt-0.5">${def.desc}</div>`;
+                btn.addEventListener('click', () => setPlacing(placing === type ? null : type));
+                shopEl.appendChild(btn);
+                shopBtns.push({ type, el: btn });
+            }
+            const refreshShopAffordability = (gold: number) => {
+                for (const b of shopBtns) {
+                    const affordable = gold >= buildCost(b.type);
+                    b.el.classList.toggle('opacity-40', !affordable);
+                }
+            };
+            refreshShopAffordability(0);
+
+            upgradeBtn.addEventListener('click', () => game.upgradeSelected());
+            sellBtn.addEventListener('click', () => game.sellSelected());
+
+            waveBtn.addEventListener('click', () => game.startWave());
+            speedBtn.addEventListener('click', () => {
+                const i = SPEEDS.indexOf(curSpeed as (typeof SPEEDS)[number]);
+                game.setSpeed(SPEEDS[(i + 1) % SPEEDS.length]);
+            });
+            autoEl.addEventListener('change', () => game.setAutoStart(autoEl.checked));
+            pauseBtn.addEventListener('click', () => {
+                game.togglePause();
+                pauseBtn.textContent = pauseBtn.textContent === '暫停' ? '繼續' : '暫停';
+            });
+            restartBtn.addEventListener('click', () => game.restart());
+
+            window.addEventListener('beforeunload', () => game.destroy());
+
+            if (import.meta.env.DEV) (window as any).__td = game;
+        });
+    </script>
+</BaseLayout>
