@@ -1,0 +1,29 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import TestDataTool from './_TestDataTool';
+---
+<BaseLayout currentPage="tools"
+  title="測試假資料產生器 | 挫屎勇的實用工具"
+  description="給工程師用的測試假資料產生器：產生符合 Luhn 演算法的信用卡號碼、通過檢查碼驗證的身分證字號，用來測試表單驗證。純瀏覽器運算，不上傳。"
+>
+
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+    <h1 class="text-3xl font-bold text-base-50 mb-4">🧪 測試假資料產生器</h1>
+    <p class="text-base-400 mb-6">
+      開發網頁時要測試表單驗證、卡號遮罩、檢查碼邏輯，總不能拿自己的真資料來填。
+      這個工具產生<strong class="text-base-50">格式正確、可通過驗證</strong>的假資料，方便你測試。
+    </p>
+
+    <!-- 重要免責聲明 -->
+    <div class="bg-accent-yellow/15 border border-accent-yellow rounded-lg p-4 mb-6">
+      <h5 class="font-bold text-accent-yellow mb-1">⚠️ 這些都是「假資料」，僅供測試</h5>
+      <ul class="text-base-400 mb-0 list-disc list-inside space-y-1">
+        <li>信用卡號只是<strong class="text-base-50">符合 Luhn 演算法</strong>的格式，背後沒有任何真實帳戶，無法刷卡。</li>
+        <li>身分證字號只是<strong class="text-base-50">通過檢查碼規則</strong>的隨機組合，不對應任何真實個人。</li>
+        <li>請勿用於詐騙、冒用或任何違法用途。所有運算都在你的瀏覽器完成，不會上傳。</li>
+      </ul>
+    </div>
+
+    <TestDataTool client:load />
+  </div>
+</BaseLayout>
