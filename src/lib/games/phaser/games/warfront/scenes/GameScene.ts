@@ -6,8 +6,7 @@ import {
     LANE_JITTER,
     KEEP_PLAYER_X,
     KEEP_ENEMY_X,
-    SPAWN_OFFSET,
-    UNIT_SPACING,
+    SPAWN_BEHIND,
     MAX_UNITS_PER_SIDE,
     HOME_RANGE,
     HOME_DAMAGE_BONUS,
@@ -246,17 +245,12 @@ export class GameScene extends Phaser.Scene {
     }
 
     private advance(u: Unit, dtSec: number): void {
+        // 部隊可自由重疊（不互相阻擋）：只朝敵方主堡方向前進。
+        // 前排後排會因射程差異自然形成——近戰擠到最前線、遠程在後方放。
         const dir = u.side === 'player' ? 1 : -1;
         const speedMul = u.rallyMs > 0 ? 1 + RALLY.speedBonus : 1;
-        let newX = u.x + dir * u.def.speed * speedMul * dtSec;
-
-        // 與前方友軍保持間距，自然排成戰列
-        const ahead = this.nearestAllyAhead(u);
-        if (ahead) {
-            if (dir > 0) newX = Math.min(newX, ahead.x - UNIT_SPACING);
-            else newX = Math.max(newX, ahead.x + UNIT_SPACING);
-        }
-        u.x = Phaser.Math.Clamp(newX, KEEP_PLAYER_X + 12, KEEP_ENEMY_X - 12);
+        const newX = u.x + dir * u.def.speed * speedMul * dtSec;
+        u.x = Phaser.Math.Clamp(newX, 12, BOARD_WIDTH - 12);
     }
 
     private attackUnit(u: Unit, target: Unit): void {
@@ -353,22 +347,6 @@ export class GameScene extends Phaser.Scene {
             }
         }
         return best ? { unit: best, dist: bestDist } : null;
-    }
-
-    private nearestAllyAhead(u: Unit): Unit | null {
-        const dir = u.side === 'player' ? 1 : -1;
-        let best: Unit | null = null;
-        let bestDist = Infinity;
-        for (const o of this.units) {
-            if (o === u || o.side !== u.side || o.isDead) continue;
-            const ahead = (o.x - u.x) * dir;
-            if (ahead <= 0) continue;
-            if (ahead < bestDist) {
-                bestDist = ahead;
-                best = o;
-            }
-        }
-        return best;
     }
 
     // ── 投射物命中 ──
@@ -582,8 +560,8 @@ export class GameScene extends Phaser.Scene {
         const def = UNIT_DEFS[type];
         if (!this.eco(side).spend(def.cost)) return false;
 
-        const keepX = side === 'player' ? KEEP_PLAYER_X : KEEP_ENEMY_X;
-        const x = side === 'player' ? keepX + SPAWN_OFFSET : keepX - SPAWN_OFFSET;
+        // 從城堡後方出兵：玩家在主堡左側、敵方在主堡右側
+        const x = side === 'player' ? KEEP_PLAYER_X - SPAWN_BEHIND : KEEP_ENEMY_X + SPAWN_BEHIND;
         const y = GROUND_Y + Phaser.Math.Between(-LANE_JITTER, LANE_JITTER);
         const u = new Unit(this, side, def, x, y);
         const sideRally = side === 'player' ? this.playerRallyMs : this.enemyRallyMs;

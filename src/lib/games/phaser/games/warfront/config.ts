@@ -12,8 +12,10 @@ export const GROUND_Y = 308; // 部隊行軍的基準線
 export const LANE_JITTER = 24; // 部隊上下散開的幅度，避免完全重疊
 export const KEEP_PLAYER_X = 72; // 玩家主堡 x
 export const KEEP_ENEMY_X = BOARD_WIDTH - 72; // 敵方主堡 x
-export const SPAWN_OFFSET = 46; // 出兵點離主堡的距離
-export const UNIT_SPACING = 26; // 同隊前後排隊的最小間距
+// 出兵點在主堡「後方」：所有兵種都從城堡後面出來、往前推進。
+// 如此新兵永遠出現在貼城敵軍的後方（自家側），往前走自然接戰，
+// 索敵也只需看前方，不會出在敵軍背後而互相無視。
+export const SPAWN_BEHIND = 40;
 export const MAX_UNITS_PER_SIDE = 64; // 單方部隊數上限（避免失控）
 
 /** 主場優勢：距離自家主堡 HOME_RANGE 內的部隊獲得加成 */
