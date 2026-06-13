@@ -1,0 +1,315 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+    currentPage="game"
+    title="狼煙 - 單線拉鋸即時戰略"
+    description="用 Phaser 3 打造的即時戰略《狼煙》：兵種相剋、經濟博弈與戰爭迷霧，靠手動指揮（隕石／戰吼／偵查）推平敵方主堡。"
+>
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-12">
+        <header class="text-center mb-5">
+            <a href="/game" class="inline-block mb-3 text-sm text-accent-green hover:text-accent-green/80 transition">
+                ← 返回遊戲列表
+            </a>
+            <h1 class="text-3xl font-bold text-base-50 mb-1">🔥 狼煙</h1>
+            <p class="text-base-400 text-sm">單線拉鋸即時戰略 — 相剋三角、經濟博弈、戰爭迷霧、手動指揮</p>
+        </header>
+
+        <!-- 主堡血量條 -->
+        <div class="flex items-center gap-3 mb-3 text-xs">
+            <span class="text-accent-blue font-bold whitespace-nowrap">你</span>
+            <div class="flex-1 h-3 rounded-full bg-base-900 border border-base-700 overflow-hidden">
+                <div id="wf-php-bar" class="h-full bg-accent-blue transition-[width] duration-200" style="width:100%"></div>
+            </div>
+            <span id="wf-php" class="text-base-300 font-mono w-24 text-center">— / —</span>
+            <div class="flex-1 h-3 rounded-full bg-base-900 border border-base-700 overflow-hidden flex justify-end">
+                <div id="wf-ehp-bar" class="h-full bg-accent-red transition-[width] duration-200" style="width:100%"></div>
+            </div>
+            <span class="text-accent-red font-bold whitespace-nowrap">敵</span>
+        </div>
+
+        <div class="grid gap-6 lg:grid-cols-[1fr_300px]">
+            <!-- 戰場 -->
+            <div class="rounded-2xl bg-base-900 border border-base-600 p-2 shadow-lg shadow-accent-orange/5">
+                <div
+                    id="wf-canvas"
+                    class="rounded-xl overflow-hidden mx-auto w-full"
+                    style="aspect-ratio: 12 / 5; max-width: 960px;"
+                >
+                </div>
+            </div>
+
+            <!-- HUD 側欄 -->
+            <aside class="flex flex-col gap-4">
+                <!-- 資源 -->
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="rounded-lg border border-base-600 bg-base-800 p-2.5 text-center">
+                        <div class="text-[11px] text-base-400">金幣</div>
+                        <div id="wf-gold" class="text-lg font-bold text-accent-yellow">0</div>
+                    </div>
+                    <div class="rounded-lg border border-base-600 bg-base-800 p-2.5 text-center">
+                        <div class="text-[11px] text-base-400">收入/秒</div>
+                        <div id="wf-income" class="text-lg font-bold text-accent-green">0</div>
+                    </div>
+                    <div class="rounded-lg border border-base-600 bg-base-800 p-2.5 text-center">
+                        <div class="text-[11px] text-base-400">指揮值</div>
+                        <div id="wf-cp" class="text-lg font-bold text-accent-cyan">0</div>
+                    </div>
+                </div>
+
+                <!-- 兵種商店 -->
+                <div class="rounded-lg border border-base-600 bg-base-800 p-3">
+                    <h2 class="text-xs font-bold text-base-300 mb-2 uppercase tracking-wider">產兵 · 自動進攻</h2>
+                    <div id="wf-shop" class="grid grid-cols-1 gap-1.5"></div>
+                </div>
+
+                <!-- 升級 -->
+                <div class="rounded-lg border border-base-600 bg-base-800 p-3 flex flex-col gap-2">
+                    <h2 class="text-xs font-bold text-base-300 uppercase tracking-wider">升級</h2>
+                    <button
+                        id="wf-income-btn"
+                        class="flex items-center justify-between rounded-md border-l-4 border-accent-green bg-base-700/60 hover:bg-base-700 px-3 py-2 transition disabled:opacity-40"
+                    >
+                        <span class="text-sm text-base-100">📈 收入 <span id="wf-income-lvl" class="text-base-400 text-xs"></span></span>
+                        <span id="wf-income-cost" class="text-xs font-mono text-accent-yellow">$0</span>
+                    </button>
+                    <button
+                        id="wf-keep-btn"
+                        class="flex items-center justify-between rounded-md border-l-4 border-accent-blue bg-base-700/60 hover:bg-base-700 px-3 py-2 transition disabled:opacity-40"
+                    >
+                        <span class="text-sm text-base-100">🏯 主堡 <span id="wf-keep-lvl" class="text-base-400 text-xs"></span></span>
+                        <span id="wf-keep-cost" class="text-xs font-mono text-accent-yellow">$0</span>
+                    </button>
+                </div>
+
+                <!-- 指揮技能 -->
+                <div class="rounded-lg border border-base-600 bg-base-800 p-3">
+                    <h2 class="text-xs font-bold text-base-300 mb-2 uppercase tracking-wider">指揮技能 · 消耗指揮值</h2>
+                    <div id="wf-abilities" class="grid grid-cols-3 gap-1.5"></div>
+                    <p id="wf-ability-hint" class="text-[11px] text-accent-orange mt-2 h-4"></p>
+                </div>
+
+                <!-- 控制 -->
+                <div class="rounded-lg border border-base-600 bg-base-800 p-3 flex gap-2 mt-auto">
+                    <button
+                        id="wf-speed-btn"
+                        class="flex-1 px-3 py-2 rounded bg-base-700 hover:bg-base-600 text-base-100 text-sm font-medium transition"
+                    >速度 1x</button>
+                    <button
+                        id="wf-pause-btn"
+                        class="flex-1 px-3 py-2 rounded bg-base-700 hover:bg-base-600 text-base-100 text-sm font-medium transition"
+                    >暫停</button>
+                </div>
+            </aside>
+        </div>
+
+        <!-- 相剋說明 -->
+        <p class="text-center text-xs text-base-500 mt-4">
+            相剋：🛡️盾 → ⚔️騎 → 🏹弓 → 🛡️盾　·　🔮法師清群、✨牧師治療　·　靠近自家主堡的部隊更強（主場優勢）
+        </p>
+
+        <!-- 開戰 overlay -->
+        <div
+            id="wf-start"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-base-900/85 backdrop-blur-sm"
+        >
+            <div class="rounded-2xl border border-base-600 bg-base-800 p-7 text-center max-w-md mx-4">
+                <h2 class="text-2xl font-bold text-base-50 mb-1">🔥 狼煙</h2>
+                <p class="text-base-400 text-sm mb-5">
+                    把對方主堡打到 0 就獲勝。攢經濟還是早出兵壓制？敵方後場藏在迷霧裡——用偵查看穿它。
+                </p>
+                <div class="text-xs font-bold text-base-300 uppercase tracking-wider mb-2">選擇難度</div>
+                <div class="grid grid-cols-3 gap-2 mb-2" id="wf-diff">
+                    <button data-diff="easy" class="px-3 py-3 rounded-lg border border-accent-green bg-base-700/60 hover:bg-base-700 transition">
+                        <div class="text-base-50 font-bold text-sm">簡單</div>
+                        <div class="text-[11px] text-base-400">AI 慢、不用技能</div>
+                    </button>
+                    <button data-diff="normal" class="px-3 py-3 rounded-lg border border-accent-yellow bg-base-700/60 hover:bg-base-700 transition">
+                        <div class="text-base-50 font-bold text-sm">普通</div>
+                        <div class="text-[11px] text-base-400">懂相剋、會用技能</div>
+                    </button>
+                    <button data-diff="hard" class="px-3 py-3 rounded-lg border border-accent-red bg-base-700/60 hover:bg-base-700 transition">
+                        <div class="text-base-50 font-bold text-sm">困難</div>
+                        <div class="text-[11px] text-base-400">經濟領先、思考快</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 結算 overlay -->
+        <div
+            id="wf-overlay"
+            class="fixed inset-0 z-50 hidden items-center justify-center bg-base-900/85 backdrop-blur-sm"
+        >
+            <div class="rounded-2xl border border-base-600 bg-base-800 p-8 text-center max-w-sm mx-4">
+                <h2 id="wf-overlay-title" class="text-3xl font-bold mb-2"></h2>
+                <p id="wf-overlay-msg" class="text-base-400 mb-6"></p>
+                <button
+                    id="wf-restart-btn"
+                    class="px-6 py-2.5 rounded bg-accent-orange hover:bg-accent-orange/80 text-base-900 font-bold transition"
+                >再玩一次</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        import { initWarfrontGame, UNIT_TYPES, UNIT_DEFS, ABILITY_TYPES, ABILITY_DEFS, SPEEDS } from '@/lib/games/phaser/games/warfront';
+        import type { GameStateSnapshot, UnitType, AbilityType, Difficulty } from '@/lib/games/phaser/games/warfront';
+
+        const $ = (id: string) => document.getElementById(id)!;
+
+        // 完整字面類名（避免 Tailwind 動態組類被 purge）
+        const UNIT_BORDER: Record<UnitType, string> = {
+            shield: 'border-accent-blue',
+            archer: 'border-accent-green',
+            cavalry: 'border-accent-orange',
+            mage: 'border-accent-violet',
+            cleric: 'border-accent-yellow',
+        };
+        const ABILITY_BORDER: Record<AbilityType, string> = {
+            meteor: 'border-accent-orange',
+            rally: 'border-accent-blue',
+            scout: 'border-accent-cyan',
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const goldEl = $('wf-gold');
+            const incomeEl = $('wf-income');
+            const cpEl = $('wf-cp');
+            const phpEl = $('wf-php');
+            const phpBar = $('wf-php-bar');
+            const ehpBar = $('wf-ehp-bar');
+            const shopEl = $('wf-shop');
+            const abilitiesEl = $('wf-abilities');
+            const abilityHint = $('wf-ability-hint');
+            const incomeBtn = $('wf-income-btn') as HTMLButtonElement;
+            const keepBtn = $('wf-keep-btn') as HTMLButtonElement;
+            const incomeCostEl = $('wf-income-cost');
+            const keepCostEl = $('wf-keep-cost');
+            const incomeLvlEl = $('wf-income-lvl');
+            const keepLvlEl = $('wf-keep-lvl');
+            const speedBtn = $('wf-speed-btn') as HTMLButtonElement;
+            const pauseBtn = $('wf-pause-btn') as HTMLButtonElement;
+            const startOverlay = $('wf-start');
+            const overlay = $('wf-overlay');
+            const overlayTitle = $('wf-overlay-title');
+            const overlayMsg = $('wf-overlay-msg');
+            const restartBtn = $('wf-restart-btn') as HTMLButtonElement;
+            const canvasEl = $('wf-canvas');
+
+            let lastGold = 0;
+            let lastCp = 0;
+            let curSpeed = 1;
+            let armed: AbilityType | null = null;
+
+            // ── 兵種商店 ──
+            const unitBtns: { type: UnitType; el: HTMLButtonElement }[] = [];
+            for (const type of UNIT_TYPES) {
+                const def = UNIT_DEFS[type];
+                const btn = document.createElement('button');
+                btn.className =
+                    `text-left rounded-md border-l-4 ${UNIT_BORDER[type]} bg-base-700/60 hover:bg-base-700 px-2.5 py-1.5 transition disabled:opacity-40`;
+                btn.innerHTML =
+                    `<div class="flex items-center justify-between">` +
+                    `<span class="text-sm font-bold text-base-100">${def.emoji} ${def.name}</span>` +
+                    `<span class="text-xs font-mono text-accent-yellow">$${def.cost}</span></div>` +
+                    `<div class="text-[10px] text-base-400 mt-0.5">${def.desc}　<span class="text-base-500">${def.counterText}</span></div>`;
+                btn.addEventListener('click', () => game.spawnUnit(type));
+                shopEl.appendChild(btn);
+                unitBtns.push({ type, el: btn });
+            }
+
+            // ── 技能 ──
+            const abilityBtns: { type: AbilityType; el: HTMLButtonElement }[] = [];
+            for (const type of ABILITY_TYPES) {
+                const def = ABILITY_DEFS[type];
+                const btn = document.createElement('button');
+                btn.className =
+                    `flex flex-col items-center gap-0.5 rounded-md border-t-2 ${ABILITY_BORDER[type]} bg-base-700/60 hover:bg-base-700 px-1 py-2 transition disabled:opacity-40`;
+                btn.innerHTML =
+                    `<span class="text-lg leading-none">${def.emoji}</span>` +
+                    `<span class="text-[11px] text-base-100 font-medium">${def.name}</span>` +
+                    `<span class="text-[10px] font-mono text-accent-cyan">${def.cpCost} CP</span>`;
+                btn.title = def.desc;
+                btn.addEventListener('click', () => game.useAbility(type));
+                abilitiesEl.appendChild(btn);
+                abilityBtns.push({ type, el: btn });
+            }
+
+            const game = initWarfrontGame('wf-canvas', {
+                onStateChange: render,
+                onAbilityArmed: onArmed,
+            });
+
+            function onArmed(a: AbilityType | null) {
+                armed = a;
+                for (const b of abilityBtns) {
+                    const on = b.type === a;
+                    b.el.classList.toggle('ring-2', on);
+                    b.el.classList.toggle('ring-accent-orange', on);
+                }
+                canvasEl.style.cursor = a === 'meteor' ? 'crosshair' : '';
+                abilityHint.textContent = a === 'meteor' ? '☄️ 點選戰場落點施放隕石（再按一次取消）' : '';
+            }
+
+            function render(s: GameStateSnapshot) {
+                lastGold = s.gold;
+                lastCp = s.cp;
+                goldEl.textContent = String(s.gold);
+                incomeEl.textContent = String(s.income);
+                cpEl.textContent = `${s.cp}/${s.cpMax}`;
+
+                phpEl.textContent = `${s.playerKeepHp} / ${s.enemyKeepHp}`;
+                phpBar.style.width = `${(s.playerKeepHp / s.playerKeepMax) * 100}%`;
+                ehpBar.style.width = `${(s.enemyKeepHp / s.enemyKeepMax) * 100}%`;
+
+                incomeCostEl.textContent = `$${s.incomeCost}`;
+                keepCostEl.textContent = `$${s.keepCost}`;
+                incomeLvlEl.textContent = `Lv.${s.incomeLvl}`;
+                keepLvlEl.textContent = `Lv.${s.keepLvl}`;
+
+                const playing = s.status === 'playing';
+                incomeBtn.disabled = !playing || s.gold < s.incomeCost;
+                keepBtn.disabled = !playing || s.gold < s.keepCost;
+                for (const b of unitBtns) b.el.disabled = !playing || s.gold < UNIT_DEFS[b.type].cost;
+                for (const b of abilityBtns) b.el.disabled = !playing || s.cp < ABILITY_DEFS[b.type].cpCost;
+
+                curSpeed = s.speed;
+                speedBtn.textContent = `速度 ${s.speed}x`;
+                pauseBtn.textContent = s.paused ? '繼續' : '暫停';
+
+                // overlays
+                startOverlay.classList.toggle('hidden', s.status !== 'ready');
+                startOverlay.classList.toggle('flex', s.status === 'ready');
+
+                const ended = s.status === 'won' || s.status === 'lost';
+                if (ended) {
+                    overlayTitle.textContent = s.status === 'won' ? '🎉 攻陷敵堡！' : '💥 主堡淪陷';
+                    overlayTitle.className =
+                        'text-3xl font-bold mb-2 ' + (s.status === 'won' ? 'text-accent-green' : 'text-accent-red');
+                    overlayMsg.textContent =
+                        s.status === 'won' ? '你的狼煙燒到了對方城下，漂亮！' : '防線崩潰，城門大開… 再戰一場？';
+                }
+                overlay.classList.toggle('hidden', !ended);
+                overlay.classList.toggle('flex', ended);
+            }
+
+            // ── 控制 ──
+            for (const b of document.querySelectorAll<HTMLButtonElement>('#wf-diff button')) {
+                b.addEventListener('click', () => game.startMatch(b.dataset.diff as Difficulty));
+            }
+            incomeBtn.addEventListener('click', () => game.upgradeIncome());
+            keepBtn.addEventListener('click', () => game.upgradeKeep());
+            speedBtn.addEventListener('click', () => {
+                const i = SPEEDS.indexOf(curSpeed as (typeof SPEEDS)[number]);
+                game.setSpeed(SPEEDS[(i + 1) % SPEEDS.length]);
+            });
+            pauseBtn.addEventListener('click', () => game.togglePause());
+            restartBtn.addEventListener('click', () => game.restart());
+
+            window.addEventListener('beforeunload', () => game.destroy());
+            if (import.meta.env.DEV) (window as any).__wf = game;
+        });
+    </script>
+</BaseLayout>
