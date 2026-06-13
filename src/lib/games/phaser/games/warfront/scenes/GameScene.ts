@@ -11,6 +11,7 @@ import {
     HOME_RANGE,
     HOME_DAMAGE_BONUS,
     HOME_DEFENSE_BONUS,
+    CLERIC_FOLLOW_GAP,
     FOG_X,
     COLORS,
     ECONOMY,
@@ -218,11 +219,24 @@ export class GameScene extends Phaser.Scene {
 
     private updateCleric(u: Unit, dtSec: number): void {
         u.cd -= dtSec;
-        const foe = this.nearestForwardFoe(u);
-        // 牧師不主動進攻：敵人逼近就守住，否則隨軍前進（排隊邏輯會讓它待在後排）
-        if (!foe || foe.dist >= u.def.range) {
-            this.advance(u, dtSec);
+        const dir = u.side === 'player' ? 1 : -1;
+
+        // 找自家最前線的戰鬥單位（非牧師）
+        let front: Unit | null = null;
+        for (const o of this.units) {
+            if (o === u || o.side !== u.side || o.isDead || o.def.kind === 'cleric') continue;
+            if (!front || o.x * dir > front.x * dir) front = o;
         }
+
+        // 有友軍 → 跟在前線後方治療；沒友軍 → 退回出生點待命
+        const spawnX = u.side === 'player' ? KEEP_PLAYER_X - SPAWN_BEHIND : KEEP_ENEMY_X + SPAWN_BEHIND;
+        const desiredX = front ? front.x - dir * CLERIC_FOLLOW_GAP : spawnX;
+        const speedMul = u.rallyMs > 0 ? 1 + RALLY.speedBonus : 1;
+        const step = u.def.speed * speedMul * dtSec;
+        if (Math.abs(desiredX - u.x) <= step) u.x = desiredX;
+        else u.x += Math.sign(desiredX - u.x) * step;
+        u.x = Phaser.Math.Clamp(u.x, 12, BOARD_WIDTH - 12);
+
         if (u.cd <= 0) {
             const healed = this.healAround(u);
             u.cd = healed ? u.def.attackCd : 0.3;

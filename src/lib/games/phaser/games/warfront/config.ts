@@ -23,6 +23,9 @@ export const HOME_RANGE = 230;
 export const HOME_DAMAGE_BONUS = 0.35; // +35% 傷害
 export const HOME_DEFENSE_BONUS = 0.25; // 受到傷害 -25%
 
+/** 牧師跟在自家最前線戰鬥單位後方的距離；前方沒有友軍時退回出生點待命 */
+export const CLERIC_FOLLOW_GAP = 56;
+
 /** 戰爭迷霧：此 x 之後（敵方後場）平時看不到敵方部隊 */
 export const FOG_X = BOARD_WIDTH * 0.6;
 
