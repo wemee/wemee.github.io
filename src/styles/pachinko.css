@@ -1,0 +1,232 @@
+/* 封入式柏青哥模擬器樣式。全部收進 .pachinko 命名空間，避免洩漏到全站。 */
+.pachinko {
+  --pk-bg: #1b1d22;
+  --pk-panel: #24272e;
+  --pk-text: #e7e9ee;
+  --pk-muted: #9aa0ab;
+  --pk-accent: #4da3ff;
+  --pk-gold: #ffcc4d;
+  --pk-line: #3a3f4a;
+  --pk-inset: #11131a;
+
+  display: flex;
+  justify-content: center;
+  color: var(--pk-text);
+  font-family: "Helvetica Neue", Arial, "PingFang TC", "Microsoft JhengHei", sans-serif;
+}
+
+.pachinko * { box-sizing: border-box; }
+
+.pachinko .layout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.pachinko .app {
+  width: 420px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 學習導覽面板 */
+.pachinko .guide {
+  width: 320px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pachinko .now {
+  background: var(--pk-panel);
+  border-radius: 8px;
+  padding: 14px 16px;
+  border-left: 4px solid var(--pk-accent);
+}
+.pachinko .now-tag {
+  font-size: 12px;
+  color: var(--pk-muted);
+  letter-spacing: 2px;
+}
+.pachinko .now h2 {
+  margin: 2px 0 12px;
+  font-size: 22px;
+  color: var(--pk-gold);
+}
+.pachinko .now-row {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+  font-size: 14px;
+}
+.pachinko .now-row span { flex: 0 0 64px; color: var(--pk-muted); }
+.pachinko .now-row p { margin: 0; line-height: 1.5; }
+
+.pachinko .flow {
+  background: var(--pk-panel);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.pachinko .flow-title {
+  font-size: 13px;
+  color: var(--pk-muted);
+  margin-bottom: 10px;
+}
+.pachinko .flow ol { list-style: none; margin: 0; padding: 0; }
+.pachinko .flow li[data-step] {
+  position: relative;
+  border: 1px solid var(--pk-line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 4px 0;
+  transition: all 200ms ease;
+}
+.pachinko .flow li[data-step] b { font-size: 14px; }
+.pachinko .flow li[data-step] span {
+  float: right;
+  font-size: 11px;
+  color: var(--pk-muted);
+  border: 1px solid var(--pk-line);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+.pachinko .flow li[data-step] em {
+  display: block;
+  font-style: normal;
+  font-size: 12px;
+  color: var(--pk-muted);
+  line-height: 1.5;
+  margin-top: 4px;
+}
+.pachinko .flow li[data-step] u {
+  text-decoration: none;
+  color: var(--pk-accent);
+  font-weight: 700;
+}
+.pachinko .flow li.arrow {
+  font-size: 11px;
+  color: var(--pk-muted);
+  padding: 2px 0 2px 8px;
+}
+/* 目前所在狀態的高亮 */
+.pachinko .flow li.active {
+  border-color: var(--pk-gold);
+  background: rgba(255, 204, 77, 0.08);
+  box-shadow: -3px 0 0 var(--pk-gold);
+}
+.pachinko .flow li.active b { color: var(--pk-gold); }
+.pachinko .flow li.active::after {
+  content: "◀ 你在這";
+  position: absolute;
+  right: 10px;
+  bottom: 6px;
+  font-size: 11px;
+  color: var(--pk-gold);
+}
+.pachinko .flow-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--pk-muted);
+  line-height: 1.5;
+}
+
+.pachinko .topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--pk-panel);
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+.pachinko .topbar label { font-size: 13px; color: var(--pk-muted); }
+.pachinko .topbar select {
+  flex: 1;
+  padding: 8px 10px;
+  background: var(--pk-inset);
+  color: var(--pk-text);
+  border: 1px solid var(--pk-line);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.pachinko .statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--pk-panel);
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.pachinko .phase { font-size: 18px; font-weight: 700; }
+.pachinko .phase-NORMAL { color: var(--pk-text); }
+.pachinko .phase-JACKPOT { color: var(--pk-gold); }
+.pachinko .phase-ST { color: var(--pk-accent); }
+
+.pachinko .direction { font-size: 15px; color: var(--pk-muted); }
+
+.pachinko .board { background: var(--pk-panel); border-radius: 8px; padding: 8px; }
+
+.pachinko .reels {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+}
+.pachinko .reel {
+  width: 56px;
+  height: 72px;
+  background: var(--pk-inset);
+  border: 2px solid var(--pk-line);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44px;
+  font-weight: 700;
+  color: var(--pk-gold);
+}
+
+.pachinko .stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px 16px;
+  background: var(--pk-panel);
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.pachinko .stats div span { color: var(--pk-muted); margin-right: 6px; }
+.pachinko .stats div b { font-variant-numeric: tabular-nums; }
+
+.pachinko .controls { display: flex; gap: 8px; }
+.pachinko button {
+  flex: 1;
+  padding: 12px;
+  font-size: 15px;
+  border: none;
+  border-radius: 8px;
+  background: var(--pk-accent);
+  color: #06203b;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pachinko button.secondary { background: var(--pk-line); color: var(--pk-text); }
+.pachinko button:active { transform: translateY(1px); }
+
+.pachinko .log {
+  background: var(--pk-inset);
+  border-radius: 8px;
+  padding: 10px 12px;
+  height: 180px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+  color: var(--pk-muted);
+}
+.pachinko .log div { white-space: nowrap; }
