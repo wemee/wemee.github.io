@@ -22,6 +22,17 @@
   gap: 16px;
   align-items: flex-start;
   flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  max-width: 756px; /* .app 420 + gap 16 + .guide 320 */
+  margin: 0 auto;
+}
+
+/* 窄螢幕才堆疊；寬螢幕一律並排 */
+@media (max-width: 720px) {
+  .pachinko .layout {
+    max-width: 420px;
+  }
 }
 
 .pachinko .app {
