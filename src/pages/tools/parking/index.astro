@@ -1,0 +1,117 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ParkingApp from './_ParkingApp';
+---
+<BaseLayout currentPage="tools"
+  title="停車位置記錄器 - 一鍵記下車停哪，免登入免安裝 | 挫屎勇的工具箱"
+  description="停好車打開網頁按一下，就把 GPS 位置和時間記下來。找車時直接看地圖或用 Google Maps 步行導航回去。免註冊、免安裝 App，記錄只存在你自己的瀏覽器。"
+>
+
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
+    <h1 class="text-3xl font-bold text-base-50 mb-4">🅿️ 停車位置記錄器</h1>
+
+    <!-- 說明 -->
+    <div class="bg-accent-cyan/20 border border-accent-cyan rounded-lg p-4 mb-6">
+      <h5 class="font-bold text-accent-cyan mb-2">🚗 「欸…我車停哪？」</h5>
+      <p class="text-base-400 mb-2">
+        逛完百貨公司走出來，整層停車場長得一模一樣；出去玩隨手停路邊，回頭就忘了是哪條巷子。<br />
+        <strong class="text-base-50">為了這件事再裝一個 App？不用。</strong>
+      </p>
+      <ul class="text-base-400 list-disc list-inside mb-2 space-y-1">
+        <li>🅿️ <strong>停車時</strong> — 打開網頁，按一下大按鈕，位置和時間就記好了</li>
+        <li>🚶 <strong>找車時</strong> — 點最新那筆，地圖上同時看到車和你，或直接用 Google Maps 步行導航</li>
+        <li>📅 <strong>依日期分組</strong> — 每天停在哪、幾點停的，一路往回翻</li>
+        <li>📝 <strong>可加備註</strong> — 順手記下「B2 綠區 3-14」，GPS 進不了地下室的時候靠它</li>
+      </ul>
+      <p class="text-base-600 text-sm">
+        ⚠️ 記錄只存在你這台裝置的瀏覽器裡，不會上傳到任何伺服器；也因此清除瀏覽器資料就會不見。
+      </p>
+    </div>
+
+    <!-- React Component -->
+    <ParkingApp client:load />
+
+    <!-- 使用提醒 -->
+    <div class="mt-8 rounded-lg border border-base-600 p-4">
+      <h2 class="text-base-50 font-bold mb-2">關於定位精度</h2>
+      <ul class="text-base-400 text-sm list-disc list-inside space-y-1">
+        <li>按下按鈕後會連續取樣幾秒鐘，留下精度最好的那次，所以請稍等一下再收起手機。</li>
+        <li>地下停車場幾乎收不到 GPS，誤差超過 50 公尺時會標成黃色，這時候備註比座標可靠。</li>
+        <li>桌機沒有 GPS，靠 Wi-Fi 和 IP 推算，誤差可能到幾百公尺甚至幾公里，這個工具本來就是給手機用的。</li>
+        <li>首次使用瀏覽器會詢問定位權限，必須允許才能記錄。</li>
+      </ul>
+    </div>
+  </div>
+
+  <style is:global>
+    /* Leaflet 預設是淺色底，這裡壓成站上的 Solarized 深色 */
+    .leaflet-container {
+      background: var(--color-base-900);
+      font: inherit;
+    }
+
+    .leaflet-control-attribution {
+      background: rgba(0, 43, 54, 0.8) !important;
+      color: var(--color-base-600);
+      font-size: 10px;
+    }
+
+    /* 小螢幕上這張圖片會把版權列擠成兩行，蓋住地圖 */
+    .leaflet-control-attribution svg {
+      display: none;
+    }
+
+    .leaflet-control-attribution a {
+      color: var(--color-base-400);
+    }
+
+    .leaflet-bar a {
+      background: var(--color-base-800);
+      color: var(--color-base-50);
+      border-bottom-color: var(--color-base-600);
+    }
+
+    .leaflet-bar a:hover {
+      background: var(--color-base-600);
+      color: var(--color-base-50);
+    }
+
+    /* 自訂標記：用 divIcon 畫，不依賴 Leaflet 的圖片資源 */
+    .parking-pin-car {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      font-size: 20px;
+      line-height: 1;
+      border-radius: 9999px;
+      background: rgba(7, 54, 66, 0.95);
+      border: 2px solid var(--color-accent-cyan);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    .parking-pin-me {
+      display: block;
+      width: 14px;
+      height: 14px;
+      margin: 2px;
+      border-radius: 9999px;
+      background: var(--color-accent-blue);
+      border: 2px solid var(--color-base-50);
+      box-shadow: 0 0 0 6px rgba(38, 139, 210, 0.25);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .parking-pin-me {
+        animation: parking-pulse 2s ease-out infinite;
+      }
+    }
+
+    @keyframes parking-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(38, 139, 210, 0.45); }
+      70% { box-shadow: 0 0 0 12px rgba(38, 139, 210, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(38, 139, 210, 0); }
+    }
+  </style>
+</BaseLayout>
