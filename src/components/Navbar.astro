@@ -131,7 +131,6 @@ const navItems = [
       <div class="tw-desktop-nav">
         {navItems.map((item) => (
           item.items ? (
-            <!-- Dropdown Menu -->
             <div class="tw-dropdown">
               <button 
                 class={`tw-nav-link ${currentPage === item.key ? 'active' : ''}`}
@@ -155,8 +154,7 @@ const navItems = [
               </div>
             </div>
           ) : (
-            <!-- Regular Link -->
-            <a 
+            <a
               href={item.href}
               class={`tw-nav-link ${currentPage === item.key ? 'active' : ''}`}
             >
@@ -210,7 +208,6 @@ const navItems = [
     <div class="tw-mobile-menu-content">
       {navItems.map((item) => (
         item.items ? (
-          <!-- Mobile Dropdown -->
           <div class="tw-mobile-dropdown">
             <button 
               class={`tw-mobile-nav-link ${currentPage === item.key ? 'active' : ''}`}
@@ -232,8 +229,7 @@ const navItems = [
             </div>
           </div>
         ) : (
-          <!-- Mobile Regular Link -->
-          <a 
+          <a
             href={item.href}
             class={`tw-mobile-nav-link ${currentPage === item.key ? 'active' : ''}`}
           >

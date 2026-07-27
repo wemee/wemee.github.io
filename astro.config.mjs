@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { defineConfig } from 'astro/config';
+import { unified } from '@astrojs/markdown-remark';
 import sitemap from '@astrojs/sitemap';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -43,10 +44,17 @@ export default defineConfig({
   output: 'static',
   integrations: [sitemap(), react()],
 
+  // Astro 7 預設換成 Sätteri 處理器；部落格依賴 remark-math/rehype-katex 與
+  // Shiki 行為，明確設回 remark pipeline
   markdown: {
-    remarkPlugins: [remarkMath],
-    rehypePlugins: [rehypeKatex],
+    processor: unified({
+      remarkPlugins: [remarkMath],
+      rehypePlugins: [rehypeKatex],
+    }),
   },
+
+  // Astro 7 預設改為 'jsx' 空白壓縮規則；維持 v6 的 HTML 規則
+  compressHTML: true,
 
   vite: {
     plugins: [tailwindcss(), publicDirIndexFallback()],
