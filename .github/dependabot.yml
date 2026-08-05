@@ -1,0 +1,37 @@
+version: 2
+updates:
+  # 只開安全性更新 PR（open-pull-requests-limit: 0 關閉一般版本升級 PR，
+  # 避免每週被非安全性的升版 PR 洗版）；同一波安全性修復合併成一個 PR
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    groups:
+      security-fixes:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: npm
+    directory: /workers/comments
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    groups:
+      security-fixes:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  # GitHub Actions 本身的安全性更新（actions/checkout 等）
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    groups:
+      security-fixes:
+        applies-to: security-updates
+        patterns:
+          - "*"
