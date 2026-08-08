@@ -152,4 +152,172 @@ const related: string[] = post.data.related ?? [];
     border-radius: 0.5rem;
     margin: 1rem 0;
   }
+
+  /* ------------------------------------------------------------------
+     `.mesh-*` — inline SVG figures for the LoRa / Meshtastic posts.
+     Every selector below is prefixed so it can never leak onto ordinary
+     prose elements (see the <pre> note above for why that matters).
+     Animations are CSS-only: they run a few cycles and settle on their
+     final state, and collapse to that final state under reduced motion.
+     ------------------------------------------------------------------ */
+  .blog-content :global(.mesh-fig) {
+    margin: 1.75rem 0;
+    padding: 1rem 0.75rem 0.75rem;
+    border: 1px solid var(--color-base-600);
+    border-radius: 0.5rem;
+    background: var(--color-base-800);
+  }
+
+  .blog-content :global(.mesh-fig svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .blog-content :global(.mesh-fig figcaption) {
+    margin-top: 0.75rem;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    text-align: center;
+    color: var(--color-base-500);
+  }
+
+  /* Shared SVG primitives */
+  .blog-content :global(.mesh-fig text) {
+    fill: var(--color-base-300);
+    font-size: 12px;
+    font-family: inherit;
+  }
+  .blog-content :global(.mesh-fig .t-sm) { font-size: 10px; fill: var(--color-base-500); }
+
+  /* Narrow screens shrink the SVG to ~300px, which would drop these labels to
+     7px on screen. Bump the user-unit size so they hold up on a phone —
+     verified against every figure's viewBox for clipping at this size. */
+  @media (max-width: 640px) {
+    .blog-content :global(.mesh-fig text) { font-size: 14px; }
+    .blog-content :global(.mesh-fig .t-sm) { font-size: 12px; }
+  }
+  .blog-content :global(.mesh-fig .t-hi) { fill: var(--color-base-50); font-weight: 600; }
+  .blog-content :global(.mesh-fig .t-cy) { fill: var(--color-accent-cyan); }
+  .blog-content :global(.mesh-fig .t-rd) { fill: var(--color-accent-red); }
+  .blog-content :global(.mesh-fig .t-yl) { fill: var(--color-accent-yellow); }
+  .blog-content :global(.mesh-fig .node) {
+    fill: var(--color-base-900);
+    stroke: var(--color-base-500);
+    stroke-width: 1.5;
+  }
+  .blog-content :global(.mesh-fig .node-on) {
+    fill: var(--color-base-900);
+    stroke: var(--color-accent-cyan);
+    stroke-width: 2;
+  }
+  .blog-content :global(.mesh-fig .link) {
+    stroke: var(--color-base-600);
+    stroke-width: 1.5;
+    fill: none;
+  }
+  .blog-content :global(.mesh-fig .link-dash) {
+    stroke: var(--color-base-600);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 4;
+    fill: none;
+  }
+  .blog-content :global(.mesh-fig .link-cy) {
+    stroke: var(--color-accent-cyan);
+    stroke-width: 2;
+    fill: none;
+  }
+  .blog-content :global(.mesh-fig .box) {
+    fill: var(--color-base-900);
+    stroke: var(--color-base-600);
+    stroke-width: 1;
+  }
+
+  /* --- Animation A: multi-hop relay (intro post) --- */
+  .blog-content :global(.mesh-packet) {
+    animation: mesh-travel 6s ease-in-out 3 forwards;
+    fill: var(--color-accent-yellow);
+  }
+  @keyframes mesh-travel {
+    0%, 3%    { transform: translateX(0);     opacity: 0; }
+    6%, 18%   { transform: translateX(0);     opacity: 1; }
+    30%, 40%  { transform: translateX(76px);  opacity: 1; }
+    52%, 62%  { transform: translateX(152px); opacity: 1; }
+    74%, 84%  { transform: translateX(228px); opacity: 1; }
+    96%, 100% { transform: translateX(304px); opacity: 1; }
+  }
+
+  .blog-content :global(.mesh-ping) {
+    transform-box: fill-box;
+    transform-origin: center;
+    fill: none;
+    stroke: var(--color-accent-yellow);
+    stroke-width: 1.5;
+    opacity: 0;
+    animation: mesh-ping 6s ease-out 3 both;
+    animation-delay: var(--d, 0s);
+  }
+  @keyframes mesh-ping {
+    0%   { opacity: 0;   transform: scale(0.7); }
+    8%   { opacity: 0.9; transform: scale(1); }
+    24%  { opacity: 0;   transform: scale(2.1); }
+    100% { opacity: 0;   transform: scale(2.1); }
+  }
+
+  /* --- Animations B & C: airtime occupancy bars --- */
+  .blog-content :global(.mesh-bar) {
+    transform-box: fill-box;
+    transform-origin: left center;
+    animation-duration: var(--dur, 5s);
+    animation-timing-function: linear;
+    animation-iteration-count: 3;
+    animation-fill-mode: forwards;
+  }
+  .blog-content :global(.mesh-bar-lora) {
+    fill: var(--color-accent-cyan);
+    animation-name: mesh-grow-lora;
+  }
+  @keyframes mesh-grow-lora {
+    0%        { transform: scaleX(0); }
+    88%, 100% { transform: scaleX(1); }
+  }
+
+  .blog-content :global(.mesh-bar-a) {
+    fill: var(--color-accent-cyan);
+    animation-name: mesh-grow-a;
+  }
+  @keyframes mesh-grow-a {
+    0%        { transform: scaleX(0); }
+    52%, 100% { transform: scaleX(1); }
+  }
+
+  .blog-content :global(.mesh-bar-c) {
+    fill: var(--color-accent-violet);
+    animation-name: mesh-grow-c;
+  }
+  @keyframes mesh-grow-c {
+    0%, 18%   { transform: scaleX(0); }
+    70%, 100% { transform: scaleX(1); }
+  }
+
+  .blog-content :global(.mesh-crash) {
+    opacity: 0;
+    animation: mesh-crash 5s linear 3 forwards;
+  }
+  @keyframes mesh-crash {
+    0%, 18%   { opacity: 0; }
+    24%, 100% { opacity: 1; }
+  }
+
+  /* Reduced motion: skip the motion, keep the conclusion on screen. */
+  @media (prefers-reduced-motion: reduce) {
+    .blog-content :global(.mesh-packet) {
+      animation: none;
+      transform: translateX(304px);
+      opacity: 1;
+    }
+    .blog-content :global(.mesh-ping) { animation: none; opacity: 0; }
+    .blog-content :global(.mesh-bar) { animation: none; transform: scaleX(1); }
+    .blog-content :global(.mesh-crash) { animation: none; opacity: 1; }
+  }
 </style>
