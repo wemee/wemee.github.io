@@ -18,7 +18,9 @@ const sortedTags = Array.from(tagCounts.entries()).sort((a, b) => {
   return a[0].localeCompare(b[0]);
 });
 ---
-<BaseLayout currentPage="blog" title="部落格">
+<BaseLayout currentPage="blog" title="部落格"
+  description="挫屎勇的技術部落格。記錄跟 AI Agent 一起寫程式的實戰心得、前端與全端開發筆記、LoRa / Meshtastic 等無線網路實驗，以及各種把想法做成產品的過程。"
+>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
     <h1 class="text-3xl font-bold text-base-50 mb-4">📝 部落格</h1>
     <p class="text-base-400 mb-6">技術筆記、學習心得與隨筆</p>

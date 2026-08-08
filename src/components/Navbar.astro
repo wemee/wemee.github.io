@@ -119,7 +119,9 @@ const navItems = [
 ];
 ---
 
-<nav class="tw-navbar">
+<!-- data-nosnippet:導覽列同樣是全站樣板文字,不該出現在搜尋摘要裡。
+     只擋摘要,連結照樣被爬取,不影響 sitelinks。 -->
+<nav class="tw-navbar" data-nosnippet>
   <div class="tw-navbar-inner">
     <div class="tw-navbar-content">
       <!-- Brand Logo -->

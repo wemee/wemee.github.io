@@ -6,7 +6,9 @@
 // - dev 模式沒有索引(Pagefind 只跑在 build 後),會顯示友善提示。
 ---
 
-<div class="sp-overlay" id="sp-overlay" hidden aria-hidden="true">
+<!-- data-nosnippet:面板雖然 hidden,Google 仍讀得到「↑↓移動 ↵開啟 esc關閉
+     Pagefind 站內搜尋」並拿去湊搜尋摘要。 -->
+<div class="sp-overlay" id="sp-overlay" hidden aria-hidden="true" data-nosnippet>
   <div
     class="sp-panel"
     role="dialog"

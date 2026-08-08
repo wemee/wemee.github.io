@@ -28,14 +28,22 @@ const sections = [
   }
 ];
 ---
-<BaseLayout currentPage="home" 
-  title="挫屎勇的個人網站 | 數學工具・網頁遊戲・AI 開發日誌" 
-  description="歡迎來到挫屎勇 (wemee) 的個人網站。這裡提供免費的數學教學工具 (GCD/LCM, 傅立葉變換)、經典網頁遊戲重製 (下樓梯, 打磚塊) 以及最新的 AI 技術開發部落格。"
+<BaseLayout currentPage="home"
+  title="挫屎勇 | 數學工具・網頁遊戲・程式實驗室・AI 開發日誌"
+  description="挫屎勇 (wemee) 的個人網站。免費的互動式數學視覺化工具、可在 Colab 直接執行的程式實驗室課程、Canvas 與 Phaser 網頁小遊戲，以及 AI Agent 開發日誌。全部工具皆在瀏覽器運行，不上傳任何資料。"
 >
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
-    <h1 class="text-3xl font-bold text-base-50 mb-2">歡迎來到我的網站</h1>
-    <p class="text-base-400 mb-8">這是我的個人網站。</p>
-    
+    <h1 class="text-3xl font-bold text-base-50 mb-3">挫屎勇的個人網站</h1>
+    <p class="text-base-400 mb-2 max-w-3xl leading-relaxed">
+      我是<strong class="text-base-200 font-semibold">挫屎勇</strong>(英文 ID <strong class="text-base-200 font-semibold">wemee</strong>)，
+      一個喜歡把抽象概念做成「看得到、摸得到」的東西的開發者。
+    </p>
+    <p class="text-base-400 mb-8 max-w-3xl leading-relaxed">
+      這裡放的是我自己動手做的互動式數學視覺化、可以直接在 Google Colab 跑起來的程式課程、
+      用 Canvas 與 Phaser 寫的網頁小遊戲，還有一系列跟 AI Agent 一起寫程式的開發日誌。
+      所有線上工具都在你的瀏覽器裡運算，不會上傳任何資料。
+    </p>
+
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       {sections.map((section) => (
         <div class="flex flex-col rounded-lg border border-base-600 bg-base-800 h-full">

@@ -7,7 +7,12 @@ interface Props {
 }
 
 const { title, description = "A next-gen Sudoku experience." } = Astro.props;
+
+// 與 BaseLayout 保持一致的品牌訊號（見 BaseLayout.astro 的 BRAND 註解）
+const BRAND = '挫屎勇';
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const socialImageURL = new URL('/images/og-default.png', Astro.site);
+const fullTitle = title.includes(BRAND) ? title : `${title} | ${BRAND}`;
 ---
 <!DOCTYPE html>
 <html lang="zh-Hant">
@@ -18,15 +23,18 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   <link rel="canonical" href={canonicalURL} />
 
   <!-- Primary Meta Tags -->
-  <title>{title}</title>
-  <meta name="title" content={title} />
+  <title>{fullTitle}</title>
+  <meta name="title" content={fullTitle} />
   <meta name="description" content={description} />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
-  <meta property="og:url" content={Astro.url} />
-  <meta property="og:title" content={title} />
+  <meta property="og:url" content={canonicalURL} />
+  <meta property="og:title" content={fullTitle} />
   <meta property="og:description" content={description} />
+  <meta property="og:image" content={socialImageURL} />
+  <meta property="og:locale" content="zh_TW" />
+  <meta property="og:site_name" content={BRAND} />
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -42,7 +42,14 @@ function publicDirIndexFallback() {
 export default defineConfig({
   site: 'https://wemee.github.io',
   output: 'static',
-  integrations: [sitemap(), react()],
+  integrations: [
+    sitemap({
+      // /html-css-/ 是保留給 iThome 外連的舊網址轉址頁（見 src/pages/html-css-/），
+      // 本身沒有內容，不該被列進 sitemap 當成可索引頁面。
+      filter: (page) => !page.includes('/html-css-/'),
+    }),
+    react(),
+  ],
 
   // Astro 7 預設換成 Sätteri 處理器；部落格依賴 remark-math/rehype-katex 與
   // Shiki 行為，明確設回 remark pipeline

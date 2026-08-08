@@ -63,7 +63,8 @@ export default function Comments({ page }: CommentsProps) {
   }
 
   return (
-    <section className="comments" aria-labelledby="comments-heading">
+    // data-nosnippet:訪客留言不該被拿去當本頁的搜尋摘要。
+    <section className="comments" aria-labelledby="comments-heading" data-nosnippet>
       <h2 id="comments-heading" className="comments-title">
         留言 <span className="comments-count">{comments.length}</span>
       </h2>

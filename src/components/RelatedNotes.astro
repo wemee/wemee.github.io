@@ -20,8 +20,10 @@ const matched = allPosts
   )
   .sort((a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf());
 ---
+{/* data-nosnippet:這裡放的是「別頁」的標題與摘要,Google 曾把它當成本頁的
+    搜尋摘要抓走。nosnippet 不影響爬取,內部連結照樣傳遞。 */}
 {matched.length > 0 && (
-  <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 my-10">
+  <section data-nosnippet class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 my-10">
     <div class="rounded-lg border border-base-600 bg-base-800/60 p-6">
       <h2 class="text-xl font-bold text-base-50 mb-1">{heading}</h2>
       {intro && <p class="text-sm text-base-600 mb-4">{intro}</p>}
