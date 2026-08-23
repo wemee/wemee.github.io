@@ -92,6 +92,12 @@ export abstract class Canvas2DBase {
     requestAnimationFrame(() => {
       this.renderQueued = false;
       if (this.destroyed) return;
+      // A collapsed box (display:none, a mid-flight viewport resize, a
+      // full-page screenshot pass) makes every derived length negative, and
+      // any radius computed from them throws IndexSizeError out of arc().
+      // There is nothing to draw at zero size, so skip rather than making
+      // every subclass defend itself.
+      if (this.width <= 0 || this.height <= 0) return;
       this.ctx.clearRect(0, 0, this.width, this.height);
       this.draw();
     });

@@ -312,6 +312,39 @@ ok('ResonanceScene.draw at low damping near resonance', () => {
 
 
 
+
+const SCENE_FACTORIES: [string, () => any][] = [
+  ['ResonanceScene', () => new ResonanceScene({ canvasId: 'x' })],
+  ['CoupledOscillatorScene', () => new CoupledOscillatorScene({ canvasId: 'x' })],
+  ['IsingScene', () => new IsingScene({ canvasId: 'x', chartCanvasId: 'y' })],
+  ['UncertaintyScene', () => new UncertaintyScene({ canvasId: 'x' })],
+  ['DoubleSlitScene', () => new DoubleSlitScene({ canvasId: 'x' })],
+  ['TunnelingScene', () => new TunnelingScene({ canvasId: 'x' })],
+  ['BellScene', () => new BellScene({ canvasId: 'x' })],
+];
+
+// A collapsed canvas (display:none, a mid-flight viewport resize, a full-page
+// screenshot pass) used to make arc() throw IndexSizeError on a negative
+// radius. Canvas2DBase now skips the draw, but draw() is also reachable
+// directly, so every scene is checked at zero size too.
+console.log('\n— collapsed canvas —');
+{
+  const collapse = (s: any) => { s.width = 0; s.height = 0; };
+  const tiny = (s: any) => { s.width = 12; s.height = 8; };
+  for (const [name, make] of SCENE_FACTORIES) {
+    try {
+      const s: any = make();
+      collapse(s); s.draw();
+      tiny(s); s.draw();
+      s.destroy();
+      console.log(`  ok   ${name} survives a collapsed canvas`);
+    } catch (e) {
+      bad++;
+      console.log(` FAIL  ${name} threw at zero size: ${(e as Error).message}`);
+    }
+  }
+}
+
 console.log('');
 if (failures === 0 && bad === 0) {
   console.log(`ALL CHECKS PASSED (${'physics scenes'})`);
