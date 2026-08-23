@@ -1,0 +1,314 @@
+---
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/physics.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<MathLessonLayout
+  section="physics"
+  slug="bell"
+  currentPage="physics"
+  seoTitle="貝爾不等式與 CHSH 實驗 · 自己動手把局域實在論測掉"
+  seoDescription="自己挑測量角度、自己跑幾萬對糾纏光子。任何「出發前就決定好答案」的局域隱變數模型，CHSH 的 S 值都不可能超過 2；量子力學給你 2√2 ≈ 2.83。"
+>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">
+    這一頁全程只有取樣與估計，沒有一句玄學。可是跑完之後，你會親手排除掉一整類關於世界怎麼運作的假設。
+  </p>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2">
+      <canvas id="bl-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 62vh; min-height: 440px;"></canvas>
+      <div class="mt-3 flex flex-wrap gap-2 text-xs">
+        <span class="phy-chip"><span class="dot" style="background: #2aa198"></span>S 的估計值</span>
+        <span class="phy-chip"><span class="dot" style="background: #dc322f"></span>古典上限 2</span>
+        <span class="phy-chip"><span class="dot" style="background: #859900"></span>Tsirelson 上限 2√2</span>
+        <span class="phy-chip">直線 = ±1 個標準差</span>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <div class="phy-panel">
+        <div class="head">🎲 用哪一種模型產生資料</div>
+        <div class="body grid grid-cols-1 gap-2">
+          <button data-mode="quantum" class="phy-btn text-left active">量子力學（糾纏態 |Φ⁺⟩）</button>
+          <button data-mode="hidden" class="phy-btn text-left">局域隱變數（共同偏振角 λ）</button>
+          <button data-mode="best" class="phy-btn text-left">最佳古典策略（剛好卡在 2）</button>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">▶️ 跑實驗</div>
+        <div class="body space-y-2">
+          <div class="grid grid-cols-3 gap-2">
+            <button data-run="100" class="phy-btn" type="button">+100</button>
+            <button data-run="2000" class="phy-btn" type="button">+2000</button>
+            <button data-run="20000" class="phy-btn" type="button">+2萬</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="bl-stream" class="phy-btn primary" type="button">▶ 連續測量</button>
+            <button id="bl-reset" class="phy-btn" type="button">↻ 重設</button>
+          </div>
+          <div class="phy-tile"><span class="label">已測量光子對</span><span class="value accent-cyan" id="bl-pairs">0</span></div>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">📊 CHSH 結果</div>
+        <div class="body space-y-2">
+          <div class="phy-tile">
+            <span class="label">S = E(a,b) − E(a,b′) + E(a′,b) + E(a′,b′)</span>
+            <span class="value accent-yellow" id="bl-s">—</span>
+          </div>
+          <div id="bl-verdict" class="text-xs font-mono text-base-400">先跑幾千對再看</div>
+          <hr class="border-base-600" />
+          <div class="space-y-1 text-xs font-mono">
+            <div class="flex justify-between"><span class="text-base-400">E(a, b)</span><span id="bl-e11" class="phy-readout accent-blue w-20">—</span></div>
+            <div class="flex justify-between"><span class="text-base-400">E(a, b′)</span><span id="bl-e12" class="phy-readout accent-blue w-20">—</span></div>
+            <div class="flex justify-between"><span class="text-base-400">E(a′, b)</span><span id="bl-e21" class="phy-readout accent-magenta w-20">—</span></div>
+            <div class="flex justify-between"><span class="text-base-400">E(a′, b′)</span><span id="bl-e22" class="phy-readout accent-magenta w-20">—</span></div>
+          </div>
+          <p class="text-xs text-base-500">量子力學對<strong class="text-base-300">目前這組角度</strong>的預測值：<span id="bl-predicted" class="text-accent-green font-mono">—</span></p>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">🎛️ 分析器角度（改動即重設）</div>
+        <div class="body space-y-3">
+          <div>
+            <div class="phy-label"><span>Alice a</span><span class="val" id="bl-a1">0.0°</span></div>
+            <input id="bl-a1-slider" type="range" min="0" max="90" step="0.5" value="0" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>Alice a′</span><span class="val" id="bl-a2">45.0°</span></div>
+            <input id="bl-a2-slider" type="range" min="0" max="90" step="0.5" value="45" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>Bob b</span><span class="val" id="bl-b1">22.5°</span></div>
+            <input id="bl-b1-slider" type="range" min="0" max="90" step="0.5" value="22.5" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>Bob b′</span><span class="val" id="bl-b2">67.5°</span></div>
+            <input id="bl-b2-slider" type="range" min="0" max="90" step="0.5" value="67.5" class="phy-slider" />
+          </div>
+          <button id="bl-optimal" class="phy-btn w-full" type="button">🎯 回到最佳角度（0°/45°/22.5°/67.5°）</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── Teaching ─────────── -->
+  <section class="mt-12 max-w-3xl mx-auto prose-content">
+    <h2 class="text-2xl font-bold text-base-50 mb-4">📖 貝爾把哲學問題變成了實驗</h2>
+
+    <div class="space-y-4 text-base-300 leading-relaxed">
+      <p>
+        1935 年 Einstein、Podolsky、Rosen 主張量子力學不完備：一定有某些「還沒被寫進理論」的隱藏參數，
+        在粒子分開的那一刻就決定好了兩邊會量到什麼。這聽起來像是永遠吵不完的形上學。
+      </p>
+      <p>
+        1964 年 John Bell 做了一件驚人的事：他證明<strong class="text-accent-yellow">任何</strong>符合兩個條件的理論，
+        某個統計量都必須滿足一個不等式 —— 而量子力學預測會違反它。
+        <strong class="text-base-50">吵架變成了可以量的東西。</strong>
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">📐 CHSH 的做法</h3>
+      <p>
+        每一對光子送到兩端。Alice 從兩個角度 <span set:html={tex('a, a\'')} /> 隨機挑一個，
+        Bob 從 <span set:html={tex('b, b\'')} /> 隨機挑一個。各自量到 +1 或 −1。累積四種組合的關聯：
+      </p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`E(a,b) = \\langle A\\cdot B\\rangle = \\frac{N_{++} + N_{--} - N_{+-} - N_{-+}}{N_{\\text{total}}}`, true)} />
+      <p>然後組合成一個數字：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`S = E(a,b) - E(a,b') + E(a',b) + E(a',b')`, true)} />
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🧱 為什麼古典模型卡在 2</h3>
+      <p>假設每對粒子帶著一組隱藏參數 λ，而且每一邊的結果只取決於<strong class="text-base-50">自己的角度</strong>與 λ（這就是「局域」）。那麼對任何單一個 λ：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`A B - A B' + A' B + A' B' = A(B - B') + A'(B + B')`, true)} />
+      <p>
+        因為 <span set:html={tex("B, B'")} /> 各是 ±1，<span set:html={tex("B-B'")} /> 與 <span set:html={tex("B+B'")} /> 之中
+        必定一個是 0、另一個是 ±2。所以整個式子只能是 ±2。取平均只會讓它更靠近 0：
+      </p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`|S| \\le 2`, true)} />
+      <p class="text-sm text-base-400 border-l-2 border-base-600 pl-3">
+        注意這個推導<strong class="text-base-200">完全沒有用到量子力學</strong>，也沒有假設 λ 是什麼。
+        它只用了兩件事：結果在被測量前就有值（實在論）、而且一邊的結果不受另一邊設定影響（局域性）。
+        兩個假設加起來，天花板就是 2。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">⚛️ 量子力學給的是 2√2</h3>
+      <p>對糾纏態 <span set:html={tex('|\\Phi^+\\rangle = (|HH\\rangle + |VV\\rangle)/\\sqrt2')} />，量子力學預測：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`E(\\alpha, \\beta) = \\cos\\big(2(\\alpha - \\beta)\\big)`, true)} />
+      <p>
+        把角度取成 0°、45°（Alice）與 22.5°、67.5°（Bob），四個關聯都是 ±0.7071，組合起來
+        <span set:html={tex('S = 2\\sqrt2 \\approx 2.828')} />。
+        超過 2 —— 而且超過的幅度是 40%，不是勉強擦邊。
+      </p>
+      <p>
+        2.828 也不是隨便一個數字。Tsirelson 證明了<strong class="text-base-50">量子力學自己也有上限</strong>，
+        就是 2√2。所以世界卡在一個很妙的位置：比古典能做到的多，但沒有多到無限。
+      </p>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+      <ol class="list-decimal list-inside space-y-2 ml-2">
+        <li><strong class="text-accent-blue">量子模式，按「+100」</strong>。看 S 值上下亂跳，誤差棒很長 — 這時候它可能「超過 2」，但那不算數。</li>
+        <li><strong class="text-accent-blue">按「+2萬」</strong>。誤差棒縮成一小段，S 穩穩停在綠線附近。<strong class="text-base-50">誤差隨 1/√N 縮小</strong>，這就是<a href="/math/probstat/lln-clt" class="text-accent-cyan hover:underline">中央極限定理</a>在替你把結論釘死。</li>
+        <li><strong class="text-accent-blue">切到「局域隱變數」</strong>，一樣跑 2 萬對。這個模型物理上完全合理 — 每顆光子帶著一個偏振角 λ 出發，兩邊各自照自己的角度回答。它<strong class="text-base-50">剛好爬到 2.000 就停住</strong>（這個模型的理論值就是精確的 2），再怎麼跑都上不去。你可能會看到 2.01 之類的讀數 — 那是統計雜訊，所以上面的判定要求超出 3σ 才算數。</li>
+        <li><strong class="text-accent-blue">切到「最佳古典策略」</strong>。它作弊到極致（兩邊事先約好答案表），S 剛好停在 2.000。<strong class="text-base-50">2 不是隨便畫的線，是真的天花板</strong>。</li>
+        <li><strong class="text-accent-blue">回到量子模式，把 Bob 的 b′ 從 67.5° 移到 22.5°</strong>（跟 b 一樣）。前兩項互相抵消，S 掉到 1.414 — 遠低於 2，古典模型完全解釋得了。<strong class="text-base-200">糾纏還在，只是你挑錯角度就測不出來</strong>。順帶一提，只把 b 移到 0° 是不夠的，那樣 S 仍有 2.414。</li>
+        <li><strong class="text-accent-blue">把四個角度亂設</strong>，看「量子力學預測值」跟你跑出來的 S 是否吻合。吻合就是模擬沒騙你。</li>
+      </ol>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🕳️ 誠實面對這頁的限制與真實實驗的漏洞</h3>
+      <ul class="list-disc list-inside space-y-2 ml-2">
+        <li>
+          <strong class="text-base-50">這是模擬，不是實驗。</strong>「量子模式」是照量子力學的預測抽樣的 —
+          它證明的是「量子力學預測 S = 2.83」，不是「大自然真的是這樣」。後者要靠真實實驗，而實驗已經做了。
+        </li>
+        <li>
+          <strong class="text-base-50">偵測漏洞</strong> — 如果偵測器只收到一部分光子，被漏掉的那些可能剛好是「不合作」的。
+          2013 年起用高效率偵測器補上。
+        </li>
+        <li>
+          <strong class="text-base-50">局域性漏洞</strong> — 如果 Alice 的設定有時間傳到 Bob 那邊，局域性假設就不成立。
+          做法是把兩端拉遠、設定選擇快到光來不及跑。
+        </li>
+        <li>
+          <strong class="text-base-50">自由選擇漏洞</strong> — 如果測量角度的選擇跟 λ 有關聯，推導就垮了。
+          所以這個模擬每一對都<strong class="text-base-200">獨立隨機</strong>挑角度；真實實驗甚至用遙遠星系的星光來當亂數源。
+        </li>
+        <li>
+          <strong class="text-base-50">2015 年</strong>幾組團隊做出了同時堵住主要漏洞的實驗，結論一致：<strong class="text-base-50">不等式被違反</strong>。
+          Aspect、Clauser、Zeilinger 因此獲得 2022 年諾貝爾物理獎。
+        </li>
+      </ul>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🤔 所以到底是什麼被推翻了</h3>
+      <p>
+        常見誤解：「所以資訊可以超光速傳遞」。<strong class="text-accent-red">不行。</strong>
+        Alice 單看自己那一側，結果永遠是 50/50 的隨機，不管 Bob 做什麼、有沒有做。
+        相關性只有在兩邊的資料<strong class="text-base-50">被拿到一起比對之後</strong>才浮現，而那需要一條普通的、不超光速的通訊管道。
+      </p>
+      <p>
+        被推翻的是<strong class="text-base-50">「局域性」與「實在論」的組合</strong>。你必須放棄至少一個：
+        要嘛結果不是出發前就決定好的，要嘛遠處的設定真的能影響這裡。
+        物理學界主流選擇放棄前者 —— 但這是一個關於世界的實質結論，不是文字遊戲，而且是被實驗逼出來的。
+      </p>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 它已經變成技術了</h3>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">量子密鑰分發</strong> — 違反貝爾不等式可以當成「沒有被竊聽」的憑證（device-independent QKD）</li>
+        <li><strong class="text-base-50">認證隨機數</strong> — 由 CHSH 違反保證的隨機性，連硬體製造商都無法預測</li>
+        <li><strong class="text-base-50">量子計算驗證</strong> — 用類似的不等式檢查裝置是否真的在做量子運算</li>
+      </ul>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">📚 走到這裡</h3>
+      <p>
+        六頁走完了：從彈簧上的特徵向量、格子上的 MCMC、傅立葉對偶、單光子統計、真的解出來的薛丁格方程，
+        到現在這個可以自己測的關聯上限。回頭看，<strong class="text-base-50">每一頁的工具都來自數學專區</strong> —
+        物理沒有另外發明一套數學，它只是把那些工具指向了世界。
+      </p>
+      <p>下一步可以往哪走：</p>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">布洛赫球與量子閘</strong> — 把這頁的兩能階系統畫成幾何，直接接上線代的么正矩陣</li>
+        <li><strong class="text-base-50">氫原子軌域</strong> — 三維薛丁格方程的束縛態，用 Three.js 看那些形狀</li>
+        <li><strong class="text-base-50">量子糾纏的資訊論</strong> — 糾纏熵，接回<a href="/math/probstat/entropy" class="text-accent-cyan hover:underline">熵與 KL 散度</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <script>
+    import { BellScene, type BellStats, type BellMode, CLASSICAL_BOUND } from '@/lib/physics/BellScene';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const pairsEl = document.getElementById('bl-pairs')!;
+      const sEl = document.getElementById('bl-s')!;
+      const verdictEl = document.getElementById('bl-verdict')!;
+      const predictedEl = document.getElementById('bl-predicted')!;
+      const eEls = [
+        document.getElementById('bl-e11')!,
+        document.getElementById('bl-e12')!,
+        document.getElementById('bl-e21')!,
+        document.getElementById('bl-e22')!,
+      ];
+      const angleEls = {
+        a1: document.getElementById('bl-a1')!,
+        a2: document.getElementById('bl-a2')!,
+        b1: document.getElementById('bl-b1')!,
+        b2: document.getElementById('bl-b2')!,
+      };
+      const angleSliders = {
+        a1: document.getElementById('bl-a1-slider') as HTMLInputElement,
+        a2: document.getElementById('bl-a2-slider') as HTMLInputElement,
+        b1: document.getElementById('bl-b1-slider') as HTMLInputElement,
+        b2: document.getElementById('bl-b2-slider') as HTMLInputElement,
+      };
+      const streamBtn = document.getElementById('bl-stream') as HTMLButtonElement;
+      const resetBtn = document.getElementById('bl-reset') as HTMLButtonElement;
+      const optimalBtn = document.getElementById('bl-optimal') as HTMLButtonElement;
+      const modeBtns = document.querySelectorAll<HTMLButtonElement>('[data-mode]');
+      const runBtns = document.querySelectorAll<HTMLButtonElement>('[data-run]');
+
+      /** QM prediction for a given set of angles — pure, so renderStats never
+       *  has to reach back into `scene` (which is still in its TDZ on the
+       *  first call, fired from the constructor). */
+      function predictedS(a: BellStats['angles']): number {
+        const rad = (d: number) => (d * Math.PI) / 180;
+        const e = (x: number, y: number) => Math.cos(2 * (rad(x) - rad(y)));
+        return e(a.a1, a.b1) - e(a.a1, a.b2) + e(a.a2, a.b1) + e(a.a2, a.b2);
+      }
+
+      function renderStats(s: BellStats) {
+        pairsEl.textContent = s.pairs.toLocaleString('en-US');
+        sEl.textContent = s.pairs > 0 ? `${s.S.toFixed(3)} ± ${s.sigmaS.toFixed(3)}` : '—';
+        s.correlations.forEach((e, i) => {
+          eEls[i].textContent = s.counts[i] > 0 ? e.toFixed(3) : '—';
+        });
+        predictedEl.textContent = predictedS(s.angles).toFixed(3);
+
+        (['a1', 'a2', 'b1', 'b2'] as const).forEach((key) => {
+          angleEls[key].textContent = `${s.angles[key].toFixed(1)}°`;
+          angleSliders[key].value = String(s.angles[key]);
+        });
+
+        // "violated" only counts when the gap is bigger than the noise
+        if (s.pairs < 400) {
+          verdictEl.textContent = '樣本還太少，誤差棒比訊號大';
+          verdictEl.className = 'text-xs font-mono text-base-400';
+        } else if (s.S - CLASSICAL_BOUND > 3 * s.sigmaS) {
+          const sigmas = (s.S - CLASSICAL_BOUND) / s.sigmaS;
+          verdictEl.textContent = `✓ 違反貝爾不等式，超出古典上限 ${sigmas.toFixed(1)}σ`;
+          verdictEl.className = 'text-xs font-mono text-accent-green';
+        } else if (s.S > CLASSICAL_BOUND) {
+          verdictEl.textContent = '↗ 略高於 2，但還在誤差範圍內 — 再多跑一點';
+          verdictEl.className = 'text-xs font-mono text-accent-yellow';
+        } else {
+          verdictEl.textContent = '— 沒有違反，古典模型解釋得了這組資料';
+          verdictEl.className = 'text-xs font-mono text-base-400';
+        }
+
+        streamBtn.textContent = s.streaming ? '⏸ 停止測量' : '▶ 連續測量';
+        streamBtn.classList.toggle('active-yellow', s.streaming);
+        modeBtns.forEach((b) => b.classList.toggle('active', b.dataset.mode === s.mode));
+      }
+
+      const scene = new BellScene({ canvasId: 'bl-canvas', onStats: renderStats });
+
+      modeBtns.forEach((btn) => {
+        btn.addEventListener('click', () => scene.setMode(btn.dataset.mode as BellMode));
+      });
+      runBtns.forEach((btn) => {
+        btn.addEventListener('click', () => scene.run(Number(btn.dataset.run)));
+      });
+      (['a1', 'a2', 'b1', 'b2'] as const).forEach((key) => {
+        angleSliders[key].addEventListener('input', () => scene.setAngle(key, Number(angleSliders[key].value)));
+      });
+      streamBtn.addEventListener('click', () => scene.toggleStream());
+      resetBtn.addEventListener('click', () => scene.reset());
+      optimalBtn.addEventListener('click', () => scene.useOptimalAngles());
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</MathLessonLayout>

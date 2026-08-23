@@ -1,0 +1,240 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import '@/styles/physics.css';
+
+const colorMap: Record<string, { bg: string; hover: string; border: string }> = {
+  primary: { bg: 'bg-accent-blue', hover: 'hover:bg-accent-blue/80', border: 'border-accent-blue' },
+  success: { bg: 'bg-accent-green', hover: 'hover:bg-accent-green/80', border: 'border-accent-green' },
+  info: { bg: 'bg-accent-cyan', hover: 'hover:bg-accent-cyan/80', border: 'border-accent-cyan' },
+  warning: { bg: 'bg-accent-yellow', hover: 'hover:bg-accent-yellow/80', border: 'border-accent-yellow' },
+  danger: { bg: 'bg-accent-red', hover: 'hover:bg-accent-red/80', border: 'border-accent-red' },
+};
+
+interface Lesson {
+  title: string;
+  description: string;
+  href: string;
+  color: string;
+  chapter: string;
+  uses: { label: string; href: string }[];
+}
+
+const lessons: Lesson[] = [
+  {
+    title: '🪀 耦合振子與正常模態',
+    description: '兩顆質量、三根彈簧。能量在兩顆之間來回搬，看起來很複雜 — 換到「正常模態」座標，它就只是兩個各自獨立的簡諧振動。對角化不是技巧，是找到讓它們不再互相干擾的那組座標。',
+    href: '/physics/coupled-oscillator',
+    color: 'primary',
+    chapter: 'Chapter 1 · 從古典到統計',
+    uses: [{ label: '特徵向量與對角化', href: '/math/linalg/eigen' }],
+  },
+  {
+    title: '🧲 二維 Ising 模型與相變',
+    description: '一格一格的自旋，拉溫度滑桿。過了 T_c ≈ 2.269 的瞬間，畫面從雜訊突然結晶成大塊磁區 — 相變是滑桿一格之差，看得見的質變。',
+    href: '/physics/ising',
+    color: 'warning',
+    chapter: 'Chapter 1 · 從古典到統計',
+    uses: [
+      { label: '馬可夫鏈與 MCMC', href: '/math/probstat/markov' },
+      { label: '熵與 KL 散度', href: '/math/probstat/entropy' },
+    ],
+  },
+  {
+    title: '🌊 不確定性原理 = 傅立葉對偶',
+    description: '把波包拉窄，動量分布就變寬，乘積壓不下 ħ/2。海森堡不是「測量會打擾粒子」的玄學 — 它是任何波都有的傅立葉性質，聲波也有。',
+    href: '/physics/uncertainty',
+    color: 'info',
+    chapter: 'Chapter 2 · 波動作為橋樑',
+    uses: [
+      { label: '傅立葉畫畫', href: '/math/fourier' },
+      { label: '波形合成器', href: '/math/waveform' },
+    ],
+  },
+  {
+    title: '🔦 雙狹縫與單光子累積',
+    description: '一次只打一顆。前十顆是隨機亮點，一萬顆之後條紋才長出來。再把偵測器打開 — 同樣的光、同樣的狹縫，條紋沒了。',
+    href: '/physics/double-slit',
+    color: 'success',
+    chapter: 'Chapter 2 · 波動作為橋樑',
+    uses: [{ label: '不確定性原理', href: '/physics/uncertainty' }],
+  },
+  {
+    title: '🚧 量子穿隧',
+    description: '用 split-step FFT 真的解含時薛丁格方程。能量低於障礙，波包照樣有一部分穿過去；而且太薄的高牆比矮胖的牆好穿。模擬值與課本公式並排比對。',
+    href: '/physics/tunneling',
+    color: 'danger',
+    chapter: 'Chapter 3 · 量子的硬骨頭',
+    uses: [{ label: '不確定性原理', href: '/physics/uncertainty' }],
+  },
+  {
+    title: '🔗 貝爾不等式與 CHSH 實驗',
+    description: '自己挑角度、自己跑幾萬對。任何「粒子出發前就決定好答案」的模型，S 都不可能超過 2；量子力學給你 2.83。這一頁你可以親手把局域實在論測掉。',
+    href: '/physics/bell',
+    color: 'info',
+    chapter: 'Chapter 3 · 量子的硬骨頭',
+    uses: [
+      { label: '機率分布動物園', href: '/math/probstat/distributions' },
+      { label: '大數法則與中央極限', href: '/math/probstat/lln-clt' },
+    ],
+  },
+];
+---
+<BaseLayout
+  currentPage="physics"
+  title="物理視覺化"
+  description="從耦合振子到貝爾不等式 — 6 頁互動式物理視覺化。每一頁都接回站內的數學專區：正常模態就是特徵向量、Ising 用的是 MCMC、不確定性原理就是傅立葉對偶。"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-16">
+    <header class="text-center mb-10">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">物理專區</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-3">物理 · 動手玩版本</h1>
+      <p class="text-base-400 max-w-2xl mx-auto">
+        這裡的每一頁都是<strong class="text-base-200">數學專區的應用層</strong>。線代的特徵向量會在彈簧上晃給你看、
+        機率統計的 MCMC 會在自旋格子上跑、傅立葉會直接變成不確定性原理。所以每張卡片下面都標了「用到哪一頁」。
+      </p>
+    </header>
+
+    <!-- ─────────── 熱身：共振 ─────────── -->
+    <section class="rounded-lg border border-accent-yellow/40 bg-base-800/60 p-6 mb-10">
+      <div class="flex items-baseline justify-between mb-4 flex-wrap gap-2">
+        <h2 class="text-xl font-bold text-accent-yellow">🎚️ 熱身：共振</h2>
+        <p class="text-sm text-base-400">先看一次「一個數字慢慢變，行為卻突然變了」</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div class="lg:col-span-2">
+          <div class="relative w-full rounded-md bg-base-900/60 border border-base-700" style="aspect-ratio: 16/9; min-height: 300px;">
+            <canvas id="resonance-canvas" class="absolute inset-0 w-full h-full"></canvas>
+          </div>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span class="phy-chip"><span class="dot" style="background: #b58900"></span>外力方向</span>
+            <span class="phy-chip"><span class="dot" style="background: #2aa198"></span>穩態振幅曲線</span>
+            <span class="phy-chip"><span class="dot" style="background: #dc322f"></span>自然頻率 ω₀ = 1</span>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <div class="phy-label"><span>驅動頻率 ω_d</span><span class="val" id="res-wd">1.00</span></div>
+            <input id="res-wd-slider" type="range" min="0.05" max="2.5" step="0.01" value="1" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>阻尼 γ</span><span class="val" id="res-gamma">0.08</span></div>
+            <input id="res-gamma-slider" type="range" min="0.01" max="0.5" step="0.01" value="0.08" class="phy-slider" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="phy-tile"><span class="label">穩態振幅</span><span class="value accent-cyan" id="res-amp">—</span></div>
+            <div class="phy-tile"><span class="label">相位落後</span><span class="value accent-yellow" id="res-phase">—</span></div>
+          </div>
+          <div class="phy-tile"><span class="label">品質因數 Q = ω₀ / 2γ</span><span class="value accent-magenta" id="res-q">—</span></div>
+          <button id="res-reset" class="phy-btn w-full" type="button">↻ 從靜止重新開始</button>
+          <p class="text-xs text-base-400 leading-relaxed">
+            把 γ 調到 0.02、再把 ω_d 慢慢推向 1 — 振幅不是線性變大，是在最後一小段突然衝上去。
+            這種「參數連續變、行為不連續」的現象，在 Ising 那頁會以相變的形式再出現一次。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────── 為什麼這樣排 ─────────── -->
+    <section class="rounded-lg border border-base-600 bg-base-800/60 p-6 mb-10">
+      <h2 class="text-lg font-bold text-accent-blue mb-3">📍 這 6 頁怎麼串起來</h2>
+      <div class="grid md:grid-cols-3 gap-5 text-base-300 text-sm leading-relaxed">
+        <div>
+          <p class="text-base-50 font-semibold mb-1">Chapter 1 · 從古典到統計</p>
+          <p>先在<strong class="text-base-200">完全古典</strong>的地盤上，把兩個之後會反覆用到的工具練熟：把耦合系統對角化、以及用取樣去逼近一個沒有解析解的分布。</p>
+        </div>
+        <div>
+          <p class="text-base-50 font-semibold mb-1">Chapter 2 · 波動作為橋樑</p>
+          <p>量子的怪事有一半其實只是<strong class="text-base-200">波的性質</strong>。先把「波包有寬度」講清楚，雙狹縫的條紋就不神秘了 — 神秘的是那個「一顆一顆來」。</p>
+        </div>
+        <div>
+          <p class="text-base-50 font-semibold mb-1">Chapter 3 · 量子的硬骨頭</p>
+          <p>剩下真的無法用古典講的兩件事：波函數會穿過古典禁區，以及糾纏關聯強到任何隱變數模型都追不上。這兩頁都是<strong class="text-base-200">跑出來的，不是畫出來的</strong>。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────── 6 個內頁卡片 ─────────── -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {lessons.map((lesson) => {
+        const colors = colorMap[lesson.color];
+        return (
+          <div class={`flex flex-col rounded-lg border ${colors.border} bg-base-800 h-full`}>
+            <div class="p-5 flex-1">
+              <p class="text-xs text-base-400 mb-1">{lesson.chapter}</p>
+              <h5 class="text-lg font-semibold text-base-50 mb-2">{lesson.title}</h5>
+              <p class="text-base-400 text-sm mb-3">{lesson.description}</p>
+              <p class="text-xs text-base-500">
+                用到：
+                {lesson.uses.map((u, i) => (
+                  <>
+                    {i > 0 && <span class="text-base-600"> · </span>}
+                    <a href={u.href} class="text-accent-cyan hover:underline">{u.label}</a>
+                  </>
+                ))}
+              </p>
+            </div>
+            <div class="px-5 pb-5">
+              <a
+                href={lesson.href}
+                class={`block text-center px-4 py-2 rounded ${colors.bg} ${colors.hover} text-base-50 font-medium transition`}
+              >
+                開始學習 →
+              </a>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+    <!-- ─────────── 相關頁面 ─────────── -->
+    <section class="mt-10 rounded-lg border border-base-600 bg-base-800/60 p-6">
+      <h2 class="text-lg font-bold text-accent-cyan mb-3">🔭 站上其他物理相關的頁面</h2>
+      <div class="grid md:grid-cols-2 gap-4 text-sm text-base-300 leading-relaxed">
+        <p>
+          <a href="/math/nbody" class="text-accent-blue hover:underline font-medium">🪐 N 體運動模擬器</a>
+          — 重力多體：二體為何穩定、三體為何混沌，用雙軌對照直接看見對初始條件的敏感依賴。
+        </p>
+        <p>
+          <a href="/math/traffic" class="text-accent-blue hover:underline font-medium">🚗 交通流體力學</a>
+          — 幽靈塞車如何從一個煞車動作長成一列反向傳播的波。
+        </p>
+      </div>
+      <p class="text-xs text-base-500 mt-3">
+        這兩頁目前還掛在 /math/ 底下。等物理累積得再多一些，會一起搬過來並保留轉址。
+      </p>
+    </section>
+  </div>
+
+  <script>
+    import { ResonanceScene, type ResonanceStats } from '@/lib/physics/ResonanceScene';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const wdEl = document.getElementById('res-wd')!;
+      const gammaEl = document.getElementById('res-gamma')!;
+      const ampEl = document.getElementById('res-amp')!;
+      const phaseEl = document.getElementById('res-phase')!;
+      const qEl = document.getElementById('res-q')!;
+      const wdSlider = document.getElementById('res-wd-slider') as HTMLInputElement;
+      const gammaSlider = document.getElementById('res-gamma-slider') as HTMLInputElement;
+      const resetBtn = document.getElementById('res-reset') as HTMLButtonElement;
+
+      function renderStats(s: ResonanceStats) {
+        wdEl.textContent = s.driveFrequency.toFixed(2);
+        gammaEl.textContent = s.damping.toFixed(2);
+        ampEl.textContent = s.steadyAmplitude.toFixed(2);
+        phaseEl.textContent = `${s.phaseLagDeg.toFixed(0)}°`;
+        qEl.textContent = s.qualityFactor.toFixed(1);
+      }
+
+      const scene = new ResonanceScene({ canvasId: 'resonance-canvas', onStats: renderStats });
+
+      wdSlider.addEventListener('input', () => scene.setDriveFrequency(Number(wdSlider.value)));
+      gammaSlider.addEventListener('input', () => scene.setDamping(Number(gammaSlider.value)));
+      resetBtn.addEventListener('click', () => scene.reset());
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</BaseLayout>

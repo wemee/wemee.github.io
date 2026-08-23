@@ -1,0 +1,297 @@
+---
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/physics.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<MathLessonLayout
+  section="physics"
+  slug="coupled-oscillator"
+  currentPage="physics"
+  seoTitle="耦合振子與正常模態 · 特徵向量在彈簧上晃給你看"
+  seoDescription="兩顆質量、三根彈簧，能量在兩顆之間來回搬。換到正常模態座標，它就只是兩個獨立的簡諧振動 — 對角化不是技巧，是找到讓它們不再互相干擾的那組座標。"
+>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">
+    線性代數說「對稱矩陣可以對角化」。這一頁是那句話的實體版本：把耦合矩陣的特徵向量找出來，兩顆互相拉扯的質量就變成兩個彼此無關的振動。
+  </p>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2">
+      <canvas id="co-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 62vh; min-height: 440px;"></canvas>
+      <div class="mt-3 flex flex-wrap gap-2 text-xs">
+        <span class="phy-chip"><span class="dot" style="background: #268bd2"></span>質量 1 的位移</span>
+        <span class="phy-chip"><span class="dot" style="background: #d33682"></span>質量 2 的位移</span>
+        <span class="phy-chip"><span class="dot" style="background: #b58900"></span>耦合彈簧 k_c</span>
+        <span class="phy-chip">虛線 = 拍包絡線</span>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <div class="phy-panel">
+        <div class="head">🎴 初始條件</div>
+        <div class="body grid grid-cols-1 gap-2">
+          <button data-preset="in-phase" class="phy-btn text-left">同相：兩顆同方向 → 純模態 1</button>
+          <button data-preset="anti-phase" class="phy-btn text-left">反相：兩顆反方向 → 純模態 2</button>
+          <button data-preset="push-one" class="phy-btn text-left active">只推第一顆 → 拍（能量來回搬）</button>
+          <button data-preset="mixed" class="phy-btn text-left">不對稱混合</button>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">🎛️ 參數</div>
+        <div class="body space-y-3">
+          <div>
+            <div class="phy-label"><span>外側彈簧 k</span><span class="val" id="co-k">1.60</span></div>
+            <input id="co-k-slider" type="range" min="0.4" max="4" step="0.05" value="1.6" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>耦合彈簧 k_c</span><span class="val" id="co-kc">0.45</span></div>
+            <input id="co-kc-slider" type="range" min="0" max="2" step="0.01" value="0.45" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>質量 m</span><span class="val" id="co-m">1.00</span></div>
+            <input id="co-m-slider" type="range" min="0.4" max="3" step="0.05" value="1" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>播放速度</span><span class="val" id="co-speed">1.0×</span></div>
+            <input id="co-speed-slider" type="range" min="0.25" max="3" step="0.05" value="1" class="phy-slider" />
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button id="co-toggle" class="phy-btn primary" type="button">⏸ 暫停</button>
+            <button id="co-reset" class="phy-btn" type="button">↻ 回 t = 0</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">🧮 兩個正常模態</div>
+        <div class="body space-y-2 text-sm font-mono">
+          <div class="flex justify-between items-baseline">
+            <span class="text-base-400" set:html={tex('\\omega_1 = \\sqrt{k/m}')} />
+            <span id="co-w1" class="phy-readout accent-blue w-24">—</span>
+          </div>
+          <div class="flex justify-between items-baseline">
+            <span class="text-base-400" set:html={tex('\\omega_2 = \\sqrt{(k+2k_c)/m}')} />
+            <span id="co-w2" class="phy-readout accent-magenta w-24">—</span>
+          </div>
+          <hr class="border-base-600 my-1" />
+          <div class="flex justify-between items-baseline">
+            <span class="text-base-400">ω₂ / ω₁</span>
+            <span id="co-ratio" class="phy-readout accent-cyan w-24">—</span>
+          </div>
+          <div class="flex justify-between items-baseline">
+            <span class="text-base-400">拍週期 T_beat</span>
+            <span id="co-beat" class="phy-readout accent-yellow w-24">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">⚖️ 能量放在哪裡</div>
+        <div class="body space-y-3">
+          <div>
+            <p class="text-xs text-base-400 mb-2">模態能量（<strong class="text-accent-green">不隨時間變</strong>）</p>
+            <div class="space-y-1.5">
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-base-400 w-10 font-mono">E₁</span>
+                <div class="flex-1 h-2.5 rounded bg-base-900 overflow-hidden"><div id="co-bar-e1" class="h-full" style="width: 0%; background: #268bd2"></div></div>
+                <span id="co-e1" class="text-xs font-mono text-base-100 w-12 text-right">—</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-base-400 w-10 font-mono">E₂</span>
+                <div class="flex-1 h-2.5 rounded bg-base-900 overflow-hidden"><div id="co-bar-e2" class="h-full" style="width: 0%; background: #d33682"></div></div>
+                <span id="co-e2" class="text-xs font-mono text-base-100 w-12 text-right">—</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="text-xs text-base-400 mb-2">各質量的局部能量（<strong class="text-accent-yellow">一直在搬</strong>）</p>
+            <div class="space-y-1.5">
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-base-400 w-10 font-mono">m₁</span>
+                <div class="flex-1 h-2.5 rounded bg-base-900 overflow-hidden"><div id="co-bar-l1" class="h-full" style="width: 0%; background: #268bd2"></div></div>
+                <span id="co-l1" class="text-xs font-mono text-base-100 w-12 text-right">—</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-base-400 w-10 font-mono">m₂</span>
+                <div class="flex-1 h-2.5 rounded bg-base-900 overflow-hidden"><div id="co-bar-l2" class="h-full" style="width: 0%; background: #d33682"></div></div>
+                <span id="co-l2" class="text-xs font-mono text-base-100 w-12 text-right">—</span>
+              </div>
+            </div>
+          </div>
+          <p class="text-xs text-base-500 leading-relaxed">
+            耦合彈簧的位能不屬於任何一顆質量，上面的「局部能量」把它平分給兩邊 — 這是一個約定，不是定律。
+            重點不是那個數字本身，是<strong class="text-base-300">上面兩條不動、下面兩條一直在動</strong>。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── Teaching ─────────── -->
+  <section class="mt-12 max-w-3xl mx-auto prose-content">
+    <h2 class="text-2xl font-bold text-base-50 mb-4">📖 為什麼要換座標</h2>
+
+    <div class="space-y-4 text-base-300 leading-relaxed">
+      <p>兩顆質量各自的牛頓方程長這樣：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`m\\ddot{x}_1 = -k x_1 - k_c(x_1 - x_2), \\qquad m\\ddot{x}_2 = -k x_2 - k_c(x_2 - x_1)`, true)} />
+      <p>
+        麻煩在於 <span set:html={tex('x_1')} /> 的方程裡有 <span set:html={tex('x_2')} />，反之亦然。
+        它們<strong class="text-base-50">綁在一起</strong>，沒辦法一個一個解。寫成矩陣：
+      </p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`m\\ddot{\\mathbf{x}} = -K\\mathbf{x}, \\qquad K = \\begin{pmatrix} k+k_c & -k_c \\\\ -k_c & k+k_c \\end{pmatrix}`, true)} />
+      <p>
+        綁在一起的原因，就是 <span set:html={tex('K')} /> 的非對角元素不是 0。而線性代數早就給了答案：
+        <strong class="text-accent-cyan">對稱矩陣可以正交對角化</strong>。找到 <span set:html={tex('K')} /> 的特徵向量，
+        在那組座標下 <span set:html={tex('K')} /> 是對角的，非對角項消失 — 兩個方程就此分家。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🌟 這個矩陣的特徵向量</h3>
+      <p>因為 <span set:html={tex('K')} /> 對兩顆質量完全對稱，特徵向量不用算就能猜出來：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`\\mathbf{v}_1 = \\tfrac{1}{\\sqrt2}\\begin{pmatrix}1\\\\1\\end{pmatrix},\\ \\lambda_1 = k \\qquad \\mathbf{v}_2 = \\tfrac{1}{\\sqrt2}\\begin{pmatrix}1\\\\-1\\end{pmatrix},\\ \\lambda_2 = k + 2k_c`, true)} />
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li>
+          <strong class="text-accent-blue">模態 1（同相）</strong> — 兩顆一起往同一邊。中間那根彈簧
+          <strong class="text-base-50">從頭到尾沒有被拉伸過</strong>，所以 <span set:html={tex('k_c')} /> 完全不出現在
+          <span set:html={tex('\\omega_1')} /> 裡。把 k_c 滑桿拉到底，ω₁ 紋風不動 — 你可以現在就試。
+        </li>
+        <li>
+          <strong class="text-accent-magenta">模態 2（反相）</strong> — 兩顆往相反方向。中間彈簧被拉到最兇，
+          所以它額外貢獻了 <span set:html={tex('2k_c')} />，頻率比較高。
+        </li>
+      </ul>
+      <p>
+        頻率就是特徵值開根號除以質量：<span set:html={tex('\\omega_i = \\sqrt{\\lambda_i / m}')} />。
+        這不是巧合 — <strong class="text-base-50">特徵值是「這個方向有多硬」，特徵向量是「哪個方向」</strong>。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">⚖️ 對角化的觀測後果</h3>
+      <p>
+        把位移投影到兩個特徵向量上，得到模態座標
+        <span set:html={tex('q_1 = (x_1+x_2)/\\sqrt2')} />、<span set:html={tex('q_2 = (x_1-x_2)/\\sqrt2')} />，
+        總能量就乾淨地拆成兩份：
+      </p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`E = \\underbrace{\\tfrac12 m(\\dot q_1^2 + \\omega_1^2 q_1^2)}_{E_1} + \\underbrace{\\tfrac12 m(\\dot q_2^2 + \\omega_2^2 q_2^2)}_{E_2}`, true)} />
+      <p>
+        <strong class="text-accent-green">兩份各自守恆。</strong>右邊面板上那兩條「模態能量」不會動，
+        而「各質量的局部能量」兩條一直在互相搬 — 同一個系統、同一個瞬間，換個座標看，
+        「能量在流動」這件事就消失了。這就是對角化真正買到的東西。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🥁 拍是怎麼來的</h3>
+      <p>選「只推第一顆」，初始條件同時含有兩個模態。兩個餘弦疊加，用和差化積：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`x_1(t) = A\\cos\\!\\Big(\\tfrac{\\Delta\\omega}{2}t\\Big)\\cos(\\bar\\omega t), \\qquad x_2(t) = A\\sin\\!\\Big(\\tfrac{\\Delta\\omega}{2}t\\Big)\\sin(\\bar\\omega t)`, true)} />
+      <p>
+        快的那個 <span set:html={tex('\\bar\\omega')} /> 是你看到的震盪，慢的那個
+        <span set:html={tex('\\Delta\\omega/2')} /> 是包絡線（畫面上的虛線）。當 <span set:html={tex('x_1')} /> 的包絡線壓到 0，
+        能量整包跑到了 <span set:html={tex('x_2')} />。耦合越弱，<span set:html={tex('\\Delta\\omega')} /> 越小，搬運越慢 —
+        把 k_c 調到 0.05 看看，那會慢到像在偷渡。
+      </p>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+      <ol class="list-decimal list-inside space-y-2 ml-2">
+        <li><strong class="text-accent-blue">先按「同相」</strong>，然後把 k_c 從 0 拉到 2。ω₁ 完全沒變，圖形也沒變 — 耦合彈簧沒參與。</li>
+        <li><strong class="text-accent-blue">再按「反相」</strong>，同樣拉 k_c。這次 ω₂ 一路往上，震得越來越快。同一根彈簧，兩種待遇。</li>
+        <li><strong class="text-accent-blue">「只推第一顆」</strong> — 看兩條虛線包絡線交錯呼吸，一條鼓起來另一條就癟下去。這就是能量在兩顆之間搬。</li>
+        <li><strong class="text-accent-blue">把 k_c 調到 0.05</strong>，拍週期會拉到很長；調到 1.5，快到幾乎看不出「拍」，只剩雜亂。<strong class="text-base-50">耦合強度決定資訊傳遞的速度</strong>。</li>
+        <li><strong class="text-accent-blue">看「不對稱混合」</strong>：兩個模態的份量不相等，所以能量搬不乾淨 — 包絡線最低點不會碰到 0。</li>
+      </ol>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 這個結構在哪裡還會出現</h3>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">分子振動</strong> — CO₂ 的對稱伸縮／反對稱伸縮／彎曲就是三個正常模態，紅外線光譜量到的是特徵值</li>
+        <li><strong class="text-base-50">建築與橋梁</strong> — 結構的「模態分析」找的就是這些特徵向量，怕的是地震頻率剛好撞上某一個</li>
+        <li><strong class="text-base-50">電路</strong> — 兩個耦合 LC 迴路是完全一樣的數學，能量在兩個迴路間來回就是拍</li>
+        <li><strong class="text-base-50">量子力學</strong> — 兩能階耦合系統的 avoided crossing、以及分子軌域的成鍵／反鍵，是同一個 2×2 對角化</li>
+        <li><strong class="text-base-50">PCA 與圖論</strong> — 一樣是「找對稱矩陣的特徵向量」，只是那裡叫主成分或譜分群</li>
+      </ul>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">📚 接下來</h3>
+      <p>
+        這頁的系統是<strong class="text-base-50">線性</strong>的，所以有精確解，畫面上每個像素都是公式直接算出來的、沒有累積誤差。
+        下一頁換到另一個極端：一個沒有解析解、只能靠取樣去逼近的系統 — 而且它會在某個溫度突然變樣。
+      </p>
+    </div>
+  </section>
+
+  <script>
+    import { CoupledOscillatorScene, type OscStats, type OscPresetId } from '@/lib/physics/CoupledOscillatorScene';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const kEl = document.getElementById('co-k')!;
+      const kcEl = document.getElementById('co-kc')!;
+      const mEl = document.getElementById('co-m')!;
+      const speedEl = document.getElementById('co-speed')!;
+      const w1El = document.getElementById('co-w1')!;
+      const w2El = document.getElementById('co-w2')!;
+      const ratioEl = document.getElementById('co-ratio')!;
+      const beatEl = document.getElementById('co-beat')!;
+      const e1El = document.getElementById('co-e1')!;
+      const e2El = document.getElementById('co-e2')!;
+      const l1El = document.getElementById('co-l1')!;
+      const l2El = document.getElementById('co-l2')!;
+      const barE1 = document.getElementById('co-bar-e1') as HTMLDivElement;
+      const barE2 = document.getElementById('co-bar-e2') as HTMLDivElement;
+      const barL1 = document.getElementById('co-bar-l1') as HTMLDivElement;
+      const barL2 = document.getElementById('co-bar-l2') as HTMLDivElement;
+      const toggleBtn = document.getElementById('co-toggle') as HTMLButtonElement;
+      const resetBtn = document.getElementById('co-reset') as HTMLButtonElement;
+      const kSlider = document.getElementById('co-k-slider') as HTMLInputElement;
+      const kcSlider = document.getElementById('co-kc-slider') as HTMLInputElement;
+      const mSlider = document.getElementById('co-m-slider') as HTMLInputElement;
+      const speedSlider = document.getElementById('co-speed-slider') as HTMLInputElement;
+      const presetBtns = document.querySelectorAll<HTMLButtonElement>('[data-preset]');
+
+      function renderStats(s: OscStats) {
+        w1El.textContent = s.omega1.toFixed(3);
+        w2El.textContent = s.omega2.toFixed(3);
+        ratioEl.textContent = s.ratio.toFixed(3);
+        beatEl.textContent = s.beatPeriod === null ? '∞' : `${s.beatPeriod.toFixed(1)} s`;
+
+        const modeTotal = s.modeEnergy1 + s.modeEnergy2 || 1;
+        const localTotal = s.localEnergy1 + s.localEnergy2 || 1;
+        e1El.textContent = s.modeEnergy1.toFixed(3);
+        e2El.textContent = s.modeEnergy2.toFixed(3);
+        l1El.textContent = s.localEnergy1.toFixed(3);
+        l2El.textContent = s.localEnergy2.toFixed(3);
+        barE1.style.width = `${(s.modeEnergy1 / modeTotal) * 100}%`;
+        barE2.style.width = `${(s.modeEnergy2 / modeTotal) * 100}%`;
+        barL1.style.width = `${(s.localEnergy1 / localTotal) * 100}%`;
+        barL2.style.width = `${(s.localEnergy2 / localTotal) * 100}%`;
+
+        toggleBtn.textContent = s.running ? '⏸ 暫停' : '▶ 播放';
+        toggleBtn.classList.toggle('active-yellow', !s.running);
+        presetBtns.forEach((b) => b.classList.toggle('active', b.dataset.preset === s.preset));
+      }
+
+      const scene = new CoupledOscillatorScene({ canvasId: 'co-canvas', onStats: renderStats });
+
+      presetBtns.forEach((btn) => {
+        btn.addEventListener('click', () => scene.setPreset(btn.dataset.preset as OscPresetId));
+      });
+      kSlider.addEventListener('input', () => {
+        kEl.textContent = Number(kSlider.value).toFixed(2);
+        scene.setK(Number(kSlider.value));
+      });
+      kcSlider.addEventListener('input', () => {
+        kcEl.textContent = Number(kcSlider.value).toFixed(2);
+        scene.setKc(Number(kcSlider.value));
+      });
+      mSlider.addEventListener('input', () => {
+        mEl.textContent = Number(mSlider.value).toFixed(2);
+        scene.setMass(Number(mSlider.value));
+      });
+      speedSlider.addEventListener('input', () => {
+        speedEl.textContent = `${Number(speedSlider.value).toFixed(1)}×`;
+        scene.setSpeed(Number(speedSlider.value));
+      });
+      toggleBtn.addEventListener('click', () => scene.toggle());
+      resetBtn.addEventListener('click', () => scene.reset());
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</MathLessonLayout>

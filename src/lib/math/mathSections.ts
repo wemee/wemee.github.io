@@ -1,12 +1,17 @@
 /**
- * Single registry for every /math/ lesson subsection (linalg, calculus,
- * probstat, …). One source of truth for: canonical lesson order (drives
- * prev/next in MathPageNav), the "回專區" fallback label, and per-page
- * supplementary reading.
+ * Single registry for every lesson subsection on the site — /math/ (linalg,
+ * calculus, probstat) and /physics/ alike. One source of truth for: canonical
+ * lesson order (drives prev/next in MathPageNav), the "回專區" fallback label,
+ * and per-page supplementary reading.
+ *
+ * The file still lives under src/lib/math/ for historical reasons; nothing in
+ * it is /math/-specific — `indexHref` carries the URL prefix, so a section can
+ * sit anywhere. Physics pages never import this directly; MathLessonLayout
+ * resolves everything from `section` + `slug`.
  *
  * To add a lesson: add an entry to the relevant section's `pages` AND create
  * the matching .astro file. To add a whole subsection: add a MathSection here
- * and point its pages at `/math/<id>/...`.
+ * and point its pages at `/<prefix>/<id>/...`.
  */
 
 export interface MathPage {
@@ -124,10 +129,50 @@ const PROBSTAT: MathSection = {
   },
 };
 
+const PHYSICS: MathSection = {
+  id: 'physics',
+  indexHref: '/physics/',
+  sectionEmoji: '⚛️',
+  name: '物理',
+  parts: { 'Chapter 1': '從古典到統計', 'Chapter 2': '波動作為橋樑', 'Chapter 3': '量子的硬骨頭' },
+  pages: [
+    { slug: 'coupled-oscillator', title: '耦合振子與正常模態', emoji: '🪀', href: '/physics/coupled-oscillator', chapter: 'Chapter 1' },
+    { slug: 'ising',              title: '二維 Ising 與相變',   displayTitle: '二維 Ising 模型與相變', emoji: '🧲', href: '/physics/ising',   chapter: 'Chapter 1' },
+    { slug: 'uncertainty',        title: '不確定性原理',        displayTitle: '不確定性原理 = 傅立葉對偶', emoji: '🌊', href: '/physics/uncertainty', chapter: 'Chapter 2' },
+    { slug: 'double-slit',        title: '雙狹縫與單光子',      displayTitle: '雙狹縫與單光子累積', emoji: '🔦', href: '/physics/double-slit', chapter: 'Chapter 2' },
+    { slug: 'tunneling',          title: '量子穿隧',            displayTitle: '量子穿隧 — 解含時薛丁格方程', emoji: '🚧', href: '/physics/tunneling', chapter: 'Chapter 3' },
+    { slug: 'bell',               title: '貝爾不等式',          displayTitle: '貝爾不等式與 CHSH 實驗', emoji: '🔗', href: '/physics/bell', chapter: 'Chapter 3' },
+  ],
+  supplements: {
+    'coupled-oscillator': [
+      { label: '🌟 特徵向量與對角化', description: '本頁的「正常模態」就是那一頁的特徵向量', href: '/math/linalg/eigen' },
+    ],
+    ising: [
+      { label: '🚶 馬可夫鏈與 MCMC', description: '本頁翻自旋用的 Metropolis 就是那一頁的演算法本人', href: '/math/probstat/markov' },
+      { label: '🔥 熵與 KL 散度', description: '自由能 F = E − TS 裡的那個 S', href: '/math/probstat/entropy' },
+    ],
+    uncertainty: [
+      { label: '🎨 傅立葉畫畫', description: '先看「任何波形都能拆成正弦波」', href: '/math/fourier' },
+      { label: '🎛️ 波形合成器', description: '諧波疊加與頻譜的互動版本', href: '/math/waveform' },
+    ],
+    'double-slit': [
+      { label: '🌊 不確定性原理', description: '雙峰波包在動量空間就是干涉條紋', href: '/physics/uncertainty' },
+    ],
+    tunneling: [
+      { label: '🌊 不確定性原理', description: '波包有能量寬度，所以模擬的穿透率不會剛好等於單一能量的理論值', href: '/physics/uncertainty' },
+    ],
+    bell: [
+      { label: '📦 機率分布動物園', description: '本頁全程在做取樣與估計，沒有玄學', href: '/math/probstat/distributions' },
+      { label: '🎯 大數法則與中央極限', description: '為什麼 S 的誤差棒隨 1/√N 縮小', href: '/math/probstat/lln-clt' },
+    ],
+  },
+};
+
 export const MATH_SECTIONS: Record<string, MathSection> = {
   linalg: LINALG,
   calculus: CALCULUS,
   probstat: PROBSTAT,
+  physics: PHYSICS,
 };
 
 /** "📐 微積分專區" — the emoji label used by the MathPageNav fallback cards. */

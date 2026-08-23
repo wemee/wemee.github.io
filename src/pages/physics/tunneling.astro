@@ -1,0 +1,238 @@
+---
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/physics.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<MathLessonLayout
+  section="physics"
+  slug="tunneling"
+  currentPage="physics"
+  seoTitle="量子穿隧 · 用 split-step FFT 真的解含時薛丁格方程"
+  seoDescription="能量低於障礙，波包照樣有一部分穿過去。split-step 傅立葉法即時積分薛丁格方程，反射率與穿透率是量出來的，並與課本的平面波公式並排比對。"
+>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">
+    古典力學說：能量不夠就是過不去，機率是 0。這一頁把方程真的積出來 —— 波包撞上牆，一部分彈回來，一部分<strong class="text-base-200">出現在牆的另一邊</strong>。
+  </p>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2">
+      <canvas id="tn-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 60vh; min-height: 420px;"></canvas>
+      <div class="mt-3 flex flex-wrap gap-2 text-xs">
+        <span class="phy-chip"><span class="dot" style="background: #2aa198"></span>|ψ(x)|² 機率密度</span>
+        <span class="phy-chip"><span class="dot" style="background: #268bd2"></span>Re ψ</span>
+        <span class="phy-chip"><span class="dot" style="background: #b58900"></span>位能障礙 V₀</span>
+        <span class="phy-chip"><span class="dot" style="background: #dc322f"></span>波包能量 E</span>
+        <span class="phy-chip">兩側灰區 = 吸收邊界</span>
+        <span class="phy-chip">下方面板 = 障礙區放大</span>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <div class="phy-panel">
+        <div class="head">🎴 情境</div>
+        <div class="body grid grid-cols-1 gap-2">
+          <button data-preset="tunnel" class="phy-btn text-left active">E &lt; V₀ — 古典禁區，照樣穿</button>
+          <button data-preset="at-threshold" class="phy-btn text-left">E ≈ V₀ — 沒有「剛好過關」這回事</button>
+          <button data-preset="resonance" class="phy-btn text-left">共振穿透 — 障礙幾乎變透明</button>
+          <button data-preset="thin-barrier" class="phy-btn text-left">又高又薄 — 厚度比高度重要</button>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">📊 量到的結果</div>
+        <div class="body space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">反射 R</span><span class="value accent-orange" id="tn-r">—</span></div>
+            <div class="phy-tile"><span class="label">穿透 T</span><span class="value accent-green" id="tn-t">—</span></div>
+          </div>
+          <div class="h-4 rounded overflow-hidden flex bg-base-900">
+            <div id="tn-bar-r" class="h-full" style="width: 0%; background: #cb4b16"></div>
+            <div id="tn-bar-in" class="h-full" style="width: 0%; background: #586e75"></div>
+            <div id="tn-bar-t" class="h-full" style="width: 0%; background: #859900"></div>
+          </div>
+          <div class="phy-tile">
+            <span class="label">課本公式（單一能量 E 的平面波）</span>
+            <span class="value accent-yellow" id="tn-analytic">—</span>
+          </div>
+          <p class="text-xs text-base-500 leading-relaxed">
+            兩個數字<strong class="text-base-300">不會完全一樣</strong>，而且這是對的 —— 波包不是單一能量，
+            它有 ΔE 的寬度（<a href="/physics/uncertainty" class="text-accent-cyan hover:underline">上一頁</a>），
+            量到的是 T(E) 對整個能量分布的加權平均。
+          </p>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">E ± ΔE</span><span class="value accent-cyan" id="tn-energy">—</span></div>
+            <div class="phy-tile"><span class="label">機率總和</span><span class="value" id="tn-norm">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">🎛️ 參數（改動即重置）</div>
+        <div class="body space-y-3">
+          <div>
+            <div class="phy-label"><span>障礙高度 V₀</span><span class="val" id="tn-v0">4.00</span></div>
+            <input id="tn-v0-slider" type="range" min="0" max="10" step="0.05" value="4" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>障礙寬度 w</span><span class="val" id="tn-w">1.60</span></div>
+            <input id="tn-w-slider" type="range" min="0.2" max="6" step="0.05" value="1.6" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>入射動量 k₀</span><span class="val" id="tn-k0">2.20</span></div>
+            <input id="tn-k0-slider" type="range" min="0.5" max="4" step="0.01" value="2.2" class="phy-slider" />
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button id="tn-toggle" class="phy-btn primary" type="button">⏸ 暫停</button>
+            <button id="tn-reset" class="phy-btn" type="button">↻ 重新發射</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── Teaching ─────────── -->
+  <section class="mt-12 max-w-3xl mx-auto prose-content">
+    <h2 class="text-2xl font-bold text-base-50 mb-4">📖 這頁真的在解方程</h2>
+
+    <div class="space-y-4 text-base-300 leading-relaxed">
+      <p>前一頁是從已知分布抽樣，這一頁不是。這裡逐步積分的是含時薛丁格方程（取 ħ = m = 1）：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`i\\frac{\\partial \\psi}{\\partial t} = \\Big(-\\tfrac12 \\frac{\\partial^2}{\\partial x^2} + V(x)\\Big)\\psi`, true)} />
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">✂️ split-step：把難的一分為二</h3>
+      <p>
+        動能項在<strong class="text-base-50">動量空間</strong>是對角的（微分變成乘 <span set:html={tex('ik')} />），
+        位能項在<strong class="text-base-50">位置空間</strong>是對角的。兩個都容易，只是不在同一個空間。
+        於是就在兩個空間之間跳（Strang 分裂）：
+      </p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`\\psi \\leftarrow e^{-iV\\,dt/2}\\;\\mathcal{F}^{-1}\\Big[e^{-ik^2 dt/2}\\;\\mathcal{F}\\big[e^{-iV\\,dt/2}\\psi\\big]\\Big]`, true)} />
+      <p>
+        每一步就是兩次逐點相乘加兩次 FFT。這個方法<strong class="text-accent-green">天生是么正的</strong> —
+        每個因子的模都是 1，所以機率不會憑空增減。右邊那個「機率總和」永遠是 1.000，
+        而且不是靠事後歸一化硬拉回來的。
+      </p>
+      <p class="text-sm text-base-400 border-l-2 border-base-600 pl-3">
+        兩側灰色區域是<strong class="text-base-200">吸收邊界</strong>。FFT 讓格子變成週期性的，跑出右邊的波會從左邊繞回來、
+        污染反射率的量測。所以邊緣有一個平滑的海綿把它吸掉，而<strong class="text-base-200">吸走的機率會記在正確的那一邊</strong>，
+        R + T 才會加回 1。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🧱 為什麼過得去</h3>
+      <p>
+        在障礙裡，能量低於位能，於是 <span set:html={tex('k^2 = 2(E - V_0) < 0')} /> —— 波數變成虛數。
+        波不再震盪，改成<strong class="text-base-50">指數衰減</strong>：
+      </p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`\\psi(x) \\sim e^{-\\kappa x}, \\qquad \\kappa = \\sqrt{2(V_0 - E)}`, true)} />
+      <p>
+        關鍵是：指數衰減<strong class="text-accent-yellow">不會變成 0</strong>。只要牆是有限厚，另一邊就還剩一點振幅，
+        接回去就是一個往右跑的波。穿透率大致像
+        <span set:html={tex('T \\sim e^{-2\\kappa w}')} /> —— 對<strong class="text-base-50">寬度</strong>是指數敏感，
+        對高度只是根號裡的差。所以「又高又薄」那個預設會比你直覺的好穿很多。
+      </p>
+      <p>完整的矩形障礙公式（右邊面板拿來比對的就是它）：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`T = \\Big[1 + \\frac{V_0^2 \\sinh^2(\\kappa w)}{4E(V_0-E)}\\Big]^{-1} \\quad (E < V_0)`, true)} />
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🎯 反過來也怪：能量夠了也可能被彈回</h3>
+      <p>
+        古典直覺說 E &gt; V₀ 就一定過。錯。障礙的兩個邊界各自會反射一次，兩個反射波會干涉 —
+        大多數情況它們部分相消、部分相長，結果 T &lt; 1。而當
+        <span set:html={tex("k'w = n\\pi")} />（<span set:html={tex("k' = \\sqrt{2(E-V_0)}")} />）時，
+        兩個反射剛好完全抵消，<strong class="text-accent-green">T = 1，障礙變成完全透明</strong>。
+      </p>
+      <p>
+        這叫<strong class="text-base-50">共振穿透</strong>，和光學上的抗反射鍍膜是同一個機制。
+        「共振穿透」那個預設就設在 n = 1 上。
+      </p>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+      <ol class="list-decimal list-inside space-y-2 ml-2">
+        <li><strong class="text-accent-blue">預設「E &lt; V₀」跑完一次</strong>。紅線（E）明顯在黃色障礙下面，可是右邊還是分到了機率。看綠色那段長條。</li>
+        <li><strong class="text-accent-blue">盯著下方的「障礙區放大」面板</strong>（可以按暫停）。障礙只佔主畫面寬度的 1%，所以牆內發生什麼事必須放大才看得到：在牆內 ψ 不震盪，是一條往下掉的<strong class="text-base-50">指數曲線</strong>。注意那個面板是<strong class="text-base-300">依自己視窗縮放</strong>的，右上角會誠實告訴你這裡的峰值只有全域的百分之幾。</li>
+        <li><strong class="text-accent-blue">把寬度 w 從 1.6 拉到 3.2</strong>。T 掉一個數量級以上。再拉回 0.8，T 暴增。<strong class="text-base-50">指數敏感就是這個意思</strong>。</li>
+        <li><strong class="text-accent-blue">試「共振穿透」</strong>。E 在 V₀ 上方，T ≈ 0.96 — 障礙幾乎透明。把 w 從 2.0 拉到 2.5，T 掉到 0.87；拉到 3.0 剩 0.84。離開 k′w = π 的條件就開始漏。</li>
+        <li><strong class="text-accent-blue">為什麼共振那組用比較矮、比較薄的障礙？</strong> 因為又高又寬的障礙，共振峰在能量軸上會變得很<strong class="text-base-50">窄</strong> — 窄到比波包自己的 ΔE 還窄。那時候量到的 T 是共振被「抹平」之後的平均（大約 0.67），完全看不出透明。試試看：手動把 V₀ 和 w 都設到 3，分析值仍然是 1.000，模擬值卻只有 0.67。<strong class="text-accent-yellow">上一頁的能量寬度，在這裡直接決定了你看不看得見一個現象。</strong></li>
+        <li><strong class="text-accent-blue">試「E ≈ V₀」</strong>。古典預期是「剛好過」，實際上 T 只有 0.6 左右。門檻在量子裡是模糊的。</li>
+        <li><strong class="text-accent-blue">比較兩個 T</strong>。E 遠離 V₀ 時兩者很接近；E 貼近 V₀ 時差距最大 — 因為 T(E) 在那裡變化最陡，波包的能量寬度就被放大成了偏差。</li>
+      </ol>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 穿隧不是實驗室裡的花招</h3>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">太陽在發光</strong> — 核心溫度其實不足以讓質子越過庫倫障壁，融合幾乎全靠穿隧。沒有穿隧就沒有陽光</li>
+        <li><strong class="text-base-50">α 衰變</strong> — Gamow 在 1928 年用穿隧解釋半衰期跨 20 個數量級，是量子力學最早的量化勝利之一</li>
+        <li><strong class="text-base-50">掃描穿隧顯微鏡 (STM)</strong> — 靠穿隧電流對距離的指數敏感，量到原子級的高低差</li>
+        <li><strong class="text-base-50">快閃記憶體</strong> — 寫入與抹除就是讓電子穿過氧化層。你手機裡每一格 bit 都在用</li>
+        <li><strong class="text-base-50">晶片微縮的物理牆</strong> — 閘極氧化層薄到幾個原子時，漏電流（穿隧）就擋不住了</li>
+        <li><strong class="text-base-50">酵素催化</strong> — 質子與電子的穿隧在部分生化反應速率中扮演實質角色</li>
+      </ul>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">📚 接下來</h3>
+      <p>
+        到這裡為止，所有奇怪的事都還可以說成「因為它是波」。最後一頁不行 ——
+        那裡要處理的是<strong class="text-base-50">關聯</strong>：兩個分隔遙遠的測量結果，強相關到任何
+        「出發前就決定好答案」的模型都追不上。而且你可以自己跑實驗把它測出來。
+      </p>
+    </div>
+  </section>
+
+  <script>
+    import { TunnelingScene, type TunnelStats, type TunnelPresetId } from '@/lib/physics/TunnelingScene';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const rEl = document.getElementById('tn-r')!;
+      const tEl = document.getElementById('tn-t')!;
+      const analyticEl = document.getElementById('tn-analytic')!;
+      const energyEl = document.getElementById('tn-energy')!;
+      const normEl = document.getElementById('tn-norm')!;
+      const v0El = document.getElementById('tn-v0')!;
+      const wEl = document.getElementById('tn-w')!;
+      const k0El = document.getElementById('tn-k0')!;
+      const barR = document.getElementById('tn-bar-r') as HTMLDivElement;
+      const barIn = document.getElementById('tn-bar-in') as HTMLDivElement;
+      const barT = document.getElementById('tn-bar-t') as HTMLDivElement;
+      const toggleBtn = document.getElementById('tn-toggle') as HTMLButtonElement;
+      const resetBtn = document.getElementById('tn-reset') as HTMLButtonElement;
+      const v0Slider = document.getElementById('tn-v0-slider') as HTMLInputElement;
+      const wSlider = document.getElementById('tn-w-slider') as HTMLInputElement;
+      const k0Slider = document.getElementById('tn-k0-slider') as HTMLInputElement;
+      const presetBtns = document.querySelectorAll<HTMLButtonElement>('[data-preset]');
+
+      function renderStats(s: TunnelStats) {
+        rEl.textContent = s.reflection.toFixed(4);
+        tEl.textContent = s.transmission.toFixed(4);
+        analyticEl.textContent = `T = ${s.analyticT.toFixed(4)}`;
+        energyEl.textContent = `${s.energy.toFixed(2)} ± ${s.energySpread.toFixed(2)}`;
+        normEl.textContent = s.norm.toFixed(4);
+        barR.style.width = `${s.reflection * 100}%`;
+        barIn.style.width = `${s.inside * 100}%`;
+        barT.style.width = `${s.transmission * 100}%`;
+
+        v0El.textContent = s.barrierHeight.toFixed(2);
+        wEl.textContent = s.barrierWidth.toFixed(2);
+        k0El.textContent = s.k0.toFixed(2);
+        v0Slider.value = String(s.barrierHeight);
+        wSlider.value = String(s.barrierWidth);
+        k0Slider.value = String(s.k0);
+
+        toggleBtn.textContent = s.running ? '⏸ 暫停' : '▶ 播放';
+        toggleBtn.classList.toggle('active-yellow', !s.running);
+        presetBtns.forEach((b) => b.classList.toggle('active', b.dataset.preset === s.preset));
+      }
+
+      const scene = new TunnelingScene({ canvasId: 'tn-canvas', onStats: renderStats });
+
+      presetBtns.forEach((btn) => {
+        btn.addEventListener('click', () => scene.applyPreset(btn.dataset.preset as TunnelPresetId));
+      });
+      v0Slider.addEventListener('input', () => scene.setV0(Number(v0Slider.value)));
+      wSlider.addEventListener('input', () => scene.setBarrierWidth(Number(wSlider.value)));
+      k0Slider.addEventListener('input', () => scene.setK0(Number(k0Slider.value)));
+      toggleBtn.addEventListener('click', () => scene.toggle());
+      resetBtn.addEventListener('click', () => scene.reset());
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</MathLessonLayout>

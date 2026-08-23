@@ -1,0 +1,245 @@
+---
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/physics.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<MathLessonLayout
+  section="physics"
+  slug="ising"
+  currentPage="physics"
+  seoTitle="二維 Ising 模型與相變 · 用 MCMC 看見質變的那一刻"
+  seoDescription="96×96 的自旋格子，Metropolis 取樣。拉溫度滑桿越過 T_c ≈ 2.269，畫面從雜訊突然結晶成大塊磁區 — 相變是滑桿一格之差，看得見的質變。"
+>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">
+    每一格只想跟鄰居一樣，溫度只想把一切打亂。這兩件事拉鋸的結果，不是「慢慢變」— 是在某個溫度<strong class="text-base-200">突然</strong>換了一種樣子。
+  </p>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2">
+      <canvas id="ising-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 58vh; min-height: 380px;"></canvas>
+      <div class="mt-3 flex flex-wrap gap-2 text-xs">
+        <span class="phy-chip"><span class="dot" style="background: rgb(203,75,22)"></span>自旋向上 s = +1</span>
+        <span class="phy-chip"><span class="dot" style="background: rgb(22,82,120)"></span>自旋向下 s = −1</span>
+        <span class="phy-chip">週期性邊界（上接下、左接右）</span>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <div class="phy-panel">
+        <div class="head">🌡️ 溫度</div>
+        <div class="body space-y-3">
+          <div>
+            <div class="phy-label"><span>T（以 J/k_B 為單位）</span><span class="val" id="is-temp">2.60</span></div>
+            <input id="is-temp-slider" type="range" min="0.5" max="4" step="0.005" value="2.6" class="phy-slider" />
+            <p class="text-xs text-base-500 mt-1">臨界溫度 T_c ≈ 2.269（Onsager 精確解）</p>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="is-tc" class="phy-btn" type="button">跳到 T_c</button>
+            <button id="is-toggle" class="phy-btn primary" type="button">⏸ 暫停</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">📊 即時量測</div>
+        <div class="body grid grid-cols-2 gap-2">
+          <div class="phy-tile"><span class="label">磁化 |M|</span><span class="value accent-orange" id="is-mag">—</span></div>
+          <div class="phy-tile"><span class="label">能量 E/N</span><span class="value accent-cyan" id="is-energy">—</span></div>
+          <div class="phy-tile"><span class="label">接受率</span><span class="value accent-yellow" id="is-accept">—</span></div>
+          <div class="phy-tile"><span class="label">已掃描</span><span class="value" id="is-sweeps">—</span></div>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">🧪 實驗</div>
+        <div class="body space-y-2">
+          <button id="is-auto" class="phy-btn primary w-full" type="button">▶ 自動掃描溫度（建立曲線）</button>
+          <p class="text-xs text-base-500 leading-relaxed">
+            從 T = 3.6 一路降到 1.2，每個溫度<strong class="text-base-300">先跑 60 次掃描讓它平衡</strong>，
+            再取 80 次的平均。沒平衡就讀數，是做出一張會騙人的相變圖最快的方法。
+          </p>
+          <div id="is-sweep-status" class="text-xs text-accent-cyan font-mono hidden">—</div>
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button id="is-record" class="phy-btn" type="button">📍 記錄此點</button>
+            <button id="is-clear" class="phy-btn" type="button">🗑️ 清除曲線</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">♻️ 初始狀態</div>
+        <div class="body grid grid-cols-2 gap-2">
+          <button id="is-random" class="phy-btn" type="button">🎲 隨機（T = ∞）</button>
+          <button id="is-align" class="phy-btn" type="button">⬆️ 全部向上（T = 0）</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="phy-label"><span>每幀掃描次數</span><span class="val" id="is-spf">4</span></div>
+        <input id="is-spf-slider" type="range" min="1" max="20" step="1" value="4" class="phy-slider" />
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-6">
+    <canvas id="ising-chart" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 280px;"></canvas>
+    <p class="text-xs text-base-500 mt-2 text-center">
+      ⟨|M|⟩ 對 T — 高溫端貼著 0，低溫端衝向 1，中間那個轉折就是相變。黃色虛線是 Onsager 算出來的精確 T_c，不是我們畫上去湊的。
+    </p>
+  </div>
+
+  <!-- ─────────── Teaching ─────────── -->
+  <section class="mt-12 max-w-3xl mx-auto prose-content">
+    <h2 class="text-2xl font-bold text-base-50 mb-4">📖 一條規則，兩種世界</h2>
+
+    <div class="space-y-4 text-base-300 leading-relaxed">
+      <p>整個模型只有一條能量規則：<strong class="text-base-50">相鄰的自旋同向就比較低能量</strong>。</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`E = -J \\sum_{\\langle i,j\\rangle} s_i s_j, \\qquad s_i = \\pm 1`, true)} />
+      <p>
+        <span set:html={tex('\\langle i,j\\rangle')} /> 表示只加最近鄰的那四對。沒有磁場、沒有長程作用力、沒有別的參數 —
+        整個系統就這麼多。而它有相變。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🚶 這裡跑的就是 MCMC</h3>
+      <p>
+        我們沒有辦法直接從波茲曼分布 <span set:html={tex('P(s) \\propto e^{-E(s)/T}')} /> 抽樣 —
+        2<sup>9216</sup> 種組態，配分函數算不出來。所以用
+        <a href="/math/probstat/markov" class="text-accent-cyan hover:underline">馬可夫鏈與 MCMC</a> 那頁的老方法：
+      </p>
+      <ol class="list-decimal list-inside space-y-1 ml-2">
+        <li>隨機挑一格，提議把它翻面</li>
+        <li>算出這一翻會讓能量變多少：<span set:html={tex('\\Delta E = 2 J s_i \\textstyle\\sum_{\\text{鄰居}} s_j')} /></li>
+        <li>如果 <span set:html={tex('\\Delta E \\le 0')} />，接受；否則以機率 <span set:html={tex('e^{-\\Delta E / T}')} /> 接受</li>
+      </ol>
+      <p>
+        一模一樣的 Metropolis 準則。差別只在那頁的目標分布是二維的高斯，這頁的目標分布活在 9216 維上。
+        <strong class="text-accent-cyan">演算法沒變，問題的規模變了</strong> — 而它照樣能跑。
+      </p>
+      <p class="text-sm text-base-400 border-l-2 border-base-600 pl-3">
+        小技巧：<span set:html={tex('\\Delta E')} /> 只可能是 −8J、−4J、0、4J、8J 五個值，所以
+        <span set:html={tex('e^{-\\Delta E/T}')} /> 可以查表，不用每次呼叫 <code>exp()</code>。一次掃描 9216 格，這個差別很有感。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🔥 為什麼會有一個臨界溫度</h3>
+      <p>系統在最小化的不是能量，是<strong class="text-accent-yellow">自由能</strong>：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`F = E - T S`, true)} />
+      <p>
+        兩項在搶方向盤。<span set:html={tex('E')} /> 想要整齊（大家同向），
+        <span set:html={tex('S')} /> — 就是<a href="/math/probstat/entropy" class="text-accent-cyan hover:underline">熵那一頁</a>的熵 —
+        想要亂（組態數越多越好）。前面的係數 <span set:html={tex('T')} /> 決定誰說話比較大聲：
+      </p>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">高溫</strong>：熵項壓倒能量項 → 亂序相，⟨|M|⟩ ≈ 0，畫面像雜訊</li>
+        <li><strong class="text-base-50">低溫</strong>：能量項勝出 → 有序相，⟨|M|⟩ → 1，整片同色</li>
+        <li><strong class="text-accent-yellow">T_c</strong>：兩邊剛好打平。此時關聯長度發散，你會看到<strong class="text-base-50">所有尺度的磁區同時存在</strong> — 大塊裡有小塊，小塊裡還有更小塊</li>
+      </ul>
+      <p>
+        Onsager 在 1944 年解出了這個模型的精確解，臨界溫度是
+        <span set:html={tex('T_c = 2/\\ln(1+\\sqrt2) \\approx 2.269')} />。
+        你剛才那條用亂數跑出來的曲線，轉折就落在那條黃線上。
+      </p>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+      <ol class="list-decimal list-inside space-y-2 ml-2">
+        <li><strong class="text-accent-blue">從 T = 3.5 開始慢慢往下拉</strong>。3.0、2.8、2.5 都還是雜訊 — 然後在 2.3 附近，大塊的色斑<strong class="text-base-50">突然</strong>長出來。這就是相變，不是漸變。</li>
+        <li><strong class="text-accent-blue">停在 T_c</strong>（按「跳到 T_c」）盯個 20 秒。你會看到各種大小的磁區在翻騰，沒有一個特徵尺度 — 這叫尺度不變性，也是碎形跟臨界現象的交會處。</li>
+        <li><strong class="text-accent-blue">按「全部向上」再把 T 設在 1.5</strong>。系統幾乎不動，因為它已經在低能量狀態了。接受率會掉到很低 — MCMC 在低溫下走得很慢，這是真實的困難，不是 bug。</li>
+        <li><strong class="text-accent-blue">按「隨機」再設 T = 1.5</strong>。這次你會看到<strong class="text-base-50">磁區粗化</strong>：兩三塊大區域互相吞併，可能卡在條紋狀好一陣子。同樣的溫度、不同的起點，路徑完全不同。</li>
+        <li><strong class="text-accent-blue">跑一次「自動掃描溫度」</strong>，看那條 S 形曲線怎麼長出來，轉折點跟黃線對得多準。</li>
+        <li><strong class="text-accent-blue">看接受率</strong>：高溫接近 0.5（幾乎什麼都接受），低溫掉到個位數 %。這個數字是 MCMC 效率的體溫計。</li>
+      </ol>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🧭 誠實的但書</h3>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">有限尺寸</strong>：96×96 不是無限大，所以曲線在 T_c 附近是圓滑的轉折而不是尖角。真正的相變只在熱力學極限下才有數學上的奇異點。</li>
+        <li><strong class="text-base-50">臨界慢化</strong>：越靠近 T_c，單格翻轉的 MCMC 收斂越慢（關聯時間發散）。所以 T_c 附近那幾個點的誤差最大 — 這是演算法的已知弱點，正經的做法會改用 Wolff 或 Swendsen–Wang 的整塊翻轉。</li>
+        <li><strong class="text-base-50">|M| 而不是 M</strong>：低溫時系統會隨機選一個方向倒過去，全上或全下機率各半。取絕對值才不會在平均時互相抵消掉。</li>
+      </ul>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 這個模型的射程</h3>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">鐵磁性</strong> — 居禮溫度以上磁鐵失去磁性，就是這條曲線</li>
+        <li><strong class="text-base-50">神經網路</strong> — Hopfield network 與 Boltzmann machine 直接搬用這個能量函式</li>
+        <li><strong class="text-base-50">影像處理</strong> — 馬可夫隨機場去雜訊，「鄰居應該相似」是同一條先驗</li>
+        <li><strong class="text-base-50">社會與流行病模型</strong> — 意見同化、傳染臨界值，數學骨架一樣</li>
+        <li><strong class="text-base-50">普適性</strong> — 完全不同的系統（磁鐵、液氣共存、合金），在臨界點附近的指數卻一模一樣。這是統計物理最漂亮的結果之一</li>
+      </ul>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">📚 接下來</h3>
+      <p>
+        Chapter 1 到此結束：一頁精確解、一頁靠取樣。下一章換一個角度切入 —
+        量子力學那些「反直覺」的部分，有一大半其實只是<strong class="text-base-50">波本來就有的性質</strong>，
+        而且你在傅立葉那兩頁已經看過了。
+      </p>
+    </div>
+  </section>
+
+  <script>
+    import { IsingScene, type IsingStats, T_CRITICAL } from '@/lib/physics/IsingScene';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const tempEl = document.getElementById('is-temp')!;
+      const magEl = document.getElementById('is-mag')!;
+      const energyEl = document.getElementById('is-energy')!;
+      const acceptEl = document.getElementById('is-accept')!;
+      const sweepsEl = document.getElementById('is-sweeps')!;
+      const spfEl = document.getElementById('is-spf')!;
+      const statusEl = document.getElementById('is-sweep-status')!;
+      const tempSlider = document.getElementById('is-temp-slider') as HTMLInputElement;
+      const spfSlider = document.getElementById('is-spf-slider') as HTMLInputElement;
+      const toggleBtn = document.getElementById('is-toggle') as HTMLButtonElement;
+      const autoBtn = document.getElementById('is-auto') as HTMLButtonElement;
+      const tcBtn = document.getElementById('is-tc') as HTMLButtonElement;
+      const recordBtn = document.getElementById('is-record') as HTMLButtonElement;
+      const clearBtn = document.getElementById('is-clear') as HTMLButtonElement;
+      const randomBtn = document.getElementById('is-random') as HTMLButtonElement;
+      const alignBtn = document.getElementById('is-align') as HTMLButtonElement;
+
+      let sweeping = false;
+
+      function renderStats(s: IsingStats) {
+        tempEl.textContent = s.temperature.toFixed(3);
+        tempSlider.value = String(s.temperature);
+        magEl.textContent = Math.abs(s.magnetization).toFixed(3);
+        energyEl.textContent = s.energyPerSite.toFixed(3);
+        acceptEl.textContent = `${(s.acceptRate * 100).toFixed(1)}%`;
+        sweepsEl.textContent = s.sweeps.toLocaleString('en-US');
+        toggleBtn.textContent = s.running ? '⏸ 暫停' : '▶ 繼續';
+        toggleBtn.classList.toggle('active-yellow', !s.running);
+
+        sweeping = s.sweepPhase !== 'idle';
+        autoBtn.textContent = sweeping ? '⏹ 停止掃描' : '▶ 自動掃描溫度（建立曲線）';
+        statusEl.classList.toggle('hidden', !sweeping);
+        if (sweeping) {
+          const phase = s.sweepPhase === 'equilibrating' ? '平衡中' : '量測中';
+          statusEl.textContent = `${phase} · 進度 ${(s.sweepProgress * 100).toFixed(0)}% · 已記錄 ${s.curvePoints} 點`;
+        }
+      }
+
+      const scene = new IsingScene({
+        canvasId: 'ising-canvas',
+        chartCanvasId: 'ising-chart',
+        onStats: renderStats,
+      });
+
+      tempSlider.addEventListener('input', () => scene.setTemperature(Number(tempSlider.value)));
+      spfSlider.addEventListener('input', () => {
+        spfEl.textContent = spfSlider.value;
+        scene.setSweepsPerFrame(Number(spfSlider.value));
+      });
+      tcBtn.addEventListener('click', () => scene.setTemperature(T_CRITICAL));
+      toggleBtn.addEventListener('click', () => scene.toggle());
+      autoBtn.addEventListener('click', () => (sweeping ? scene.stopAutoSweep() : scene.startAutoSweep()));
+      recordBtn.addEventListener('click', () => scene.recordPoint());
+      clearBtn.addEventListener('click', () => scene.clearCurve());
+      randomBtn.addEventListener('click', () => scene.randomize());
+      alignBtn.addEventListener('click', () => scene.alignUp());
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</MathLessonLayout>

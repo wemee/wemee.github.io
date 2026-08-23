@@ -1,0 +1,212 @@
+/**
+ * Physics subsection — shared control + readout styles.
+ *
+ * Imported by every page under /physics/. Class names are prefixed with
+ * `.phy-` to avoid colliding with .ps-* (probstat), .calc-* (calculus) and
+ * .m-* (linalg). Palette tokens mirror probstat.css so the two subsections
+ * read as one system.
+ */
+
+/* ---- Read-only result chips ---- */
+
+.phy-readout {
+  padding: 6px 8px;
+  background: color-mix(in srgb, var(--color-base-900) 60%, transparent);
+  border-radius: 4px;
+  color: var(--color-base-100);
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  text-align: center;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.phy-readout.accent-cyan { color: var(--color-accent-cyan); }
+.phy-readout.accent-yellow { color: var(--color-accent-yellow); }
+.phy-readout.accent-magenta { color: var(--color-accent-magenta); }
+.phy-readout.accent-green { color: var(--color-accent-green); }
+.phy-readout.accent-blue { color: var(--color-accent-blue); }
+.phy-readout.accent-orange { color: var(--color-accent-orange); }
+.phy-readout.accent-violet { color: var(--color-accent-violet); }
+.phy-readout.error { color: var(--color-accent-red); }
+
+/* ---- Stat tile (bigger readout with a caption) ---- */
+
+.phy-tile {
+  border: 1px solid var(--color-base-600);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-base-900) 45%, transparent);
+  padding: 10px 12px;
+}
+
+.phy-tile .label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-base-400);
+  margin-bottom: 4px;
+}
+
+.phy-tile .value {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-base-50);
+  line-height: 1.2;
+}
+
+.phy-tile .value.accent-cyan { color: var(--color-accent-cyan); }
+.phy-tile .value.accent-yellow { color: var(--color-accent-yellow); }
+.phy-tile .value.accent-magenta { color: var(--color-accent-magenta); }
+.phy-tile .value.accent-green { color: var(--color-accent-green); }
+.phy-tile .value.accent-blue { color: var(--color-accent-blue); }
+.phy-tile .value.accent-orange { color: var(--color-accent-orange); }
+
+/* ---- Range sliders ---- */
+
+.phy-slider {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 4px;
+  background: var(--color-base-700);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.phy-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-accent-cyan);
+  cursor: pointer;
+  border: 2px solid var(--color-base-50);
+  box-shadow: 0 0 0 1px var(--color-base-900);
+}
+
+.phy-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-accent-cyan);
+  cursor: pointer;
+  border: 2px solid var(--color-base-50);
+  box-shadow: 0 0 0 1px var(--color-base-900);
+}
+
+.phy-slider:focus::-webkit-slider-thumb { background: var(--color-accent-yellow); }
+.phy-slider:focus::-moz-range-thumb { background: var(--color-accent-yellow); }
+
+/* ---- Legend chips ---- */
+
+.phy-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 12px;
+  background: color-mix(in srgb, var(--color-base-900) 50%, transparent);
+  border: 1px solid var(--color-base-600);
+  color: var(--color-base-100);
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+.phy-chip .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ---- Buttons ---- */
+
+.phy-btn {
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  background: var(--color-base-700);
+  border: 1px solid var(--color-base-600);
+  color: var(--color-base-50);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.phy-btn:hover {
+  background: color-mix(in srgb, var(--color-accent-cyan) 30%, transparent);
+  border-color: var(--color-accent-cyan);
+}
+
+.phy-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.phy-btn:disabled:hover {
+  background: var(--color-base-700);
+  border-color: var(--color-base-600);
+}
+
+.phy-btn.active {
+  background: color-mix(in srgb, var(--color-accent-cyan) 30%, transparent);
+  border-color: var(--color-accent-cyan);
+  color: var(--color-base-50);
+}
+
+.phy-btn.active-yellow {
+  background: color-mix(in srgb, var(--color-accent-yellow) 30%, transparent);
+  border-color: var(--color-accent-yellow);
+}
+
+.phy-btn.primary {
+  background: color-mix(in srgb, var(--color-accent-blue) 35%, transparent);
+  border-color: var(--color-accent-blue);
+}
+
+.phy-btn.primary:hover {
+  background: color-mix(in srgb, var(--color-accent-blue) 55%, transparent);
+}
+
+/* ---- Control group card ---- */
+
+.phy-panel {
+  border: 1px solid var(--color-base-600);
+  border-radius: 8px;
+  background: var(--color-base-800);
+  overflow: hidden;
+}
+
+.phy-panel > .head {
+  padding: 0.6rem 1rem;
+  background: color-mix(in srgb, var(--color-base-600) 30%, transparent);
+  border-bottom: 1px solid var(--color-base-600);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--color-accent-blue);
+}
+
+.phy-panel > .body {
+  padding: 0.85rem 1rem;
+}
+
+/* ---- Slider row label ---- */
+
+.phy-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+  color: var(--color-base-400);
+  margin-bottom: 4px;
+}
+
+.phy-label .val {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-base-100);
+}

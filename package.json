@@ -6,6 +6,7 @@
     "prebuild": "npm run check:links",
     "build": "astro build && pagefind",
     "preview": "astro preview",
+    "check:physics": "esbuild scripts/physics-check/run.ts --bundle --format=esm --platform=node --outfile=node_modules/.cache/physics-check.mjs --alias:@=./src --log-level=warning && node node_modules/.cache/physics-check.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "check:links": "node scripts/check-related-links.mjs",

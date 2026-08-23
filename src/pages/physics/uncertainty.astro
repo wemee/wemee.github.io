@@ -1,0 +1,218 @@
+---
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/physics.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<MathLessonLayout
+  section="physics"
+  slug="uncertainty"
+  currentPage="physics"
+  seoTitle="不確定性原理 = 傅立葉對偶 · 把波包拉窄，動量就變寬"
+  seoDescription="海森堡不確定性原理不是「測量會打擾粒子」的玄學，而是任何波都有的傅立葉性質。拉滑桿改變波包寬度，即時 FFT 算出 Δx 與 Δp，看乘積怎麼都壓不下 ħ/2。"
+>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">
+    這一頁沒有粒子、沒有觀測者、沒有意識。只有一個波、它的傅立葉變換，以及兩個用數值積分量出來的寬度。乘積下不去 ½ —— 而它連量子力學都不需要。
+  </p>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2">
+      <canvas id="un-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 62vh; min-height: 440px;"></canvas>
+      <div class="mt-3 flex flex-wrap gap-2 text-xs">
+        <span class="phy-chip"><span class="dot" style="background: #2aa198"></span>|ψ(x)|² 位置分布</span>
+        <span class="phy-chip"><span class="dot" style="background: #268bd2"></span>Re ψ（載波）</span>
+        <span class="phy-chip"><span class="dot" style="background: #d33682"></span>|φ(k)|² 動量分布</span>
+        <span class="phy-chip">陰影 = ±1 個標準差</span>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <div class="phy-panel">
+        <div class="head">🌊 波包形狀</div>
+        <div class="body grid grid-cols-1 gap-2">
+          <button data-mode="gaussian" class="phy-btn text-left active">高斯波包（最小不確定態）</button>
+          <button data-mode="square" class="phy-btn text-left">近似方形波包</button>
+          <button data-mode="double" class="phy-btn text-left">雙峰 → 動量空間出現條紋</button>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">🎛️ 參數</div>
+        <div class="body space-y-3">
+          <div>
+            <div class="phy-label"><span>寬度參數</span><span class="val" id="un-width">1.20</span></div>
+            <input id="un-width-slider" type="range" min="0.25" max="4" step="0.01" value="1.2" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>中心動量 k₀</span><span class="val" id="un-k0">4.0</span></div>
+            <input id="un-k0-slider" type="range" min="-14" max="14" step="0.1" value="4" class="phy-slider" />
+          </div>
+          <p class="text-xs text-base-500">k₀ 只把動量分布整包平移，<strong class="text-base-300">寬度不變</strong> — 動量中心跟動量不確定度是兩回事。</p>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">📏 量到的寬度</div>
+        <div class="body space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">Δx</span><span class="value accent-cyan" id="un-dx">—</span></div>
+            <div class="phy-tile"><span class="label">Δp</span><span class="value accent-magenta" id="un-dp">—</span></div>
+          </div>
+          <div class="phy-tile">
+            <span class="label">Δx · Δp （下限 = 0.5）</span>
+            <span class="value accent-yellow" id="un-product">—</span>
+          </div>
+          <div class="h-3 rounded bg-base-900 overflow-hidden relative">
+            <div id="un-bar" class="h-full transition-all" style="width: 0%; background: #b58900"></div>
+            <div class="absolute inset-y-0 left-[25%] w-px bg-base-50/60"></div>
+          </div>
+          <p class="text-xs text-base-500">
+            白色刻度是 <span set:html={tex('\\hbar/2')} /> 的位置。指示條<strong class="text-base-300">永遠碰不到它左邊</strong>，
+            高斯波包剛好停在上面。
+          </p>
+          <div id="un-verdict" class="text-xs font-mono text-accent-green">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── Teaching ─────────── -->
+  <section class="mt-12 max-w-3xl mx-auto prose-content">
+    <h2 class="text-2xl font-bold text-base-50 mb-4">📖 先講最重要的事：這不是關於測量</h2>
+
+    <div class="space-y-4 text-base-300 leading-relaxed">
+      <p>
+        流傳最廣的講法是「你要看電子，就得拿光子去撞它，撞了就打亂它的動量」。這個說法有它的歷史地位
+        （海森堡自己一開始就是這樣說的），但它<strong class="text-accent-red">不是不確定性原理的內容</strong>。
+      </p>
+      <p>
+        真正的內容是：<strong class="text-base-50">一個粒子在被測量之前，就已經沒有同時確定的位置和動量了</strong>。
+        Δx 和 Δp 是<em>那個波本身</em>的兩個寬度，測不測都在那裡。而它們的關係，是純數學。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🎨 位置與動量是一對傅立葉變換</h3>
+      <p>
+        德布羅意告訴我們動量 <span set:html={tex('p = \\hbar k')} />，也就是<strong class="text-base-50">動量就是波數</strong>。
+        而一個波在「位置」與「波數」兩種描述之間，靠的正是<a href="/math/fourier" class="text-accent-cyan hover:underline">傅立葉變換</a>：
+      </p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`\\varphi(k) = \\frac{1}{\\sqrt{2\\pi}}\\int \\psi(x)\\, e^{-ikx}\\, dx`, true)} />
+      <p>
+        於是「粒子的位置與動量」這個物理問題，就變成「一個函式與它的傅立葉變換」這個數學問題。
+        而數學早就有答案了：
+      </p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`\\Delta x \\cdot \\Delta k \\ge \\tfrac12 \\quad\\Longrightarrow\\quad \\Delta x \\cdot \\Delta p \\ge \\frac{\\hbar}{2}`, true)} />
+      <p class="text-sm text-base-400 border-l-2 border-base-600 pl-3">
+        這個定理在訊號處理裡叫<strong class="text-base-200">時頻不確定性</strong>，比量子力學還早被工程師用熟：
+        一個很短的脈衝必然佔用很寬的頻寬。<strong class="text-base-50">同一條定理，沒有任何量子成分。</strong>
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🧮 這一頁怎麼算的</h3>
+      <p>沒有套用任何公式，全部是數值積分：</p>
+      <ol class="list-decimal list-inside space-y-1 ml-2">
+        <li>在 1024 點的格子上取樣 <span set:html={tex('\\psi(x)')} />，歸一化到 <span set:html={tex('\\int|\\psi|^2 dx = 1')} /></li>
+        <li>做一次 FFT 得到 <span set:html={tex('\\varphi(k)')} />，同樣歸一化</li>
+        <li>兩邊各自算 <span set:html={tex('\\Delta = \\sqrt{\\langle u^2\\rangle - \\langle u\\rangle^2}')} />，相乘</li>
+      </ol>
+      <p>
+        所以那個 0.500 不是寫死的常數，是<strong class="text-accent-green">量出來的</strong>。
+        你把寬度滑桿從一端拉到另一端，高斯模式下它會一直停在 0.500。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🏆 為什麼高斯剛好在下限</h3>
+      <p>
+        高斯函式的傅立葉變換還是高斯 — 它是這個變換的「不動形狀」。攤開來看：
+        <span set:html={tex('|\\psi|^2 \\propto e^{-x^2/2\\sigma^2}')} /> 給出 <span set:html={tex('\\Delta x = \\sigma')} />，
+        而 <span set:html={tex('|\\varphi|^2 \\propto e^{-2\\sigma^2 k^2}')} /> 給出 <span set:html={tex('\\Delta k = 1/2\\sigma')} />。
+        乘起來 <span set:html={tex('\\sigma')} /> 直接消掉，剩下 ½ — 跟你選多寬完全無關。
+      </p>
+      <p>
+        其他形狀都比較差。方形波包的邊緣是「急轉彎」，急轉彎需要很多高頻成分去拼，
+        所以動量空間拖出一整排旁瓣，<span set:html={tex('\\Delta p')} /> 被拉大。
+        <strong class="text-base-50">波形越有稜角，頻譜越髒</strong> — 這也是為什麼通訊系統要做脈衝整形。
+      </p>
+      <p class="text-sm text-base-400 border-l-2 border-base-600 pl-3">
+        技術細節：這裡的「方形」其實是超高斯 <span set:html={tex('e^{-(x/w)^8}')} />，不是真正的矩形。
+        真矩形的傅立葉變換是 sinc，尾巴衰減太慢，<span set:html={tex('\\langle k^2 \\rangle')} /> 在數學上發散 —
+        在有限格子上算出來的 Δp 會<strong class="text-base-300">隨格子大小改變</strong>，那個數字沒有意義。
+        超高斯保留了平頂與旁瓣，但矩量是收斂的。
+      </p>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+      <ol class="list-decimal list-inside space-y-2 ml-2">
+        <li><strong class="text-accent-blue">高斯模式，把寬度從 4 拉到 0.25</strong>。上面的峰急速變瘦、下面的峰同步變胖，而乘積<strong class="text-base-50">釘在 0.500 不動</strong>。這是整頁最該看的一幕。</li>
+        <li><strong class="text-accent-blue">推 k₀ 滑桿</strong>。下面的分布整包平移，寬度不變，乘積不變。上面的載波（藍線）疏密跟著變 — 那就是德布羅意波長。</li>
+        <li><strong class="text-accent-blue">切到「近似方形」</strong>。乘積立刻跳到 0.5 以上，而且動量空間長出對稱旁瓣。稜角的代價。</li>
+        <li><strong class="text-accent-blue">切到「雙峰」</strong>。動量空間出現<strong class="text-accent-yellow">週期性條紋</strong> — 這就是雙狹縫干涉，只是畫在動量空間。兩個峰離越遠，條紋越密。下一頁會在真實的屏幕上再看一次同一件事。</li>
+        <li><strong class="text-accent-blue">試著把乘積壓到 0.5 以下</strong>。做不到。這不是程式擋你，是定理擋你。</li>
+      </ol>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 同一條定理的其他名字</h3>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">雷達與聲納</strong> — 距離解析度要短脈衝、都卜勒解析度要長脈衝，兩者不可兼得（所以才發明了 chirp 脈衝壓縮）</li>
+        <li><strong class="text-base-50">無線通訊</strong> — 符元越短、佔用頻寬越大。這是頻譜規劃的物理底線，不是工程偷懶</li>
+        <li><strong class="text-base-50">音樂與聽覺</strong> — 極短的音沒有明確音高。想聽出低音，就得聽夠久</li>
+        <li><strong class="text-base-50">影像處理</strong> — Gabor filter 用高斯窗，正是因為它同時把空間與頻率的定位做到理論最佳</li>
+        <li><strong class="text-base-50">超短脈衝雷射</strong> — 飛秒脈衝必然是寬頻的，這叫 transform-limited pulse</li>
+      </ul>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">📚 接下來</h3>
+      <p>
+        既然量子的「波」就是普通的波，那雙狹縫的條紋一點也不神秘 — 任何波都會干涉。
+        下一頁要看的是真正奇怪的那半邊：<strong class="text-base-50">明明是一顆一顆打到屏幕上的</strong>，
+        條紋卻還是長出來了。
+      </p>
+    </div>
+  </section>
+
+  <script>
+    import { UncertaintyScene, type UncertaintyStats, type PacketMode } from '@/lib/physics/UncertaintyScene';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const widthEl = document.getElementById('un-width')!;
+      const k0El = document.getElementById('un-k0')!;
+      const dxEl = document.getElementById('un-dx')!;
+      const dpEl = document.getElementById('un-dp')!;
+      const productEl = document.getElementById('un-product')!;
+      const verdictEl = document.getElementById('un-verdict')!;
+      const bar = document.getElementById('un-bar') as HTMLDivElement;
+      const widthSlider = document.getElementById('un-width-slider') as HTMLInputElement;
+      const k0Slider = document.getElementById('un-k0-slider') as HTMLInputElement;
+      const modeBtns = document.querySelectorAll<HTMLButtonElement>('[data-mode]');
+
+      function renderStats(s: UncertaintyStats) {
+        dxEl.textContent = s.deltaX.toFixed(3);
+        dpEl.textContent = s.deltaP.toFixed(3);
+        productEl.textContent = s.product.toFixed(3);
+        // the ħ/2 tick sits at 25%, so the bar reads "how many times the floor"
+        bar.style.width = `${Math.min(100, s.excess * 25)}%`;
+        if (s.excess < 1.02) {
+          verdictEl.textContent = '✓ 剛好落在下限 ħ/2 — 這是最小不確定態';
+          verdictEl.className = 'text-xs font-mono text-accent-green';
+        } else {
+          verdictEl.textContent = `↑ 是下限的 ${s.excess.toFixed(2)} 倍 — 這個形狀「浪費」了不確定度`;
+          verdictEl.className = 'text-xs font-mono text-accent-yellow';
+        }
+        modeBtns.forEach((b) => b.classList.toggle('active', b.dataset.mode === s.mode));
+      }
+
+      const scene = new UncertaintyScene({ canvasId: 'un-canvas', onStats: renderStats });
+
+      modeBtns.forEach((btn) => {
+        btn.addEventListener('click', () => scene.setMode(btn.dataset.mode as PacketMode));
+      });
+      widthSlider.addEventListener('input', () => {
+        widthEl.textContent = Number(widthSlider.value).toFixed(2);
+        scene.setWidth(Number(widthSlider.value));
+      });
+      k0Slider.addEventListener('input', () => {
+        k0El.textContent = Number(k0Slider.value).toFixed(1);
+        scene.setK0(Number(k0Slider.value));
+      });
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</MathLessonLayout>

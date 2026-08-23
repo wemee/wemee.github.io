@@ -1,0 +1,214 @@
+---
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/physics.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<MathLessonLayout
+  section="physics"
+  slug="double-slit"
+  currentPage="physics"
+  seoTitle="雙狹縫與單光子累積 · 一顆一顆打，條紋自己長出來"
+  seoDescription="一次只發射一顆光子。前十顆是隨機亮點，一萬顆之後干涉條紋才浮現。再把狹縫偵測器打開 — 同樣的光、同樣的狹縫，條紋消失。"
+>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">
+    干涉不奇怪，任何波都會。奇怪的是：光是<strong class="text-base-200">一顆一顆</strong>抵達的，每一顆落在哪裡完全隨機，可是一萬顆疊起來，卻精準地排成條紋。
+  </p>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2">
+      <canvas id="ds-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 66vh; min-height: 480px;"></canvas>
+      <div class="mt-3 flex flex-wrap gap-2 text-xs">
+        <span class="phy-chip"><span class="dot" style="background: #2aa198"></span>實際落點統計</span>
+        <span class="phy-chip"><span class="dot" style="background: #b58900"></span>理論強度 I(y)</span>
+        <span class="phy-chip">屏幕距離固定 1 m</span>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <div class="phy-panel">
+        <div class="head">🔦 發射光子</div>
+        <div class="body space-y-2">
+          <div class="grid grid-cols-3 gap-2">
+            <button data-fire="1" class="phy-btn" type="button">+1</button>
+            <button data-fire="100" class="phy-btn" type="button">+100</button>
+            <button data-fire="2000" class="phy-btn" type="button">+2000</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="ds-stream" class="phy-btn primary" type="button">▶ 連續發射</button>
+            <button id="ds-reset" class="phy-btn" type="button">↻ 清空底片</button>
+          </div>
+          <div class="phy-tile"><span class="label">已累積光子</span><span class="value accent-cyan" id="ds-count">0</span></div>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">🕵️ 路徑偵測</div>
+        <div class="body space-y-2">
+          <label class="flex items-center gap-2 text-sm text-base-300 cursor-pointer select-none">
+            <input id="ds-whichpath" type="checkbox" class="accent-accent-red" />
+            在狹縫上裝偵測器（知道走哪一條）
+          </label>
+          <p class="text-xs text-base-500 leading-relaxed">
+            打開它，分布會從「兩條路的<strong class="text-base-300">振幅</strong>相加再平方」變成
+            「兩條路的<strong class="text-base-300">機率</strong>直接相加」。條紋是那個交叉項，一取得路徑資訊就沒了。
+          </p>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">🎛️ 裝置參數</div>
+        <div class="body space-y-3">
+          <div>
+            <div class="phy-label"><span>波長 λ</span><span class="val" id="ds-lambda">550 nm</span></div>
+            <input id="ds-lambda-slider" type="range" min="400" max="700" step="5" value="550" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>狹縫間距 d</span><span class="val" id="ds-sep">0.150 mm</span></div>
+            <input id="ds-sep-slider" type="range" min="0.05" max="0.4" step="0.005" value="0.15" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>狹縫寬度 a</span><span class="val" id="ds-width">0.030 mm</span></div>
+            <input id="ds-width-slider" type="range" min="0.01" max="0.08" step="0.001" value="0.03" class="phy-slider" />
+          </div>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">📐 理論預測</div>
+        <div class="body grid grid-cols-1 gap-2">
+          <div class="phy-tile"><span class="label">條紋間距 Δy = λL/d</span><span class="value accent-yellow" id="ds-fringe">—</span></div>
+          <div class="phy-tile"><span class="label">單縫包絡首個零點 λL/a</span><span class="value accent-orange" id="ds-envelope">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── Teaching ─────────── -->
+  <section class="mt-12 max-w-3xl mx-auto prose-content">
+    <h2 class="text-2xl font-bold text-base-50 mb-4">📖 這頁在算什麼、不在算什麼</h2>
+
+    <div class="space-y-4 text-base-300 leading-relaxed">
+      <p class="border-l-2 border-accent-yellow pl-3 text-sm">
+        <strong class="text-accent-yellow">誠實聲明：</strong>這個模擬<strong class="text-base-50">不解波動方程</strong>。
+        它做的是：算出量子力學預測的落點機率分布 I(y)，然後從那個分布<strong class="text-base-50">抽樣</strong>每一顆光子的落點。
+        條紋不是畫上去的 — 是抽樣的結果。如果直接把曲線畫出來，這頁想證明的事就被抹掉了。
+      </p>
+
+      <p>遠場（Fraunhofer）條件下，雙狹縫的強度分布是兩個因子的乘積：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`I(y) \\propto \\underbrace{\\operatorname{sinc}^2\\!\\Big(\\frac{\\pi a y}{\\lambda L}\\Big)}_{\\text{單縫包絡}} \\cdot \\underbrace{\\cos^2\\!\\Big(\\frac{\\pi d y}{\\lambda L}\\Big)}_{\\text{雙縫干涉}}`, true)} />
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-accent-orange">包絡</strong>由<strong class="text-base-50">單一條縫的寬度 a</strong> 決定 — 縫越窄，光散得越開，包絡越寬</li>
+        <li><strong class="text-accent-yellow">細條紋</strong>由<strong class="text-base-50">兩縫的間距 d</strong> 決定 — 間距越大，條紋越密</li>
+      </ul>
+      <p>這兩個因子由不同的參數控制，所以你可以分開調，親眼確認誰管誰。</p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">➕ 振幅相加，不是機率相加</h3>
+      <p>關鍵在這一步。兩條路徑各有一個複數振幅，量子力學說<strong class="text-base-50">先加振幅、再取模平方</strong>：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`P = |A_1 + A_2|^2 = |A_1|^2 + |A_2|^2 + \\underbrace{2\\,\\mathrm{Re}(A_1^* A_2)}_{\\text{干涉項}}`, true)} />
+      <p>
+        那個交叉項就是條紋。它可以是正的（亮紋）也可以是負的（暗紋）—
+        <strong class="text-accent-red">兩個都有光的地方，加起來可以是黑的</strong>，這是機率論做不到的事。
+      </p>
+      <p>
+        而一旦裝上偵測器、知道光子走了哪一條，兩條路徑就不再相干，只能
+        <span set:html={tex('P = |A_1|^2 + |A_2|^2')} /> —— 交叉項消失，條紋跟著消失。
+        打勾那個開關，看到的就是這件事。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🚫 順便清掉三個常見誤解</h3>
+      <ul class="list-disc list-inside space-y-2 ml-2">
+        <li>
+          <strong class="text-base-50">「觀測需要意識」</strong> — 不需要。任何會與光子發生糾纏、把路徑資訊留在環境裡的物理過程都足夠。
+          偵測器有沒有人在看、資料有沒有被讀取，都不影響條紋消失。
+        </li>
+        <li>
+          <strong class="text-base-50">「光子自己跟自己干涉，所以它同時穿過兩條縫」</strong> —
+          「同時穿過兩條縫」是把粒子的圖像硬套在振幅上。比較安全的說法是：<strong class="text-base-200">沒有測量路徑時，路徑這個概念沒有定義值</strong>，
+          能算的只有振幅怎麼疊加。
+        </li>
+        <li>
+          <strong class="text-base-50">「這是儀器精度不夠」</strong> — 不是。條紋位置可以算到任意精度，
+          隨機的是<strong class="text-base-200">單顆光子落在哪</strong>。這個隨機性目前沒有被任何實驗歸因到隱藏的機制上（下一步就是貝爾那頁）。
+        </li>
+      </ul>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+      <ol class="list-decimal list-inside space-y-2 ml-2">
+        <li><strong class="text-accent-blue">清空，然後按 5 次「+1」</strong>。五個點，看不出任何規律。你沒辦法從這五顆推出任何條紋。</li>
+        <li><strong class="text-accent-blue">按「+100」</strong>。開始有點集中的感覺，但還很像雜訊。</li>
+        <li><strong class="text-accent-blue">按幾次「+2000」</strong>。條紋浮出來，而且愈來愈貼合黃色理論曲線。<strong class="text-base-50">同樣的規則、同樣的隨機，只是樣本變多</strong> — 這是大數法則在做事。</li>
+        <li><strong class="text-accent-blue">現在打開偵測器</strong>（底片會自動清空），再打個一兩萬顆。條紋不見了，只剩一個寬包。同樣的光、同樣的縫。</li>
+        <li><strong class="text-accent-blue">把 d 從 0.05 拉到 0.4</strong>：條紋變密（Δy = λL/d 變小），包絡不動。</li>
+        <li><strong class="text-accent-blue">把 a 從 0.01 拉到 0.08</strong>：包絡收窄，條紋間距不動 — 但兩側的條紋被包絡壓掉了。</li>
+        <li><strong class="text-accent-blue">把 λ 從 400 拉到 700</strong>：紅光的條紋比藍光疏。這就是為什麼白光的干涉圖案是彩色的。</li>
+      </ol>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🔬 這不是思想實驗</h3>
+      <p>單粒子逐一累積的干涉，是真的做出來過的：</p>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">1974 / 1989</strong> — Merli 等人與 Tonomura 團隊用<strong class="text-base-200">單電子</strong>做出逐點累積的影片</li>
+        <li><strong class="text-base-50">1999</strong> — Zeilinger 團隊用 C₆₀ 富勒烯（60 顆碳原子）做出干涉</li>
+        <li><strong class="text-base-50">2019</strong> — 分子量超過 25,000 amu 的大分子仍然干涉</li>
+      </ul>
+      <p>
+        「多大的東西還會干涉」目前仍是開放的實驗前沿。<strong class="text-base-50">還沒有人找到上限。</strong>
+      </p>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">📚 接下來</h3>
+      <p>
+        本頁是<strong class="text-base-200">從已知分布抽樣</strong>。下一頁換真的解方程 —
+        給定初始波包與一道位能壁，用 split-step FFT 一步一步把薛丁格方程積出來，
+        看波包撞上古典禁區時發生什麼事。
+      </p>
+    </div>
+  </section>
+
+  <script>
+    import { DoubleSlitScene, type SlitStats } from '@/lib/physics/DoubleSlitScene';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const countEl = document.getElementById('ds-count')!;
+      const fringeEl = document.getElementById('ds-fringe')!;
+      const envelopeEl = document.getElementById('ds-envelope')!;
+      const lambdaEl = document.getElementById('ds-lambda')!;
+      const sepEl = document.getElementById('ds-sep')!;
+      const widthEl = document.getElementById('ds-width')!;
+      const streamBtn = document.getElementById('ds-stream') as HTMLButtonElement;
+      const resetBtn = document.getElementById('ds-reset') as HTMLButtonElement;
+      const whichPathBox = document.getElementById('ds-whichpath') as HTMLInputElement;
+      const lambdaSlider = document.getElementById('ds-lambda-slider') as HTMLInputElement;
+      const sepSlider = document.getElementById('ds-sep-slider') as HTMLInputElement;
+      const widthSlider = document.getElementById('ds-width-slider') as HTMLInputElement;
+      const fireBtns = document.querySelectorAll<HTMLButtonElement>('[data-fire]');
+
+      function renderStats(s: SlitStats) {
+        countEl.textContent = s.photons.toLocaleString('en-US');
+        fringeEl.textContent = `${(s.fringeSpacing * 1000).toFixed(2)} mm`;
+        envelopeEl.textContent = `${(s.envelopeFirstZero * 1000).toFixed(1)} mm`;
+        lambdaEl.textContent = `${s.wavelengthNm.toFixed(0)} nm`;
+        sepEl.textContent = `${s.separationMm.toFixed(3)} mm`;
+        widthEl.textContent = `${s.slitWidthMm.toFixed(3)} mm`;
+        streamBtn.textContent = s.streaming ? '⏸ 停止發射' : '▶ 連續發射';
+        streamBtn.classList.toggle('active-yellow', s.streaming);
+      }
+
+      const scene = new DoubleSlitScene({ canvasId: 'ds-canvas', onStats: renderStats });
+
+      fireBtns.forEach((btn) => {
+        btn.addEventListener('click', () => scene.fire(Number(btn.dataset.fire)));
+      });
+      streamBtn.addEventListener('click', () => scene.toggleStream());
+      resetBtn.addEventListener('click', () => scene.reset());
+      whichPathBox.addEventListener('change', () => scene.setWhichPath(whichPathBox.checked));
+      lambdaSlider.addEventListener('input', () => scene.setWavelengthNm(Number(lambdaSlider.value)));
+      sepSlider.addEventListener('input', () => scene.setSeparationMm(Number(sepSlider.value)));
+      widthSlider.addEventListener('input', () => scene.setSlitWidthMm(Number(widthSlider.value)));
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</MathLessonLayout>
