@@ -1,0 +1,209 @@
+---
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/physics.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<MathLessonLayout
+  section="rf"
+  slug="antenna"
+  currentPage="physics"
+  seoTitle="天線陣列與波束成形 · 方向圖就是一個傅立葉變換"
+  seoDescription="調整元件數、間距、相位與錐削，即時看極座標輻射場型。孔徑越大波束越窄、邊緣錐削壓低旁瓣、間距超過 λ/2 長出柵瓣 — 全都是同一個傅立葉定理。"
+>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">
+    天線不會放大功率，它只是把能量從你不需要的方向搬到你需要的方向。而「怎麼搬」這件事，數學上就是一次傅立葉變換。
+  </p>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2">
+      <canvas id="ant-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 66vh; min-height: 460px;"></canvas>
+      <div class="mt-3 flex flex-wrap gap-2 text-xs">
+        <span class="phy-chip"><span class="dot" style="background: #2aa198"></span>陣列因子（dB）</span>
+        <span class="phy-chip"><span class="dot" style="background: #b58900"></span>指定的波束方向</span>
+        <span class="phy-chip"><span class="dot" style="background: #268bd2"></span>各元件的激發振幅</span>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <div class="phy-panel">
+        <div class="head">🎛️ 陣列</div>
+        <div class="body space-y-3">
+          <div>
+            <div class="phy-label"><span>元件數 N</span><span class="val" id="ant-n">8</span></div>
+            <input id="ant-n-slider" type="range" min="1" max="24" step="1" value="8" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>間距 d / λ</span><span class="val" id="ant-d">0.50</span></div>
+            <input id="ant-d-slider" type="range" min="0.1" max="1.5" step="0.01" value="0.5" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>波束指向</span><span class="val" id="ant-steer">0°</span></div>
+            <input id="ant-steer-slider" type="range" min="-80" max="80" step="1" value="0" class="phy-slider" />
+          </div>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">🪟 邊緣錐削（視窗函式）</div>
+        <div class="body grid grid-cols-1 gap-2">
+          <button data-taper="uniform" class="phy-btn text-left active">均勻 — 硬邊，旁瓣 −13 dB</button>
+          <button data-taper="hamming" class="phy-btn text-left">漢明窗 — 旁瓣壓到 −33 dB</button>
+          <button data-taper="gaussian" class="phy-btn text-left">高斯 — 旁瓣最低，主瓣最寬</button>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">📊 量到的特性</div>
+        <div class="body grid grid-cols-2 gap-2">
+          <div class="phy-tile"><span class="label">主瓣寬度 HPBW</span><span class="value accent-cyan" id="ant-hpbw">—</span></div>
+          <div class="phy-tile"><span class="label">最高旁瓣</span><span class="value accent-yellow" id="ant-sll">—</span></div>
+          <div class="phy-tile"><span class="label">方向性</span><span class="value accent-green" id="ant-dir">—</span></div>
+          <div class="phy-tile"><span class="label">孔徑</span><span class="value" id="ant-ap">—</span></div>
+        </div>
+      </div>
+
+      <div id="ant-warn" class="text-xs font-mono text-accent-red hidden">
+        ⚠ 間距超過 λ/2 的取樣極限，能量被複製到另一個方向 — 這就是柵瓣。
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── Teaching ─────────── -->
+  <section class="mt-12 max-w-3xl mx-auto prose-content">
+    <h2 class="text-2xl font-bold text-base-50 mb-4">📖 一個式子，三個結論</h2>
+
+    <div class="space-y-4 text-base-300 leading-relaxed">
+      <p>把 N 個相同的天線排成一直線，間距 d，第 n 個餵進振幅 <span set:html={tex('a_n')} /> 與遞增相位 <span set:html={tex('n\\beta')} />。遠場的合成振幅是：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`AF(\\theta) = \\sum_{n=0}^{N-1} a_n \\, e^{\\,j n (k d \\sin\\theta + \\beta)}, \\qquad k = \\frac{2\\pi}{\\lambda}`, true)} />
+      <p>
+        現在做一個代換：令 <span set:html={tex('u = \\sin\\theta')} />。式子變成
+        <span set:html={tex("\\sum a_n e^{jnkdu}")} /> ——
+        <strong class="text-accent-cyan">這就是把 <span set:html={tex('a_n')} /> 做離散傅立葉變換</strong>，
+        只是「頻率軸」變成了角度。天線的激發分布與它的方向圖，是一對傅立葉變換。
+      </p>
+      <p>認清這件事之後，三個看起來無關的現象就變成同一件事的三種說法：</p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">① 孔徑越大，波束越窄</h3>
+      <p>
+        這是 <a href="/physics/uncertainty" class="text-accent-cyan hover:underline">不確定性原理那一頁</a>
+        的 <span set:html={tex('\\Delta x \\cdot \\Delta k \\ge \\tfrac12')} /> 換了個名字。
+        天線是「x 空間」的寬度，波束是「k 空間」的寬度，兩者相乘有下限。實用近似：
+      </p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`\\text{HPBW} \\approx 0.886\\,\\frac{\\lambda}{N d} \\ \\text{(rad)}`, true)} />
+      <p>
+        把 N 從 8 拉到 16，孔徑加倍，波束寬度就<strong class="text-base-50">剛好減半</strong>。
+        這也是為什麼衛星地面站的碟型天線那麼大 — 波束要夠窄才對得準。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">② 硬邊會產生旁瓣，錐削可以壓掉</h3>
+      <p>
+        均勻激發等於在孔徑上開一個<strong class="text-base-200">矩形窗</strong>，它的變換是 sinc，
+        第一旁瓣固定在 −13.2 dB，跟 N 無關。把邊緣的元件餵小一點（錐削），
+        旁瓣掉到 −33 dB 甚至更低 — 代價是主瓣變寬、方向性下降。
+      </p>
+      <p>
+        <strong class="text-accent-yellow">這跟不確定性那一頁的「方形波包 vs 高斯波包」是同一個實驗。</strong>
+        那裡稜角讓動量空間長出旁瓣；這裡稜角讓角度空間長出旁瓣。訊號處理管它叫加窗，天線工程管它叫錐削。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">③ 間距太大會長出柵瓣</h3>
+      <p>
+        陣列是在空間上<strong class="text-base-200">取樣</strong>一個連續孔徑。取樣就有 Nyquist 條件：
+        當 <span set:html={tex('d > \\lambda/2')} />，角度空間就會發生混疊，一個一模一樣的主瓣出現在別的方向。
+        天線工程叫它<strong class="text-base-50">柵瓣（grating lobe）</strong>，訊號處理叫它<strong class="text-base-50">混疊</strong>。
+      </p>
+      <p>精確條件（含波束掃描）：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`\\frac{d}{\\lambda}\\big(1 + |\\sin\\theta_0|\\big) \\ge 1`, true)} />
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🎯 波束成形：改相位，不動天線</h3>
+      <p>
+        把遞增相位設成 <span set:html={tex('\\beta = -kd\\sin\\theta_0')} />，主瓣就轉到
+        <span set:html={tex('\\theta_0')} />。<strong class="text-base-50">沒有任何機械轉動</strong>，
+        只是每個元件的訊號延遲不同 — 這就是相位陣列（phased array）。
+      </p>
+      <p>
+        但掃描不是免費的：離開正前方之後，陣列在那個方向的<strong class="text-base-200">投影孔徑</strong>變成
+        <span set:html={tex('Nd\\cos\\theta_0')} />，所以波束按 <span set:html={tex('1/\\cos\\theta_0')} /> 變寬。
+        掃到 60° 時波束寬度是正前方的兩倍。
+      </p>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+      <ol class="list-decimal list-inside space-y-2 ml-2">
+        <li><strong class="text-accent-blue">N = 1</strong>：一個元件沒有方向性，方向圖是一個半圓，方向性 0 dBi。這是所有比較的基準。</li>
+        <li><strong class="text-accent-blue">把 N 從 2 一路推到 24</strong>。波束越來越尖，方向性讀數就是 10log₁₀(N) — N = 8 給 9.03 dBi，N = 16 給 12.04 dBi。<strong class="text-base-50">元件數加倍 = 增益 +3 dB</strong>。</li>
+        <li><strong class="text-accent-blue">N = 8、間距 0.5λ、均勻</strong>：HPBW 約 13°、旁瓣 −13 dB。換成漢明窗：旁瓣掉到 −33 dB，但 HPBW 變成 20°。<strong class="text-base-50">你買不到兩全其美。</strong></li>
+        <li><strong class="text-accent-blue">把間距推到 1.0λ</strong>：正前方以外突然長出第二個一樣高的主瓣。你的訊號有一半送給了錯誤的方向 — 或者更糟，你會從那個方向收到干擾。</li>
+        <li><strong class="text-accent-blue">間距設 0.5λ，把指向從 0° 掃到 60°</strong>。波束轉過去了，但同時變胖 — 13° 變成約 26°，正好是 1/cos60° = 2 倍。</li>
+        <li><strong class="text-accent-blue">間距 0.7λ + 指向 60°</strong>：柵瓣警告亮起。掃描讓混疊條件更容易被觸發。</li>
+      </ol>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🧭 誠實的但書</h3>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">這裡畫的是「陣列因子」</strong>，假設每個元件本身是全向的。真實天線的方向圖是陣列因子乘上單一元件的方向圖（pattern multiplication），所以實際場型會被元件本身再修一次。</li>
+        <li><strong class="text-base-50">沒有互耦</strong>。靠得很近的天線會互相影響輸入阻抗與場型，這在 0.5λ 以下相當顯著，是實務上最麻煩的部分之一。</li>
+        <li><strong class="text-base-50">方向性不等於增益</strong>。增益 = 方向性 × 效率，實際天線還要扣掉歐姆損耗與阻抗不匹配。</li>
+        <li><strong class="text-base-50">旁瓣讀數在大角度掃描時不可靠</strong>：主瓣變得太寬，程式用來判定「第一個零點」的方法會提早收手。看正前方附近的數字最準。</li>
+      </ul>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🚀 這東西現在到處都是</h3>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">5G massive MIMO</strong> — 基地台用 64～256 個元件，同時對不同使用者打不同的波束</li>
+        <li><strong class="text-base-50">Starlink 使用者終端</strong> — 那片平板就是相位陣列，靠改相位追衛星，沒有馬達</li>
+        <li><strong class="text-base-50">相位陣列雷達</strong> — 波束可以在微秒內指到別的方向，機械雷達做不到</li>
+        <li><strong class="text-base-50">超音波與醫學影像</strong> — 完全相同的數學，只是換成聲波</li>
+        <li><strong class="text-base-50">電波干涉儀（VLBI）</strong> — 把散佈全球的電波望遠鏡當成一個孔徑，孔徑等於地球直徑</li>
+      </ul>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">📚 接下來</h3>
+      <p>
+        Chapter 1 假設訊號在自由空間裡飛。下一章開始把現實加回來，第一件就是：
+        <strong class="text-base-50">看得到，不代表通得過。</strong>
+      </p>
+    </div>
+  </section>
+
+  <script>
+    import { AntennaArrayScene, type AntennaStats, type Taper } from '@/lib/rf/AntennaArrayScene';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const g = (id: string) => document.getElementById(id)!;
+      const nEl = g('ant-n');
+      const dEl = g('ant-d');
+      const steerEl = g('ant-steer');
+      const hpbwEl = g('ant-hpbw');
+      const sllEl = g('ant-sll');
+      const dirEl = g('ant-dir');
+      const apEl = g('ant-ap');
+      const warnEl = g('ant-warn');
+      const nSlider = g('ant-n-slider') as HTMLInputElement;
+      const dSlider = g('ant-d-slider') as HTMLInputElement;
+      const steerSlider = g('ant-steer-slider') as HTMLInputElement;
+      const taperBtns = document.querySelectorAll<HTMLButtonElement>('[data-taper]');
+
+      function renderStats(s: AntennaStats) {
+        nEl.textContent = String(s.elements);
+        dEl.textContent = s.spacingLambda.toFixed(2);
+        steerEl.textContent = `${s.steerDeg.toFixed(0)}°`;
+        hpbwEl.textContent = s.hpbwDeg === null ? '無主瓣' : `${s.hpbwDeg.toFixed(1)}°`;
+        sllEl.textContent = s.sidelobeDb === null ? '—' : `${s.sidelobeDb.toFixed(1)} dB`;
+        dirEl.textContent = `${s.directivityDbi.toFixed(2)} dBi`;
+        apEl.textContent = `${s.apertureLambda.toFixed(2)} λ`;
+        warnEl.classList.toggle('hidden', !s.gratingLobe);
+        taperBtns.forEach((b) => b.classList.toggle('active', b.dataset.taper === s.taper));
+      }
+
+      const scene = new AntennaArrayScene({ canvasId: 'ant-canvas', onStats: renderStats });
+
+      nSlider.addEventListener('input', () => scene.setElements(Number(nSlider.value)));
+      dSlider.addEventListener('input', () => scene.setSpacing(Number(dSlider.value)));
+      steerSlider.addEventListener('input', () => scene.setSteer(Number(steerSlider.value)));
+      taperBtns.forEach((btn) => btn.addEventListener('click', () => scene.setTaper(btn.dataset.taper as Taper)));
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</MathLessonLayout>

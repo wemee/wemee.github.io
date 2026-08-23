@@ -1,0 +1,223 @@
+---
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/physics.css';
+import { RADIO_PRESETS } from '@/lib/rf/radio';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<MathLessonLayout
+  section="rf"
+  slug="shannon"
+  currentPage="physics"
+  seoTitle="香農容量極限 · 為什麼 LoRa 能在雜訊底下工作"
+  seoDescription="C = B·log₂(1+SNR)。互動比較 LoRa、Wi-Fi、LTE、業餘無線電四個真實系統與理論容量的距離，並解釋為什麼負 SNR 的鏈路完全合法。"
+>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">
+    1948 年，Shannon 證明了一件讓人不太舒服的事：給定頻寬與雜訊，一條通道能傳的資訊量有一個上限，而且跟你用什麼技術完全無關。
+  </p>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2">
+      <canvas id="sh-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 56vh; min-height: 380px;"></canvas>
+      <div class="mt-3 flex flex-wrap gap-2 text-xs">
+        <span class="phy-chip"><span class="dot" style="background: #2aa198"></span>香農容量</span>
+        <span class="phy-chip"><span class="dot" style="background: #b58900"></span>目前系統的上限</span>
+        <span class="phy-chip"><span class="dot" style="background: #859900"></span>它實際跑的速率</span>
+        <span class="phy-chip"><span class="dot" style="background: #dc322f"></span>雜訊底 / 無限頻寬天花板</span>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <div class="phy-panel">
+        <div class="head">📻 真實系統</div>
+        <div class="body grid grid-cols-1 gap-2">
+          {RADIO_PRESETS.map((p) => (
+            <button data-preset={p.id} class="phy-btn text-left">{p.name}</button>
+          ))}
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">📊 這條通道能塞多少</div>
+        <div class="body space-y-2">
+          <div class="phy-tile"><span class="label">香農容量 C</span><span class="value accent-cyan" id="sh-cap">—</span></div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">實際速率</span><span class="value accent-green" id="sh-actual">—</span></div>
+            <div class="phy-tile"><span class="label">用掉了 C 的</span><span class="value accent-yellow" id="sh-eff">—</span></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">頻譜效率</span><span class="value" id="sh-se">—</span></div>
+            <div class="phy-tile"><span class="label">頻寬無限時的 C∞</span><span class="value accent-magenta" id="sh-inf">—</span></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">雜訊底</span><span class="value" id="sh-noise">—</span></div>
+            <div class="phy-tile"><span class="label">訊號功率</span><span class="value" id="sh-sig">—</span></div>
+          </div>
+          <div id="sh-verdict" class="text-xs font-mono">—</div>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">🎛️ 自己調</div>
+        <div class="body space-y-3">
+          <div>
+            <div class="phy-label"><span>頻寬 B</span><span class="val" id="sh-bw">250 kHz</span></div>
+            <input id="sh-bw-slider" type="range" min="0" max="100" step="0.5" value="0" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>SNR</span><span class="val" id="sh-snr">−17.5 dB</span></div>
+            <input id="sh-snr-slider" type="range" min="-30" max="40" step="0.5" value="-17.5" class="phy-slider" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── Teaching ─────────── -->
+  <section class="mt-12 max-w-3xl mx-auto prose-content">
+    <h2 class="text-2xl font-bold text-base-50 mb-4">📖 一條線，兩個旋鈕</h2>
+
+    <div class="space-y-4 text-base-300 leading-relaxed">
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`C = B \\log_2\\!\\left(1 + \\frac{S}{N}\\right) \\quad \\text{bits/s}`, true)} />
+      <p>
+        C 是<strong class="text-base-50">通道容量</strong>：低於它，存在某種編碼可以把錯誤率壓到任意小；
+        高於它，錯誤率無法降到零。不是「現在的技術做不到」，是<strong class="text-accent-red">做不到</strong>。
+      </p>
+      <p class="text-sm text-base-400 border-l-2 border-base-600 pl-3">
+        單位是 bit，而 bit 的定義來自
+        <a href="/math/probstat/entropy" class="text-accent-cyan hover:underline">熵那一頁</a>。
+        容量的正式定義是輸入與輸出之間<strong class="text-base-200">互資訊的最大值</strong> —
+        「訊號告訴了你多少關於輸入的事」，扣掉雜訊搞混的部分。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🔋 旋鈕一：功率（報酬遞減）</h3>
+      <p>
+        高 SNR 時 <span set:html={tex('\\log_2(1+S/N) \\approx \\log_2(S/N)')} />，所以
+        <strong class="text-base-50">每多 3 dB 功率只多 1 bit/s/Hz</strong>。
+        要讓速率加倍，功率得平方 —— 而電池不是這樣長的。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">📻 旋鈕二：頻寬（會撞到天花板）</h3>
+      <p>
+        乍看 C 正比於 B，加頻寬就好。但雜訊功率 <span set:html={tex('N = N_0 B')} /> 也跟著長。
+        固定接收功率 S，把 B 推向無限：
+      </p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`C_\\infty = \\lim_{B\\to\\infty} B\\log_2\\!\\left(1+\\frac{S}{N_0 B}\\right) = \\frac{S}{N_0 \\ln 2}`, true)} />
+      <p>
+        <strong class="text-accent-red">它收斂。</strong>右邊那張圖上的紅色虛線就是這個天花板。
+        再多的頻譜也換不到更多容量 —— 唯一的辦法是加功率。
+      </p>
+      <p>
+        由此可以導出通訊理論最著名的一個數字：每個位元所需的能量與雜訊密度之比，下限是
+        <span set:html={tex('E_b/N_0 = \\ln 2 = -1.59\\ \\mathrm{dB}')} />。任何系統、任何編碼，都不可能低於它。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🔍 那 LoRa 是怎麼回事</h3>
+      <p>
+        LoRa 的 SF11 在 <strong class="text-accent-yellow">SNR = −17.5 dB</strong> 下還能解調 —
+        訊號功率只有雜訊的 1.8%。很多人第一反應是「這不是違反物理嗎」。
+      </p>
+      <p>把數字代進去就知道沒有：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`C = 250\\,\\mathrm{kHz} \\times \\log_2(1 + 0.0178) \\approx 6.4\\ \\mathrm{kbps}`, true)} />
+      <p>
+        容量是<strong class="text-base-50">正的</strong>，只是很小。而 LoRa 實際只跑 1.07 kbps，
+        大約是理論上限的 17% —— <strong class="text-accent-green">完全在容量之內，一點都不神奇</strong>。
+      </p>
+      <p>
+        關鍵在於 <span set:html={tex('\\log_2(1+x) \\approx x/\\ln2')} /> 在 x 很小時仍然大於零。
+        負 SNR 不代表容量為零，只代表你得用很寬的頻寬換很低的速率。
+        LoRa 就是這樣做的：用 250 kHz 的頻寬送 1 kbps，把頻譜效率壓到 0.004 bit/s/Hz，
+        換來 <strong class="text-base-200">−17.5 dB 的工作點</strong>，也就是好幾十公里的距離。
+      </p>
+      <p class="text-sm text-base-400 border-l-2 border-base-600 pl-3">
+        這就是「用速率換距離」的精確版本。展頻不是在對抗香農，它是在<strong class="text-base-200">沿著香農曲線往左下角走</strong>。
+      </p>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+      <ol class="list-decimal list-inside space-y-2 ml-2">
+        <li><strong class="text-accent-blue">按 LoRa</strong>。操作點落在紅色區域裡（訊號在雜訊底下），但容量曲線在那裡仍然是正的。綠點（實際速率）確實在青點（容量）下面。</li>
+        <li><strong class="text-accent-blue">切到 Wi-Fi</strong>。SNR +25 dB、頻寬 20 MHz，容量高達 166 Mbps，實際跑 65 Mbps — 用掉 39%。<strong class="text-base-50">沒有任何系統跑到 100%</strong>，因為那需要無限長的碼字。</li>
+        <li><strong class="text-accent-blue">切到 LTE</strong>：用掉 61%，是四者中最高的。LTE 的 turbo / LDPC 編碼確實是逼近香農的工程成果。</li>
+        <li><strong class="text-accent-blue">自己把 SNR 從 −30 慢慢推到 +40</strong>。低 SNR 段容量幾乎線性成長，高 SNR 段變成對數 —— 前面那段每 3 dB 幾乎翻倍，後面那段每 3 dB 只加一點。</li>
+        <li><strong class="text-accent-blue">看右邊那張圖，把頻寬滑桿一路拉大</strong>。曲線爬升然後<strong class="text-base-50">攤平</strong>，貼在紅線上再也上不去。</li>
+        <li><strong class="text-accent-blue">試著讓實際速率超過容量</strong>。做不到 — 四個預設全都在線下。這不是我設定的限制，是把真實規格代進公式的結果。</li>
+      </ol>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🧭 誠實的但書</h3>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">這是 AWGN 通道的容量</strong>：加成性白色高斯雜訊、單一天線、通道已知且不變。真實通道會衰落（<a href="/physics/rf/multipath" class="text-accent-cyan hover:underline">上一頁</a>），衰落通道的容量是另一套公式，通常更低。</li>
+        <li><strong class="text-base-50">MIMO 可以「突破」它 —— 但沒有違反它</strong>。多天線等於開了多條平行通道，每一條各自遵守香農。容量正比於天線數，公式本身沒被打破。</li>
+        <li><strong class="text-base-50">容量是可達性的陳述，不是建構方法</strong>。Shannon 證明了存在達到 C 的編碼，但沒說怎麼找。人類花了 50 年才用 turbo 碼與 LDPC 實際逼近它。</li>
+        <li><strong class="text-base-50">預設的靈敏度與速率取自規格書</strong>，雜訊指數統一假設 6 dB。不同晶片會有出入，數字用來建立量級感，不要拿去做工程設計。</li>
+      </ul>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">📚 接下來</h3>
+      <p>
+        這一頁講的是<strong class="text-base-200">一條</strong>鏈路的極限。最後一頁把場景換成一群節點共用同一個頻道 ——
+        當每個封包都要佔用頻道整整三分之一秒，「該不該轉送」就變成一個很貴的決定。
+      </p>
+    </div>
+  </section>
+
+  <script>
+    import { ShannonScene, type ShannonStats } from '@/lib/rf/ShannonScene';
+    import { formatBitrate } from '@/lib/rf/radio';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const g = (id: string) => document.getElementById(id)!;
+      const capEl = g('sh-cap');
+      const actualEl = g('sh-actual');
+      const effEl = g('sh-eff');
+      const seEl = g('sh-se');
+      const infEl = g('sh-inf');
+      const noiseEl = g('sh-noise');
+      const sigEl = g('sh-sig');
+      const verdictEl = g('sh-verdict');
+      const bwEl = g('sh-bw');
+      const snrEl = g('sh-snr');
+      const bwSlider = g('sh-bw-slider') as HTMLInputElement;
+      const snrSlider = g('sh-snr-slider') as HTMLInputElement;
+      const presetBtns = document.querySelectorAll<HTMLButtonElement>('[data-preset]');
+
+      // bandwidth slider is logarithmic: 1 kHz … 1 GHz
+      const sliderToBw = (v: number) => Math.pow(10, 3 + (v / 100) * 6);
+      const bwToSlider = (b: number) => ((Math.log10(Math.max(1e3, b)) - 3) / 6) * 100;
+      const fmtHz = (hz: number) =>
+        hz >= 1e6 ? `${(hz / 1e6).toFixed(2)} MHz` : hz >= 1e3 ? `${(hz / 1e3).toFixed(1)} kHz` : `${hz.toFixed(0)} Hz`;
+
+      function renderStats(s: ShannonStats) {
+        capEl.textContent = formatBitrate(s.capacityBps);
+        actualEl.textContent = Number.isNaN(s.actualBitrate) ? '（自訂）' : formatBitrate(s.actualBitrate);
+        effEl.textContent = Number.isNaN(s.efficiencyPct) ? '—' : `${s.efficiencyPct.toFixed(1)}%`;
+        seEl.textContent = `${s.spectralEfficiency.toFixed(3)} b/s/Hz`;
+        infEl.textContent = formatBitrate(s.infiniteBandwidthBps);
+        noiseEl.textContent = `${s.noiseFloorDbm.toFixed(1)} dBm`;
+        sigEl.textContent = `${s.signalDbm.toFixed(1)} dBm`;
+        bwEl.textContent = fmtHz(s.bandwidthHz);
+        snrEl.textContent = `${s.snrDb.toFixed(1)} dB`;
+        bwSlider.value = String(bwToSlider(s.bandwidthHz));
+        snrSlider.value = String(s.snrDb);
+
+        if (s.belowNoiseFloor) {
+          verdictEl.textContent = `訊號在雜訊底下 ${Math.abs(s.snrDb).toFixed(1)} dB，容量仍然是正的`;
+          verdictEl.style.color = '#b58900';
+        } else {
+          verdictEl.textContent = `訊號高於雜訊底 ${s.snrDb.toFixed(1)} dB`;
+          verdictEl.style.color = '#859900';
+        }
+        presetBtns.forEach((b) => b.classList.toggle('active', b.dataset.preset === s.presetId));
+      }
+
+      const scene = new ShannonScene({ canvasId: 'sh-canvas', onStats: renderStats });
+
+      presetBtns.forEach((btn) => btn.addEventListener('click', () => scene.applyPreset(btn.dataset.preset!)));
+      bwSlider.addEventListener('input', () => scene.setBandwidth(sliderToBw(Number(bwSlider.value))));
+      snrSlider.addEventListener('input', () => scene.setSnr(Number(snrSlider.value)));
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</MathLessonLayout>

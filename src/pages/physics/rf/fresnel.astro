@@ -1,0 +1,249 @@
+---
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/physics.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<MathLessonLayout
+  section="rf"
+  slug="fresnel"
+  currentPage="physics"
+  seoTitle="菲涅耳區與刀鋒繞射 · 看得到不代表通得過"
+  seoDescription="電波走的是一個橢球體，不是一條直線。拖動山頭觀察第一菲涅耳區被侵入時的繞射損耗，含 60% 淨空法則與地球曲率（k = 4/3）的影響。"
+>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">
+    兩根天線互相看得見，鏈路就通了嗎？不一定。電波走的不是一條線，是一個橢球體 —— 山頭只要伸進去，就開始收費。
+  </p>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2">
+      <canvas id="fr-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 58vh; min-height: 400px; cursor: ew-resize;"></canvas>
+      <div class="mt-3 flex flex-wrap gap-2 text-xs">
+        <span class="phy-chip"><span class="dot" style="background: #2aa198"></span>第一菲涅耳區</span>
+        <span class="phy-chip"><span class="dot" style="background: #b58900"></span>60% 淨空界線</span>
+        <span class="phy-chip"><span class="dot" style="background: #fdf6e3"></span>直視線 LOS</span>
+        <span class="phy-chip">拖曳畫面可移動障礙物</span>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <div class="phy-panel">
+        <div class="head">📊 這座山要收多少</div>
+        <div class="body space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">第一菲涅耳半徑</span><span class="value accent-cyan" id="fr-r1">—</span></div>
+            <div class="phy-tile"><span class="label">淨空比例</span><span class="value accent-green" id="fr-clear">—</span></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">繞射參數 ν</span><span class="value" id="fr-nu">—</span></div>
+            <div class="phy-tile"><span class="label">繞射損耗</span><span class="value accent-orange" id="fr-diff">—</span></div>
+          </div>
+          <div class="phy-tile"><span class="label">總損耗（自由空間 + 繞射）</span><span class="value accent-yellow" id="fr-total">—</span></div>
+          <div id="fr-verdict" class="text-xs font-mono">—</div>
+          <button id="fr-solve" class="phy-btn w-full" type="button">🗼 把發射塔加高到符合 60% 法則</button>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">🎛️ 鏈路</div>
+        <div class="body space-y-3">
+          <div>
+            <div class="phy-label"><span>頻率</span><span class="val" id="fr-freq">923 MHz</span></div>
+            <input id="fr-freq-slider" type="range" min="50" max="6000" step="1" value="923" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>鏈路長度</span><span class="val" id="fr-link">12.0 km</span></div>
+            <input id="fr-link-slider" type="range" min="1" max="60" step="0.5" value="12" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>發射天線高度</span><span class="val" id="fr-txh">30 m</span></div>
+            <input id="fr-txh-slider" type="range" min="1" max="400" step="1" value="30" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>接收天線高度</span><span class="val" id="fr-rxh">10 m</span></div>
+            <input id="fr-rxh-slider" type="range" min="1" max="400" step="1" value="10" class="phy-slider" />
+          </div>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">⛰️ 障礙物</div>
+        <div class="body space-y-3">
+          <div>
+            <div class="phy-label"><span>位置（沿路徑）</span><span class="val" id="fr-pos">50%</span></div>
+            <input id="fr-pos-slider" type="range" min="5" max="95" step="1" value="50" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>高度</span><span class="val" id="fr-obs">60 m</span></div>
+            <input id="fr-obs-slider" type="range" min="0" max="400" step="1" value="60" class="phy-slider" />
+          </div>
+          <label class="flex items-center gap-2 text-sm text-base-300 cursor-pointer select-none">
+            <input id="fr-earth" type="checkbox" checked class="accent-accent-cyan" />
+            計入地球曲率（k = 4/3）
+          </label>
+          <p class="text-xs text-base-500">目前隆起：<span id="fr-bulge" class="font-mono text-accent-orange">—</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── Teaching ─────────── -->
+  <section class="mt-12 max-w-3xl mx-auto prose-content">
+    <h2 class="text-2xl font-bold text-base-50 mb-4">📖 為什麼電波不是一條線</h2>
+
+    <div class="space-y-4 text-base-300 leading-relaxed">
+      <p>
+        從發射點到接收點，有無限多條可能的路徑。走直線的那條最短，但只要另一條路徑
+        <strong class="text-base-200">多走的距離小於半個波長</strong>，它抵達時的相位就跟直線路徑
+        還算對得上，會<strong class="text-accent-green">貢獻</strong>而不是抵消。所有這樣的點形成一個橢球體，
+        叫做<strong class="text-base-50">第一菲涅耳區</strong>。
+      </p>
+      <p>它在路徑上某一點的半徑是：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`r_1 = \\sqrt{\\frac{\\lambda\\, d_1 d_2}{d_1 + d_2}}`, true)} />
+      <p>
+        兩個直覺：<strong class="text-base-50">中點最粗</strong>（所以山擋在中間最傷），
+        <strong class="text-base-50">波長越長越粗</strong>（所以低頻鏈路需要更多淨空 —— 這常常反直覺）。
+      </p>
+      <p class="text-sm text-base-400 border-l-2 border-base-600 pl-3">
+        代個數字感受一下：923 MHz、12 km 的鏈路，中點的第一菲涅耳半徑是
+        <strong class="text-base-200">約 31 公尺</strong>。也就是說即使雙方都看得到對方，
+        中點附近有一棟 20 層樓就已經吃掉一大半。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">📐 60% 法則從哪來</h3>
+      <p>
+        繞射損耗由一個無因次參數 ν 決定（h 是障礙物頂端超過直視線的高度，可以是負的）：
+      </p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`\\nu = h\\sqrt{\\frac{2(d_1+d_2)}{\\lambda d_1 d_2}}`, true)} />
+      <p>
+        當障礙物剛好在直視線上（h = 0、ν = 0），損耗是 <strong class="text-accent-red">6 dB</strong> —
+        注意這是「看得到卻已經損失一半功率」的意思。要讓損耗趨近於零，障礙物必須退到
+        <span set:html={tex('\\nu \\approx -0.8')} /> 以下，換算回來大約就是<strong class="text-base-50">留出第一菲涅耳半徑的 60%</strong>。
+      </p>
+      <p>這就是那條工程師隨口就能講出來的規則的出處。它不是經驗法則，是這條曲線的數值解。</p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🔦 這跟雙狹縫是同一件事</h3>
+      <p>
+        刀鋒繞射的公式來自菲涅耳積分，跟
+        <a href="/physics/double-slit" class="text-accent-cyan hover:underline">雙狹縫那一頁</a>
+        的來源完全相同 —— 都是「把所有路徑的振幅加起來」。差別只在那裡的障礙是一片開了兩條縫的板子，
+        這裡是一座山；那裡看的是明暗條紋，這裡看的是總功率少了幾 dB。
+      </p>
+      <p>
+        順帶一提：<strong class="text-base-50">正因為是繞射，電波才能翻過山頭</strong>。
+        如果電波真的只走直線，山的另一側會是完全的死區。低頻繞射能力強，
+        所以 145 MHz 的手持機翻得過稜線，而 5 GHz 的 Wi-Fi 連一道牆都很勉強。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🌍 地球是圓的</h3>
+      <p>
+        長距離鏈路還有一個障礙物是地球本身。大氣的折射率隨高度遞減，會把電波往下彎一點，
+        效果等同於地球半徑變大 —— 標準模型取 <strong class="text-base-200">k = 4/3</strong>。等效隆起高度：
+      </p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`h_{bulge}\\,[\\mathrm{m}] = \\frac{d_1 d_2}{12.75\\,k} \\quad (d \\text{ in km})`, true)} />
+      <p>
+        50 km 鏈路的中點隆起約 <strong class="text-accent-orange">36 公尺</strong>。
+        這就是為什麼超過幾十公里的鏈路，天線一定要架很高 —— 不是為了避開樹，是為了避開地球。
+      </p>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+      <ol class="list-decimal list-inside space-y-2 ml-2">
+        <li><strong class="text-accent-blue">拖動障礙物左右移動</strong>。同樣高度的山，擺在中點最致命，靠近任一端影響就小很多 —— 因為菲涅耳區在兩端是收窄的。</li>
+        <li><strong class="text-accent-blue">把山的高度慢慢往上拉</strong>，盯著繞射損耗。它不是碰到直視線才開始跳，<strong class="text-base-50">在還低於直視線時就已經開始扣</strong>。碰到直視線的那一刻正好 6 dB。</li>
+        <li><strong class="text-accent-blue">按「把發射塔加高到符合 60% 法則」</strong>，看需要多高。這就是實務上勘點在算的事。</li>
+        <li><strong class="text-accent-blue">把頻率從 923 拉到 5800 MHz</strong>。菲涅耳區<strong class="text-base-50">變細</strong>了，同一座山突然合格 —— 高頻對淨空的要求反而低。但別忘了自由空間損耗同時多了 16 dB。</li>
+        <li><strong class="text-accent-blue">把鏈路長度拉到 50 km 並打開地球曲率</strong>。就算完全沒有山，中間的隆起也會把鏈路擋掉。關掉曲率再看一次差多少。</li>
+        <li><strong class="text-accent-blue">把山降到 0、兩端天線都設 1 m、鏈路 30 km</strong>：這是「站在平地上互相看不到」的情況。曲率打開之後損耗立刻變得很難看。</li>
+      </ol>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🧭 誠實的但書</h3>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">刀鋒模型是理想化的</strong>。真實山頭是圓的，圓化的山脊損耗會比刀鋒更大（ITU-R P.526 另有修正項）。這裡的數字是樂觀的下界。</li>
+        <li><strong class="text-base-50">只有一個障礙物</strong>。多重障礙要用 Deygout 或 Epstein–Peterson 之類的方法逐一疊加。</li>
+        <li><strong class="text-base-50">k = 4/3 是標準大氣</strong>。逆溫層會讓 k 變得很大（超折射，訊號傳異常遠），有時甚至變成負的（次折射，鏈路無故中斷）。這是實務上長鏈路不穩定的一大來源。</li>
+        <li><strong class="text-base-50">圖是垂直放大的</strong>，倍率標在畫面右上角。用不放大的比例畫，整條鏈路會是一條看不見厚度的線。</li>
+      </ul>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">📚 接下來</h3>
+      <p>
+        這一頁的障礙物是<strong class="text-base-200">靜態</strong>的，算一次就知道結果。
+        下一頁的破壞則是隨時間與位置劇烈跳動的 —— 而且製造它的不是障礙物，是<strong class="text-base-50">電波自己</strong>。
+      </p>
+    </div>
+  </section>
+
+  <script>
+    import { FresnelScene, type FresnelStats } from '@/lib/rf/FresnelScene';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const g = (id: string) => document.getElementById(id)!;
+      const r1El = g('fr-r1');
+      const clearEl = g('fr-clear');
+      const nuEl = g('fr-nu');
+      const diffEl = g('fr-diff');
+      const totalEl = g('fr-total');
+      const verdictEl = g('fr-verdict');
+      const bulgeEl = g('fr-bulge');
+      const freqEl = g('fr-freq');
+      const linkEl = g('fr-link');
+      const txhEl = g('fr-txh');
+      const rxhEl = g('fr-rxh');
+      const posEl = g('fr-pos');
+      const obsEl = g('fr-obs');
+      const freqSlider = g('fr-freq-slider') as HTMLInputElement;
+      const linkSlider = g('fr-link-slider') as HTMLInputElement;
+      const txhSlider = g('fr-txh-slider') as HTMLInputElement;
+      const rxhSlider = g('fr-rxh-slider') as HTMLInputElement;
+      const posSlider = g('fr-pos-slider') as HTMLInputElement;
+      const obsSlider = g('fr-obs-slider') as HTMLInputElement;
+      const earthBox = g('fr-earth') as HTMLInputElement;
+      const solveBtn = g('fr-solve') as HTMLButtonElement;
+
+      function renderStats(s: FresnelStats) {
+        r1El.textContent = `${s.radiusM.toFixed(1)} m`;
+        clearEl.textContent = `${(s.clearanceRatio * 100).toFixed(0)}%`;
+        clearEl.style.color = s.clearanceRatio >= 0.6 ? '' : '#dc322f';
+        nuEl.textContent = s.nu.toFixed(2);
+        diffEl.textContent = `${s.diffractionLossDb.toFixed(1)} dB`;
+        totalEl.textContent = `${s.totalLossDb.toFixed(1)} dB`;
+        bulgeEl.textContent = `${s.bulgeM.toFixed(1)} m`;
+
+        freqEl.textContent = `${s.freqMHz.toFixed(0)} MHz`;
+        linkEl.textContent = `${s.linkKm.toFixed(1)} km`;
+        txhEl.textContent = `${s.txHeightM.toFixed(0)} m`;
+        rxhEl.textContent = `${s.rxHeightM.toFixed(0)} m`;
+        posEl.textContent = `${(s.obstacleFraction * 100).toFixed(0)}%`;
+        obsEl.textContent = `${s.obstacleHeightM.toFixed(0)} m`;
+        txhSlider.value = String(s.txHeightM);
+        posSlider.value = String(s.obstacleFraction * 100);
+
+        if (s.clearanceRatio >= 0.6) {
+          verdictEl.textContent = '✓ 符合 60% 淨空法則';
+          verdictEl.style.color = '#859900';
+        } else if (s.clearanceHeightM < 0) {
+          verdictEl.textContent = '⚠ 還看得到，但已經侵入第一菲涅耳區';
+          verdictEl.style.color = '#b58900';
+        } else {
+          verdictEl.textContent = '✗ 障礙物高過直視線，正在遮蔽';
+          verdictEl.style.color = '#dc322f';
+        }
+      }
+
+      const scene = new FresnelScene({ canvasId: 'fr-canvas', onStats: renderStats });
+
+      freqSlider.addEventListener('input', () => scene.setFrequency(Number(freqSlider.value)));
+      linkSlider.addEventListener('input', () => scene.setLinkKm(Number(linkSlider.value)));
+      txhSlider.addEventListener('input', () => scene.setTxHeight(Number(txhSlider.value)));
+      rxhSlider.addEventListener('input', () => scene.setRxHeight(Number(rxhSlider.value)));
+      posSlider.addEventListener('input', () => scene.setObstacleFraction(Number(posSlider.value) / 100));
+      obsSlider.addEventListener('input', () => scene.setObstacleHeight(Number(obsSlider.value)));
+      earthBox.addEventListener('change', () => scene.setEarthCurvature(earthBox.checked));
+      solveBtn.addEventListener('click', () => scene.solveForClearance());
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</MathLessonLayout>

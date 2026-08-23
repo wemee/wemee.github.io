@@ -1,0 +1,338 @@
+---
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/physics.css';
+import { MESH_MODES } from '@/lib/rf/MeshSim';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<MathLessonLayout
+  section="rf"
+  slug="mesh"
+  currentPage="physics"
+  seoTitle="多跳網路：氾濫、抑制與空中時間 · Meshtastic 的轉送策略模擬器"
+  seoDescription="四種廣播轉送策略同場競技：天真氾濫、重複抑制、轉送前先聽、以及 Meshtastic 實際使用的 SNR 排序退避。同樣佈點各跑 40 次取平均，比較送達率、轉送次數與總空中時間。"
+>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">
+    沒有基地台、沒有路由表，只有一群小裝置互相接力。當一個封包要佔用頻道整整三分之一秒，「要不要幫忙轉送」就變成一個很貴的決定。
+  </p>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2">
+      <canvas id="mesh-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 60vh; min-height: 420px;"></canvas>
+      <div class="mt-3 flex flex-wrap gap-2 text-xs">
+        <span class="phy-chip"><span class="dot" style="background: #859900"></span>已收到訊息</span>
+        <span class="phy-chip"><span class="dot" style="background: #b58900"></span>正在佔用頻道</span>
+        <span class="phy-chip"><span class="dot" style="background: rgb(88,110,117)"></span>還沒收到</span>
+        <span class="phy-chip"><span class="dot" style="background: #dc322f"></span>發生過碰撞</span>
+        <span class="phy-chip">黃圈 = 排隊等著轉送</span>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <div class="phy-panel">
+        <div class="head">🔀 轉送策略</div>
+        <div class="body grid grid-cols-1 gap-2">
+          {MESH_MODES.map((m) => (
+            <button data-mode={m.id} class="phy-btn text-left">
+              {m.label}
+              <span class="block text-xs text-base-500 mt-0.5 font-normal">{m.blurb}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">📊 這一次的結果</div>
+        <div class="body space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">送達率</span><span class="value accent-green" id="me-delivery">—</span></div>
+            <div class="phy-tile"><span class="label">轉送次數</span><span class="value accent-cyan" id="me-tx">—</span></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">碰撞次數</span><span class="value" id="me-coll">—</span></div>
+            <div class="phy-tile"><span class="label">總空中時間</span><span class="value accent-yellow" id="me-air">—</span></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">最遠跳數</span><span class="value" id="me-hop">—</span></div>
+            <div class="phy-tile"><span class="label">傳播耗時</span><span class="value" id="me-time">—</span></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button id="me-replay" class="phy-btn primary" type="button">↻ 重播</button>
+            <button id="me-reseed" class="phy-btn" type="button">🎲 換佈點</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">🎛️ 網路</div>
+        <div class="body space-y-3">
+          <div>
+            <div class="phy-label"><span>節點數</span><span class="val" id="me-nodes">30</span></div>
+            <input id="me-nodes-slider" type="range" min="8" max="70" step="1" value="30" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>通訊半徑</span><span class="val" id="me-range">26</span></div>
+            <input id="me-range-slider" type="range" min="12" max="50" step="1" value="26" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>跳數上限（可被轉送幾次）</span><span class="val" id="me-hoplimit">3</span></div>
+            <input id="me-hoplimit-slider" type="range" min="1" max="7" step="1" value="3" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>單封包空中時間</span><span class="val" id="me-airtime">354 ms</span></div>
+            <input id="me-airtime-slider" type="range" min="10" max="1200" step="10" value="354" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>退避視窗 CW</span><span class="val" id="me-cw">700 ms</span></div>
+            <input id="me-cw-slider" type="range" min="50" max="2000" step="50" value="700" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>播放速度</span><span class="val" id="me-speed">1.0×</span></div>
+            <input id="me-speed-slider" type="range" min="0.25" max="6" step="0.25" value="1" class="phy-slider" />
+          </div>
+          <label class="flex items-center gap-2 text-sm text-base-300 cursor-pointer select-none">
+            <input id="me-links" type="checkbox" checked class="accent-accent-cyan" />
+            顯示可直接通訊的節點對
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-6">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+      <h2 class="text-lg font-bold text-accent-cyan">⚖️ 四種策略同場競技</h2>
+      <div class="flex gap-2">
+        <button id="me-compare" class="phy-btn primary" type="button">▶ 四種策略各跑 40 次比較</button>
+        <button id="me-clear" class="phy-btn" type="button">清除</button>
+      </div>
+    </div>
+    <canvas id="mesh-chart" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 260px;"></canvas>
+    <p class="text-xs text-base-500 mt-2 text-center">
+      四種策略跑在<strong class="text-base-300">完全相同的 40 組佈點</strong>上再平均 —— 單一次結果幾乎只反映運氣，不能拿來比較。
+    </p>
+  </div>
+
+  <!-- ─────────── Teaching ─────────── -->
+  <section class="mt-12 max-w-3xl mx-auto prose-content">
+    <h2 class="text-2xl font-bold text-base-50 mb-4">📖 為什麼這裡的瓶頸不是路由</h2>
+
+    <div class="space-y-4 text-base-300 leading-relaxed">
+      <p>
+        傳統的無線隨意網路（MANET）研究，核心命題是<strong class="text-base-200">怎麼挑下一跳</strong> ——
+        AODV 先發 RREQ 找出一條路徑再走、GPSR 用座標每跳現場貪婪選鄰居。
+        Meshtastic 的答案是：<strong class="text-accent-yellow">都不是，它基本上不挑</strong>。
+      </p>
+      <p>要理解為什麼這樣可行，得先看一個數字。</p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">⏱️ 空中時間才是稀缺資源</h3>
+      <p>
+        Meshtastic 預設的 LongFast 模式，實際資料速率大約 <strong class="text-base-200">1.07 kbps</strong>。
+        對照 802.11g 的 54 Mbps，差了大約<strong class="text-accent-red">五萬倍</strong>。
+        同一個 16 bytes 的小封包：
+      </p>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li>在 Wi-Fi 上佔用頻道 <strong class="text-base-50">0.0024 毫秒</strong></li>
+        <li>在 LoRa LongFast 上佔用 <strong class="text-base-50">約 354 毫秒</strong> —— 整整三分之一秒</li>
+      </ul>
+      <p>
+        在這個尺度下，<strong class="text-base-50">維護路由表的控制封包本身就是奢侈品</strong>。
+        AODV 的一次 route discovery 要 flood 一輪 RREQ、等 RREP 回來，那已經是好幾秒的空中時間 ——
+        在一個「一小時可能只有幾則訊息」的網路裡，建路徑的成本很可能高過直接把資料送出去。
+      </p>
+      <p>
+        還有第二個理由：MANET/VANET 最難的部分是<strong class="text-base-200">移動性</strong>，
+        路徑建好三秒後就斷了，得花更多控制封包去修補。而 Meshtastic 的節點絕大多數是不動的 ——
+        架在屋頂、架在山頂、放在窗邊，一放好幾個月。<strong class="text-base-50">那個最難的題目在這裡根本不存在。</strong>
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🌪️ 但它也不是天真的氾濫</h3>
+      <p>
+        「每個節點收到就再廣播一次」——這在 1999 年之後基本上就是
+        <strong class="text-accent-red">廣播風暴</strong>的定義。那篇經典論文
+        （Ni、Tseng、Chen、Sheu, MobiCom '99）提出了幾類抑制手段：probabilistic、
+        counter-based、distance-based、location-based、cluster-based。
+      </p>
+      <p>
+        Meshtastic 其實把那套抑制術學走了一大半，它丟掉的是<strong class="text-base-200">路由層</strong>，不是抑制術：
+      </p>
+      <ul class="list-disc list-inside space-y-2 ml-2">
+        <li><strong class="text-base-50">重複封包抑制</strong> — 每個封包有 ID，收過就丟掉</li>
+        <li><strong class="text-base-50">轉送前先聽</strong> — 等一下再轉，聽到別人已經轉了就取消。這是 counter-based scheme</li>
+        <li><strong class="text-base-50">跳數上限</strong> — 預設 3、最多 7，硬性限制擴散半徑</li>
+        <li>
+          <strong class="text-accent-yellow">SNR 決定的競爭視窗</strong> — 最精巧的一條。
+          隨機等待時間的長短跟收到的 SNR 有關：<strong class="text-base-50">SNR 越差（代表離發送者越遠）的節點，等待越短、越優先轉送</strong>；
+          近距離的節點聽到之後就縮手。
+        </li>
+      </ul>
+      <p>
+        最後那條本質上就是 1999 年那篇論文裡的 <strong class="text-base-50">distance-based scheme</strong>：
+        離得遠的節點轉送才有價值，因為它能把訊息推到新的區域；離得近的節點轉送幾乎是純浪費。
+        差別只在 Meshtastic 沒有量測距離，而是<strong class="text-base-200">拿 SNR 當距離的代理變數</strong> ——
+        在一個節點未必有 GPS、也未必信任彼此座標的網路裡，這比實際距離更務實。
+      </p>
+      <p class="text-sm text-base-400 border-l-2 border-accent-yellow pl-3">
+        所以精確的說法不是「Meshtastic 放任廣播風暴」，而是：
+        <strong class="text-base-200">它保留了 1999 年那套廣播抑制術，但把整個路由層丟掉了。</strong>
+        風暴被關在一個半徑三跳的籠子裡，但籠子裡面，它就是風暴。
+        這段的完整脈絡在<a href="/blog/meshtastic-broadcast-storm" class="text-accent-cyan hover:underline">這篇文章</a>。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🧪 模擬器在算什麼</h3>
+      <p>節點隨機散佈，通訊半徑固定（半徑從哪來？<a href="/physics/rf/link-budget" class="text-accent-cyan hover:underline">鏈路預算那一頁</a>）。左上角那個白圈節點發出一則訊息，然後：</p>
+      <ol class="list-decimal list-inside space-y-1 ml-2">
+        <li>發送時，半徑內所有節點都聽得到，而且頻道被佔用整整一個空中時間</li>
+        <li><strong class="text-base-50">半雙工</strong>：一個節點在發送時收不到任何東西</li>
+        <li><strong class="text-base-50">碰撞</strong>：接收期間只要有第二個聽得到的發送重疊，這次接收就毀了</li>
+        <li>成功收到之後，依照選定的策略決定要不要轉送、以及等多久</li>
+      </ol>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+      <ol class="list-decimal list-inside space-y-2 ml-2">
+        <li><strong class="text-accent-blue">先按「四種策略各跑 40 次比較」</strong>。這是整頁的重點：天真氾濫用了最多轉送、製造最多碰撞，送達率卻是最低的。<strong class="text-base-50">做更多事，得到更差的結果。</strong></li>
+        <li><strong class="text-accent-blue">比較「天真氾濫」與「＋重複抑制」</strong>。只加了重複抑制，差別意外地小 —— 因為大家還是搶著同時轉送。<strong class="text-base-50">光有去重，不夠。</strong></li>
+        <li><strong class="text-accent-blue">再看「＋轉送前先聽」</strong>。轉送次數與碰撞都直接腰斬 —— 隨機退避加上取消機制，才是真正壓下風暴的那一招。</li>
+        <li><strong class="text-accent-blue">最後看 Meshtastic 那一根</strong>。轉送次數跟 counter-based 差不多，<strong class="text-accent-green">送達率卻明顯更高</strong>。因為先轉送的是最遠的節點，每一次轉送推進的新領土最大。這就是 SNR 排序買到的東西。</li>
+        <li><strong class="text-accent-blue">切到「天真氾濫」模式看動畫</strong>。你會看到大量黃色圓盤同時亮起、互相重疊，紅點（碰撞）到處都是。再切到 Meshtastic，轉送變成一波一波向外推。</li>
+        <li><strong class="text-accent-blue">把跳數上限從 3 拉到 7</strong>。送達率上升，但總空中時間也跟著漲。Meshtastic 預設 3 不是保守，是<strong class="text-base-50">在拿覆蓋範圍換頻道容量</strong>。</li>
+        <li><strong class="text-accent-blue">把退避視窗 CW 從 100 ms 拉到 2000 ms</strong>（空中時間不動）。碰撞從約 6 次掉到 3 次，但傳播完成時間從 1.4 秒變成 2.7 秒。<strong class="text-base-50">抑制術買到的可靠度，是用延遲付的</strong> —— Meshtastic 的競爭視窗就卡在這個取捨上。</li>
+        <li><strong class="text-accent-blue">把空中時間與 CW 同時縮小 10 倍</strong>（35 ms / 70 ms）。四項數字幾乎完全不變 —— 這個模型只在乎<strong class="text-base-50">比例</strong>，不在乎絕對時間。所以「LoRa 很慢」本身不是問題，問題是它慢到一個封包就佔滿頻道三分之一秒，而法規還在限制你的責任週期（duty cycle）。</li>
+        <li><strong class="text-accent-blue">把節點數拉到 70</strong>。節點越多覆蓋越好，但天真氾濫會惡化得更快 —— 這正是廣播風暴問題的本體。</li>
+      </ol>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🕳️ 這個模型沒有處理的事</h3>
+      <ul class="list-disc list-inside space-y-2 ml-2">
+        <li>
+          <strong class="text-base-50">捕獲效應（capture effect）</strong> —
+          真實的 LoRa 在兩個訊號重疊時，往往仍能解出比較強的那一個。這裡一律判定為碰撞，
+          所以<strong class="text-base-200">碰撞數字是悲觀的</strong>，天真氾濫在真機上不會這麼慘。
+        </li>
+        <li>
+          <strong class="text-base-50">隱藏終端</strong>只被間接模擬到。兩個互相聽不見的節點同時發送、
+          在中間的節點造成碰撞 —— 這在模型裡會發生，但沒有 RTS/CTS 這類機制可以比較。
+        </li>
+        <li>
+          <strong class="text-base-50">暴露終端</strong>完全沒有模擬。本模型的節點不會因為聽到別人講話就抑制自己的發送
+          （沒有 CSMA 的 defer 行為），所以「該講卻不敢講」的浪費看不到。
+        </li>
+        <li>
+          <strong class="text-base-50">真實的 SNR</strong>。這裡直接拿距離當 SNR 的代理，
+          但<a href="/physics/rf/multipath" class="text-accent-cyan hover:underline">多路徑那一頁</a>剛講過，
+          真實 SNR 會劇烈起伏 —— 一個很近的節點也可能剛好落在深衰落裡。
+        </li>
+        <li>
+          <strong class="text-base-50">節點不會動</strong>，也沒有封包遺失重傳、沒有 ACK、沒有訊息佇列。
+        </li>
+      </ul>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">📚 走到這裡</h3>
+      <p>
+        六頁走完了：從一條鏈路的每一個 dB、天線怎麼把能量指向某處、地形與反射怎麼破壞它、
+        通道理論上能塞多少，到最後一群節點怎麼共用這條又慢又擠的通道。
+      </p>
+      <p>
+        回頭看，<strong class="text-base-50">這裡用到的數學全部來自站上既有的頁面</strong> ——
+        陣列因子是傅立葉、衰落統計是中央極限、容量的單位是熵那一頁的 bit。
+        電波沒有自己發明一套數學，它只是把那些工具指向了空氣。
+      </p>
+    </div>
+  </section>
+
+  <script>
+    import { MeshScene } from '@/lib/rf/MeshScene';
+    import type { MeshStats, MeshMode } from '@/lib/rf/MeshSim';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const g = (id: string) => document.getElementById(id)!;
+      const deliveryEl = g('me-delivery');
+      const txEl = g('me-tx');
+      const collEl = g('me-coll');
+      const airEl = g('me-air');
+      const hopEl = g('me-hop');
+      const timeEl = g('me-time');
+      const nodesEl = g('me-nodes');
+      const rangeEl = g('me-range');
+      const hopLimitEl = g('me-hoplimit');
+      const airtimeEl = g('me-airtime');
+      const cwEl = g('me-cw');
+      const speedEl = g('me-speed');
+      const nodesSlider = g('me-nodes-slider') as HTMLInputElement;
+      const rangeSlider = g('me-range-slider') as HTMLInputElement;
+      const hopSlider = g('me-hoplimit-slider') as HTMLInputElement;
+      const airtimeSlider = g('me-airtime-slider') as HTMLInputElement;
+      const cwSlider = g('me-cw-slider') as HTMLInputElement;
+      const speedSlider = g('me-speed-slider') as HTMLInputElement;
+      const linksBox = g('me-links') as HTMLInputElement;
+      const replayBtn = g('me-replay') as HTMLButtonElement;
+      const reseedBtn = g('me-reseed') as HTMLButtonElement;
+      const compareBtn = g('me-compare') as HTMLButtonElement;
+      const clearBtn = g('me-clear') as HTMLButtonElement;
+      const modeBtns = document.querySelectorAll<HTMLButtonElement>('[data-mode]');
+
+      function renderStats(s: MeshStats) {
+        deliveryEl.textContent = `${(s.deliveryRatio * 100).toFixed(0)}% (${s.reached}/${s.nodes})`;
+        txEl.textContent = String(s.transmissions);
+        collEl.textContent = String(s.collisions);
+        collEl.style.color = s.collisions > 0 ? '#dc322f' : '';
+        airEl.textContent = `${(s.totalAirtimeMs / 1000).toFixed(1)} s`;
+        hopEl.textContent = String(Math.max(0, s.maxHop));
+        timeEl.textContent = `${(s.completionMs / 1000).toFixed(2)} s`;
+        modeBtns.forEach((b) => b.classList.toggle('active', b.dataset.mode === s.mode));
+      }
+
+      const scene = new MeshScene({
+        canvasId: 'mesh-canvas',
+        chartCanvasId: 'mesh-chart',
+        onStats: renderStats,
+      });
+      // start on the strategy the lesson is about
+      scene.setMode('meshtastic');
+
+      modeBtns.forEach((btn) => btn.addEventListener('click', () => scene.setMode(btn.dataset.mode as MeshMode)));
+      nodesSlider.addEventListener('input', () => {
+        nodesEl.textContent = nodesSlider.value;
+        scene.setNodeCount(Number(nodesSlider.value));
+      });
+      rangeSlider.addEventListener('input', () => {
+        rangeEl.textContent = rangeSlider.value;
+        scene.setRange(Number(rangeSlider.value));
+      });
+      hopSlider.addEventListener('input', () => {
+        hopLimitEl.textContent = hopSlider.value;
+        scene.setHopLimit(Number(hopSlider.value));
+      });
+      airtimeSlider.addEventListener('input', () => {
+        airtimeEl.textContent = `${airtimeSlider.value} ms`;
+        scene.setAirtime(Number(airtimeSlider.value));
+      });
+      cwSlider.addEventListener('input', () => {
+        cwEl.textContent = `${cwSlider.value} ms`;
+        scene.setContentionWindow(Number(cwSlider.value));
+      });
+      speedSlider.addEventListener('input', () => {
+        speedEl.textContent = `${Number(speedSlider.value).toFixed(2)}×`;
+        scene.setSpeed(Number(speedSlider.value));
+      });
+      linksBox.addEventListener('change', () => scene.setShowLinks(linksBox.checked));
+      replayBtn.addEventListener('click', () => scene.replay());
+      reseedBtn.addEventListener('click', () => scene.reseed());
+      clearBtn.addEventListener('click', () => scene.clearComparison());
+      compareBtn.addEventListener('click', () => {
+        compareBtn.disabled = true;
+        compareBtn.textContent = '計算中…';
+        // let the button repaint before the synchronous batch run
+        setTimeout(() => {
+          scene.runComparison(40);
+          compareBtn.disabled = false;
+          compareBtn.textContent = '▶ 四種策略各跑 40 次比較';
+        }, 30);
+      });
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</MathLessonLayout>

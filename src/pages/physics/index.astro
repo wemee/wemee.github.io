@@ -155,6 +155,27 @@ const lessons: Lesson[] = [
       </div>
     </section>
 
+    <!-- ─────────── 子專區 ─────────── -->
+    <section class="rounded-lg border border-accent-cyan/50 bg-base-800 p-6 mb-10">
+      <div class="flex flex-wrap items-baseline justify-between gap-3 mb-3">
+        <h2 class="text-xl font-bold text-accent-cyan">📡 電波專區</h2>
+        <a href="/physics/rf/" class="text-sm text-accent-blue hover:underline">進入專區 →</a>
+      </div>
+      <p class="text-base-400 text-sm leading-relaxed mb-4">
+        另外 6 頁，主題是<strong class="text-base-200">訊號離開天線之後會發生什麼事</strong>：鏈路預算、天線陣列、
+        地形繞射、多路徑衰落、香農容量，以及一群沒有基地台的節點怎麼把訊息接力送出去。
+        一樣接回數學專區 —— 陣列因子是傅立葉、衰落統計是中央極限、容量的單位是熵那一頁的 bit。
+      </p>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+        <a href="/physics/rf/link-budget" class="text-accent-blue hover:underline">📉 路徑損耗與鏈路預算</a>
+        <a href="/physics/rf/antenna" class="text-accent-blue hover:underline">📶 天線陣列與波束成形</a>
+        <a href="/physics/rf/fresnel" class="text-accent-blue hover:underline">⛰️ 菲涅耳區與刀鋒繞射</a>
+        <a href="/physics/rf/multipath" class="text-accent-blue hover:underline">🌫️ 多路徑衰落與都卜勒</a>
+        <a href="/physics/rf/shannon" class="text-accent-blue hover:underline">🧮 香農容量極限</a>
+        <a href="/physics/rf/mesh" class="text-accent-blue hover:underline">🕸️ 多跳網路與廣播抑制</a>
+      </div>
+    </section>
+
     <!-- ─────────── 6 個內頁卡片 ─────────── -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {lessons.map((lesson) => {

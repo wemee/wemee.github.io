@@ -1,0 +1,205 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import '@/styles/physics.css';
+
+const colorMap: Record<string, { bg: string; hover: string; border: string }> = {
+  primary: { bg: 'bg-accent-blue', hover: 'hover:bg-accent-blue/80', border: 'border-accent-blue' },
+  success: { bg: 'bg-accent-green', hover: 'hover:bg-accent-green/80', border: 'border-accent-green' },
+  info: { bg: 'bg-accent-cyan', hover: 'hover:bg-accent-cyan/80', border: 'border-accent-cyan' },
+  warning: { bg: 'bg-accent-yellow', hover: 'hover:bg-accent-yellow/80', border: 'border-accent-yellow' },
+  danger: { bg: 'bg-accent-red', hover: 'hover:bg-accent-red/80', border: 'border-accent-red' },
+};
+
+interface Lesson {
+  title: string;
+  description: string;
+  href: string;
+  color: string;
+  chapter: string;
+  uses: { label: string; href: string }[];
+}
+
+const lessons: Lesson[] = [
+  {
+    title: '📉 路徑損耗與鏈路預算',
+    description: '把發射功率、天線增益、路徑損耗、接收靈敏度排成一列，看那 100 多 dB 是怎麼被吃掉的。算得出來的東西就不必猜 — 這一頁的最大距離，後面 mesh 那頁會直接拿去用。',
+    href: '/physics/rf/link-budget',
+    color: 'primary',
+    chapter: 'Chapter 1 · 把訊號送出去',
+    uses: [{ label: 'LoRa 與 Meshtastic 入門', href: '/blog/lora-meshtastic-intro' }],
+  },
+  {
+    title: '📶 天線陣列與波束成形',
+    description: '陣列因子就是激發分布的傅立葉變換。所以孔徑越大波束越窄、邊緣錐削會壓低旁瓣但拉寬主瓣、間距超過 λ/2 會長出柵瓣 — 三件事全是同一個定理。',
+    href: '/physics/rf/antenna',
+    color: 'info',
+    chapter: 'Chapter 1 · 把訊號送出去',
+    uses: [
+      { label: '傅立葉畫畫', href: '/math/fourier' },
+      { label: '不確定性原理', href: '/physics/uncertainty' },
+    ],
+  },
+  {
+    title: '⛰️ 菲涅耳區與刀鋒繞射',
+    description: '看得到不代表通得過。電波走的是一個橢球體，山頭只要伸進第一菲涅耳區就開始扣分。拖著山移動，看繞射損耗怎麼跳。',
+    href: '/physics/rf/fresnel',
+    color: 'warning',
+    chapter: 'Chapter 2 · 真實世界的破壞',
+    uses: [{ label: '雙狹縫與單光子累積', href: '/physics/double-slit' }],
+  },
+  {
+    title: '🌫️ 多路徑衰落與都卜勒',
+    description: '接收機把每條路徑當成一個複數相量加起來。移動半個波長就從相長變相消 — 而一堆隨機相量相加會收斂成 Rayleigh 分布，那正是中央極限定理。',
+    href: '/physics/rf/multipath',
+    color: 'danger',
+    chapter: 'Chapter 2 · 真實世界的破壞',
+    uses: [
+      { label: '大數法則與中央極限', href: '/math/probstat/lln-clt' },
+      { label: '機率分布動物園', href: '/math/probstat/distributions' },
+    ],
+  },
+  {
+    title: '🧮 香農容量極限',
+    description: 'C = B·log₂(1+SNR)。這條線沒有任何技術跨得過去。順便回答一個好問題：LoRa 的訊號埋在雜訊底下 17 dB，為什麼還能解出來？',
+    href: '/physics/rf/shannon',
+    color: 'success',
+    chapter: 'Chapter 3 · 極限與網路',
+    uses: [{ label: '熵與 KL 散度', href: '/math/probstat/entropy' }],
+  },
+  {
+    title: '🕸️ 多跳網路：氾濫、抑制與空中時間',
+    description: '四種轉送策略同場競技：天真氾濫、重複抑制、轉送前先聽、以及 Meshtastic 真正在用的 SNR 排序退避。同樣的佈點各跑 40 次取平均，看誰用更少的空中時間送到更多人。',
+    href: '/physics/rf/mesh',
+    color: 'info',
+    chapter: 'Chapter 3 · 極限與網路',
+    uses: [
+      { label: '當年我們拼命避免廣播風暴…', href: '/blog/meshtastic-broadcast-storm' },
+      { label: 'LoRa 與 Meshtastic 入門', href: '/blog/lora-meshtastic-intro' },
+    ],
+  },
+];
+---
+<BaseLayout
+  currentPage="physics"
+  title="電波與無線通訊視覺化"
+  description="從鏈路預算到多跳網路 — 6 頁互動式電波傳播視覺化。天線陣列就是傅立葉變換、多路徑衰落就是中央極限定理、香農容量解釋了 LoRa 為何能在雜訊底下工作。含 Meshtastic 廣播抑制策略模擬器。"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-16">
+    <a href="/physics/" class="text-accent-blue hover:underline text-sm">← 回物理專區</a>
+
+    <header class="text-center mb-10 mt-4">
+      <p class="text-base-400 text-sm tracking-widest uppercase mb-2">電波專區</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-base-50 mb-3">電波 · 動手玩版本</h1>
+      <p class="text-base-400 max-w-2xl mx-auto">
+        訊號離開天線之後會發生什麼事：怎麼衰減、怎麼被地形擋、怎麼互相干涉、能塞多少資訊進去，
+        以及一群沒有基地台的小裝置要怎麼把訊息接力送出去。
+      </p>
+    </header>
+
+    <!-- ─────────── 熱身：平方反比與 dB ─────────── -->
+    <section class="rounded-lg border border-accent-yellow/40 bg-base-800/60 p-6 mb-10">
+      <div class="flex items-baseline justify-between mb-4 flex-wrap gap-2">
+        <h2 class="text-xl font-bold text-accent-yellow">📻 熱身：為什麼無線電都用 dB</h2>
+        <p class="text-sm text-base-400">同一個數字，兩種刻度</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div class="lg:col-span-2">
+          <div class="relative w-full rounded-md bg-base-900/60 border border-base-700" style="aspect-ratio: 16/9; min-height: 320px;">
+            <canvas id="isq-canvas" class="absolute inset-0 w-full h-full"></canvas>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <div class="phy-label"><span>距離</span><span class="val" id="isq-dist">8.0 m</span></div>
+            <input id="isq-slider" type="range" min="0" max="100" step="0.5" value="50" class="phy-slider" />
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">相對功率（線性）</span><span class="value accent-blue" id="isq-linear">—</span></div>
+            <div class="phy-tile"><span class="label">相對功率（dB）</span><span class="value accent-cyan" id="isq-db">—</span></div>
+          </div>
+          <p class="text-xs text-base-400 leading-relaxed">
+            拉到 64 公尺：線性刻度上那根藍條早就看不見了（0.00024），你沒辦法用它做任何比較。
+            換成 dB 是 −36.1，而且<strong class="text-base-200">每次距離加倍就固定少 6.02 dB</strong> —
+            乘法變成加法，一條 100 多 dB 的鏈路才有辦法用心算追蹤。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────── 為什麼是這 6 頁 ─────────── -->
+    <section class="rounded-lg border border-base-600 bg-base-800/60 p-6 mb-10">
+      <h2 class="text-lg font-bold text-accent-blue mb-3">📍 這 6 頁怎麼串起來</h2>
+      <div class="grid md:grid-cols-3 gap-5 text-base-300 text-sm leading-relaxed">
+        <div>
+          <p class="text-base-50 font-semibold mb-1">Chapter 1 · 把訊號送出去</p>
+          <p>先建立<strong class="text-base-200">會算</strong>的能力：一條鏈路的每一項增益與損耗，以及天線要怎麼把能量集中到你想要的方向。</p>
+        </div>
+        <div>
+          <p class="text-base-50 font-semibold mb-1">Chapter 2 · 真實世界的破壞</p>
+          <p>然後把理想拆掉。地形會伸進電波的橢球體、反射會讓訊號自己跟自己打架 — 這兩件事是實際部署會遇到的真正麻煩。</p>
+        </div>
+        <div>
+          <p class="text-base-50 font-semibold mb-1">Chapter 3 · 極限與網路</p>
+          <p>最後問兩個問題：這條通道理論上最多能塞多少？以及當你只有一條又慢又擠的通道時，一群節點該怎麼合作。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────── 6 個內頁卡片 ─────────── -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {lessons.map((lesson) => {
+        const colors = colorMap[lesson.color];
+        return (
+          <div class={`flex flex-col rounded-lg border ${colors.border} bg-base-800 h-full`}>
+            <div class="p-5 flex-1">
+              <p class="text-xs text-base-400 mb-1">{lesson.chapter}</p>
+              <h5 class="text-lg font-semibold text-base-50 mb-2">{lesson.title}</h5>
+              <p class="text-base-400 text-sm mb-3">{lesson.description}</p>
+              <p class="text-xs text-base-500">
+                延伸：
+                {lesson.uses.map((u, i) => (
+                  <>
+                    {i > 0 && <span class="text-base-600"> · </span>}
+                    <a href={u.href} class="text-accent-cyan hover:underline">{u.label}</a>
+                  </>
+                ))}
+              </p>
+            </div>
+            <div class="px-5 pb-5">
+              <a
+                href={lesson.href}
+                class={`block text-center px-4 py-2 rounded ${colors.bg} ${colors.hover} text-base-50 font-medium transition`}
+              >
+                開始學習 →
+              </a>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+
+  <script>
+    import { InverseSquareScene, type InverseSquareStats } from '@/lib/rf/InverseSquareScene';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const distEl = document.getElementById('isq-dist')!;
+      const linEl = document.getElementById('isq-linear')!;
+      const dbEl = document.getElementById('isq-db')!;
+      const slider = document.getElementById('isq-slider') as HTMLInputElement;
+
+      function renderStats(s: InverseSquareStats) {
+        distEl.textContent = `${s.distanceM.toFixed(1)} m`;
+        linEl.textContent = s.relativePower < 0.001 ? s.relativePower.toExponential(2) : s.relativePower.toFixed(5);
+        dbEl.textContent = `${s.relativeDb.toFixed(1)} dB`;
+        slider.value = String((Math.log(s.distanceM) / Math.log(64)) * 100);
+      }
+
+      const scene = new InverseSquareScene({ canvasId: 'isq-canvas', onStats: renderStats });
+      slider.addEventListener('input', () => scene.setDistance(Math.pow(64, Number(slider.value) / 100)));
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</BaseLayout>

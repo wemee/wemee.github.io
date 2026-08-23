@@ -1,0 +1,253 @@
+---
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/physics.css';
+import { RADIO_PRESETS } from '@/lib/rf/radio';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<MathLessonLayout
+  section="rf"
+  slug="link-budget"
+  currentPage="physics"
+  seoTitle="路徑損耗與鏈路預算 · 那 100 多 dB 是怎麼被吃掉的"
+  seoDescription="把發射功率、天線增益、自由空間路徑損耗、接收靈敏度排成一列，互動式算出鏈路餘裕與理論最大距離。含 LoRa、Wi-Fi、LTE、業餘無線電四組真實參數。"
+>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">
+    無線電能傳多遠，不是玄學也不是廣告詞，是一條加減法。這一頁把每一項都攤開來，讓你自己算。
+  </p>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2">
+      <canvas id="lb-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 66vh; min-height: 480px;"></canvas>
+      <div class="mt-3 flex flex-wrap gap-2 text-xs">
+        <span class="phy-chip"><span class="dot" style="background: #268bd2"></span>發射功率</span>
+        <span class="phy-chip"><span class="dot" style="background: #859900"></span>天線增益</span>
+        <span class="phy-chip"><span class="dot" style="background: #dc322f"></span>路徑損耗</span>
+        <span class="phy-chip"><span class="dot" style="background: #cb4b16"></span>接頭與饋線損耗</span>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <div class="phy-panel">
+        <div class="head">📻 真實系統</div>
+        <div class="body grid grid-cols-1 gap-2">
+          {RADIO_PRESETS.map((p) => (
+            <button data-preset={p.id} class="phy-btn text-left">{p.name}</button>
+          ))}
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">📊 結果</div>
+        <div class="body space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">接收功率</span><span class="value accent-cyan" id="lb-rx">—</span></div>
+            <div class="phy-tile"><span class="label">鏈路餘裕</span><span class="value accent-green" id="lb-margin">—</span></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">路徑損耗</span><span class="value accent-orange" id="lb-fspl">—</span></div>
+            <div class="phy-tile"><span class="label">理論最大距離</span><span class="value accent-yellow" id="lb-range">—</span></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">EIRP</span><span class="value" id="lb-eirp">—</span></div>
+            <div class="phy-tile"><span class="label">波長</span><span class="value" id="lb-lambda">—</span></div>
+          </div>
+          <button id="lb-snap" class="phy-btn w-full" type="button">↦ 把距離推到餘裕歸零</button>
+          <div id="lb-verdict" class="text-xs font-mono">—</div>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">🎛️ 參數</div>
+        <div class="body space-y-3">
+          <div>
+            <div class="phy-label"><span>距離</span><span class="val" id="lb-dist">—</span></div>
+            <input id="lb-dist-slider" type="range" min="0" max="100" step="0.25" value="50" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>頻率</span><span class="val" id="lb-freq">923 MHz</span></div>
+            <input id="lb-freq-slider" type="range" min="50" max="6000" step="1" value="923" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>發射功率</span><span class="val" id="lb-tx">20 dBm</span></div>
+            <input id="lb-tx-slider" type="range" min="-10" max="40" step="0.5" value="20" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>發射天線增益</span><span class="val" id="lb-txg">2 dBi</span></div>
+            <input id="lb-txg-slider" type="range" min="0" max="30" step="0.5" value="2" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>接收天線增益</span><span class="val" id="lb-rxg">2 dBi</span></div>
+            <input id="lb-rxg-slider" type="range" min="0" max="30" step="0.5" value="2" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>接收靈敏度</span><span class="val" id="lb-sens">−132 dBm</span></div>
+            <input id="lb-sens-slider" type="range" min="-150" max="-60" step="1" value="-132" class="phy-slider" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────── Teaching ─────────── -->
+  <section class="mt-12 max-w-3xl mx-auto prose-content">
+    <h2 class="text-2xl font-bold text-base-50 mb-4">📖 一條加減法</h2>
+
+    <div class="space-y-4 text-base-300 leading-relaxed">
+      <p>整條鏈路只有一個式子，而且是加減法（因為全部換算成 dB 了）：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`P_{rx} = P_{tx} + G_{tx} - L_{tx} - L_{path} + G_{rx} - L_{rx}`, true)} />
+      <p>
+        只要 <span set:html={tex('P_{rx}')} /> 高於接收機的靈敏度，就通得了；高出的部分叫
+        <strong class="text-accent-green">鏈路餘裕（link margin）</strong>，是留給雨衰、樹葉、人體遮擋、
+        天線沒對準這些現實的緩衝。實務上會要求至少 10～20 dB。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">📉 自由空間路徑損耗</h3>
+      <p>唯一的減項大戶。在自由空間中，功率隨距離平方衰減（能量攤在越來越大的球面上）：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`L_{path}\\,[\\mathrm{dB}] = 20\\log_{10} d_{km} + 20\\log_{10} f_{MHz} + 32.44`, true)} />
+      <p>那個 32.44 不是魔法數字，是 <span set:html={tex('20\\log_{10}(4\\pi \\times 10^{9}/c)')} /> 在「km + MHz」單位下的值。從式子直接讀出兩件事：</p>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">距離加倍 = 多 6 dB</strong>。要把距離翻倍，發射功率得變四倍。</li>
+        <li><strong class="text-base-50">頻率加倍 = 多 6 dB</strong>。這就是為什麼 5 GHz Wi-Fi 比 2.4 GHz 傳得近，也是為什麼 LoRa 用 900 MHz、業餘無線電用 145 MHz。</li>
+      </ul>
+      <p class="text-sm text-base-400 border-l-2 border-base-600 pl-3">
+        頻率那一項常被誤解成「高頻的電波比較容易被吸收」。在自由空間裡不是 —
+        真正的原因是<strong class="text-base-200">接收天線的等效面積正比於 λ²</strong>。同樣尺寸的天線，
+        頻率越高抓到的能量越少。（大氣吸收確實存在，但要到 10 GHz 以上才顯著。）
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🔊 dBm、dBi、dB 的差別</h3>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">dBm</strong> — 絕對功率，以 1 mW 為基準。0 dBm = 1 mW，20 dBm = 100 mW，30 dBm = 1 W。</li>
+        <li><strong class="text-base-50">dBi</strong> — 天線增益，以理想全向天線為基準。天線不會「放大」功率，它只是<strong class="text-base-200">把能量從你不需要的方向擠到你需要的方向</strong>。</li>
+        <li><strong class="text-base-50">dB</strong> — 純比值，用在損耗與餘裕。</li>
+      </ul>
+      <p>
+        <span set:html={tex('P_{tx} + G_{tx} - L_{tx}')} /> 合起來叫 <strong class="text-base-50">EIRP</strong>，
+        是法規在管的量 — 台灣 923 MHz ISM 頻段的上限是 <strong class="text-base-200">36 dBm EIRP</strong>，
+        所以你不能靠一根 20 dBi 的天線無限加碼。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🎯 靈敏度是另外半場</h3>
+      <p>接收靈敏度也不是廠商隨便標的，它是三項相加：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`P_{sens} = \\underbrace{-174 + 10\\log_{10} B}_{\\text{熱雜訊底}} + \\underbrace{NF}_{\\text{接收機自己的雜訊}} + \\underbrace{SNR_{min}}_{\\text{解調需要的門檻}}`, true)} />
+      <p>
+        LoRa 的整套把戲就在最後一項。一般調變需要正的 SNR，LoRa 的 chirp 展頻讓 SF11 可以在
+        <strong class="text-accent-yellow">SNR = −17.5 dB</strong> 下解調 — 訊號完全埋在雜訊裡。
+        代入 250 kHz 與 6 dB 雜訊指數：−174 + 54 + 6 − 17.5 = <strong class="text-base-50">−131.5 dBm</strong>，
+        正是預設值裡那個 −132。<a href="/physics/rf/shannon" class="text-accent-cyan hover:underline">為什麼這樣做合法，香農那頁會回答</a>。
+      </p>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+      <ol class="list-decimal list-inside space-y-2 ml-2">
+        <li><strong class="text-accent-blue">先按「LoRa · Meshtastic LongFast」</strong>，再按「把距離推到餘裕歸零」。理論最大距離會是幾百公里 — 這是自由空間的答案，實務上完全達不到，因為地球是圓的而且有山。<a href="/physics/rf/fresnel" class="text-accent-cyan hover:underline">下一章就處理這件事</a>。</li>
+        <li><strong class="text-accent-blue">切到 Wi-Fi</strong>。發射功率一樣是 20 dBm，最大距離卻短得多。差別來自兩處：頻率高了 2.6 倍（多 8 dB），靈敏度差了 50 dB。<strong class="text-base-50">靈敏度才是主角</strong>。</li>
+        <li><strong class="text-accent-blue">把發射功率從 20 拉到 30 dBm</strong>（10 倍功率）。距離只變成幾倍？ — 因為距離加倍要 6 dB，10 dB 大約是 3.2 倍。<strong class="text-base-50">功率的報酬非常差</strong>。</li>
+        <li><strong class="text-accent-blue">改成把兩端天線增益各加 10 dBi</strong>。同樣 20 dB，效果一樣好，而且不耗電 — 這就是為什麼架高、換天線永遠比開大功率划算。</li>
+        <li><strong class="text-accent-blue">把頻率從 923 拉到 2400 MHz</strong>，其他不動。看損耗多了約 8 dB，距離掉到約 40%。</li>
+        <li><strong class="text-accent-blue">看下面那張圖</strong>：接收功率對距離在對數軸上是一條<strong class="text-base-50">直線</strong>。這就是熱身那一頁講的事 — 用 dB 之後，物理定律變成了一次函數。</li>
+      </ol>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🧭 誠實的但書</h3>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">這是自由空間</strong>，也就是「兩根天線飄在太空中」。地面上要再加地面反射、地形繞射、植被與建築物穿透 — 都會讓實際指數比 2 更大（都會區常用 3～4）。</li>
+        <li><strong class="text-base-50">沒有考慮衰落</strong>。實際接收功率會隨時間與位置劇烈跳動，這是<a href="/physics/rf/multipath" class="text-accent-cyan hover:underline">多路徑那一頁</a>的主題，也是為什麼要留餘裕。</li>
+        <li><strong class="text-base-50">靈敏度是統計量</strong>，通常定義在某個封包錯誤率下（例如 1%），不是硬性門檻。</li>
+      </ul>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">📚 接下來</h3>
+      <p>
+        這一頁把天線當成一個數字（增益）。下一頁打開它：那個數字是怎麼來的，
+        以及為什麼<strong class="text-base-50">天線陣列的方向圖就是一個傅立葉變換</strong>。
+      </p>
+    </div>
+  </section>
+
+  <script>
+    import { LinkBudgetScene, type LinkBudgetStats } from '@/lib/rf/LinkBudgetScene';
+    import { formatDistance } from '@/lib/rf/radio';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const g = (id: string) => document.getElementById(id)!;
+      const rxEl = g('lb-rx');
+      const marginEl = g('lb-margin');
+      const fsplEl = g('lb-fspl');
+      const rangeEl = g('lb-range');
+      const eirpEl = g('lb-eirp');
+      const lambdaEl = g('lb-lambda');
+      const verdictEl = g('lb-verdict');
+      const distEl = g('lb-dist');
+      const freqEl = g('lb-freq');
+      const txEl = g('lb-tx');
+      const txgEl = g('lb-txg');
+      const rxgEl = g('lb-rxg');
+      const sensEl = g('lb-sens');
+      const distSlider = g('lb-dist-slider') as HTMLInputElement;
+      const freqSlider = g('lb-freq-slider') as HTMLInputElement;
+      const txSlider = g('lb-tx-slider') as HTMLInputElement;
+      const txgSlider = g('lb-txg-slider') as HTMLInputElement;
+      const rxgSlider = g('lb-rxg-slider') as HTMLInputElement;
+      const sensSlider = g('lb-sens-slider') as HTMLInputElement;
+      const snapBtn = g('lb-snap') as HTMLButtonElement;
+      const presetBtns = document.querySelectorAll<HTMLButtonElement>('[data-preset]');
+
+      // the distance slider is logarithmic: 10 m … 2000 km
+      const sliderToKm = (v: number) => Math.pow(10, -2 + (v / 100) * (Math.log10(2000) + 2));
+      const kmToSlider = (km: number) =>
+        ((Math.log10(Math.max(0.01, km)) + 2) / (Math.log10(2000) + 2)) * 100;
+
+      function renderStats(s: LinkBudgetStats) {
+        rxEl.textContent = `${s.rxPowerDbm.toFixed(1)} dBm`;
+        marginEl.textContent = `${s.marginDb >= 0 ? '+' : ''}${s.marginDb.toFixed(1)} dB`;
+        marginEl.className = `value ${s.marginDb >= 0 ? 'accent-green' : ''}`;
+        if (s.marginDb < 0) marginEl.style.color = '#dc322f'; else marginEl.style.color = '';
+        fsplEl.textContent = `${s.fsplDb.toFixed(1)} dB`;
+        rangeEl.textContent = formatDistance(s.maxRangeKm);
+        eirpEl.textContent = `${s.eirpDbm.toFixed(1)} dBm`;
+        lambdaEl.textContent = `${s.wavelengthCm.toFixed(1)} cm`;
+
+        distEl.textContent = formatDistance(s.distanceKm);
+        freqEl.textContent = `${s.freqMHz.toFixed(0)} MHz`;
+        txEl.textContent = `${s.budget.txPowerDbm.toFixed(1)} dBm`;
+        txgEl.textContent = `${s.budget.txGainDbi.toFixed(1)} dBi`;
+        rxgEl.textContent = `${s.budget.rxGainDbi.toFixed(1)} dBi`;
+        sensEl.textContent = `${s.budget.sensitivityDbm.toFixed(0)} dBm`;
+
+        distSlider.value = String(kmToSlider(s.distanceKm));
+        freqSlider.value = String(s.freqMHz);
+        txSlider.value = String(s.budget.txPowerDbm);
+        txgSlider.value = String(s.budget.txGainDbi);
+        rxgSlider.value = String(s.budget.rxGainDbi);
+        sensSlider.value = String(s.budget.sensitivityDbm);
+
+        if (s.marginDb >= 20) {
+          verdictEl.textContent = '✓ 餘裕充足，這條鏈路很穩';
+          verdictEl.style.color = '#859900';
+        } else if (s.marginDb >= 0) {
+          verdictEl.textContent = '⚠ 通得了，但餘裕不足 20 dB — 下雨或擋一下就掉';
+          verdictEl.style.color = '#b58900';
+        } else {
+          verdictEl.textContent = '✗ 收不到：接收功率低於靈敏度';
+          verdictEl.style.color = '#dc322f';
+        }
+        presetBtns.forEach((b) => b.classList.toggle('active', b.dataset.preset === s.presetId));
+      }
+
+      const scene = new LinkBudgetScene({ canvasId: 'lb-canvas', onStats: renderStats });
+
+      presetBtns.forEach((btn) => btn.addEventListener('click', () => scene.applyPreset(btn.dataset.preset!)));
+      distSlider.addEventListener('input', () => scene.setDistance(sliderToKm(Number(distSlider.value))));
+      freqSlider.addEventListener('input', () => scene.setFrequency(Number(freqSlider.value)));
+      txSlider.addEventListener('input', () => scene.setBudgetField('txPowerDbm', Number(txSlider.value)));
+      txgSlider.addEventListener('input', () => scene.setBudgetField('txGainDbi', Number(txgSlider.value)));
+      rxgSlider.addEventListener('input', () => scene.setBudgetField('rxGainDbi', Number(rxgSlider.value)));
+      sensSlider.addEventListener('input', () => scene.setBudgetField('sensitivityDbm', Number(sensSlider.value)));
+      snapBtn.addEventListener('click', () => scene.snapToMaxRange());
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</MathLessonLayout>

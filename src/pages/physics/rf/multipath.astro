@@ -1,0 +1,262 @@
+---
+import MathLessonLayout from '@/layouts/MathLessonLayout.astro';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+import '@/styles/physics.css';
+
+const tex = (s: string, display = false) =>
+  katex.renderToString(s, { displayMode: display, throwOnError: false, output: 'html' });
+---
+<MathLessonLayout
+  section="rf"
+  slug="multipath"
+  currentPage="physics"
+  seoTitle="多路徑衰落與都卜勒 · 移動半個波長，訊號就不見了"
+  seoDescription="接收機把每條反射路徑當成複數相量相加。互動觀察 λ/2 週期的深衰落、相量首尾相接的過程，以及多重反射如何讓包絡收斂成 Rayleigh 分布 — 那正是中央極限定理。"
+>
+  <p slot="tagline" class="text-base-400 max-w-2xl mx-auto">
+    手機收訊格數在原地跳動、走兩步就恢復 —— 那不是基地台在鬧脾氣。是同一個訊號經由不同路徑抵達，然後自己跟自己打架。
+  </p>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2">
+      <canvas id="mp-canvas" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 52vh; min-height: 360px;"></canvas>
+      <div class="mt-3 flex flex-wrap gap-2 text-xs">
+        <span class="phy-chip"><span class="dot" style="background: #b58900"></span>發射端</span>
+        <span class="phy-chip"><span class="dot" style="background: #2aa198"></span>接收端</span>
+        <span class="phy-chip"><span class="dot" style="background: #d33682"></span>反射路徑（顏色 = 抵達相位）</span>
+        <span class="phy-chip"><span class="dot" style="background: #fdf6e3"></span>直視路徑</span>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <div class="phy-panel">
+        <div class="head">📊 現在收到什麼</div>
+        <div class="body space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">相對接收功率</span><span class="value accent-cyan" id="mp-gain">—</span></div>
+            <div class="phy-tile"><span class="label">整條軌跡最深衰落</span><span class="value" id="mp-fade">—</span></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">波長 λ</span><span class="value" id="mp-lambda">—</span></div>
+            <div class="phy-tile"><span class="label">衰落間距 λ/2</span><span class="value accent-yellow" id="mp-coh">—</span></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="phy-tile"><span class="label">最大都卜勒頻移</span><span class="value accent-magenta" id="mp-dopp">—</span></div>
+            <div class="phy-tile"><span class="label">Rician K（設定值）</span><span class="value accent-green" id="mp-k">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phy-panel">
+        <div class="head">🎛️ 環境</div>
+        <div class="body space-y-3">
+          <div>
+            <div class="phy-label"><span>反射體數量</span><span class="val" id="mp-scat">8</span></div>
+            <input id="mp-scat-slider" type="range" min="0" max="24" step="1" value="8" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>頻率</span><span class="val" id="mp-freq">923 MHz</span></div>
+            <input id="mp-freq-slider" type="range" min="100" max="6000" step="1" value="923" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>接收端位置</span><span class="val" id="mp-pos">—</span></div>
+            <input id="mp-pos-slider" type="range" min="20" max="180" step="0.1" value="110" class="phy-slider" />
+          </div>
+          <div>
+            <div class="phy-label"><span>移動速度</span><span class="val" id="mp-speed">5 km/h</span></div>
+            <input id="mp-speed-slider" type="range" min="1" max="120" step="1" value="5" class="phy-slider" />
+          </div>
+          <label class="flex items-center gap-2 text-sm text-base-300 cursor-pointer select-none">
+            <input id="mp-los" type="checkbox" checked class="accent-accent-cyan" />
+            有直視路徑（LOS）
+          </label>
+          <div>
+            <div class="phy-label"><span>K 因子（直視 ÷ 散射功率）</span><span class="val" id="mp-kset">6 dB</span></div>
+            <input id="mp-k-slider" type="range" min="-10" max="20" step="1" value="6" class="phy-slider" />
+            <p class="text-xs text-base-500 mt-1">關掉 LOS 時這個滑桿沒有作用 — 沒有直視路徑就沒有 K。</p>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button id="mp-move" class="phy-btn primary" type="button">▶ 開始移動</button>
+            <button id="mp-shuffle" class="phy-btn" type="button">🎲 換一組環境</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-6">
+    <canvas id="mp-stats" class="block w-full rounded-lg border border-base-600 bg-base-900 shadow-lg" style="height: 240px;"></canvas>
+    <p class="text-xs text-base-500 mt-2 text-center">
+      左：接收機沿軌跡移動時的功率起伏 — 那些尖峰向下的深谷就是衰落。右：包絡的統計分布，黃線是 Rayleigh 理論曲線（不是擬合出來的）。
+    </p>
+  </div>
+
+  <!-- ─────────── Teaching ─────────── -->
+  <section class="mt-12 max-w-3xl mx-auto prose-content">
+    <h2 class="text-2xl font-bold text-base-50 mb-4">📖 只有一個加法</h2>
+
+    <div class="space-y-4 text-base-300 leading-relaxed">
+      <p>接收機收到的不是一個訊號，是同一個訊號的許多份複本，各走不同長度的路徑抵達。每一份是一個複數相量：</p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`h = \\sum_i a_i \\, e^{-j 2\\pi L_i / \\lambda}`, true)} />
+      <p>就這樣。整頁所有現象都是這個加法的後果。</p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">〰️ 為什麼是每半個波長一次</h3>
+      <p>
+        接收機移動 <span set:html={tex('\\Delta')} />，某條路徑的長度大約也改變 <span set:html={tex('\\Delta')} />，
+        相位就轉了 <span set:html={tex('2\\pi\\Delta/\\lambda')} />。當 <span set:html={tex('\\Delta = \\lambda/2')} />，
+        相位轉了 <strong class="text-accent-red">π</strong> —— 原本相加的兩條路徑變成相減。
+      </p>
+      <p>
+        923 MHz 的半波長是 <strong class="text-base-200">16 公分</strong>。
+        所以你把手機從左手換到右手，收訊真的可能從滿格變成沒有 —— 這不是錯覺，是物理。
+        2.4 GHz 的 Wi-Fi 更誇張，半波長只有 6 公分。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🎯 為什麼會收斂成 Rayleigh</h3>
+      <p>
+        當有很多條路徑、而且沒有一條特別強時，
+        <span set:html={tex('h')} /> 的實部與虛部各自是<strong class="text-base-200">許多獨立小量的和</strong>。
+        這正是 <a href="/math/probstat/lln-clt" class="text-accent-cyan hover:underline">中央極限定理</a>的前提，
+        所以兩者都趨近高斯分布。
+      </p>
+      <p>
+        一個實部與虛部都是零均值高斯的複數，它的<strong class="text-base-50">模長服從 Rayleigh 分布</strong>：
+      </p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`f(r) = \\frac{r}{\\sigma^2} e^{-r^2/2\\sigma^2}`, true)} />
+      <p>
+        右下角那張圖上的黃線就是它，<strong class="text-accent-green">沒有經過任何擬合</strong> —
+        參數只用了「平均功率歸一」這一個條件。把反射體數量拉高、關掉直視路徑，
+        長條圖會自己貼上去。
+      </p>
+      <p>
+        留下直視路徑的話，就多了一個固定的大相量，分布變成
+        <strong class="text-base-50">Rician</strong>。直視路徑與散射功率的比值叫 <strong class="text-accent-green">K 因子</strong> —
+        K 越大，衰落越淺。這就是為什麼工程上願意花錢換取視線通暢。
+      </p>
+      <p class="text-sm text-base-400 border-l-2 border-base-600 pl-3">
+        <strong class="text-base-200">為什麼 K 是滑桿而不是算出來的？</strong>
+        因為在真實世界它也是<strong class="text-base-200">量出來的</strong>，不是推導出來的 —
+        它取決於反射面的材質、角度、粗糙度，沒有一個好用的閉式解。這個模擬器用幾何決定每條路徑的
+        <strong class="text-base-200">相位</strong>（那才是 λ/2 週期與都卜勒的來源），
+        而散射路徑的<strong class="text-base-200">總功率</strong>由你設定的 K 決定。
+        典型值：開闊視野 10～20 dB、市區 3～8 dB、室內或完全遮蔽則趨近 −∞（純 Rayleigh）。
+      </p>
+
+      <h3 class="text-lg font-bold text-base-50 mt-6">🚗 都卜勒：衰落有多快</h3>
+      <p>
+        以速度 v 移動時，來自前方的路徑頻率被壓高、來自後方的被拉低，最大偏移是：
+      </p>
+      <div class="my-3 flex justify-center overflow-x-auto" set:html={tex(`f_d = \\frac{v}{\\lambda}`, true)} />
+      <p>
+        時速 100 公里、923 MHz：<span set:html={tex('f_d')} /> 約 <strong class="text-base-200">85 Hz</strong>。
+        意思是通道每 12 毫秒左右就換一個樣子。這個數字決定了通訊系統的
+        <strong class="text-base-50">同調時間</strong> —— 通道估測要多久做一次、交錯編碼要鋪多長，全看它。
+      </p>
+      <p class="text-sm text-base-400 border-l-2 border-base-600 pl-3">
+        重點不是「頻率偏了一點」，而是<strong class="text-base-200">不同路徑偏的量不一樣</strong>（都卜勒展開）。
+        單一偏移可以補償，展開不行 —— 它就是通道在時間上會自己改變的原因。
+      </p>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🎮 動手試試</h3>
+      <ol class="list-decimal list-inside space-y-2 ml-2">
+        <li><strong class="text-accent-blue">反射體設 0、保留直視路徑</strong>。下方曲線是一條平滑的斜線，沒有任何起伏 — 這是自由空間，也是上一章算的世界。</li>
+        <li><strong class="text-accent-blue">加到 1 個反射體</strong>。立刻出現規律的駐波紋，週期正好 λ/2。兩條路徑就足以製造衰落。</li>
+        <li><strong class="text-accent-blue">加到 12 個以上</strong>。紋路變得毫無規律，深谷動輒 −25 dB 以下。這就是都市環境。</li>
+        <li><strong class="text-accent-blue">關掉直視路徑（NLOS）</strong>，看右下角的長條圖。它會貼上黃色的 Rayleigh 曲線 — 那條線是理論值，不是擬合出來的。</li>
+        <li><strong class="text-accent-blue">打開 LOS，把 K 從 20 dB 慢慢調到 −10 dB</strong>。K = 20 時最深的衰落只有 −10 dB 左右，訊號很穩；K 掉到 6 dB 以下，深谷立刻變成 −30 dB。<strong class="text-base-50">同樣的反射體、同樣的幾何，只是直視路徑的份量不同。</strong>K 很低時長條圖也會回頭貼上 Rayleigh — 因為那時直視路徑已經不重要了。</li>
+        <li><strong class="text-accent-blue">按「開始移動」</strong>，盯著左邊的相量圖。那些小相量各自以不同速率旋轉，合成向量（青色）忽長忽短 — 當它縮到接近原點，就是一次深衰落。</li>
+        <li><strong class="text-accent-blue">把頻率拉到 5800 MHz</strong>。衰落間距從 16 公分縮到 2.6 公分，曲線變得極度密集。高頻的通道「更難捉摸」，這是實際後果之一。</li>
+        <li><strong class="text-accent-blue">把速度從 5 拉到 120 km/h</strong>。空間圖形沒變，但都卜勒頻移變成 24 倍 — 同樣的起伏，你以 24 倍的速度穿過它們。</li>
+      </ol>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🛠️ 工程上怎麼對付它</h3>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">空間分集 / MIMO</strong> — 兩根隔開 λ/2 以上的天線，很難同時掉進深谷。這是 MIMO 最原始的動機。</li>
+        <li><strong class="text-base-50">頻率分集 / OFDM</strong> — 不同頻率的衰落位置不同，把資料打散到整個頻寬上，再用編碼補回來。</li>
+        <li><strong class="text-base-50">時間分集 / 交錯</strong> — 把位元在時間上打散，讓一次深衰落只吃掉每個碼字的一小部分。</li>
+        <li><strong class="text-base-50">擴頻</strong> — LoRa 與 CDMA 的做法：把符元拉得比通道的變化還長，用處理增益換抗性。</li>
+        <li><strong class="text-base-50">留餘裕</strong> — 最土但最常用。<a href="/physics/rf/link-budget" class="text-accent-cyan hover:underline">鏈路預算那頁</a>要留 10～20 dB，多半就是留給這一頁。</li>
+      </ul>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">🧭 誠實的但書</h3>
+      <ul class="list-disc list-inside space-y-1 ml-2">
+        <li><strong class="text-base-50">這是二維的、單次反射的模型</strong>。真實環境是三維、多次反射、還有穿透與散射。但衰落的統計性質對這些細節出奇地不敏感 — 這正是 Rayleigh 模型好用的原因。</li>
+        <li><strong class="text-base-50">窄頻假設</strong>。這裡所有路徑用同一個載波相位處理，等於假設訊號頻寬遠小於同調頻寬。寬頻系統還會遇到<strong class="text-base-200">頻率選擇性衰落</strong>（不同頻率衰落程度不同），那需要延遲功率分布才畫得出來。</li>
+        <li><strong class="text-base-50">畫面上的移動速度被放慢了</strong>，否則 λ/2 的漣漪會快到看不見。都卜勒讀數用的是你設定的真實速度。</li>
+      </ul>
+
+      <h3 class="text-xl font-bold text-base-50 mt-6 mb-3">📚 接下來</h3>
+      <p>
+        到這裡為止，都在講「訊號會被弄壞多少」。下一章換一個問題：
+        <strong class="text-base-50">就算通道給定了，理論上最多能塞多少資訊進去？</strong>
+        答案是一條沒有任何技術跨得過去的線。
+      </p>
+    </div>
+  </section>
+
+  <script>
+    import { MultipathScene, type MultipathStats } from '@/lib/rf/MultipathScene';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const g = (id: string) => document.getElementById(id)!;
+      const gainEl = g('mp-gain');
+      const fadeEl = g('mp-fade');
+      const lambdaEl = g('mp-lambda');
+      const cohEl = g('mp-coh');
+      const doppEl = g('mp-dopp');
+      const kEl = g('mp-k');
+      const scatEl = g('mp-scat');
+      const freqEl = g('mp-freq');
+      const posEl = g('mp-pos');
+      const speedEl = g('mp-speed');
+      const scatSlider = g('mp-scat-slider') as HTMLInputElement;
+      const freqSlider = g('mp-freq-slider') as HTMLInputElement;
+      const posSlider = g('mp-pos-slider') as HTMLInputElement;
+      const speedSlider = g('mp-speed-slider') as HTMLInputElement;
+      const losBox = g('mp-los') as HTMLInputElement;
+      const kSlider = g('mp-k-slider') as HTMLInputElement;
+      const ksetEl = g('mp-kset');
+      const moveBtn = g('mp-move') as HTMLButtonElement;
+      const shuffleBtn = g('mp-shuffle') as HTMLButtonElement;
+
+      function renderStats(s: MultipathStats) {
+        gainEl.textContent = `${s.gainDb >= 0 ? '+' : ''}${s.gainDb.toFixed(1)} dB`;
+        gainEl.style.color = s.gainDb < -15 ? '#dc322f' : '';
+        fadeEl.textContent = `${s.deepestFadeDb.toFixed(1)} dB`;
+        lambdaEl.textContent = `${s.wavelengthCm.toFixed(1)} cm`;
+        cohEl.textContent = `${s.coherenceDistanceCm.toFixed(1)} cm`;
+        doppEl.textContent = `${s.maxDopplerHz.toFixed(1)} Hz`;
+        kEl.textContent = s.ricianKdB === null ? '無 LOS' : `${s.ricianKdB.toFixed(0)} dB`;
+        ksetEl.textContent = `${s.kFactorSetDb.toFixed(0)} dB`;
+        kSlider.disabled = !s.hasLineOfSight;
+        scatEl.textContent = String(s.scatterers);
+        freqEl.textContent = `${s.freqMHz.toFixed(0)} MHz`;
+        posEl.textContent = `${s.rxPositionM.toFixed(1)} m`;
+        speedEl.textContent = `${s.speedKmh.toFixed(0)} km/h`;
+        posSlider.value = String(s.rxPositionM);
+      }
+
+      const scene = new MultipathScene({
+        canvasId: 'mp-canvas',
+        statsCanvasId: 'mp-stats',
+        onStats: renderStats,
+      });
+
+      scatSlider.addEventListener('input', () => scene.setScatterers(Number(scatSlider.value)));
+      freqSlider.addEventListener('input', () => scene.setFrequency(Number(freqSlider.value)));
+      posSlider.addEventListener('input', () => scene.setRxPosition(Number(posSlider.value)));
+      speedSlider.addEventListener('input', () => scene.setSpeed(Number(speedSlider.value)));
+      losBox.addEventListener('change', () => scene.setLineOfSight(losBox.checked));
+      kSlider.addEventListener('input', () => scene.setKFactor(Number(kSlider.value)));
+      shuffleBtn.addEventListener('click', () => scene.shuffle());
+      moveBtn.addEventListener('click', () => {
+        scene.toggleMoving();
+        moveBtn.textContent = scene.isMoving ? '⏸ 停止移動' : '▶ 開始移動';
+        moveBtn.classList.toggle('active-yellow', scene.isMoving);
+      });
+
+      window.addEventListener('beforeunload', () => scene.destroy());
+    });
+  </script>
+</MathLessonLayout>

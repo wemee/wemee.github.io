@@ -168,11 +168,51 @@ const PHYSICS: MathSection = {
   },
 };
 
+const RF: MathSection = {
+  id: 'rf',
+  indexHref: '/physics/rf/',
+  sectionEmoji: '📡',
+  name: '電波',
+  parts: { 'Chapter 1': '把訊號送出去', 'Chapter 2': '真實世界的破壞', 'Chapter 3': '極限與網路' },
+  pages: [
+    { slug: 'link-budget', title: '路徑損耗與鏈路預算', emoji: '📉', href: '/physics/rf/link-budget', chapter: 'Chapter 1' },
+    { slug: 'antenna',     title: '天線陣列與波束成形', emoji: '📶', href: '/physics/rf/antenna',     chapter: 'Chapter 1' },
+    { slug: 'fresnel',     title: '菲涅耳區與刀鋒繞射', emoji: '⛰️', href: '/physics/rf/fresnel',     chapter: 'Chapter 2' },
+    { slug: 'multipath',   title: '多路徑衰落與都卜勒', emoji: '🌫️', href: '/physics/rf/multipath',   chapter: 'Chapter 2' },
+    { slug: 'shannon',     title: '香農容量極限',       displayTitle: '香農容量極限 — 這條線誰都過不去', emoji: '🧮', href: '/physics/rf/shannon', chapter: 'Chapter 3' },
+    { slug: 'mesh',        title: '多跳網路與廣播抑制', displayTitle: '多跳網路：氾濫、抑制與空中時間', emoji: '🕸️', href: '/physics/rf/mesh', chapter: 'Chapter 3' },
+  ],
+  supplements: {
+    'link-budget': [
+      { label: '📻 LoRa 與 Meshtastic 入門', description: '這頁算出來的距離，那篇在講它能拿來做什麼', href: '/blog/lora-meshtastic-intro' },
+    ],
+    antenna: [
+      { label: '🎨 傅立葉畫畫', description: '陣列因子就是激發分布的傅立葉變換', href: '/math/fourier' },
+      { label: '🌊 不確定性原理', description: '孔徑越大、波束越窄 — 就是 Δx·Δk ≥ ½ 換了個名字', href: '/physics/uncertainty' },
+    ],
+    fresnel: [
+      { label: '🔦 雙狹縫與單光子累積', description: '繞射是同一件事，只是這裡的障礙物是一座山', href: '/physics/double-slit' },
+    ],
+    multipath: [
+      { label: '🎯 大數法則與中央極限', description: '為什麼多重反射的合成會收斂成 Rayleigh 分布', href: '/math/probstat/lln-clt' },
+      { label: '📦 機率分布動物園', description: 'Rayleigh 與指數分布長什麼樣', href: '/math/probstat/distributions' },
+    ],
+    shannon: [
+      { label: '🔥 熵與 KL 散度', description: '容量的單位是 bit，而 bit 的定義在那一頁', href: '/math/probstat/entropy' },
+    ],
+    mesh: [
+      { label: '🌪️ 當年我們拼命避免廣播風暴，Meshtastic 卻選擇擁抱它', description: '這個模擬器就是那篇文章的可操作版本', href: '/blog/meshtastic-broadcast-storm' },
+      { label: '📻 LoRa 與 Meshtastic 入門', description: '沒碰過 Meshtastic 的話先看這篇', href: '/blog/lora-meshtastic-intro' },
+    ],
+  },
+};
+
 export const MATH_SECTIONS: Record<string, MathSection> = {
   linalg: LINALG,
   calculus: CALCULUS,
   probstat: PROBSTAT,
   physics: PHYSICS,
+  rf: RF,
 };
 
 /** "📐 微積分專區" — the emoji label used by the MathPageNav fallback cards. */
