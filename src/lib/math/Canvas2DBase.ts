@@ -55,6 +55,16 @@ export abstract class Canvas2DBase {
    * Apply devicePixelRatio scaling. Called on init and whenever the canvas
    * element resizes. Reads CSS dimensions from getBoundingClientRect so the
    * stylesheet controls sizing (responsive aspect-ratio etc.).
+   *
+   * Only the backing-store size (the width/height *attributes*) is written
+   * here. It used to also pin `style.width`/`style.height` to the measured
+   * pixel size, which quietly froze the element: an inline width beats the
+   * `w-full` class, so the canvas could never grow again when its container
+   * did, and the ResizeObserver — watching an element whose box no longer
+   * changed — never fired. Widening the window left every scene rendering at
+   * its first-paint width. Every canvas in the project is sized by CSS
+   * (`w-full` plus an explicit height or aspect-ratio), so dropping the pin
+   * changes nothing on first paint and makes resizing work.
    */
   protected setupCanvas(): void {
     const dpr = window.devicePixelRatio || 1;
@@ -65,8 +75,6 @@ export abstract class Canvas2DBase {
 
     this.canvas.width = this.width * dpr;
     this.canvas.height = this.height * dpr;
-    this.canvas.style.width = `${this.width}px`;
-    this.canvas.style.height = `${this.height}px`;
 
     this.ctx.resetTransform();
     this.ctx.scale(dpr, dpr);
