@@ -1,6 +1,7 @@
 ---
 /**
- * Shared shell for every /math/ lesson page (linalg, calculus, probstat).
+ * Shared shell for every lesson page on the site — /math/ (linalg, calculus,
+ * probstat) and /physics/ alike.
  *
  * Owns the parts that were copy-pasted across all 18 lessons: the BaseLayout
  * wrapper, the outer container, the "← 回X專區" breadcrumb, the centered
@@ -21,12 +22,14 @@ interface Props {
   slug: string;
   seoTitle: string;
   seoDescription: string;
+  /** navbar highlight key — 'math' for /math/ lessons, 'physics' for /physics/ */
+  currentPage?: string;
 }
 
-const { section, slug, seoTitle, seoDescription } = Astro.props;
+const { section, slug, seoTitle, seoDescription, currentPage = 'math' } = Astro.props;
 const header = getLessonHeader(section, slug);
 ---
-<BaseLayout currentPage="math" title={seoTitle} description={seoDescription}>
+<BaseLayout currentPage={currentPage} title={seoTitle} description={seoDescription}>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
     <a href={header.indexHref} class="text-accent-blue hover:underline text-sm">← {header.backLabel}</a>
 
