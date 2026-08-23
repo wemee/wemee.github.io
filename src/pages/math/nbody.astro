@@ -1,0 +1,447 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { NBODY_PRESETS } from '@/lib/math/nbody/presets';
+
+const speeds = [0.25, 0.5, 1, 2, 4];
+---
+
+<BaseLayout currentPage="math"
+  title="N 體運動模擬器 | 二體穩定、三體混沌的互動視覺化"
+  description="互動式 N 體重力模擬：用辛積分器 (velocity Verlet) 觀察二體軌道為何穩定、三體為何混沌。內建雙軌對照 — 兩個只差 δ 的初始條件同時跑，直接看見對初始條件的敏感依賴，並估計分離指數 λ。支援 2 到 10 個天體。"
+>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-12">
+
+    <!-- 標題 -->
+    <header class="mb-8 border-b border-base-600/60 pb-6">
+      <p class="text-xs tracking-[0.25em] uppercase text-accent-cyan mb-2">Gravitational N-Body</p>
+      <h1 class="text-3xl sm:text-4xl font-bold text-base-50 mb-3">🪐 N 體運動模擬器</h1>
+      <p class="text-base-400 max-w-3xl leading-relaxed">
+        兩個天體互繞，軌道會永遠閉合；加上第三個，軌道就再也算不出來了。
+        這一頁把「<strong class="text-base-100">二體穩定、三體混沌</strong>」擺在同一個畫面上比較 ——
+        而且不是靠「看起來很亂」，是靠<strong class="text-base-100">雙軌對照</strong>：同時跑兩份只差 δ 的模擬，看它們什麼時候分家。
+      </p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- 左：模擬畫面 + 分離曲線 -->
+      <div class="lg:col-span-2 space-y-4">
+        <div class="relative rounded-lg border border-base-600 bg-base-900 overflow-hidden shadow-lg">
+          <canvas id="nbodyCanvas" class="w-full block" style="aspect-ratio: 16 / 10; max-height: 520px;"></canvas>
+          <div id="legend" class="absolute top-3 right-3 flex flex-col items-end gap-1 pointer-events-none"></div>
+        </div>
+
+        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <div class="px-4 py-2 bg-base-600/30 border-b border-base-600 flex flex-wrap items-baseline justify-between gap-2">
+            <span class="text-sm text-base-50">雙軌分離距離 d(t)　<span class="text-base-400 font-normal">對數座標</span></span>
+            <span class="text-xs text-base-400">
+              <span class="text-accent-magenta">━</span> d(t)　
+              <span class="text-accent-yellow">┅</span> 指數擬合　
+              <span class="text-accent-orange">┅</span> 飽和（系統尺度）
+            </span>
+          </div>
+          <canvas id="divergenceCanvas" class="w-full block" style="aspect-ratio: 7 / 2; max-height: 190px;"></canvas>
+        </div>
+
+        <p class="text-sm text-base-500 leading-relaxed px-1">
+          在對數座標上，<strong class="text-base-300">直線 = 指數成長 = 混沌</strong>；
+          曲線往右壓平、斜率越來越小，代表分離只是<strong class="text-base-300">多項式成長</strong>，那是規律運動。
+          兩者的差別不在「亂不亂」，在這條線是不是直的。
+        </p>
+      </div>
+
+      <!-- 右：控制面板 -->
+      <div class="space-y-4">
+
+        <!-- 情境 -->
+        <section class="rounded-lg border border-accent-cyan/60 bg-base-800 overflow-hidden">
+          <h2 class="px-4 py-2 bg-accent-cyan/15 border-b border-base-600 text-base-50 text-sm font-semibold">情境</h2>
+          <div class="p-3">
+            <div id="presetGroup" class="grid grid-cols-2 gap-2">
+              {NBODY_PRESETS.map((p) => (
+                <button
+                  type="button"
+                  data-preset={p.id}
+                  class="preset-btn px-2 py-2 rounded border border-base-600 text-base-300 hover:bg-base-600/40 text-xs leading-tight transition text-left"
+                >
+                  <span class="block text-base leading-none mb-1">{p.emoji}</span>
+                  {p.name}
+                </button>
+              ))}
+            </div>
+            <p id="presetBlurb" class="mt-3 text-xs text-base-400 leading-relaxed border-l-2 border-accent-cyan/60 pl-3"></p>
+          </div>
+        </section>
+
+        <!-- 播放 -->
+        <section class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <h2 class="px-4 py-2 bg-base-600/30 border-b border-base-600 text-base-50 text-sm font-semibold">播放</h2>
+          <div class="p-4 space-y-3">
+            <div class="grid grid-cols-3 gap-2">
+              <button id="playBtn" type="button" class="px-3 py-2 rounded bg-accent-green hover:bg-accent-green/80 text-base-50 font-medium transition">▶ 播放</button>
+              <button id="resetBtn" type="button" class="px-3 py-2 rounded border border-base-600 text-base-300 hover:bg-base-600 font-medium transition">↺ 重置</button>
+              <button id="rerollBtn" type="button" class="px-3 py-2 rounded border border-base-600 text-base-300 hover:bg-base-600 font-medium transition disabled:opacity-40 disabled:cursor-not-allowed">🎲 重擲</button>
+            </div>
+            <div>
+              <span class="block text-xs text-base-400 mb-1">速度</span>
+              <div id="speedGroup" class="grid grid-cols-5 gap-1">
+                {speeds.map((s) => (
+                  <button type="button" data-speed={s} class="speed-btn px-1 py-1 rounded border border-accent-blue/70 text-accent-blue hover:bg-accent-blue/10 text-xs transition">{s}×</button>
+                ))}
+              </div>
+            </div>
+            <p class="text-xs text-base-600">快捷鍵：<kbd class="text-base-400">空白鍵</kbd> 播放／暫停、<kbd class="text-base-400">R</kbd> 重置</p>
+          </div>
+        </section>
+
+        <!-- 參數 -->
+        <section class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
+          <h2 class="px-4 py-2 bg-base-600/30 border-b border-base-600 text-base-50 text-sm font-semibold">參數</h2>
+          <div class="p-4 space-y-4">
+            <div>
+              <label for="bodyCount" class="flex justify-between text-sm mb-1">
+                <span class="text-base-400">天體數量 N</span>
+                <span id="bodyCountValue" class="text-base-50">2</span>
+              </label>
+              <input type="range" id="bodyCount" min="2" max="10" step="1" value="4" class="w-full disabled:opacity-40">
+              <p id="bodyCountHint" class="text-xs text-base-600 mt-1">只有「隨機 N 體」情境可以調整</p>
+            </div>
+
+            <div>
+              <label for="deltaExp" class="flex justify-between text-sm mb-1">
+                <span class="text-accent-magenta">初始擾動 δ</span>
+                <span id="deltaValue" class="text-base-50 font-mono">1e-6</span>
+              </label>
+              <input type="range" id="deltaExp" min="-12" max="-2" step="0.5" value="-6" class="w-full">
+              <p class="text-xs text-base-600 mt-1">第二份模擬只有第一顆天體的 x 座標差這麼多</p>
+            </div>
+
+            <div>
+              <label for="softeningExp" class="flex justify-between text-sm mb-1">
+                <span class="text-base-400">軟化長度 ε</span>
+                <span id="softeningValue" class="text-base-50 font-mono">0.010</span>
+              </label>
+              <input type="range" id="softeningExp" min="-3" max="-0.7" step="0.05" value="-2" class="w-full">
+              <p class="text-xs text-base-600 mt-1">防止近距離飛掠時 1/r² 發散；調太大軌道會失真</p>
+            </div>
+
+            <div>
+              <label for="trailSeconds" class="flex justify-between text-sm mb-1">
+                <span class="text-base-400">拖尾長度</span>
+                <span id="trailValue" class="text-base-50">8.0</span>
+              </label>
+              <input type="range" id="trailSeconds" min="1" max="30" step="0.5" value="8" class="w-full">
+            </div>
+
+            <div>
+              <label for="zoom" class="flex justify-between text-sm mb-1">
+                <span class="text-base-400">縮放</span>
+                <span id="zoomValue" class="text-base-50">1.00×</span>
+              </label>
+              <input type="range" id="zoom" min="0.3" max="3" step="0.05" value="1" class="w-full">
+            </div>
+
+            <div class="space-y-2 pt-1">
+              <label class="flex items-center gap-2 text-sm text-base-400 cursor-pointer">
+                <input type="checkbox" id="showTwin" checked class="accent-current"> 顯示雙軌（虛線鬼影）
+              </label>
+              <label class="flex items-center gap-2 text-sm text-base-400 cursor-pointer">
+                <input type="checkbox" id="autoFit" checked class="accent-current"> 視野自動貼合
+              </label>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- 讀數 -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+      <div class="rounded-lg border border-accent-green bg-base-800 p-4">
+        <h3 class="text-xs text-base-500 mb-1">能量漂移 |ΔE / E₀|</h3>
+        <p class="text-2xl font-bold text-base-50 font-mono" id="statDrift">--</p>
+        <p class="text-xs text-base-600 mt-1">辛積分器的證據：它應該一直很小</p>
+      </div>
+      <div class="rounded-lg border border-accent-blue bg-base-800 p-4">
+        <h3 class="text-xs text-base-500 mb-1">總能量 E</h3>
+        <p class="text-2xl font-bold text-base-50 font-mono" id="statEnergy">--</p>
+        <p class="text-xs text-base-600 mt-1">E &lt; 0 表示系統整體束縛住</p>
+      </div>
+      <div class="rounded-lg border border-accent-violet bg-base-800 p-4">
+        <h3 class="text-xs text-base-500 mb-1">角動量 L</h3>
+        <p class="text-2xl font-bold text-base-50 font-mono" id="statAngular">--</p>
+        <p class="text-xs text-base-600 mt-1">另一個該守恆的量</p>
+      </div>
+      <div class="rounded-lg border border-accent-magenta bg-base-800 p-4">
+        <h3 class="text-xs text-base-500 mb-1">雙軌分離 d(t)</h3>
+        <p class="text-2xl font-bold text-base-50 font-mono" id="statSeparation">--</p>
+        <p class="text-xs text-base-600 mt-1" id="statLambda">λ̂ 尚未估計</p>
+      </div>
+    </div>
+
+    <!-- 說明 -->
+    <section class="rounded-lg bg-base-800/50 mt-8 p-6">
+      <h2 class="text-xl font-bold text-base-50 mb-4">🔬 為什麼二體算得出來，三體算不出來？</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+          <h3 class="font-bold mb-2 text-accent-green">二體：守恆量剛好夠用</h3>
+          <p class="text-sm text-base-400 leading-relaxed">
+            兩個天體在平面上有 8 個自由度，但動量、角動量、能量、還有 Laplace–Runge–Lenz 向量
+            把它們一路約束到只剩沿著圓錐曲線跑。方程式有封閉解，軌道永遠閉合，
+            一千年後在哪裡都能直接算出來 —— 不用一步一步跑。
+          </p>
+        </div>
+        <div>
+          <h3 class="font-bold mb-2 text-accent-orange">三體：守恆量不夠了</h3>
+          <p class="text-sm text-base-400 leading-relaxed">
+            多一個天體，自由度變 12，守恆量卻沒跟著變多。Poincaré 證明了三體問題不存在
+            足夠的解析積分，系統可以在相空間裡到處亂繞。
+            結果就是<strong class="text-base-100">對初始條件的敏感依賴</strong>：
+            差一奈米，幾圈之後就是完全不同的命運。
+          </p>
+        </div>
+        <div>
+          <h3 class="font-bold mb-2 text-accent-cyan">但「三體」不等於「混沌」</h3>
+          <p class="text-sm text-base-400 leading-relaxed">
+            太陽-行星-衛星是三體，卻穩得可以拿來對時。關鍵不是數量，是
+            <strong class="text-base-100">層級分離</strong>：內外軌道尺度差夠遠，
+            內圈就只感覺到外圈的平均效果。試試「雙雙星（4 體）」—— 四個天體照樣穩。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="rounded-lg bg-accent-cyan/10 border border-accent-cyan/30 mt-6 p-6">
+      <h2 class="text-xl font-bold text-base-50 mb-3">🧭 怎麼玩才看得到重點</h2>
+      <ol class="text-base-400 text-sm leading-relaxed space-y-2 list-decimal list-inside">
+        <li><strong class="text-base-100">先跑「雙星互繞」</strong>，盯著「能量漂移」—— 它會一直停在 10⁻⁸ 上下不動。這證明畫面上看到的穩定是真的物理，不是積分器剛好沒壞。下面的 d(t) 曲線會彎、會壓平，那是規律運動的簽名。</li>
+        <li><strong class="text-base-100">切到「畢氏三體」</strong>。同樣的 δ，d(t) 這次是一條直線一路衝到飽和線，λ̂ 明顯大於零。虛線鬼影會在某個瞬間跟本尊分家 —— 那一刻之後，兩份模擬就是兩個不同的宇宙了。</li>
+        <li><strong class="text-base-100">再玩「八字形三體」</strong>。它是三體問題的精確解，漂亮到不像真的。把 δ 從 1e-12 一路調到 1e-4，看它撐多久才崩 —— 穩定和強韌是兩回事。</li>
+        <li><strong class="text-base-100">「拉格朗日三角」放著別動</strong>。它也是精確解，但等質量時線性不穩定，你什麼都不用做它就會自己解體。</li>
+        <li><strong class="text-base-100">最後把 N 拉到 10</strong>。看逃逸體被彈射出去（畫面邊緣會有小箭頭指著它），剩下的塌縮成緊密雙星 —— 這是 N 體系統最典型的下場。</li>
+      </ol>
+    </section>
+
+    <section class="rounded-lg bg-base-800/50 mt-6 p-6">
+      <h2 class="text-xl font-bold text-base-50 mb-4">⚙️ 這個模擬器裡面在做什麼</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-base-400 leading-relaxed">
+        <div>
+          <h3 class="font-bold mb-2 text-base-100">辛積分器 (velocity Verlet)</h3>
+          <p>
+            用最直覺的 Euler 積分，二體圓軌道會在幾秒內肉眼可見地向外螺旋 —— 那是積分器在偷偷灌能量，
+            不是物理。Verlet 是<strong class="text-base-100">辛 (symplectic)</strong> 積分器：
+            能量會在真值附近小幅震盪，但不會單向漂走。所以「能量漂移」那格才有資格當穩定性的證據。
+          </p>
+          <p class="mt-2">
+            時間步長固定為 dt = 5×10⁻⁴，用 accumulator 跟畫面更新率脫鉤。
+            這樣同一組初始條件在任何裝置上跑出來都一樣，
+            雙軌之間的差異才能保證真的只來自 δ。
+          </p>
+        </div>
+        <div>
+          <h3 class="font-bold mb-2 text-base-100">軟化長度 ε 與 λ̂</h3>
+          <p>
+            重力 1/r² 在 r → 0 時發散，固定步長遇到近距離飛掠必炸。這裡改算
+            (r² + ε²)，而且<strong class="text-base-100">位能也用同一個 ε</strong> ——
+            這樣軟化後的系統有一個精確守恆的 Hamiltonian，漂移讀數才不會騙人。
+          </p>
+          <p class="mt-2">
+            λ̂ 是把 ln d(t) 對 t 做最小平方擬合得到的斜率，取樣範圍限制在
+            「已脫離 δ 的雜訊底線、但還沒撞到系統尺度」之間。
+            它是<strong class="text-base-100">有限時間的估計</strong>，不是嚴格的 Lyapunov 指數 ——
+            當成「這條線有多直、多陡」的量化指標來看就好。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <div class="text-center mt-8">
+      <a href="/math/" class="inline-block px-4 py-2 rounded border border-base-600 text-base-400 hover:bg-base-600 transition">← 返回數學工具</a>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .preset-btn.active {
+    background-color: color-mix(in srgb, var(--color-accent-cyan) 25%, transparent);
+    border-color: var(--color-accent-cyan);
+    color: var(--color-base-50);
+  }
+  .speed-btn.active {
+    background-color: var(--color-accent-blue);
+    border-color: var(--color-accent-blue);
+    color: var(--color-base-50);
+  }
+  kbd {
+    border: 1px solid var(--color-base-600);
+    border-radius: 3px;
+    padding: 0 4px;
+    font-size: 0.9em;
+  }
+</style>
+
+<script>
+  import { NBodyScene } from '@/lib/math/nbody/NBodyScene';
+  import { NBODY_PRESETS } from '@/lib/math/nbody/presets';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+
+    const playBtn = $<HTMLButtonElement>('playBtn');
+    const resetBtn = $<HTMLButtonElement>('resetBtn');
+    const rerollBtn = $<HTMLButtonElement>('rerollBtn');
+    const presetGroup = $<HTMLDivElement>('presetGroup');
+    const presetBlurb = $<HTMLParagraphElement>('presetBlurb');
+    const speedGroup = $<HTMLDivElement>('speedGroup');
+    const legend = $<HTMLDivElement>('legend');
+
+    const bodyCount = $<HTMLInputElement>('bodyCount');
+    const bodyCountValue = $<HTMLSpanElement>('bodyCountValue');
+    const bodyCountHint = $<HTMLParagraphElement>('bodyCountHint');
+    const deltaExp = $<HTMLInputElement>('deltaExp');
+    const deltaValue = $<HTMLSpanElement>('deltaValue');
+    const softeningExp = $<HTMLInputElement>('softeningExp');
+    const softeningValue = $<HTMLSpanElement>('softeningValue');
+    const trailSeconds = $<HTMLInputElement>('trailSeconds');
+    const trailValue = $<HTMLSpanElement>('trailValue');
+    const zoom = $<HTMLInputElement>('zoom');
+    const zoomValue = $<HTMLSpanElement>('zoomValue');
+    const showTwin = $<HTMLInputElement>('showTwin');
+    const autoFit = $<HTMLInputElement>('autoFit');
+
+    const statDrift = $<HTMLParagraphElement>('statDrift');
+    const statEnergy = $<HTMLParagraphElement>('statEnergy');
+    const statAngular = $<HTMLParagraphElement>('statAngular');
+    const statSeparation = $<HTMLParagraphElement>('statSeparation');
+    const statLambda = $<HTMLParagraphElement>('statLambda');
+
+    const sci = (v: number, digits = 2) =>
+      Math.abs(v) >= 1e-3 && Math.abs(v) < 1e4 ? v.toFixed(digits + 1) : v.toExponential(digits);
+
+    const scene = new NBodyScene({
+      canvasId: 'nbodyCanvas',
+      chartCanvasId: 'divergenceCanvas',
+      callbacks: {
+        onStats: (s) => {
+          statDrift.textContent = s.energyDrift.toExponential(2);
+          statDrift.style.color = s.energyDrift > 1e-3 ? 'var(--color-accent-red)' : 'var(--color-base-50)';
+          statEnergy.textContent = sci(s.energy);
+          statAngular.textContent = sci(s.angularMomentum);
+          statSeparation.textContent = s.separation.toExponential(2);
+          if (s.lambda === null) {
+            statLambda.textContent = 'λ̂ 尚未估計';
+          } else {
+            statLambda.textContent = `λ̂ ≈ ${s.lambda.toFixed(3)}${s.saturated ? '（已飽和）' : ''}`;
+          }
+        },
+        onBodies: (bodies) => {
+          legend.innerHTML = bodies
+            .map(
+              (b) =>
+                `<span class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-base-900/80 border border-base-600/70 text-[11px] text-base-300">
+                   <span style="background:${b.color}" class="inline-block w-2 h-2 rounded-full"></span>
+                   ${b.label}<span class="hidden sm:inline text-base-600">m=${b.mass.toFixed(2)}</span>
+                 </span>`,
+            )
+            .join('');
+        },
+        onRunningChange: (running) => {
+          playBtn.textContent = running ? '⏸ 暫停' : '▶ 播放';
+          playBtn.className = running
+            ? 'px-3 py-2 rounded bg-accent-yellow hover:bg-accent-yellow/80 text-base-900 font-medium transition'
+            : 'px-3 py-2 rounded bg-accent-green hover:bg-accent-green/80 text-base-50 font-medium transition';
+        },
+      },
+    });
+
+    // --- 情境切換 ---
+    const syncPresetUi = () => {
+      const preset = NBODY_PRESETS.find((p) => p.id === scene.presetId)!;
+      presetBlurb.textContent = preset.blurb;
+      presetGroup.querySelectorAll<HTMLButtonElement>('.preset-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.preset === preset.id);
+      });
+
+      const variable = preset.variableN === true;
+      bodyCount.disabled = !variable;
+      rerollBtn.disabled = !variable;
+      bodyCountHint.textContent = variable
+        ? '拉大 N，看逃逸與雙星俘獲提早發生'
+        : '只有「隨機 N 體」情境可以調整';
+
+      // Presets carry their own ε (the figure-eight needs a much smaller one).
+      const eps = scene.currentSoftening;
+      softeningExp.value = String(Math.log10(eps));
+      softeningValue.textContent = eps.toFixed(3);
+    };
+
+    presetGroup.querySelectorAll<HTMLButtonElement>('.preset-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        scene.loadPreset(btn.dataset.preset || 'binary');
+        syncPresetUi();
+      });
+    });
+
+    // --- 播放控制 ---
+    playBtn.addEventListener('click', () => scene.toggle());
+    resetBtn.addEventListener('click', () => scene.reset());
+    rerollBtn.addEventListener('click', () => scene.reroll());
+
+    speedGroup.querySelectorAll<HTMLButtonElement>('.speed-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        speedGroup.querySelectorAll('.speed-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        scene.setSpeed(parseFloat(btn.dataset.speed || '1'));
+      });
+    });
+    speedGroup.querySelector<HTMLButtonElement>('[data-speed="1"]')?.classList.add('active');
+
+    // --- 參數 ---
+    bodyCount.addEventListener('input', () => {
+      bodyCountValue.textContent = bodyCount.value;
+      scene.setBodyCount(parseInt(bodyCount.value, 10));
+    });
+
+    deltaExp.addEventListener('input', () => {
+      const delta = Math.pow(10, parseFloat(deltaExp.value));
+      deltaValue.textContent = delta.toExponential(0);
+      scene.setDelta(delta);
+    });
+
+    softeningExp.addEventListener('input', () => {
+      const eps = Math.pow(10, parseFloat(softeningExp.value));
+      softeningValue.textContent = eps.toFixed(3);
+      scene.setSoftening(eps);
+    });
+
+    trailSeconds.addEventListener('input', () => {
+      trailValue.textContent = parseFloat(trailSeconds.value).toFixed(1);
+      scene.setTrailSeconds(parseFloat(trailSeconds.value));
+    });
+
+    zoom.addEventListener('input', () => {
+      zoomValue.textContent = `${parseFloat(zoom.value).toFixed(2)}×`;
+      scene.setZoom(parseFloat(zoom.value));
+    });
+
+    showTwin.addEventListener('change', () => scene.setShowTwin(showTwin.checked));
+    autoFit.addEventListener('change', () => scene.setAutoFit(autoFit.checked));
+
+    // --- 快捷鍵 ---
+    window.addEventListener('keydown', (e) => {
+      const target = e.target as HTMLElement | null;
+      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        scene.toggle();
+      } else if (e.key === 'r' || e.key === 'R') {
+        scene.reset();
+      }
+    });
+
+    bodyCountValue.textContent = bodyCount.value;
+    scene.setBodyCount(parseInt(bodyCount.value, 10));
+    syncPresetUi();
+
+    window.addEventListener('beforeunload', () => scene.destroy());
+  });
+</script>
