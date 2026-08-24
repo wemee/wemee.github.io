@@ -11,7 +11,7 @@
  * still share a frame rate, but the run would not be reproducible between
  * machines, and the energy drift would depend on the user's monitor.
  */
-import { Canvas2DBase, type Canvas2DBaseOptions } from '../Canvas2DBase';
+import { Canvas2DBase, type Canvas2DBaseOptions } from '../../math/Canvas2DBase';
 import { NBodyCore, type BodySnapshot } from './NBodyCore';
 import { DivergenceChart, type DivergenceFit } from './DivergenceChart';
 import { BODY_COLORS, getPreset, type NBodyPreset } from './presets';

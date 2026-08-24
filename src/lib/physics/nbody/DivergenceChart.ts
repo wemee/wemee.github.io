@@ -12,7 +12,7 @@
  * finite-time estimate, not a true Lyapunov exponent, and labelled as such
  * on the page.
  */
-import { Canvas2DBase } from '../Canvas2DBase';
+import { Canvas2DBase } from '../../math/Canvas2DBase';
 
 export interface DivergenceFit {
   lambda: number;

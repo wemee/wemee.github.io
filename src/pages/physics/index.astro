@@ -19,6 +19,22 @@ interface Lesson {
   uses: { label: string; href: string }[];
 }
 
+/** Standalone simulators — not part of the three-chapter arc. */
+const standalone = [
+  {
+    title: '🪐 N 體運動模擬器',
+    description: '重力多體：二體為何穩定、三體為何混沌。兩個只差 δ 的初始條件同時跑，直接看見對初始條件的敏感依賴。',
+    href: '/physics/nbody',
+    color: 'info',
+  },
+  {
+    title: '🚗 交通流體力學',
+    description: '沒有事故、沒有路口，塞車還是憑空出現。看幽靈塞車如何從一個煞車動作長成一列往後傳播的波。',
+    href: '/physics/traffic',
+    color: 'danger',
+  },
+];
+
 const lessons: Lesson[] = [
   {
     title: '🪀 耦合振子與正常模態',
@@ -82,7 +98,7 @@ const lessons: Lesson[] = [
 <BaseLayout
   currentPage="physics"
   title="物理視覺化"
-  description="從耦合振子到貝爾不等式 — 6 頁互動式物理視覺化。每一頁都接回站內的數學專區：正常模態就是特徵向量、Ising 用的是 MCMC、不確定性原理就是傅立葉對偶。"
+  description="從耦合振子到貝爾不等式的 6 課互動式物理視覺化，外加電波專區 6 課與 N 體、交通流體力學兩個獨立模擬器。每一頁都接回站內的數學專區：正常模態就是特徵向量、Ising 用的是 MCMC、不確定性原理就是傅立葉對偶。"
 >
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-16">
     <header class="text-center mb-10">
@@ -209,22 +225,33 @@ const lessons: Lesson[] = [
       })}
     </div>
 
-    <!-- ─────────── 相關頁面 ─────────── -->
-    <section class="mt-10 rounded-lg border border-base-600 bg-base-800/60 p-6">
-      <h2 class="text-lg font-bold text-accent-cyan mb-3">🔭 站上其他物理相關的頁面</h2>
-      <div class="grid md:grid-cols-2 gap-4 text-sm text-base-300 leading-relaxed">
-        <p>
-          <a href="/math/nbody" class="text-accent-blue hover:underline font-medium">🪐 N 體運動模擬器</a>
-          — 重力多體：二體為何穩定、三體為何混沌，用雙軌對照直接看見對初始條件的敏感依賴。
-        </p>
-        <p>
-          <a href="/math/traffic" class="text-accent-blue hover:underline font-medium">🚗 交通流體力學</a>
-          — 幽靈塞車如何從一個煞車動作長成一列反向傳播的波。
-        </p>
-      </div>
-      <p class="text-xs text-base-500 mt-3">
-        這兩頁目前還掛在 /math/ 底下。等物理累積得再多一些，會一起搬過來並保留轉址。
+    <!-- ─────────── 獨立工具 ─────────── -->
+    <section class="mt-10">
+      <h2 class="text-lg font-bold text-accent-cyan mb-1">🔭 獨立模擬器</h2>
+      <p class="text-base-400 text-sm mb-4">
+        不屬於上面那條課程線，各自成篇 — 都是「規則很簡單，行為卻不簡單」的系統。
       </p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {standalone.map((tool) => {
+          const colors = colorMap[tool.color];
+          return (
+            <div class={`flex flex-col rounded-lg border ${colors.border} bg-base-800 h-full`}>
+              <div class="p-5 flex-1">
+                <h5 class="text-lg font-semibold text-base-50 mb-2">{tool.title}</h5>
+                <p class="text-base-400 text-sm">{tool.description}</p>
+              </div>
+              <div class="px-5 pb-5">
+                <a
+                  href={tool.href}
+                  class={`block text-center px-4 py-2 rounded ${colors.bg} ${colors.hover} text-base-50 font-medium transition`}
+                >
+                  打開模擬器 →
+                </a>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </section>
   </div>
 

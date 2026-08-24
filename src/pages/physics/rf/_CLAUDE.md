@@ -110,8 +110,8 @@ scripts/rf-check/          # npm run check:rf
 
 ## 待辦
 
-- **`/math/nbody` 與 `/math/traffic` 仍掛在數學底下**，與 `../_CLAUDE.md` 記的是同一件事。
-- **navbar 的物理下拉已經有 15 項**（6 課 + 電波專區 6 課 + 兩個專區入口）。再長就該比照 `/lab/`
-  只列到專區層級。
+- ~~`/math/nbody` 與 `/math/traffic` 仍掛在數學底下~~ — 2026-08-24 已搬進 `/physics/`，
+  轉址設定見 `astro.config.mjs`。
+- **navbar 的物理下拉已經有 17 項**。再長就該比照 `/lab/` 只列到專區層級。
 - 可能的後續：都會區路徑損耗模型（Hata / COST-231）、OFDM 與頻率選擇性衰落、
   LoRa chirp 展頻本身的解調過程。

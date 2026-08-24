@@ -39,14 +39,27 @@ function publicDirIndexFallback() {
   };
 }
 
+// N 體模擬與交通流體力學原本掛在 /math/ 底下，2026-08-24 搬進 /physics/。
+// GitHub Pages 是純靜態、沒有伺服器端 301，Astro 只能產生 meta-refresh 的轉址頁
+// （訊號比 301 弱，但至少不會留下死連結）。舊網址已經被索引，也散在部落格文章與
+// 站外連結裡，所以這兩條要長期保留，不要因為「看起來沒人用」就刪掉。
+const MOVED_TO_PHYSICS = {
+  '/math/nbody': '/physics/nbody',
+  '/math/traffic': '/physics/traffic',
+};
+
 export default defineConfig({
   site: 'https://wemee.github.io',
   output: 'static',
+  redirects: MOVED_TO_PHYSICS,
   integrations: [
     sitemap({
-      // /html-css-/ 是保留給 iThome 外連的舊網址轉址頁（見 src/pages/html-css-/），
-      // 本身沒有內容，不該被列進 sitemap 當成可索引頁面。
-      filter: (page) => !page.includes('/html-css-/'),
+      // 轉址頁本身沒有內容，不該被列進 sitemap 當成可索引頁面：
+      //   /html-css-/        保留給 iThome 外連的舊網址（見 src/pages/html-css-/）
+      //   MOVED_TO_PHYSICS   搬家後留下的 meta-refresh 轉址頁
+      filter: (page) =>
+        !page.includes('/html-css-/') &&
+        !Object.keys(MOVED_TO_PHYSICS).some((from) => page.replace(/\/$/, '').endsWith(from)),
     }),
     react(),
   ],

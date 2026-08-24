@@ -5,7 +5,7 @@ description: "從 IDM 智慧駕駛模型開始，逐步加入隨機減速與反�
 author: "wemee (with AI assistant)"
 tags: ["simulation", "physics", "traffic", "idm", "javascript"]
 image: "/images/blog/traffic-flow-cover.webp"
-related: ["/math/traffic/"]
+related: ["/physics/traffic/"]
 ---
 
 ## 前言
@@ -185,4 +185,4 @@ if (gap < softGap && vehicle.velocity > leader.velocity) {
 
 ---
 
-**工具連結**：[交通流體力學模擬](/math/traffic/)
+**工具連結**：[交通流體力學模擬](/physics/traffic/)

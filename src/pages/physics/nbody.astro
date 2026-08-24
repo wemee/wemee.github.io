@@ -1,11 +1,11 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { NBODY_PRESETS } from '@/lib/math/nbody/presets';
+import { NBODY_PRESETS } from '@/lib/physics/nbody/presets';
 
 const speeds = [0.25, 0.5, 1, 2, 4];
 ---
 
-<BaseLayout currentPage="math"
+<BaseLayout currentPage="physics"
   title="N 體運動模擬器 | 二體穩定、三體混沌的互動視覺化"
   description="互動式 N 體重力模擬：用辛積分器 (velocity Verlet) 觀察二體軌道為何穩定、三體為何混沌。內建雙軌對照 — 兩個只差 δ 的初始條件同時跑，直接看見對初始條件的敏感依賴，並估計分離指數 λ。支援 2 到 10 個天體。"
 >
@@ -280,8 +280,8 @@ const speeds = [0.25, 0.5, 1, 2, 4];
 </style>
 
 <script>
-  import { NBodyScene } from '@/lib/math/nbody/NBodyScene';
-  import { NBODY_PRESETS } from '@/lib/math/nbody/presets';
+  import { NBodyScene } from '@/lib/physics/nbody/NBodyScene';
+  import { NBODY_PRESETS } from '@/lib/physics/nbody/presets';
 
   document.addEventListener('DOMContentLoaded', () => {
     const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
