@@ -120,8 +120,10 @@ CHSH 的 S 是 2√2、穿隧的 R + T = 1。這些用眼睛看 canvas 是驗不
   `astro.config.mjs` 的 `MOVED_TO_PHYSICS` 留了轉址，**那兩條要長期保留** —— 舊網址已被索引，
   也散在部落格文章與站外連結裡。Astro 產生的轉址頁同時帶了 `noindex` 與 `canonical`，
   對純靜態主機來說已經是最好的做法；sitemap 用同一份 map 過濾掉它們。
-- **navbar 深度**：物理 dropdown 目前列出全部 12 課再加兩個獨立模擬器，共 17 項。
-  該比照 `/lab/` 只列到專區層級。數學那邊 26 項的瘦身也尚未執行。
+- **navbar 深度規則**：物理 dropdown 只列到**專區層級**（兩個專區 + 兩個獨立模擬器），
+  比照 `/lab/` 的做法。曾經列出全部 12 課，選單直接變成 sitemap。新增專區或獨立模擬器才加進去，
+  單一課程一律不加 —— ⌘K 搜尋找單一課程比捲選單快。
+  **數學那邊 26 項的瘦身尚未執行**，是另一件待辦。
 
 - **rAF 與瀏覽器 QA**：所有 scene 都靠 `requestAnimationFrame`。Chrome 視窗被遮住時
   `visibilityState` 會變 `hidden`，rAF **完全不跑**，畫面與數字都會凍在初始值。

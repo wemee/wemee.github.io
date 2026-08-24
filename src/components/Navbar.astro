@@ -41,26 +41,17 @@ const navItems = [
       { href: '/math/dot-product', label: '🏹 向量內積視覺化' },
     ]
   },
+  // Depth rule: this dropdown stops at 專區 level, like 程式實驗室 does. Listing
+  // all 12 lessons here turned the menu into a sitemap; the 專區 index pages are
+  // where the lesson lists belong, and ⌘K search finds any single lesson faster
+  // than scrolling a menu ever will. Add a new 專區 or a new standalone
+  // simulator here — never an individual lesson.
   {
     label: '物理',
     key: 'physics',
     items: [
-      { href: '/physics/', label: '⚛️ 物理專區' },
-      { divider: true },
-      { href: '/physics/coupled-oscillator', label: '　🪀 耦合振子與正常模態' },
-      { href: '/physics/ising', label: '　🧲 二維 Ising 與相變' },
-      { href: '/physics/uncertainty', label: '　🌊 不確定性原理' },
-      { href: '/physics/double-slit', label: '　🔦 雙狹縫與單光子' },
-      { href: '/physics/tunneling', label: '　🚧 量子穿隧' },
-      { href: '/physics/bell', label: '　🔗 貝爾不等式' },
-      { divider: true },
-      { href: '/physics/rf/', label: '📡 電波專區' },
-      { href: '/physics/rf/link-budget', label: '　📉 路徑損耗與鏈路預算' },
-      { href: '/physics/rf/antenna', label: '　📶 天線陣列與波束成形' },
-      { href: '/physics/rf/fresnel', label: '　⛰️ 菲涅耳區與刀鋒繞射' },
-      { href: '/physics/rf/multipath', label: '　🌫️ 多路徑衰落與都卜勒' },
-      { href: '/physics/rf/shannon', label: '　🧮 香農容量極限' },
-      { href: '/physics/rf/mesh', label: '　🕸️ 多跳網路與廣播抑制' },
+      { href: '/physics/', label: '⚛️ 物理專區 · 6 課' },
+      { href: '/physics/rf/', label: '📡 電波專區 · 6 課' },
       { divider: true },
       { href: '/physics/nbody', label: '🪐 N 體運動模擬器' },
       { href: '/physics/traffic', label: '🚗 交通流體力學' },
