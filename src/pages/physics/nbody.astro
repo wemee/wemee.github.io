@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import '@/styles/physics.css';
 import { NBODY_PRESETS } from '@/lib/physics/nbody/presets';
 
 const speeds = [0.25, 0.5, 1, 2, 4];
@@ -31,9 +32,9 @@ const speeds = [0.25, 0.5, 1, 2, 4];
           <div id="legend" class="absolute top-3 right-3 flex flex-col items-end gap-1 pointer-events-none"></div>
         </div>
 
-        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
-          <div class="px-4 py-2 bg-base-600/30 border-b border-base-600 flex flex-wrap items-baseline justify-between gap-2">
-            <span class="text-sm text-base-50">雙軌分離距離 d(t)　<span class="text-base-400 font-normal">對數座標</span></span>
+        <div class="phy-panel">
+          <div class="head flex flex-wrap items-baseline justify-between gap-2">
+            <span>雙軌分離距離 d(t)　<span class="text-base-400 font-normal">對數座標</span></span>
             <span class="text-xs text-base-400">
               <span class="text-accent-magenta">━</span> d(t)　
               <span class="text-accent-yellow">┅</span> 指數擬合　
@@ -54,15 +55,15 @@ const speeds = [0.25, 0.5, 1, 2, 4];
       <div class="space-y-4">
 
         <!-- 情境 -->
-        <section class="rounded-lg border border-accent-cyan/60 bg-base-800 overflow-hidden">
-          <h2 class="px-4 py-2 bg-accent-cyan/15 border-b border-base-600 text-base-50 text-sm font-semibold">情境</h2>
-          <div class="p-3">
+        <section class="phy-panel">
+          <h2 class="head">情境</h2>
+          <div class="body">
             <div id="presetGroup" class="grid grid-cols-2 gap-2">
               {NBODY_PRESETS.map((p) => (
                 <button
                   type="button"
                   data-preset={p.id}
-                  class="preset-btn px-2 py-2 rounded border border-base-600 text-base-300 hover:bg-base-600/40 text-xs leading-tight transition text-left"
+                  class="preset-btn phy-btn text-xs leading-tight text-left"
                 >
                   <span class="block text-base leading-none mb-1">{p.emoji}</span>
                   {p.name}
@@ -74,19 +75,19 @@ const speeds = [0.25, 0.5, 1, 2, 4];
         </section>
 
         <!-- 播放 -->
-        <section class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
-          <h2 class="px-4 py-2 bg-base-600/30 border-b border-base-600 text-base-50 text-sm font-semibold">播放</h2>
-          <div class="p-4 space-y-3">
+        <section class="phy-panel">
+          <h2 class="head">播放</h2>
+          <div class="body space-y-3">
             <div class="grid grid-cols-3 gap-2">
-              <button id="playBtn" type="button" class="px-3 py-2 rounded bg-accent-green hover:bg-accent-green/80 text-base-50 font-medium transition">▶ 播放</button>
-              <button id="resetBtn" type="button" class="px-3 py-2 rounded border border-base-600 text-base-300 hover:bg-base-600 font-medium transition">↺ 重置</button>
-              <button id="rerollBtn" type="button" class="px-3 py-2 rounded border border-base-600 text-base-300 hover:bg-base-600 font-medium transition disabled:opacity-40 disabled:cursor-not-allowed">🎲 重擲</button>
+              <button id="playBtn" type="button" class="phy-btn primary">▶ 播放</button>
+              <button id="resetBtn" type="button" class="phy-btn">↺ 重置</button>
+              <button id="rerollBtn" type="button" class="phy-btn">🎲 重擲</button>
             </div>
             <div>
-              <span class="block text-xs text-base-400 mb-1">速度</span>
+              <span class="phy-label mb-1"><span>速度</span></span>
               <div id="speedGroup" class="grid grid-cols-5 gap-1">
                 {speeds.map((s) => (
-                  <button type="button" data-speed={s} class="speed-btn px-1 py-1 rounded border border-accent-blue/70 text-accent-blue hover:bg-accent-blue/10 text-xs transition">{s}×</button>
+                  <button type="button" data-speed={s} class="speed-btn phy-btn text-xs px-1">{s}×</button>
                 ))}
               </div>
             </div>
@@ -95,50 +96,50 @@ const speeds = [0.25, 0.5, 1, 2, 4];
         </section>
 
         <!-- 參數 -->
-        <section class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
-          <h2 class="px-4 py-2 bg-base-600/30 border-b border-base-600 text-base-50 text-sm font-semibold">參數</h2>
-          <div class="p-4 space-y-4">
+        <section class="phy-panel">
+          <h2 class="head">參數</h2>
+          <div class="body space-y-4">
             <div>
-              <label for="bodyCount" class="flex justify-between text-sm mb-1">
+              <label for="bodyCount" class="phy-label">
                 <span class="text-base-400">天體數量 N</span>
-                <span id="bodyCountValue" class="text-base-50">2</span>
+                <span id="bodyCountValue" class="val">2</span>
               </label>
-              <input type="range" id="bodyCount" min="2" max="10" step="1" value="4" class="w-full disabled:opacity-40">
+              <input type="range" id="bodyCount" min="2" max="10" step="1" value="4" class="phy-slider">
               <p id="bodyCountHint" class="text-xs text-base-600 mt-1">只有「隨機 N 體」情境可以調整</p>
             </div>
 
             <div>
-              <label for="deltaExp" class="flex justify-between text-sm mb-1">
+              <label for="deltaExp" class="phy-label">
                 <span class="text-accent-magenta">初始擾動 δ</span>
-                <span id="deltaValue" class="text-base-50 font-mono">1e-6</span>
+                <span id="deltaValue" class="val">1e-6</span>
               </label>
-              <input type="range" id="deltaExp" min="-12" max="-2" step="0.5" value="-6" class="w-full">
+              <input type="range" id="deltaExp" min="-12" max="-2" step="0.5" value="-6" class="phy-slider">
               <p class="text-xs text-base-600 mt-1">第二份模擬只有第一顆天體的 x 座標差這麼多</p>
             </div>
 
             <div>
-              <label for="softeningExp" class="flex justify-between text-sm mb-1">
+              <label for="softeningExp" class="phy-label">
                 <span class="text-base-400">軟化長度 ε</span>
-                <span id="softeningValue" class="text-base-50 font-mono">0.010</span>
+                <span id="softeningValue" class="val">0.010</span>
               </label>
-              <input type="range" id="softeningExp" min="-3" max="-0.7" step="0.05" value="-2" class="w-full">
+              <input type="range" id="softeningExp" min="-3" max="-0.7" step="0.05" value="-2" class="phy-slider">
               <p class="text-xs text-base-600 mt-1">防止近距離飛掠時 1/r² 發散；調太大軌道會失真</p>
             </div>
 
             <div>
-              <label for="trailSeconds" class="flex justify-between text-sm mb-1">
+              <label for="trailSeconds" class="phy-label">
                 <span class="text-base-400">拖尾長度</span>
-                <span id="trailValue" class="text-base-50">8.0</span>
+                <span id="trailValue" class="val">8.0</span>
               </label>
-              <input type="range" id="trailSeconds" min="1" max="30" step="0.5" value="8" class="w-full">
+              <input type="range" id="trailSeconds" min="1" max="30" step="0.5" value="8" class="phy-slider">
             </div>
 
             <div>
-              <label for="zoom" class="flex justify-between text-sm mb-1">
+              <label for="zoom" class="phy-label">
                 <span class="text-base-400">縮放</span>
-                <span id="zoomValue" class="text-base-50">1.00×</span>
+                <span id="zoomValue" class="val">1.00×</span>
               </label>
-              <input type="range" id="zoom" min="0.3" max="3" step="0.05" value="1" class="w-full">
+              <input type="range" id="zoom" min="0.3" max="3" step="0.05" value="1" class="phy-slider">
             </div>
 
             <div class="space-y-2 pt-1">
@@ -156,24 +157,24 @@ const speeds = [0.25, 0.5, 1, 2, 4];
 
     <!-- 讀數 -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-      <div class="rounded-lg border border-accent-green bg-base-800 p-4">
-        <h3 class="text-xs text-base-500 mb-1">能量漂移 |ΔE / E₀|</h3>
-        <p class="text-2xl font-bold text-base-50 font-mono" id="statDrift">--</p>
+      <div class="phy-tile">
+        <span class="label">能量漂移 |ΔE / E₀|</span>
+        <span class="value accent-green" id="statDrift">--</span>
         <p class="text-xs text-base-600 mt-1">辛積分器的證據：它應該一直很小</p>
       </div>
-      <div class="rounded-lg border border-accent-blue bg-base-800 p-4">
-        <h3 class="text-xs text-base-500 mb-1">總能量 E</h3>
-        <p class="text-2xl font-bold text-base-50 font-mono" id="statEnergy">--</p>
+      <div class="phy-tile">
+        <span class="label">總能量 E</span>
+        <span class="value accent-blue" id="statEnergy">--</span>
         <p class="text-xs text-base-600 mt-1">E &lt; 0 表示系統整體束縛住</p>
       </div>
-      <div class="rounded-lg border border-accent-violet bg-base-800 p-4">
-        <h3 class="text-xs text-base-500 mb-1">角動量 L</h3>
-        <p class="text-2xl font-bold text-base-50 font-mono" id="statAngular">--</p>
+      <div class="phy-tile">
+        <span class="label">角動量 L</span>
+        <span class="value accent-violet" id="statAngular">--</span>
         <p class="text-xs text-base-600 mt-1">另一個該守恆的量</p>
       </div>
-      <div class="rounded-lg border border-accent-magenta bg-base-800 p-4">
-        <h3 class="text-xs text-base-500 mb-1">雙軌分離 d(t)</h3>
-        <p class="text-2xl font-bold text-base-50 font-mono" id="statSeparation">--</p>
+      <div class="phy-tile">
+        <span class="label">雙軌分離 d(t)</span>
+        <span class="value accent-magenta" id="statSeparation">--</span>
         <p class="text-xs text-base-600 mt-1" id="statLambda">λ̂ 尚未估計</p>
       </div>
     </div>
@@ -261,16 +262,6 @@ const speeds = [0.25, 0.5, 1, 2, 4];
 </BaseLayout>
 
 <style>
-  .preset-btn.active {
-    background-color: color-mix(in srgb, var(--color-accent-cyan) 25%, transparent);
-    border-color: var(--color-accent-cyan);
-    color: var(--color-base-50);
-  }
-  .speed-btn.active {
-    background-color: var(--color-accent-blue);
-    border-color: var(--color-accent-blue);
-    color: var(--color-base-50);
-  }
   kbd {
     border: 1px solid var(--color-base-600);
     border-radius: 3px;
@@ -346,9 +337,10 @@ const speeds = [0.25, 0.5, 1, 2, 4];
         },
         onRunningChange: (running) => {
           playBtn.textContent = running ? '⏸ 暫停' : '▶ 播放';
-          playBtn.className = running
-            ? 'px-3 py-2 rounded bg-accent-yellow hover:bg-accent-yellow/80 text-base-900 font-medium transition'
-            : 'px-3 py-2 rounded bg-accent-green hover:bg-accent-green/80 text-base-50 font-medium transition';
+          // .phy-btn.primary is declared after .active-yellow in physics.css, so
+          // both cannot ride along together — swap them instead of stacking.
+          playBtn.classList.toggle('primary', !running);
+          playBtn.classList.toggle('active-yellow', running);
         },
       },
     });

@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import '@/styles/physics.css';
 ---
 
 <BaseLayout currentPage="physics"
@@ -21,14 +22,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <canvas id="trafficCanvas" class="w-full" style="aspect-ratio: 16 / 9; max-height: 450px;"></canvas>
 
           <div class="absolute top-3 right-3 flex gap-2">
-            <span class="px-2 py-1 rounded text-xs font-bold bg-accent-green text-base-50">正常車</span>
-            <span class="px-2 py-1 rounded text-xs font-bold bg-accent-red text-base-50">擾動者</span>
-            <span class="px-2 py-1 rounded text-xs font-bold bg-accent-blue text-base-50">吸收者</span>
+            <span class="phy-chip"><span class="dot" style="background: var(--color-accent-green)"></span>正常車</span>
+            <span class="phy-chip"><span class="dot" style="background: var(--color-accent-red)"></span>擾動者</span>
+            <span class="phy-chip"><span class="dot" style="background: var(--color-accent-blue)"></span>吸收者</span>
           </div>
         </div>
 
-        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
-          <div class="px-4 py-2 bg-base-600/30 border-b border-base-600 text-sm text-base-400">平均速度歷史</div>
+        <div class="phy-panel">
+          <div class="head">平均速度歷史</div>
           <div class="p-2 bg-base-900">
             <canvas id="historyChart" class="w-full" style="aspect-ratio: 12 / 1; max-height: 80px;"></canvas>
           </div>
@@ -38,86 +39,80 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <!-- 右側：控制面板 -->
       <div class="space-y-4">
         <!-- 播放控制 -->
-        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
-          <div class="px-4 py-2 bg-base-600/30 border-b border-base-600 text-base-50">控制</div>
-          <div class="p-4">
+        <div class="phy-panel">
+          <div class="head">控制</div>
+          <div class="body">
             <div class="grid grid-cols-3 gap-2 mb-4">
-              <button id="playBtn" class="px-4 py-2 rounded bg-accent-green hover:bg-accent-green/80 text-base-50 font-medium transition">
-                ▶ 播放
-              </button>
-              <button id="pauseBtn" class="px-4 py-2 rounded bg-accent-yellow hover:bg-accent-yellow/80 text-base-900 font-medium transition disabled:opacity-50" disabled>
-                ⏸ 暫停
-              </button>
-              <button id="resetBtn" class="px-4 py-2 rounded border border-base-600 text-base-400 hover:bg-base-600 font-medium transition">
-                ↺ 重置
-              </button>
+              <button id="playBtn" class="phy-btn primary">▶ 播放</button>
+              <button id="pauseBtn" class="phy-btn" disabled>⏸ 暫停</button>
+              <button id="resetBtn" class="phy-btn">↺ 重置</button>
             </div>
 
-            <label class="block text-sm text-base-400 mb-2">播放速度</label>
+            <p class="phy-label mb-2"><span>播放速度</span></p>
             <div id="speedBtnGroup" class="grid grid-cols-3 gap-2">
-              <button class="px-3 py-1 rounded border border-accent-blue text-accent-blue hover:bg-accent-blue/10 text-sm transition" data-speed="0.5">0.5x</button>
-              <button class="px-3 py-1 rounded bg-accent-blue text-base-50 text-sm transition active" data-speed="1">1x</button>
-              <button class="px-3 py-1 rounded border border-accent-blue text-accent-blue hover:bg-accent-blue/10 text-sm transition" data-speed="2">2x</button>
+              <button class="phy-btn" data-speed="0.5">0.5x</button>
+              <button class="phy-btn active" data-speed="1">1x</button>
+              <button class="phy-btn" data-speed="2">2x</button>
             </div>
           </div>
         </div>
 
         <!-- 車輛設定 -->
-        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
-          <div class="px-4 py-2 bg-base-600/30 border-b border-base-600 text-base-50">車輛設定</div>
-          <div class="p-4 space-y-4">
+        <div class="phy-panel">
+          <div class="head">車輛設定</div>
+          <div class="body space-y-4">
             <div>
-              <label class="flex justify-between text-sm mb-1">
+              <label class="phy-label" for="totalVehicles">
                 <span class="text-base-400">總車輛數</span>
-                <span id="totalVehiclesValue" class="text-base-50">30</span>
+                <span id="totalVehiclesValue" class="val">30</span>
               </label>
-              <input type="range" id="totalVehicles" min="10" max="50" value="30" class="w-full">
+              <input type="range" id="totalVehicles" min="10" max="50" value="30" class="phy-slider">
             </div>
 
             <div>
-              <label class="flex justify-between text-sm mb-1">
+              <label class="phy-label" for="normalRatio">
                 <span class="text-accent-green">正常車</span>
-                <span id="normalRatioValue" class="text-base-50">60%</span>
+                <span id="normalRatioValue" class="val">60%</span>
               </label>
-              <input type="range" id="normalRatio" min="0" max="100" value="60" class="w-full">
+              <input type="range" id="normalRatio" min="0" max="100" value="60" class="phy-slider">
             </div>
 
             <div>
-              <label class="flex justify-between text-sm mb-1">
+              <label class="phy-label" for="disruptorRatio">
                 <span class="text-accent-red">擾動者</span>
-                <span id="disruptorRatioValue" class="text-base-50">20%</span>
+                <span id="disruptorRatioValue" class="val">20%</span>
               </label>
-              <input type="range" id="disruptorRatio" min="0" max="100" value="20" class="w-full">
+              <input type="range" id="disruptorRatio" min="0" max="100" value="20" class="phy-slider">
             </div>
 
             <div>
-              <label class="flex justify-between text-sm mb-1">
+              <label class="phy-label" for="absorberRatio">
                 <span class="text-accent-blue">吸收者</span>
-                <span id="absorberRatioValue" class="text-base-50">20%</span>
+                <span id="absorberRatioValue" class="val">20%</span>
               </label>
-              <input type="range" id="absorberRatio" min="0" max="100" value="20" class="w-full">
+              <input type="range" id="absorberRatio" min="0" max="100" value="20" class="phy-slider">
             </div>
           </div>
         </div>
 
         <!-- 擾動參數 -->
-        <div class="rounded-lg border border-base-600 bg-base-800 overflow-hidden">
-          <div class="px-4 py-2 bg-base-600/30 border-b border-base-600 text-base-50">擾動參數</div>
-          <div class="p-4 space-y-4">
+        <div class="phy-panel">
+          <div class="head">擾動參數</div>
+          <div class="body space-y-4">
             <div>
-              <label class="flex justify-between text-sm mb-1">
+              <label class="phy-label" for="disruptionFreq">
                 <span class="text-base-400">擾動頻率</span>
-                <span id="disruptionFreqValue" class="text-base-50">0.5 次/秒</span>
+                <span id="disruptionFreqValue" class="val">0.5 次/秒</span>
               </label>
-              <input type="range" id="disruptionFreq" min="0.1" max="2" step="0.1" value="0.5" class="w-full">
+              <input type="range" id="disruptionFreq" min="0.1" max="2" step="0.1" value="0.5" class="phy-slider">
             </div>
 
             <div>
-              <label class="flex justify-between text-sm mb-1">
+              <label class="phy-label" for="disruptionStrength">
                 <span class="text-base-400">擾動強度</span>
-                <span id="disruptionStrengthValue" class="text-base-50">50%</span>
+                <span id="disruptionStrengthValue" class="val">50%</span>
               </label>
-              <input type="range" id="disruptionStrength" min="10" max="100" value="50" class="w-full">
+              <input type="range" id="disruptionStrength" min="10" max="100" value="50" class="phy-slider">
             </div>
           </div>
         </div>
@@ -126,17 +121,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     <!-- 統計區 -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-      <div class="rounded-lg border border-accent-blue bg-base-800 p-4 text-center">
-        <h6 class="text-base-600 text-sm mb-1">平均速度</h6>
-        <h3 class="text-2xl font-bold text-base-50" id="avgVelocity">--</h3>
+      <div class="phy-tile">
+        <span class="label">平均速度</span>
+        <span class="value accent-blue" id="avgVelocity">--</span>
       </div>
-      <div class="rounded-lg border border-accent-yellow bg-base-800 p-4 text-center">
-        <h6 class="text-base-600 text-sm mb-1">速度波動 (標準差)</h6>
-        <h3 class="text-2xl font-bold text-base-50" id="velocityStdDev">--</h3>
+      <div class="phy-tile">
+        <span class="label">速度波動 (標準差)</span>
+        <span class="value accent-yellow" id="velocityStdDev">--</span>
       </div>
-      <div class="rounded-lg border border-accent-green bg-base-800 p-4 text-center">
-        <h6 class="text-base-600 text-sm mb-1">模擬時間</h6>
-        <h3 class="text-2xl font-bold text-base-50" id="simTime">0:00</h3>
+      <div class="phy-tile">
+        <span class="label">模擬時間</span>
+        <span class="value accent-green" id="simTime">0:00</span>
       </div>
     </div>
 
@@ -181,7 +176,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     </div>
 
     <div class="text-center mt-6">
-      <a href="/math/" class="px-4 py-2 rounded border border-base-600 text-base-400 hover:bg-base-600 transition">← 返回數學工具</a>
+      <a href="/physics/" class="phy-btn">← 返回物理專區</a>
     </div>
   </div>
 </BaseLayout>
@@ -209,9 +204,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     const disruptionFreqValue = document.getElementById('disruptionFreqValue') as HTMLSpanElement;
     const disruptionStrengthValue = document.getElementById('disruptionStrengthValue') as HTMLSpanElement;
 
-    const avgVelocityEl = document.getElementById('avgVelocity') as HTMLHeadingElement;
-    const velocityStdDevEl = document.getElementById('velocityStdDev') as HTMLHeadingElement;
-    const simTimeEl = document.getElementById('simTime') as HTMLHeadingElement;
+    const avgVelocityEl = document.getElementById('avgVelocity') as HTMLSpanElement;
+    const velocityStdDevEl = document.getElementById('velocityStdDev') as HTMLSpanElement;
+    const simTimeEl = document.getElementById('simTime') as HTMLSpanElement;
 
     const sim = new TrafficSimulator('trafficCanvas', {
       onStatsUpdate: (stats) => {
@@ -261,10 +256,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 
     speedBtnGroup.querySelectorAll('button').forEach(btn => {
       btn.addEventListener('click', () => {
-        speedBtnGroup.querySelectorAll('button').forEach(b => {
-          b.className = 'px-3 py-1 rounded border border-accent-blue text-accent-blue hover:bg-accent-blue/10 text-sm transition';
-        });
-        btn.className = 'px-3 py-1 rounded bg-accent-blue text-base-50 text-sm transition active';
+        speedBtnGroup.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
         sim.setTimeScale(parseFloat(btn.dataset.speed || '1'));
       });
     });
