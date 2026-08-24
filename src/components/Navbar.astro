@@ -4,6 +4,12 @@ interface Props {
 }
 const { currentPage = '' } = Astro.props;
 
+// Depth rule for every dropdown here: stop at 專區 level, never list individual
+// lessons. 數學 once carried all 18 lessons and 物理 all 12 — at that size a menu
+// stops being navigation and becomes a sitemap you have to scroll. The 專區 index
+// pages are where lesson lists belong (all of them already list their own), and
+// ⌘K search reaches any single lesson faster than a menu ever will. So: add a new
+// 專區, or a standalone single-page tool — never a lesson.
 const navItems = [
   {
     label: '數學工具',
@@ -11,29 +17,9 @@ const navItems = [
     items: [
       { href: '/math/', label: '📐 全部工具' },
       { divider: true },
-      { href: '/math/linalg/', label: '📚 線性代數專區' },
-      { href: '/math/linalg/transform', label: '　🧊 4×4 矩陣變換' },
-      { href: '/math/linalg/composition', label: '　🔗 矩陣組合' },
-      { href: '/math/linalg/projection', label: '　📐 投影' },
-      { href: '/math/linalg/change-of-basis', label: '　🔄 換基底' },
-      { href: '/math/linalg/eigen', label: '　🌟 特徵向量' },
-      { href: '/math/linalg/svd', label: '　🔱 SVD' },
-      { divider: true },
-      { href: '/math/calculus/', label: '📐 微積分專區' },
-      { href: '/math/calculus/slope-tangent', label: '　📈 導數即斜率' },
-      { href: '/math/calculus/chain-rule', label: '　🔗 鏈式法則' },
-      { href: '/math/calculus/riemann', label: '　📊 黎曼和' },
-      { href: '/math/calculus/ftc', label: '　🔄 微積分基本定理' },
-      { href: '/math/calculus/taylor', label: '　🎯 泰勒展開' },
-      { href: '/math/calculus/gradient', label: '　🧭 梯度與方向導數' },
-      { divider: true },
-      { href: '/math/probstat/', label: '🎲 機率統計專區' },
-      { href: '/math/probstat/distributions', label: '　📦 機率分布動物園' },
-      { href: '/math/probstat/lln-clt', label: '　🎯 大數法則與中央極限' },
-      { href: '/math/probstat/bayes', label: '　🔮 貝氏定理' },
-      { href: '/math/probstat/mle', label: '　📏 最大似然估計' },
-      { href: '/math/probstat/markov', label: '　🚶 馬可夫鏈與 MCMC' },
-      { href: '/math/probstat/entropy', label: '　🔥 熵與 KL 散度' },
+      { href: '/math/linalg/', label: '📚 線性代數專區 · 6 課' },
+      { href: '/math/calculus/', label: '📐 微積分專區 · 6 課' },
+      { href: '/math/probstat/', label: '🎲 機率統計專區 · 6 課' },
       { divider: true },
       { href: '/math/gcdlcm', label: '🧮 數學計算器' },
       { href: '/math/fourier', label: '🎨 傅立葉畫畫' },
@@ -41,11 +27,6 @@ const navItems = [
       { href: '/math/dot-product', label: '🏹 向量內積視覺化' },
     ]
   },
-  // Depth rule: this dropdown stops at 專區 level, like 程式實驗室 does. Listing
-  // all 12 lessons here turned the menu into a sitemap; the 專區 index pages are
-  // where the lesson lists belong, and ⌘K search finds any single lesson faster
-  // than scrolling a menu ever will. Add a new 專區 or a new standalone
-  // simulator here — never an individual lesson.
   {
     label: '物理',
     key: 'physics',

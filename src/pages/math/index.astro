@@ -1,95 +1,151 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import { MATH_SECTIONS } from '@/lib/math/mathSections';
 
-// Map Bootstrap color names to Tailwind accent classes
-const colorMap: Record<string, { bg: string; hover: string; border: string }> = {
-  primary: { bg: 'bg-accent-blue', hover: 'hover:bg-accent-blue/80', border: 'border-accent-blue' },
-  success: { bg: 'bg-accent-green', hover: 'hover:bg-accent-green/80', border: 'border-accent-green' },
-  info: { bg: 'bg-accent-cyan', hover: 'hover:bg-accent-cyan/80', border: 'border-accent-cyan' },
-  warning: { bg: 'bg-accent-yellow', hover: 'hover:bg-accent-yellow/80', border: 'border-accent-yellow' },
-  danger: { bg: 'bg-accent-red', hover: 'hover:bg-accent-red/80', border: 'border-accent-red' },
+/**
+ * Two tiers, deliberately not one flat grid: the three 專區 are multi-lesson
+ * courses, the four tools below are single pages. They used to sit in the same
+ * 7-card grid, which said nothing about which was which — and now that the
+ * navbar stops at 專區 level, this page is the only place a reader is shown
+ * what lives inside each one. Lesson lists come straight from MATH_SECTIONS so
+ * they can never drift from the actual pages.
+ */
+const colorMap: Record<string, { bg: string; hover: string; border: string; hoverText: string }> = {
+  primary: { bg: 'bg-accent-blue', hover: 'hover:bg-accent-blue/80', border: 'border-accent-blue', hoverText: 'hover:text-accent-blue' },
+  success: { bg: 'bg-accent-green', hover: 'hover:bg-accent-green/80', border: 'border-accent-green', hoverText: 'hover:text-accent-green' },
+  info: { bg: 'bg-accent-cyan', hover: 'hover:bg-accent-cyan/80', border: 'border-accent-cyan', hoverText: 'hover:text-accent-cyan' },
+  warning: { bg: 'bg-accent-yellow', hover: 'hover:bg-accent-yellow/80', border: 'border-accent-yellow', hoverText: 'hover:text-accent-yellow' },
+  danger: { bg: 'bg-accent-red', hover: 'hover:bg-accent-red/80', border: 'border-accent-red', hoverText: 'hover:text-accent-red' },
 };
 
-interface Tool {
-  title: string;
-  description: string;
-  href: string;
-  color: string;
-}
-
-const tools: Tool[] = [
+const sections = [
   {
+    key: 'linalg',
     title: '📚 線性代數專區',
-    description: '從 4×4 矩陣變換到 SVD — 給 CS 工程師的線代教學，動手玩、看視覺化',
-    href: '/math/linalg/',
-    color: 'info'
+    description: '從 4×4 矩陣變換到 SVD — 給 CS 工程師的線代教學，每一頁都動手玩得到。',
+    color: 'info',
   },
   {
+    key: 'calculus',
     title: '📐 微積分專區',
-    description: '從導數到梯度 — 6 頁互動式視覺化，建立微積分直覺。承接線代的教學風格',
-    href: '/math/calculus/',
-    color: 'danger'
+    description: '從導數是斜率到梯度指向最陡的方向，一條線建立微積分直覺。承接線代的教學風格。',
+    color: 'danger',
   },
   {
+    key: 'probstat',
     title: '🎲 機率統計專區',
-    description: '從分布到 MCMC — 6 頁互動式視覺化＋擲骰子熱身。建立機率統計與資訊論直覺',
-    href: '/math/probstat/',
-    color: 'warning'
+    description: '從分布動物園走到 MCMC 與 KL 散度，把機率、統計與資訊論接成同一條線。',
+    color: 'warning',
   },
+].map((s) => ({ ...s, lessons: MATH_SECTIONS[s.key].pages, href: MATH_SECTIONS[s.key].indexHref }));
+
+/** Single-page tools — no chapter arc, each one stands alone. */
+const tools = [
   {
     title: '🧮 數學計算器',
     description: '質數檢查、質因數分解、最大公因數 (GCD)、最小公倍數 (LCM)',
     href: '/math/gcdlcm',
-    color: 'primary'
+    color: 'primary',
   },
   {
     title: '🎨 傅立葉畫畫',
-    description: '畫一個圖形，看旋轉的圓圈如何利用傅立葉級數重繪它！',
+    description: '畫一個圖形，看旋轉的圓圈如何利用傅立葉級數重繪它',
     href: '/math/fourier',
-    color: 'success'
+    color: 'success',
   },
   {
     title: '🎛️ 波形合成器',
     description: '疊加不同頻率的正弦波，即時看到波形與頻譜的變化',
     href: '/math/waveform',
-    color: 'info'
+    color: 'info',
   },
   {
     title: '🏹 向量內積視覺化',
-    description: '互動式觀察向量點積 (Dot Product) 與餘弦相似度 (Cosine Similarity) 的幾何意義',
+    description: '互動式觀察向量點積與餘弦相似度的幾何意義',
     href: '/math/dot-product',
-    color: 'warning'
-  }
+    color: 'warning',
+  },
 ];
 ---
 <BaseLayout currentPage="math" title="數學工具"
-  description="互動式數學視覺化工具，把抽象公式變成看得見的動畫。涵蓋線性代數、微積分、機率統計三大主題，另有傅立葉畫畫、波形合成器、向量內積視覺化，以及 GCD/LCM 計算器。"
+  description="互動式數學視覺化工具，把抽象公式變成看得見的動畫。涵蓋線性代數、微積分、機率統計三大專區共 18 堂課，另有傅立葉畫畫、波形合成器、向量內積視覺化，以及 GCD/LCM 計算器。"
 >
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 mb-16">
     <h1 class="text-center text-3xl font-bold text-base-50 mb-2">📐 數學工具</h1>
-    <p class="text-center text-base-400 mb-10">各種有趣的數學視覺化與計算工具</p>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {tools.map((tool) => {
-        const colors = colorMap[tool.color];
-        return (
-          <div class={`flex flex-col rounded-lg border ${colors.border} bg-base-800 h-full`}>
-            <div class="p-5 flex-1">
-              <h5 class="text-lg font-semibold text-base-50 mb-2">{tool.title}</h5>
-              <p class="text-base-400">{tool.description}</p>
+    <p class="text-center text-base-400 mb-10">
+      三個成套的專區共 18 堂課，加上幾個各自成篇的視覺化工具 — 全部在瀏覽器裡算，不上傳任何資料
+    </p>
+
+    <!-- ─────────── 三大專區 ─────────── -->
+    <section class="mb-12">
+      <h2 class="text-lg font-bold text-base-50 mb-1">📖 成套專區</h2>
+      <p class="text-base-400 text-sm mb-5">
+        每個專區是一條有順序的課程線，從直覺鋪到工具，頁與頁之間會互相接。
+        想接著看這些數學被拿去算真東西，往 <a href="/physics/" class="text-accent-blue hover:underline">物理專區</a> 走。
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {sections.map((section) => {
+          const colors = colorMap[section.color];
+          return (
+            <div class={`flex flex-col rounded-lg border ${colors.border} bg-base-800 h-full`}>
+              <div class="p-5 flex-1">
+                <div class="flex items-baseline justify-between gap-2 mb-2">
+                  <h3 class="text-lg font-semibold text-base-50">{section.title}</h3>
+                  <span class="text-xs text-base-500 shrink-0">{section.lessons.length} 課</span>
+                </div>
+                <p class="text-base-400 text-sm mb-4">{section.description}</p>
+                <ul class="space-y-1.5 text-sm border-t border-base-600 pt-3">
+                  {section.lessons.map((lesson) => (
+                    <li>
+                      <a href={lesson.href} class={`text-base-300 hover:underline ${colors.hoverText}`}>
+                        {lesson.emoji} {lesson.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div class="px-5 pb-5">
+                <a
+                  href={section.href}
+                  class={`block text-center px-4 py-2 rounded ${colors.bg} ${colors.hover} text-base-50 font-medium transition`}
+                >
+                  進入專區 →
+                </a>
+              </div>
             </div>
-            <div class="px-5 pb-5">
-              <a
-                href={tool.href}
-                class={`block text-center px-4 py-2 rounded ${colors.bg} ${colors.hover} text-base-50 font-medium transition`}
-              >
-                開始使用
-              </a>
+          );
+        })}
+      </div>
+    </section>
+
+    <!-- ─────────── 獨立工具 ─────────── -->
+    <section>
+      <h2 class="text-lg font-bold text-base-50 mb-1">🔧 獨立工具</h2>
+      <p class="text-base-400 text-sm mb-5">
+        不屬於任何一條課程線，打開就能用。
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {tools.map((tool) => {
+          const colors = colorMap[tool.color];
+          return (
+            <div class={`flex flex-col rounded-lg border ${colors.border} bg-base-800 h-full`}>
+              <div class="p-5 flex-1">
+                <h3 class="text-base font-semibold text-base-50 mb-2">{tool.title}</h3>
+                <p class="text-base-400 text-sm">{tool.description}</p>
+              </div>
+              <div class="px-5 pb-5">
+                <a
+                  href={tool.href}
+                  class={`block text-center px-4 py-2 rounded ${colors.bg} ${colors.hover} text-base-50 font-medium transition`}
+                >
+                  開始使用
+                </a>
+              </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+    </section>
   </div>
 </BaseLayout>
-
