@@ -288,11 +288,12 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             powerOut.textContent = `${Math.round(aim.power)}%`;
         },
         onPhaseChange: (phase) => {
-            const canFire = phase === 'aiming';
-            fireBtn.disabled = !canFire;
-            angleInput.disabled = !canFire;
-            powerInput.disabled = !canFire;
-            stepButtons.forEach((button) => (button.disabled = !canFire));
+            // 瞄準值整場都能調（可以趁 AI 出手時先算好下一發），只有開火受回合限制
+            const matchLive = phase !== 'over';
+            fireBtn.disabled = phase !== 'aiming';
+            angleInput.disabled = !matchLive;
+            powerInput.disabled = !matchLive;
+            stepButtons.forEach((button) => (button.disabled = !matchLive));
         },
         onGameOver: (winner) => {
             overTitle.textContent = winner === 'player' ? '🏆 勝利' : winner === 'enemy' ? '💀 落敗' : '⚖️ 同歸於盡';

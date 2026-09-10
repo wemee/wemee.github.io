@@ -67,6 +67,9 @@ export class ArtilleryGame {
     private preview: Vec2[] = [];
     private previewKey = '';
 
+    /** 顯示用的回合數。Core 在開火當下就換手加一了，畫面要等砲彈落地才跟上 */
+    private displayRound = 1;
+
     /** 中彈反應動畫。Core 已經把砲台移到新位置，這裡負責從舊位置演過去 */
     private hitReaction: Partial<Record<Side, { fromX: number; elapsed: number; hop: number; shake: number }>> = {};
 
@@ -111,6 +114,7 @@ export class ArtilleryGame {
         this.aim = { angle: 45, power: 60 };
         this.barrel = { player: 45, enemy: 45 };
         this.displayHp = { player: COMBAT.maxHp, enemy: COMBAT.maxHp };
+        this.displayRound = 1;
         this.particles = [];
         this.explosions = [];
         this.floaters = [];
@@ -154,6 +158,14 @@ export class ArtilleryGame {
 
     isPlayerTurn(): boolean {
         return !this.inputLocked && this.phase === 'aiming' && this.core.getState().turn === 'player';
+    }
+
+    /**
+     * 瞄準值可不可以改。刻意跟「能不能開火」分開：
+     * 對手回合時仍然可以先把下一發的角度力道調好，但開火還是要等輪到自己。
+     */
+    canAdjustAim(): boolean {
+        return !this.inputLocked && !this.core.getState().over;
     }
 
     destroy(): void {
@@ -226,6 +238,7 @@ export class ArtilleryGame {
         }
 
         this.flight = null;
+        this.displayRound = this.core.getState().round;
         this.impactTimer = IMPACT_HOLD;
         this.setPhase('impact');
         this.emitState();
@@ -271,7 +284,12 @@ export class ArtilleryGame {
     }
 
     private emitState(): void {
-        this.callbacks.onStateChange?.(this.core.getState(), { ...this.displayHp });
+        this.callbacks.onStateChange?.(this.viewState(), { ...this.displayHp });
+    }
+
+    /** 給畫面看的狀態：回合數用顯示值，避免砲彈還在飛就先跳號 */
+    private viewState(): ArtilleryState {
+        return { ...this.core.getState(), round: this.displayRound };
     }
 
     // === 主迴圈 ===
@@ -383,7 +401,9 @@ export class ArtilleryGame {
         const turret = state.turrets[side];
         const reaction = this.hitReaction[side];
 
-        let x = turret.x;
+        // 砲彈還在飛的時候 Core 早就把震退結算完了，但畫面上還沒打到。
+        // 這段期間必須維持開火前的位置，否則一按發射砲台就瞬移。
+        let x = this.flight ? this.flight.outcome.knockback[side].from.x : turret.x;
         let lift = 0;
 
         if (reaction) {
@@ -431,7 +451,7 @@ export class ArtilleryGame {
     }
 
     private render(time: number): void {
-        const state = this.core.getState();
+        const state = this.viewState();
         this.updatePreview(state);
 
         this.renderer.render({
@@ -470,7 +490,9 @@ export class ArtilleryGame {
      * 所以預覽的線一定貼合實際彈道，只是被截斷。
      */
     private updatePreview(state: ArtilleryState): void {
-        if (this.phase !== 'aiming' || state.turn !== 'player' || state.over) {
+        // 砲彈在飛、或砲台正在演中彈位移時，Core 的座標跟畫面上的位置還沒對齊，
+        // 這時畫預覽線會從錯的地方射出來
+        if (!this.canAdjustAim() || this.flight || this.hitReaction.player) {
             this.preview = [];
             this.previewKey = '';
             return;
@@ -510,7 +532,7 @@ export class ArtilleryGame {
     }
 
     private handlePointerDown(event: PointerEvent): void {
-        if (!this.isPlayerTurn()) return;
+        if (!this.canAdjustAim()) return;
         event.preventDefault();
         const start = this.toLogical(event);
         this.charging = false;
@@ -564,7 +586,7 @@ export class ArtilleryGame {
         const target = event.target as HTMLElement | null;
         if (target && ['TEXTAREA', 'SELECT', 'BUTTON'].includes(target.tagName)) return;
         if (target instanceof HTMLInputElement && target.type !== 'range') return;
-        if (!this.isPlayerTurn()) return;
+        if (!this.canAdjustAim()) return;
 
         // 滑桿被點過之後會保有焦點。方向鍵讓給滑桿自己處理（否則會同時動到兩個值），
         // 但空白鍵滑桿不吃，蓄力必須照常可用
