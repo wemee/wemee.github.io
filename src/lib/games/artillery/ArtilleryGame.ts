@@ -1,0 +1,571 @@
+/**
+ * 《彈道對決》瀏覽器層 — 把 Core 的回合制邏輯接上輸入、動畫與畫面。
+ *
+ * Core 的 step() 是瞬間完成的（一次 = 一整發），這裡負責把那一發
+ * 沿著記錄下來的彈道「播放」出來，播完才把傷害演出來，接著換 AI 出手。
+ */
+
+import type { Particle } from '@/lib/games/types';
+import { spawnParticles } from '@/lib/games/GameUtils';
+import { ArtilleryCore } from './ArtilleryCore';
+import { ArtilleryAgent, type ArtilleryPlan } from '@/lib/ai/agents/ArtilleryAgent';
+import { ArtilleryRenderer, type Explosion, type Floater } from './renderer';
+import { AIM, COMBAT, FIELD, PHYSICS } from './config';
+import { clamp } from './random';
+import type { ArtilleryState, ShotOutcome, Side, Vec2 } from './types';
+
+type Phase = 'aiming' | 'flying' | 'impact' | 'enemyAiming' | 'over';
+
+export interface ArtilleryGameCallbacks {
+    onStateChange?: (state: ArtilleryState, displayHp: Record<Side, number>) => void;
+    onAimChange?: (aim: { angle: number; power: number }) => void;
+    onPhaseChange?: (phase: Phase) => void;
+    onGameOver?: (winner: Side | 'draw' | null) => void;
+}
+
+/** 彈道播放速度倍率（1 = 真實飛行時間） */
+const PLAYBACK_SPEED = 1.25;
+/** 記錄點的時間間隔換算成每秒播放幾點 */
+const POINTS_PER_SECOND = (1 / (PHYSICS.dt * PHYSICS.recordEvery)) * PLAYBACK_SPEED;
+/** 落地後停留多久再換手 */
+const IMPACT_HOLD = 0.85;
+/** AI 轉動砲管瞄準的時間 */
+const ENEMY_AIM_TIME = 1.1;
+/** 拖曳到滿力所需的距離（實際螢幕像素，所以手機與桌機的手感一致） */
+const MAX_DRAG_CSS_PX = 170;
+/** 小於這個拖曳距離視為「只是點一下」，不當成瞄準 */
+const MIN_DRAG_CSS_PX = 8;
+/** 空白鍵從 0 蓄到滿力的秒數 */
+const CHARGE_DURATION = 1.2;
+
+export class ArtilleryGame {
+    private readonly canvas: HTMLCanvasElement;
+    private readonly renderer: ArtilleryRenderer;
+    private readonly callbacks: ArtilleryGameCallbacks;
+    private core: ArtilleryCore;
+    private agent: ArtilleryAgent;
+
+    private phase: Phase = 'aiming';
+    private aim = { angle: 45, power: 60 };
+    private barrel: Record<Side, number> = { player: 45, enemy: 45 };
+    private displayHp: Record<Side, number> = { player: COMBAT.maxHp, enemy: COMBAT.maxHp };
+
+    private particles: Particle[] = [];
+    private explosions: Explosion[] = [];
+    private floaters: Floater[] = [];
+    private shake = 0;
+
+    private flight: { points: Vec2[]; cursor: number; outcome: ShotOutcome } | null = null;
+    private trail: Vec2[] = [];
+    private impactTimer = 0;
+    private enemyAimTimer = 0;
+    private enemyPlan: ArtilleryPlan | null = null;
+    private enemyAimFrom = 45;
+
+    private preview: Vec2[] = [];
+    private previewKey = '';
+
+    private inputLocked = true;
+    /** 拖曳以「按下的那一點」為錨點，不是砲台本身 —— 否則畫面上隨便點一下都會開火 */
+    private drag: { start: Vec2; pointer: Vec2; aimBefore: { angle: number; power: number } } | null = null;
+    private charging = false;
+    private chargeElapsed = 0;
+    private powerBeforeCharge = 60;
+
+    private rafId = 0;
+    private lastTime = 0;
+    private resizeTimer = 0;
+
+    private readonly onPointerDown = (event: PointerEvent) => this.handlePointerDown(event);
+    private readonly onPointerMove = (event: PointerEvent) => this.handlePointerMove(event);
+    private readonly onPointerUp = () => this.handlePointerUp();
+    private readonly onKeyDown = (event: KeyboardEvent) => this.handleKeyDown(event);
+    private readonly onKeyUp = (event: KeyboardEvent) => this.handleKeyUp(event);
+    private readonly onResize = () => this.handleResize();
+
+    constructor(canvas: HTMLCanvasElement, callbacks: ArtilleryGameCallbacks = {}) {
+        this.canvas = canvas;
+        this.callbacks = callbacks;
+        this.renderer = new ArtilleryRenderer(canvas);
+        this.core = new ArtilleryCore({ width: FIELD.width, height: FIELD.height });
+        this.agent = new ArtilleryAgent({ core: this.core });
+
+        this.renderer.resize();
+        this.startMatch();
+        this.bindEvents();
+        this.lastTime = performance.now();
+        this.rafId = requestAnimationFrame((time) => this.loop(time));
+    }
+
+    /** 開新的一局：換地形、回滿血、玩家先手 */
+    startMatch(): void {
+        this.core.setSeed(Math.floor(Math.random() * 0xffffffff));
+        this.core.reset();
+
+        this.phase = 'aiming';
+        this.aim = { angle: 45, power: 60 };
+        this.barrel = { player: 45, enemy: 45 };
+        this.displayHp = { player: COMBAT.maxHp, enemy: COMBAT.maxHp };
+        this.particles = [];
+        this.explosions = [];
+        this.floaters = [];
+        this.flight = null;
+        this.trail = [];
+        this.shake = 0;
+        this.preview = [];
+        this.previewKey = '';
+        this.enemyPlan = null;
+        this.drag = null;
+        this.charging = false;
+
+        this.renderer.buildBackground(this.core.getState());
+        this.emitState();
+        this.callbacks.onAimChange?.({ ...this.aim });
+        this.callbacks.onPhaseChange?.(this.phase);
+    }
+
+    setAngle(angle: number): void {
+        this.aim.angle = clamp(angle, AIM.minAngle, AIM.maxAngle);
+        this.barrel.player = this.aim.angle;
+        this.callbacks.onAimChange?.({ ...this.aim });
+    }
+
+    setPower(power: number): void {
+        this.aim.power = clamp(power, AIM.minPower, AIM.maxPower);
+        this.callbacks.onAimChange?.({ ...this.aim });
+    }
+
+    /** 開火。只有輪到玩家、且沒有砲彈在飛的時候才有效 */
+    fire(): void {
+        if (!this.isPlayerTurn() || this.aim.power < 3) return;
+        this.shoot({ angle: this.aim.angle, power: this.aim.power });
+    }
+
+    /** 開場說明蓋在畫面上時先鎖住輸入，避免隔著遮罩用鍵盤開火 */
+    setInputLocked(locked: boolean): void {
+        this.inputLocked = locked;
+    }
+
+    isPlayerTurn(): boolean {
+        return !this.inputLocked && this.phase === 'aiming' && this.core.getState().turn === 'player';
+    }
+
+    destroy(): void {
+        cancelAnimationFrame(this.rafId);
+        window.clearTimeout(this.resizeTimer);
+        this.canvas.removeEventListener('pointerdown', this.onPointerDown);
+        window.removeEventListener('pointermove', this.onPointerMove);
+        window.removeEventListener('pointerup', this.onPointerUp);
+        window.removeEventListener('pointercancel', this.onPointerUp);
+        window.removeEventListener('keydown', this.onKeyDown);
+        window.removeEventListener('keyup', this.onKeyUp);
+        window.removeEventListener('resize', this.onResize);
+    }
+
+    // === 回合流程 ===
+
+    private shoot(action: ArtilleryPlan): void {
+        const result = this.core.step(action);
+        const outcome = result.observation.lastShot;
+        if (!outcome) return;
+
+        this.barrel[outcome.shooter] = outcome.angle;
+        this.flight = { points: outcome.points, cursor: 0, outcome };
+        this.trail = [];
+        this.drag = null;
+        this.setPhase('flying');
+    }
+
+    private onFlightEnd(outcome: ShotOutcome): void {
+        if (outcome.impact) {
+            this.explosions.push({
+                x: outcome.impact.x,
+                y: outcome.impact.y,
+                age: 0,
+                duration: 0.55,
+                radius: COMBAT.blastRadius * 0.75,
+            });
+            spawnParticles(this.particles, outcome.impact.x, outcome.impact.y, '#cb4b16', 22);
+            spawnParticles(this.particles, outcome.impact.x, outcome.impact.y, '#b58900', 14);
+            this.shake = 11;
+        }
+
+        const state = this.core.getState();
+        for (const side of ['player', 'enemy'] as Side[]) {
+            const damage = outcome.damage[side];
+            if (damage <= 0) continue;
+            const turret = state.turrets[side];
+            this.floaters.push({
+                x: turret.x,
+                y: turret.y - 54,
+                text: `-${damage}`,
+                color: side === 'player' ? '#dc322f' : '#859900',
+                age: 0,
+                duration: 1.1,
+            });
+        }
+
+        this.flight = null;
+        this.impactTimer = IMPACT_HOLD;
+        this.setPhase('impact');
+        this.emitState();
+    }
+
+    private afterImpact(): void {
+        const state = this.core.getState();
+
+        if (state.over) {
+            this.setPhase('over');
+            this.callbacks.onGameOver?.(state.winner);
+            return;
+        }
+
+        if (state.turn === 'enemy') {
+            this.startEnemyTurn();
+        } else {
+            this.setPhase('aiming');
+        }
+    }
+
+    private startEnemyTurn(): void {
+        this.setPhase('enemyAiming');
+        this.enemyAimFrom = this.barrel.enemy;
+        this.enemyAimTimer = ENEMY_AIM_TIME;
+        this.enemyPlan = null;
+
+        // 讓瞄準動畫先跑起來，再做搜尋；搜尋本身是同步的重運算
+        void this.agent
+            .predict(this.core.getState())
+            .then((result) => {
+                this.enemyPlan = result.action;
+            })
+            // 搜尋失敗也要有東西可打，否則回合會卡在「AI 瞄準中」
+            .catch(() => {
+                this.enemyPlan = { angle: 45, power: 60 };
+            });
+    }
+
+    private setPhase(phase: Phase): void {
+        this.phase = phase;
+        this.callbacks.onPhaseChange?.(phase);
+    }
+
+    private emitState(): void {
+        this.callbacks.onStateChange?.(this.core.getState(), { ...this.displayHp });
+    }
+
+    // === 主迴圈 ===
+
+    private loop(time: number): void {
+        const dt = Math.min((time - this.lastTime) / 1000, 0.05);
+        this.lastTime = time;
+
+        this.update(dt);
+        this.render(time);
+
+        this.rafId = requestAnimationFrame((next) => this.loop(next));
+    }
+
+    private update(dt: number): void {
+        this.updateCharge(dt);
+        this.updateFlight(dt);
+        this.updateEnemyAim(dt);
+        this.updateEffects(dt);
+        this.updateHpBars(dt);
+
+        if (this.phase === 'impact') {
+            this.impactTimer -= dt;
+            if (this.impactTimer <= 0) this.afterImpact();
+        }
+    }
+
+    private updateCharge(dt: number): void {
+        if (!this.charging) return;
+        this.chargeElapsed = Math.min(this.chargeElapsed + dt, CHARGE_DURATION);
+        this.setPower((this.chargeElapsed / CHARGE_DURATION) * AIM.maxPower);
+    }
+
+    private updateFlight(dt: number): void {
+        if (!this.flight) return;
+
+        this.flight.cursor += dt * POINTS_PER_SECOND;
+        const index = Math.floor(this.flight.cursor);
+
+        if (index >= this.flight.points.length - 1) {
+            const outcome = this.flight.outcome;
+            this.onFlightEnd(outcome);
+            return;
+        }
+
+        const point = this.flight.points[index];
+        this.trail.push({ ...point });
+        if (this.trail.length > 14) this.trail.shift();
+    }
+
+    private updateEnemyAim(dt: number): void {
+        if (this.phase !== 'enemyAiming') return;
+
+        this.enemyAimTimer -= dt;
+
+        if (this.enemyPlan) {
+            const progress = clamp(1 - this.enemyAimTimer / ENEMY_AIM_TIME, 0, 1);
+            this.barrel.enemy = this.enemyAimFrom + (this.enemyPlan.angle - this.enemyAimFrom) * progress;
+        }
+
+        // 等瞄準動畫跑完、而且 AI 也算完解，才真的開火
+        if (this.enemyAimTimer <= 0 && this.enemyPlan) {
+            const plan = this.enemyPlan;
+            this.enemyPlan = null;
+            this.shoot(plan);
+        }
+    }
+
+    private updateEffects(dt: number): void {
+        const scale = dt * 60;
+
+        this.particles = this.particles.filter((particle) => {
+            particle.x += particle.vx * scale;
+            particle.y += particle.vy * scale;
+            particle.vy += 0.22 * scale;
+            particle.life -= 0.022 * scale;
+            return particle.life > 0;
+        });
+
+        this.explosions = this.explosions.filter((explosion) => {
+            explosion.age += dt;
+            return explosion.age < explosion.duration;
+        });
+
+        this.floaters = this.floaters.filter((floater) => {
+            floater.age += dt;
+            return floater.age < floater.duration;
+        });
+
+        this.shake = Math.max(0, this.shake - dt * 26);
+    }
+
+    /**
+     * Core 的 step() 在開火當下就把傷害結算掉了，但畫面上砲彈還在飛。
+     * 血條要等落地才開始扣，否則等於在砲彈命中前就先劇透結果。
+     */
+    private updateHpBars(dt: number): void {
+        if (this.phase === 'flying') return;
+
+        const state = this.core.getState();
+        const rate = Math.min(1, dt * 8);
+        let changed = false;
+
+        for (const side of ['player', 'enemy'] as Side[]) {
+            const target = state.turrets[side].hp;
+            const current = this.displayHp[side];
+            if (Math.abs(target - current) < 0.4) {
+                if (current !== target) {
+                    this.displayHp[side] = target;
+                    changed = true;
+                }
+                continue;
+            }
+            this.displayHp[side] = current + (target - current) * rate;
+            changed = true;
+        }
+
+        if (changed) this.emitState();
+    }
+
+    private render(time: number): void {
+        const state = this.core.getState();
+        this.updatePreview(state);
+
+        this.renderer.render({
+            state,
+            displayHp: this.displayHp,
+            barrel: this.barrel,
+            power: this.aim.power,
+            preview: this.preview,
+            projectile: this.flight
+                ? { pos: this.flight.points[Math.min(Math.floor(this.flight.cursor), this.flight.points.length - 1)], trail: this.trail }
+                : null,
+            explosions: this.explosions,
+            particles: this.particles,
+            floaters: this.floaters,
+            drag: this.drag ? { start: this.drag.start, pointer: this.drag.pointer } : null,
+            shake: this.shake,
+            status: this.statusText(state),
+            time,
+        });
+    }
+
+    private statusText(state: ArtilleryState): string {
+        if (state.over) return '';
+        if (this.phase === 'enemyAiming') return 'AI 瞄準中…';
+        if (this.phase === 'flying') return '';
+        if (this.phase === 'impact') return '';
+        return '你的回合';
+    }
+
+    /**
+     * 彈道預覽：只畫前段。用的是跟真正開火同一支 simulate，
+     * 所以預覽的線一定貼合實際彈道，只是被截斷。
+     */
+    private updatePreview(state: ArtilleryState): void {
+        if (this.phase !== 'aiming' || state.turn !== 'player' || state.over) {
+            this.preview = [];
+            this.previewKey = '';
+            return;
+        }
+
+        const key = `${this.aim.angle.toFixed(1)}:${this.aim.power.toFixed(1)}`;
+        if (key === this.previewKey) return;
+        this.previewKey = key;
+
+        const shot = this.core.simulate('player', this.aim.angle, this.aim.power);
+        const visible = Math.ceil(shot.points.length * 0.35);
+        const sampled: Vec2[] = [];
+        for (let i = 0; i < visible && sampled.length < 26; i += 4) {
+            sampled.push(shot.points[i]);
+        }
+        this.preview = sampled;
+    }
+
+    // === 輸入 ===
+
+    private bindEvents(): void {
+        this.canvas.addEventListener('pointerdown', this.onPointerDown);
+        window.addEventListener('pointermove', this.onPointerMove);
+        window.addEventListener('pointerup', this.onPointerUp);
+        window.addEventListener('pointercancel', this.onPointerUp);
+        window.addEventListener('keydown', this.onKeyDown);
+        window.addEventListener('keyup', this.onKeyUp);
+        window.addEventListener('resize', this.onResize);
+    }
+
+    private toLogical(event: PointerEvent): Vec2 {
+        const rect = this.canvas.getBoundingClientRect();
+        return {
+            x: (event.clientX - rect.left) * (FIELD.width / rect.width),
+            y: (event.clientY - rect.top) * (FIELD.height / rect.height),
+        };
+    }
+
+    private handlePointerDown(event: PointerEvent): void {
+        if (!this.isPlayerTurn()) return;
+        event.preventDefault();
+        const start = this.toLogical(event);
+        this.charging = false;
+        this.drag = { start, pointer: start, aimBefore: { ...this.aim } };
+    }
+
+    private handlePointerMove(event: PointerEvent): void {
+        if (!this.drag) return;
+        event.preventDefault();
+        this.drag.pointer = this.toLogical(event);
+        this.updateAimFromDrag();
+    }
+
+    private handlePointerUp(): void {
+        if (!this.drag) return;
+        const { start, pointer, aimBefore } = this.drag;
+        this.drag = null;
+
+        // 沒拉開就放手＝單純點一下畫面，還原瞄準值且不開火。
+        // 用實際拖曳距離判斷，不能只看力道 —— 完全沒移動時力道還是上一次的值。
+        const dragCssPx = Math.hypot(pointer.x - start.x, pointer.y - start.y) / this.logicalPerCssPixel();
+        if (dragCssPx < MIN_DRAG_CSS_PX || this.aim.power < 3) {
+            this.setAngle(aimBefore.angle);
+            this.setPower(aimBefore.power);
+            return;
+        }
+        this.fire();
+    }
+
+    private logicalPerCssPixel(): number {
+        return FIELD.width / (this.canvas.clientWidth || FIELD.width);
+    }
+
+    /**
+     * 拉弓式瞄準：往反方向拉，拉越遠力道越大，放開往反方向射出去。
+     * 玩家朝右打，所以要往左下方拉。
+     */
+    private updateAimFromDrag(): void {
+        if (!this.drag) return;
+        const { start, pointer } = this.drag;
+
+        const dx = start.x - pointer.x;
+        const dy = start.y - pointer.y;
+        const distance = Math.hypot(dx, dy);
+
+        this.setAngle((Math.atan2(-dy, dx) * 180) / Math.PI);
+        this.setPower((distance / (MAX_DRAG_CSS_PX * this.logicalPerCssPixel())) * AIM.maxPower);
+    }
+
+    private handleKeyDown(event: KeyboardEvent): void {
+        const target = event.target as HTMLElement | null;
+        if (target && ['TEXTAREA', 'SELECT', 'BUTTON'].includes(target.tagName)) return;
+        if (target instanceof HTMLInputElement && target.type !== 'range') return;
+        if (!this.isPlayerTurn()) return;
+
+        // 滑桿被點過之後會保有焦點。方向鍵讓給滑桿自己處理（否則會同時動到兩個值），
+        // 但空白鍵滑桿不吃，蓄力必須照常可用
+        const onSlider = target instanceof HTMLInputElement;
+        const stepSize = event.shiftKey ? 5 : 1;
+
+        switch (event.key) {
+            case 'ArrowUp':
+                if (onSlider) return;
+                event.preventDefault();
+                this.setAngle(this.aim.angle + stepSize);
+                break;
+            case 'ArrowDown':
+                if (onSlider) return;
+                event.preventDefault();
+                this.setAngle(this.aim.angle - stepSize);
+                break;
+            case 'ArrowRight':
+                if (onSlider) return;
+                event.preventDefault();
+                this.setPower(this.aim.power + stepSize);
+                break;
+            case 'ArrowLeft':
+                if (onSlider) return;
+                event.preventDefault();
+                this.setPower(this.aim.power - stepSize);
+                break;
+            case ' ':
+                event.preventDefault();
+                if (!this.charging) {
+                    this.charging = true;
+                    this.chargeElapsed = 0;
+                    this.powerBeforeCharge = this.aim.power;
+                    // 按下當下就歸零，蓄力條才會從 0 開始長，
+                    // 也才不會有「按太快、力道還沒歸零就發射」的不一致行為
+                    this.setPower(0);
+                }
+                break;
+            case 'Enter':
+                event.preventDefault();
+                this.fire();
+                break;
+        }
+    }
+
+    private handleKeyUp(event: KeyboardEvent): void {
+        if (event.key !== ' ' || !this.charging) return;
+        event.preventDefault();
+        this.charging = false;
+
+        // 輕輕點一下空白鍵不該把調好的力道歸零，還原成蓄力前的值
+        if (this.aim.power < 3) {
+            this.setPower(this.powerBeforeCharge);
+            return;
+        }
+        this.fire();
+    }
+
+    private handleResize(): void {
+        window.clearTimeout(this.resizeTimer);
+        this.resizeTimer = window.setTimeout(() => {
+            this.renderer.resize();
+            this.renderer.buildBackground(this.core.getState());
+        }, 150);
+    }
+}

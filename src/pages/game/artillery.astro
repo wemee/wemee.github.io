@@ -1,0 +1,272 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+    currentPage="game"
+    title="彈道對決 - 回合制砲兵對戰"
+    description="經典 Scorched Earth 風格的回合制砲兵遊戲《彈道對決》：拖曳拉弓瞄準或按住空白鍵蓄力，算準拋物線越過隨機山脈轟掉 AI 砲台。爆炸傷害隨距離衰減，純 Canvas 打造。"
+>
+    <main class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 mt-8 mb-14">
+        <header class="mb-5">
+            <a href="/game" class="inline-block mb-3 text-sm text-accent-green hover:text-accent-green/80 transition">
+                ← 返回遊戲列表
+            </a>
+            <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                <h1 class="text-3xl font-bold text-base-50">💥 彈道對決</h1>
+                <p class="text-base-400 text-sm">回合制砲兵 — 算準角度與力道，越過山頭轟掉對面</p>
+            </div>
+        </header>
+
+        <!-- 戰報：雙方血量 -->
+        <div class="flex items-center gap-3 mb-3">
+            <div class="flex-1">
+                <div class="flex items-baseline justify-between mb-1">
+                    <span class="text-xs font-bold tracking-wider text-accent-blue">你</span>
+                    <span id="art-player-hp" class="text-xs font-mono text-base-300">100</span>
+                </div>
+                <div class="h-2.5 rounded-full bg-base-900 border border-base-600 overflow-hidden">
+                    <div id="art-player-bar" class="h-full bg-accent-blue transition-[width] duration-150" style="width:100%"></div>
+                </div>
+            </div>
+
+            <div id="art-round" class="px-3 py-1 rounded-md bg-base-800 border border-base-600 text-xs font-mono text-base-300 whitespace-nowrap">
+                第 1 回合
+            </div>
+
+            <div class="flex-1">
+                <div class="flex items-baseline justify-between mb-1">
+                    <span id="art-enemy-hp" class="text-xs font-mono text-base-300">100</span>
+                    <span class="text-xs font-bold tracking-wider text-accent-orange">AI</span>
+                </div>
+                <div class="h-2.5 rounded-full bg-base-900 border border-base-600 overflow-hidden flex justify-end">
+                    <div id="art-enemy-bar" class="h-full bg-accent-orange transition-[width] duration-150" style="width:100%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 戰場 -->
+        <div class="relative rounded-2xl border border-base-600 bg-base-900 p-2 shadow-lg shadow-accent-orange/5">
+            <canvas id="artilleryCanvas" class="art-canvas"></canvas>
+
+            <div id="art-start" class="art-overlay">
+                <h2 class="text-2xl font-bold text-base-50 mb-2">💥 彈道對決</h2>
+                <p class="text-base-300 text-sm max-w-md mb-1">
+                    輪流開砲。地形每局隨機、沒有風，所以只要算準<strong class="text-base-50">角度</strong>與<strong class="text-base-50">力道</strong>，同一組解就會一直命中。
+                </p>
+                <p class="text-base-400 text-xs max-w-md mb-5">
+                    砲彈落點離砲台越近傷害越高，直接命中最痛。先把對方打到 0 就贏。
+                </p>
+                <button id="art-start-btn" class="px-6 py-3 rounded-lg bg-accent-orange hover:bg-accent-orange/80 text-base-50 font-medium transition">
+                    開始對戰
+                </button>
+            </div>
+
+            <div id="art-over" class="art-overlay hidden">
+                <h2 id="art-over-title" class="text-3xl font-bold text-base-50 mb-2">勝利</h2>
+                <p id="art-over-desc" class="text-base-300 text-sm mb-5"></p>
+                <button id="art-again-btn" class="px-6 py-3 rounded-lg bg-accent-green hover:bg-accent-green/80 text-base-900 font-medium transition">
+                    再來一局
+                </button>
+            </div>
+        </div>
+
+        <!-- 射擊控制台 -->
+        <section class="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto] items-end rounded-xl border border-base-600 bg-base-800 p-4">
+            <div class="art-dial">
+                <div class="flex items-baseline justify-between">
+                    <label for="art-angle" class="art-label">仰角</label>
+                    <output id="art-angle-out" class="art-readout text-accent-cyan">45°</output>
+                </div>
+                <input id="art-angle" class="art-range" type="range" min="0" max="90" step="1" value="45" />
+            </div>
+
+            <div class="art-dial">
+                <div class="flex items-baseline justify-between">
+                    <label for="art-power" class="art-label">力道</label>
+                    <output id="art-power-out" class="art-readout text-accent-yellow">60%</output>
+                </div>
+                <input id="art-power" class="art-range art-range-power" type="range" min="0" max="100" step="1" value="60" />
+            </div>
+
+            <button id="art-fire" class="h-11 px-7 rounded-lg bg-accent-red hover:bg-accent-red/80 disabled:opacity-35 disabled:cursor-not-allowed text-base-50 font-bold tracking-wide transition">
+                發射
+            </button>
+        </section>
+
+        <p class="mt-3 text-xs text-base-500 leading-relaxed">
+            <strong class="text-base-300">三種瞄準方式：</strong>
+            在畫面上<strong class="text-base-300">往後拉再放開</strong>（像拉弓，拉越遠力道越大）·
+            用<strong class="text-base-300">滑桿</strong>精調數值後按發射 ·
+            <strong class="text-base-300">↑↓</strong> 調角度、<strong class="text-base-300">←→</strong> 調力道、
+            按住<strong class="text-base-300">空白鍵</strong>蓄力放開即發射（按住 Shift 可加大調整幅度）
+        </p>
+    </main>
+</BaseLayout>
+
+<style>
+    .art-canvas {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border-radius: 12px;
+        /* 拖曳瞄準時不要觸發頁面捲動 */
+        touch-action: none;
+        cursor: crosshair;
+    }
+
+    .art-overlay {
+        position: absolute;
+        inset: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 24px;
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--color-base-900) 88%, transparent);
+        backdrop-filter: blur(3px);
+    }
+
+    .art-overlay.hidden {
+        display: none;
+    }
+
+    .art-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--color-base-400);
+    }
+
+    .art-readout {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .art-range {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 6px;
+        margin-top: 10px;
+        border-radius: 3px;
+        background: var(--color-base-900);
+        border: 1px solid var(--color-base-600);
+        outline: none;
+    }
+
+    .art-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--color-accent-cyan);
+        border: 2px solid var(--color-base-50);
+        cursor: pointer;
+    }
+
+    .art-range::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--color-accent-cyan);
+        border: 2px solid var(--color-base-50);
+        cursor: pointer;
+    }
+
+    .art-range-power::-webkit-slider-thumb {
+        background: var(--color-accent-yellow);
+    }
+
+    .art-range-power::-moz-range-thumb {
+        background: var(--color-accent-yellow);
+    }
+
+    .art-range:focus-visible {
+        border-color: var(--color-accent-cyan);
+    }
+</style>
+
+<script>
+    import { ArtilleryGame } from '@/lib/games/artillery/ArtilleryGame';
+    import type { ArtilleryState, Side } from '@/lib/games/artillery/types';
+
+    const canvas = document.getElementById('artilleryCanvas') as HTMLCanvasElement;
+    const angleInput = document.getElementById('art-angle') as HTMLInputElement;
+    const powerInput = document.getElementById('art-power') as HTMLInputElement;
+    const angleOut = document.getElementById('art-angle-out') as HTMLOutputElement;
+    const powerOut = document.getElementById('art-power-out') as HTMLOutputElement;
+    const fireBtn = document.getElementById('art-fire') as HTMLButtonElement;
+    const roundLabel = document.getElementById('art-round') as HTMLElement;
+    const startOverlay = document.getElementById('art-start') as HTMLElement;
+    const overOverlay = document.getElementById('art-over') as HTMLElement;
+    const overTitle = document.getElementById('art-over-title') as HTMLElement;
+    const overDesc = document.getElementById('art-over-desc') as HTMLElement;
+
+    const bars: Record<Side, HTMLElement> = {
+        player: document.getElementById('art-player-bar') as HTMLElement,
+        enemy: document.getElementById('art-enemy-bar') as HTMLElement,
+    };
+    const hpLabels: Record<Side, HTMLElement> = {
+        player: document.getElementById('art-player-hp') as HTMLElement,
+        enemy: document.getElementById('art-enemy-hp') as HTMLElement,
+    };
+
+    const game = new ArtilleryGame(canvas, {
+        onStateChange: (state: ArtilleryState, displayHp: Record<Side, number>) => {
+            roundLabel.textContent = `第 ${state.round} 回合`;
+            (['player', 'enemy'] as Side[]).forEach((side) => {
+                const hp = Math.max(0, displayHp[side]);
+                bars[side].style.width = `${hp}%`;
+                hpLabels[side].textContent = String(Math.round(hp));
+            });
+        },
+        onAimChange: (aim) => {
+            angleInput.value = String(Math.round(aim.angle));
+            powerInput.value = String(Math.round(aim.power));
+            angleOut.textContent = `${Math.round(aim.angle)}°`;
+            powerOut.textContent = `${Math.round(aim.power)}%`;
+        },
+        onPhaseChange: (phase) => {
+            const canFire = phase === 'aiming';
+            fireBtn.disabled = !canFire;
+            angleInput.disabled = !canFire;
+            powerInput.disabled = !canFire;
+        },
+        onGameOver: (winner) => {
+            overTitle.textContent = winner === 'player' ? '🏆 勝利' : winner === 'enemy' ? '💀 落敗' : '⚖️ 同歸於盡';
+            overDesc.textContent =
+                winner === 'player'
+                    ? '對面的砲台被你轟成廢鐵了。'
+                    : winner === 'enemy'
+                      ? '被 AI 算得更準。換個地形再來過。'
+                      : '最後一發把兩邊一起送走了。';
+            overOverlay.classList.remove('hidden');
+        },
+    });
+
+    angleInput.addEventListener('input', () => game.setAngle(Number(angleInput.value)));
+    powerInput.addEventListener('input', () => game.setPower(Number(powerInput.value)));
+    fireBtn.addEventListener('click', () => {
+        game.fire();
+        // 交還焦點，否則之後的方向鍵與空白鍵會被按鈕吃掉
+        fireBtn.blur();
+    });
+
+    document.getElementById('art-start-btn')?.addEventListener('click', () => {
+        startOverlay.classList.add('hidden');
+        game.setInputLocked(false);
+    });
+
+    document.getElementById('art-again-btn')?.addEventListener('click', () => {
+        overOverlay.classList.add('hidden');
+        game.startMatch();
+        game.setInputLocked(false);
+    });
+</script>
