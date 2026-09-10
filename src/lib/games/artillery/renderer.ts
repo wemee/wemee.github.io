@@ -11,7 +11,7 @@ import { drawParticles } from '@/lib/games/GameUtils';
 import { COMBAT, FIELD, TURRET } from './config';
 import { generateTerrain } from './terrain';
 import { mulberry32 } from './random';
-import type { ArtilleryState, Side, Vec2 } from './types';
+import type { ArtilleryState, Side, TurretPose, Vec2 } from './types';
 
 const COLORS = {
     skyTop: '#00161d',
@@ -51,6 +51,8 @@ export interface Floater {
 
 export interface ArtilleryView {
     state: ArtilleryState;
+    /** 砲台的呈現姿態（含中彈的位移彈跳與地形傾斜），由上層算好 */
+    pose: Record<Side, TurretPose>;
     /** 動畫中的血量，會平滑追上 state 的實際血量 */
     displayHp: Record<Side, number>;
     /** 目前砲管仰角（玩家跟著輸入走，AI 瞄準時會轉動） */
@@ -282,30 +284,70 @@ export class ArtilleryRenderer {
 
     private drawTurret(view: ArtilleryView, side: Side): void {
         const ctx = this.ctx;
-        const turret = view.state.turrets[side];
+        const pose = view.pose[side];
         const isPlayer = side === 'player';
         const main = isPlayer ? COLORS.player : COLORS.enemy;
         const dark = isPlayer ? COLORS.playerDark : COLORS.enemyDark;
         const facing = isPlayer ? 1 : -1;
-        const { x, y } = turret;
+        const { x, y } = pose;
         const pivotY = y - TURRET.pivotOffset;
         const angle = view.barrel[side];
 
-        ctx.save();
+        // 騰空時影子縮小變淡，彈跳的高度才看得出來
+        const lift = Math.max(0, pose.groundY - y);
+        const liftRatio = Math.min(lift / 26, 1);
 
-        // 落在地面的陰影
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+        ctx.save();
+        ctx.fillStyle = `rgba(0, 0, 0, ${(0.35 - liftRatio * 0.18).toFixed(3)})`;
         ctx.beginPath();
-        ctx.ellipse(x, y + 1, TURRET.hullWidth * 0.55, 5, 0, 0, Math.PI * 2);
+        ctx.ellipse(pose.x, pose.groundY + 1, TURRET.hullWidth * (0.55 - liftRatio * 0.18), 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // 車體：貼合地形斜度旋轉，砲管維持絕對角度（畫面角度必須等於實際射角）
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(pose.tilt);
+
+        const hw = TURRET.hullWidth / 2;
+        const hh = TURRET.hullHeight;
+        ctx.fillStyle = dark;
+        ctx.beginPath();
+        ctx.moveTo(-hw, 0);
+        ctx.lineTo(-hw * 0.7, -hh);
+        ctx.lineTo(hw * 0.7, -hh);
+        ctx.lineTo(hw, 0);
+        ctx.closePath();
         ctx.fill();
 
+        ctx.fillStyle = main;
+        ctx.beginPath();
+        ctx.arc(0, -hh + 1, 11, Math.PI, 0);
+        ctx.fill();
+
+        ctx.fillStyle = '#01222b';
+        for (let i = -1; i <= 1; i++) {
+            ctx.beginPath();
+            ctx.arc(i * hw * 0.55, -3, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.strokeStyle = 'rgba(253, 246, 227, 0.25)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-hw * 0.7, -hh);
+        ctx.lineTo(hw * 0.7, -hh);
+        ctx.stroke();
+        ctx.restore();
+
         // 砲管
+        ctx.save();
         const radians = (angle * Math.PI) / 180;
         const tipX = x + facing * Math.cos(radians) * TURRET.barrelLength;
         const tipY = pivotY - Math.sin(radians) * TURRET.barrelLength;
+        ctx.lineCap = 'round';
         ctx.strokeStyle = dark;
         ctx.lineWidth = 9;
-        ctx.lineCap = 'round';
         ctx.beginPath();
         ctx.moveTo(x, pivotY);
         ctx.lineTo(tipX, tipY);
@@ -317,40 +359,6 @@ export class ArtilleryRenderer {
         ctx.moveTo(x, pivotY);
         ctx.lineTo(tipX, tipY);
         ctx.stroke();
-
-        // 車身
-        const hw = TURRET.hullWidth / 2;
-        const hh = TURRET.hullHeight;
-        ctx.fillStyle = dark;
-        ctx.beginPath();
-        ctx.moveTo(x - hw, y);
-        ctx.lineTo(x - hw * 0.7, y - hh);
-        ctx.lineTo(x + hw * 0.7, y - hh);
-        ctx.lineTo(x + hw, y);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.fillStyle = main;
-        ctx.beginPath();
-        ctx.arc(x, y - hh + 1, 11, Math.PI, 0);
-        ctx.fill();
-
-        // 履帶輪
-        ctx.fillStyle = '#01222b';
-        for (let i = -1; i <= 1; i++) {
-            ctx.beginPath();
-            ctx.arc(x + i * hw * 0.55, y - 3, 4, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // 高光讓車體不是一塊死色
-        ctx.strokeStyle = 'rgba(253, 246, 227, 0.25)';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(x - hw * 0.7, y - hh);
-        ctx.lineTo(x + hw * 0.7, y - hh);
-        ctx.stroke();
-
         ctx.restore();
 
         this.drawTurretHp(view, side);
@@ -366,11 +374,11 @@ export class ArtilleryRenderer {
 
     private drawTurretHp(view: ArtilleryView, side: Side): void {
         const ctx = this.ctx;
-        const turret = view.state.turrets[side];
+        const pose = view.pose[side];
         const hp = Math.max(0, view.displayHp[side]);
         const barWidth = 46;
-        const barX = turret.x - barWidth / 2;
-        const barY = turret.y - 42;
+        const barX = pose.x - barWidth / 2;
+        const barY = pose.y - 42;
 
         ctx.fillStyle = 'rgba(0, 22, 29, 0.85)';
         ctx.fillRect(barX - 1, barY - 1, barWidth + 2, 6);
@@ -384,8 +392,7 @@ export class ArtilleryRenderer {
     private drawDragBand(view: ArtilleryView): void {
         if (!view.drag) return;
         const ctx = this.ctx;
-        const turret = view.state.turrets.player;
-        const pivot = { x: turret.x, y: turret.y - TURRET.pivotOffset };
+        const pivot = { x: view.pose.player.x, y: view.pose.player.y - TURRET.pivotOffset };
         const { start, pointer } = view.drag;
 
         ctx.save();

@@ -10,7 +10,7 @@ import { GameCore, type GameCoreConfig, type StepResult } from '@/lib/games/core
 import { AIM, COMBAT, FIELD, PHYSICS, TERRAIN, TURRET } from './config';
 import { flattenPad, generateTerrain, groundYAt } from './terrain';
 import { clamp, mulberry32, type Rng } from './random';
-import type { ArtilleryState, ShotAction, ShotOutcome, ShotResult, Side, Turret, Vec2 } from './types';
+import type { ArtilleryState, Knockback, ShotAction, ShotOutcome, ShotResult, Side, Turret, Vec2 } from './types';
 
 const DEG_TO_RAD = Math.PI / 180;
 const SIDES: Side[] = ['player', 'enemy'];
@@ -106,8 +106,9 @@ export class ArtilleryCore extends GameCore<ArtilleryState, ShotAction> {
 
         const shot = this.simulate(shooter, angle, power);
         const damage = this.applyDamage(shot);
+        const knockback = this.applyKnockback(shot, damage);
 
-        this.lastShot = { ...shot, shooter, angle, power, damage };
+        this.lastShot = { ...shot, shooter, angle, power, damage, knockback };
         this.currentStep += 1;
 
         const opponent: Side = shooter === 'player' ? 'enemy' : 'player';
@@ -279,6 +280,49 @@ export class ArtilleryCore extends GameCore<ArtilleryState, ShotAction> {
             }
         }
         return damage;
+    }
+
+    /**
+     * 爆炸把砲台往外震退，落地後重新貼合地形高度。
+     * 位移量隨傷害成長，因此擦邊只推一點、直擊推最多。
+     *
+     * 這同時是這款唯一會讓「同一組角度力道」逐漸失準的機制 ——
+     * 沒有風力的砲兵遊戲本來算準一次就能一直複製，震退讓雙方都得持續修正。
+     */
+    private applyKnockback(shot: ShotResult, damage: Record<Side, number>): Record<Side, Knockback> {
+        const result = {} as Record<Side, Knockback>;
+
+        for (const side of SIDES) {
+            const turret = this.turrets[side];
+            const from: Vec2 = { x: turret.x, y: turret.y };
+
+            if (!shot.impact || damage[side] <= 0) {
+                result[side] = { from, to: { ...from } };
+                continue;
+            }
+
+            const push = Math.min(damage[side] * COMBAT.knockbackPerDamage, COMBAT.knockbackMax);
+            const direction = turret.x >= shot.impact.x ? 1 : -1;
+            const targetX = this.clampTurretX(side, turret.x + direction * push);
+
+            turret.x = targetX;
+            turret.y = this.groundAt(targetX);
+            result[side] = { from, to: { x: turret.x, y: turret.y } };
+        }
+
+        return result;
+    }
+
+    /** 震退後仍要留在場內，而且兩座砲台不能被推到擠在一起 */
+    private clampTurretX(side: Side, x: number): number {
+        const other = this.turrets[side === 'player' ? 'enemy' : 'player'];
+        const min = TERRAIN.edgeMargin;
+        const max = this.width - TERRAIN.edgeMargin;
+
+        if (side === 'player') {
+            return clamp(x, min, Math.min(max, other.x - TERRAIN.minSeparation));
+        }
+        return clamp(x, Math.max(min, other.x + TERRAIN.minSeparation), max);
     }
 
     /** 傷害公式：直接命中固定值，其餘依爆炸距離線性衰減 */

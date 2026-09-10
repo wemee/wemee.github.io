@@ -51,6 +51,13 @@ export const COMBAT = {
     blastMax: 38,
     /** 爆炸波及半徑，超過此距離無傷害 */
     blastRadius: 110,
+    /** 每點傷害把砲台往外震退幾 px */
+    knockbackPerDamage: 0.8,
+    /**
+     * 單次震退上限。刻意壓在爆炸半徑的三分之一以內：
+     * 位移夠大到讓原本的解開始失準，但不至於一發就要重新試炮。
+     */
+    knockbackMax: 36,
 } as const;
 
 export const AIM = {
@@ -78,6 +85,10 @@ export const TERRAIN = {
     enemyXRatio: 0.89,
     /** 每局位置隨機抖動幅度 */
     xJitterRatio: 0.035,
+    /** 砲台被震退後距離畫面左右緣至少要留的空間 */
+    edgeMargin: 46,
+    /** 兩座砲台之間的最小距離，避免一路被推到擠在一起 */
+    minSeparation: 260,
 } as const;
 
 /** AI 瞄準誤差（固定值、不隨對戰過程改變） */

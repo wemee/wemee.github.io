@@ -11,8 +11,8 @@ import { ArtilleryCore } from './ArtilleryCore';
 import { ArtilleryAgent, type ArtilleryPlan } from '@/lib/ai/agents/ArtilleryAgent';
 import { ArtilleryRenderer, type Explosion, type Floater } from './renderer';
 import { AIM, COMBAT, FIELD, PHYSICS } from './config';
-import { clamp } from './random';
-import type { ArtilleryState, ShotOutcome, Side, Vec2 } from './types';
+import { clamp, lerp } from './random';
+import type { ArtilleryState, ShotOutcome, Side, TurretPose, Vec2 } from './types';
 
 type Phase = 'aiming' | 'flying' | 'impact' | 'enemyAiming' | 'over';
 
@@ -37,6 +37,8 @@ const MAX_DRAG_CSS_PX = 170;
 const MIN_DRAG_CSS_PX = 8;
 /** 空白鍵從 0 蓄到滿力的秒數 */
 const CHARGE_DURATION = 1.2;
+/** 中彈反應（彈跳＋晃動＋滑到新位置）的長度 */
+const HIT_REACTION = 0.55;
 
 export class ArtilleryGame {
     private readonly canvas: HTMLCanvasElement;
@@ -64,6 +66,9 @@ export class ArtilleryGame {
 
     private preview: Vec2[] = [];
     private previewKey = '';
+
+    /** 中彈反應動畫。Core 已經把砲台移到新位置，這裡負責從舊位置演過去 */
+    private hitReaction: Partial<Record<Side, { fromX: number; elapsed: number; hop: number; shake: number }>> = {};
 
     private inputLocked = true;
     /** 拖曳以「按下的那一點」為錨點，不是砲台本身 —— 否則畫面上隨便點一下都會開火 */
@@ -117,6 +122,7 @@ export class ArtilleryGame {
         this.enemyPlan = null;
         this.drag = null;
         this.charging = false;
+        this.hitReaction = {};
 
         this.renderer.buildBackground(this.core.getState());
         this.emitState();
@@ -187,14 +193,28 @@ export class ArtilleryGame {
             });
             spawnParticles(this.particles, outcome.impact.x, outcome.impact.y, '#cb4b16', 22);
             spawnParticles(this.particles, outcome.impact.x, outcome.impact.y, '#b58900', 14);
-            this.shake = 11;
         }
+
+        // 打得越重，畫面震得越兇；打偏也還是有基本的落地震動
+        const heaviest = Math.max(outcome.damage.player, outcome.damage.enemy);
+        this.shake = outcome.impact ? 6 + heaviest * 0.25 : 0;
 
         const state = this.core.getState();
         for (const side of ['player', 'enemy'] as Side[]) {
             const damage = outcome.damage[side];
             if (damage <= 0) continue;
             const turret = state.turrets[side];
+
+            this.hitReaction[side] = {
+                fromX: outcome.knockback[side].from.x,
+                elapsed: 0,
+                hop: 6 + damage * 0.32,
+                shake: 2 + damage * 0.11,
+            };
+
+            // 被炸飛的碎片用陣營色，看得出是誰挨打
+            spawnParticles(this.particles, turret.x, turret.y - 12, side === 'player' ? '#268bd2' : '#cb4b16', 12);
+
             this.floaters.push({
                 x: turret.x,
                 y: turret.y - 54,
@@ -342,12 +362,50 @@ export class ArtilleryGame {
         });
 
         this.shake = Math.max(0, this.shake - dt * 26);
+
+        for (const side of ['player', 'enemy'] as Side[]) {
+            const reaction = this.hitReaction[side];
+            if (!reaction) continue;
+            reaction.elapsed += dt;
+            if (reaction.elapsed >= HIT_REACTION) delete this.hitReaction[side];
+        }
     }
 
     /**
      * Core 的 step() 在開火當下就把傷害結算掉了，但畫面上砲彈還在飛。
      * 血條要等落地才開始扣，否則等於在砲彈命中前就先劇透結果。
      */
+    /**
+     * 砲台的呈現姿態。中彈後 Core 已經把座標改到震退後的位置，
+     * 這裡負責從舊位置演過去：滑行 + 彈跳 + 衰減的晃動，落腳處貼合地形斜度。
+     */
+    private poseOf(side: Side, state: ArtilleryState): TurretPose {
+        const turret = state.turrets[side];
+        const reaction = this.hitReaction[side];
+
+        let x = turret.x;
+        let lift = 0;
+
+        if (reaction) {
+            const progress = clamp(reaction.elapsed / HIT_REACTION, 0, 1);
+            const settle = 1 - Math.pow(1 - progress, 3);
+
+            x = lerp(reaction.fromX, turret.x, settle);
+            x += Math.sin(progress * Math.PI * 14) * reaction.shake * (1 - progress);
+            lift = Math.sin(progress * Math.PI) * reaction.hop;
+        }
+
+        const groundY = this.core.groundAt(x);
+        return { x, y: groundY - lift, tilt: this.tiltAt(x), groundY };
+    }
+
+    /** 用左右兩側的地表高度差算出車體該傾斜多少 */
+    private tiltAt(x: number): number {
+        const span = 13;
+        const slope = this.core.groundAt(x + span) - this.core.groundAt(x - span);
+        return clamp(Math.atan2(slope, span * 2), -0.5, 0.5);
+    }
+
     private updateHpBars(dt: number): void {
         if (this.phase === 'flying') return;
 
@@ -378,6 +436,10 @@ export class ArtilleryGame {
 
         this.renderer.render({
             state,
+            pose: {
+                player: this.poseOf('player', state),
+                enemy: this.poseOf('enemy', state),
+            },
             displayHp: this.displayHp,
             barrel: this.barrel,
             power: this.aim.power,

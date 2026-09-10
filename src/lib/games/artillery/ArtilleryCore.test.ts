@@ -234,6 +234,80 @@ describe('AI 對手', () => {
     });
 });
 
+describe('震退', () => {
+    /** 玩家 45°／滿力空放，砲彈飛出場外不造成傷害，用來把回合交給 AI */
+    const passTurn = (core: ArtilleryCore) => core.step({ angle: 45, power: 100 });
+
+    test('中彈的砲台會被推離爆炸點，且落地後仍貼著地表', async () => {
+        const core = makeCore(42);
+        const agent = new ArtilleryAgent({ core, rng: mulberry32(1), angleSigma: 0, powerSigma: 0 });
+
+        passTurn(core);
+        const before = core.getState().turrets.player;
+        const plan = (await agent.predict(core.getState())).action;
+        core.step(plan);
+
+        const shot = core.getState().lastShot!;
+        const after = core.getState().turrets.player;
+
+        expect(shot.damage.player).toBeGreaterThan(0);
+        expect(after.x).not.toBe(before.x);
+        expect(Math.sign(after.x - before.x)).toBe(Math.sign(before.x - shot.impact!.x));
+        expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(COMBAT.knockbackMax + 1e-9);
+        expect(after.y).toBeCloseTo(core.groundAt(after.x), 5);
+    });
+
+    test('knockback 紀錄的起訖點與砲台實際位置一致', async () => {
+        const core = makeCore(7);
+        const agent = new ArtilleryAgent({ core, rng: mulberry32(2), angleSigma: 0, powerSigma: 0 });
+
+        passTurn(core);
+        const before = { ...core.getState().turrets.player };
+        core.step((await agent.predict(core.getState())).action);
+
+        const { knockback, damage } = core.getState().lastShot!;
+        expect(knockback.player.from).toEqual({ x: before.x, y: before.y });
+        expect(knockback.player.to).toEqual({
+            x: core.getState().turrets.player.x,
+            y: core.getState().turrets.player.y,
+        });
+        // 這一發沒打到敵方自己，所以敵方原地不動
+        expect(damage.enemy).toBe(0);
+        expect(knockback.enemy.from).toEqual(knockback.enemy.to);
+    });
+
+    test('沒造成傷害就不會被推動', () => {
+        const core = makeCore(42);
+        const before = core.getState().turrets;
+
+        passTurn(core);
+        const after = core.getState();
+
+        expect(after.lastShot!.damage.player).toBe(0);
+        expect(after.lastShot!.damage.enemy).toBe(0);
+        expect(after.turrets.player.x).toBe(before.player.x);
+        expect(after.turrets.enemy.x).toBe(before.enemy.x);
+    });
+
+    test('連續中彈也不會被推出場外或推到兩台重疊', async () => {
+        const core = makeCore(42);
+        const agent = new ArtilleryAgent({ core, rng: mulberry32(3), angleSigma: 0, powerSigma: 0 });
+
+        let guard = 0;
+        while (!core.getState().over && guard++ < 20) {
+            passTurn(core);
+            if (core.getState().over) break;
+            core.step((await agent.predict(core.getState())).action);
+
+            const { player, enemy } = core.getState().turrets;
+            expect(player.x).toBeGreaterThanOrEqual(TERRAIN.edgeMargin - 1e-9);
+            expect(enemy.x).toBeLessThanOrEqual(FIELD.width - TERRAIN.edgeMargin + 1e-9);
+            expect(enemy.x - player.x).toBeGreaterThanOrEqual(TERRAIN.minSeparation - 1e-9);
+        }
+        expect(core.getState().over).toBe(true);
+    });
+});
+
 describe('砲口與命中判定', () => {
     test('砲口在砲台體外，剛出膛不會誤判打到自己', () => {
         const core = makeCore(42);
