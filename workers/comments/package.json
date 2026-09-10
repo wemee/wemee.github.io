@@ -11,7 +11,7 @@
     "schema:local": "wrangler d1 execute wemee-comments --local --file=schema.sql"
   },
   "dependencies": {
-    "hono": "^4.6.14"
+    "hono": "^4.13.5"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260727.1",
