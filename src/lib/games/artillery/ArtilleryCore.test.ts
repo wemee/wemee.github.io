@@ -1,7 +1,8 @@
 import { describe, test, expect } from 'vitest';
 import { ArtilleryCore } from './ArtilleryCore';
 import { ArtilleryAgent } from '@/lib/ai/agents/ArtilleryAgent';
-import { AIM, COMBAT, FIELD, PHYSICS, TERRAIN, TURRET } from './config';
+import { AI, AIM, COMBAT, FIELD, PHYSICS, STAGE, TERRAIN, TURRET } from './config';
+import { aiSigmaForStage, enemyHpForStage } from './stage';
 import { groundYAt } from './terrain';
 import { mulberry32 } from './random';
 
@@ -231,6 +232,62 @@ describe('AI 對手', () => {
         const shot = core.simulate('enemy', plan.angle, plan.power, false);
         const selfDamage = ArtilleryCore.damageAt(shot.impact!, core.centerOf('enemy'), shot.hitTurret === 'enemy');
         expect(selfDamage).toBe(0);
+    });
+});
+
+describe('關卡成長', () => {
+    test('敵方血量每關 ×1.05 取整，且單調遞增', () => {
+        expect(enemyHpForStage(1)).toBe(100);
+        expect(enemyHpForStage(2)).toBe(105);
+        expect(enemyHpForStage(3)).toBe(110);
+        expect(enemyHpForStage(4)).toBe(115);
+
+        let previous = 0;
+        for (let stage = 1; stage <= 40; stage++) {
+            const hp = enemyHpForStage(stage);
+            expect(Number.isInteger(hp)).toBe(true);
+            expect(hp).toBeGreaterThanOrEqual(previous);
+            previous = hp;
+        }
+    });
+
+    test('AI 誤差逐關縮小，但不會低於下限', () => {
+        const first = aiSigmaForStage(1);
+        expect(first.angleSigma).toBe(AI.angleSigma);
+        expect(first.powerSigma).toBe(AI.powerSigma);
+
+        let previous = first;
+        for (let stage = 2; stage <= 60; stage++) {
+            const sigma = aiSigmaForStage(stage);
+            expect(sigma.angleSigma).toBeLessThanOrEqual(previous.angleSigma);
+            expect(sigma.powerSigma).toBeLessThanOrEqual(previous.powerSigma);
+            expect(sigma.angleSigma).toBeGreaterThanOrEqual(STAGE.minAngleSigma);
+            expect(sigma.powerSigma).toBeGreaterThanOrEqual(STAGE.minPowerSigma);
+            previous = sigma;
+        }
+
+        // 夠遠的關卡一定已經觸底
+        expect(aiSigmaForStage(60)).toEqual({
+            angleSigma: STAGE.minAngleSigma,
+            powerSigma: STAGE.minPowerSigma,
+        });
+    });
+
+    test('前十關的成長幅度仍在玩家打得完的範圍內', () => {
+        // 玩家扣掉試炮大約剩 7 發，全直擊上限是 7 × 45 = 315
+        const playableCeiling = 7 * COMBAT.directDamage;
+        expect(enemyHpForStage(10)).toBeLessThan(playableCeiling);
+        expect(enemyHpForStage(20)).toBeLessThan(playableCeiling);
+    });
+
+    test('關卡血量會套用到敵方砲台，玩家維持基準血量', () => {
+        const core = new ArtilleryCore({ seed: 42, enemyMaxHp: enemyHpForStage(6) });
+        const { player, enemy } = core.getState().turrets;
+
+        expect(enemy.maxHp).toBe(enemyHpForStage(6));
+        expect(enemy.hp).toBe(enemy.maxHp);
+        expect(player.maxHp).toBe(COMBAT.maxHp);
+        expect(player.hp).toBe(COMBAT.maxHp);
     });
 });
 

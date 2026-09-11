@@ -18,11 +18,15 @@ const SIDES: Side[] = ['player', 'enemy'];
 export interface ArtilleryCoreConfig extends GameCoreConfig {
     width?: number;
     height?: number;
+    /** 雙方血量上限。關卡制會逐關調高敵方血量 */
+    playerMaxHp?: number;
+    enemyMaxHp?: number;
 }
 
 export class ArtilleryCore extends GameCore<ArtilleryState, ShotAction> {
     private readonly width: number;
     private readonly height: number;
+    private readonly maxHp: Record<Side, number>;
     private seed: number;
     private rng: Rng;
 
@@ -38,6 +42,10 @@ export class ArtilleryCore extends GameCore<ArtilleryState, ShotAction> {
         super(config);
         this.width = config.width ?? FIELD.width;
         this.height = config.height ?? FIELD.height;
+        this.maxHp = {
+            player: config.playerMaxHp ?? COMBAT.maxHp,
+            enemy: config.enemyMaxHp ?? COMBAT.maxHp,
+        };
         this.seed = config.seed ?? Math.floor(Math.random() * 0xffffffff);
         this.rng = mulberry32(this.seed);
         this.reset();
@@ -82,7 +90,8 @@ export class ArtilleryCore extends GameCore<ArtilleryState, ShotAction> {
             side,
             x,
             y,
-            hp: COMBAT.maxHp,
+            hp: this.maxHp[side],
+            maxHp: this.maxHp[side],
             angle: 45,
             power: 60,
         };

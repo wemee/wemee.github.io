@@ -17,6 +17,8 @@ export interface Turret {
     x: number;
     y: number;
     hp: number;
+    /** 血量上限。關卡制下雙方不一定相同 */
+    maxHp: number;
     /** 最近一次使用的仰角（度） */
     angle: number;
     /** 最近一次使用的力道（0-100） */

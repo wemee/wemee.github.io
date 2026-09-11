@@ -91,7 +91,26 @@ export const TERRAIN = {
     minSeparation: 260,
 } as const;
 
-/** AI 瞄準誤差（固定值、不隨對戰過程改變） */
+/**
+ * 關卡成長曲線。
+ *
+ * 血量與命中率兩條軸刻意都放得很緩：實測 AI 大約 8～9 發打死玩家，
+ * 玩家扣掉試炮只剩約 7 發可用，兩條軸只要有一條走太快，
+ * 很快就會進入「算術上打不完」的死局。
+ */
+export const STAGE = {
+    /** 第一關的敵方血量 */
+    baseEnemyHp: 100,
+    /** 每過一關敵方血量的倍率 */
+    enemyHpGrowth: 1.05,
+    /** 每過一關 AI 誤差的衰減率（越小越快變準） */
+    sigmaDecay: 0.97,
+    /** 誤差下限，避免後期 AI 變成百發百中 */
+    minAngleSigma: 3,
+    minPowerSigma: 7,
+} as const;
+
+/** AI 瞄準誤差（第一關的起始值，之後每關遞減） */
 export const AI = {
     angleSigma: 5,
     powerSigma: 11,

@@ -53,6 +53,8 @@ export interface ArtilleryView {
     state: ArtilleryState;
     /** 砲台的呈現姿態（含中彈的位移彈跳與地形傾斜），由上層算好 */
     pose: Record<Side, TurretPose>;
+    /** 目前關卡 */
+    stage: number;
     /** 動畫中的血量，會平滑追上 state 的實際血量 */
     displayHp: Record<Side, number>;
     /** 目前砲管仰角（玩家跟著輸入走，AI 瞄準時會轉動） */
@@ -495,7 +497,7 @@ export class ArtilleryRenderer {
         ctx.textAlign = 'center';
         ctx.font = this.font(13);
         ctx.fillStyle = COLORS.text;
-        ctx.fillText(`第 ${view.state.round} 回合`, this.width / 2, 26 * this.uiScale);
+        ctx.fillText(`第 ${view.stage} 關 · 第 ${view.state.round} 回合`, this.width / 2, 26 * this.uiScale);
 
         if (view.status) {
             ctx.font = this.font(16, 700);

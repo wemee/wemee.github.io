@@ -11,16 +11,18 @@ import { ArtilleryCore } from './ArtilleryCore';
 import { ArtilleryAgent, type ArtilleryPlan } from '@/lib/ai/agents/ArtilleryAgent';
 import { ArtilleryRenderer, type Explosion, type Floater } from './renderer';
 import { AIM, COMBAT, FIELD, PHYSICS } from './config';
+import { aiSigmaForStage, enemyHpForStage } from './stage';
 import { clamp, lerp } from './random';
 import type { ArtilleryState, ShotOutcome, Side, TurretPose, Vec2 } from './types';
 
 type Phase = 'aiming' | 'flying' | 'impact' | 'enemyAiming' | 'over';
 
 export interface ArtilleryGameCallbacks {
-    onStateChange?: (state: ArtilleryState, displayHp: Record<Side, number>) => void;
+    onStateChange?: (state: ArtilleryState, display: { hp: Record<Side, number>; stage: number }) => void;
     onAimChange?: (aim: { angle: number; power: number }) => void;
     onPhaseChange?: (phase: Phase) => void;
-    onGameOver?: (winner: Side | 'draw' | null) => void;
+    /** 一關結束。cleared 為 true 代表過關，否則整趟結束 */
+    onStageEnd?: (result: { winner: Side | 'draw' | null; cleared: boolean; stage: number }) => void;
 }
 
 /** 彈道播放速度倍率（1 = 真實飛行時間） */
@@ -35,8 +37,6 @@ const ENEMY_AIM_TIME = 1.1;
 const MAX_DRAG_CSS_PX = 170;
 /** 小於這個拖曳距離視為「只是點一下」，不當成瞄準 */
 const MIN_DRAG_CSS_PX = 8;
-/** 空白鍵從 0 蓄到滿力的秒數 */
-const CHARGE_DURATION = 1.2;
 /** 中彈反應（彈跳＋晃動＋滑到新位置）的長度 */
 const HIT_REACTION = 0.55;
 
@@ -44,8 +44,10 @@ export class ArtilleryGame {
     private readonly canvas: HTMLCanvasElement;
     private readonly renderer: ArtilleryRenderer;
     private readonly callbacks: ArtilleryGameCallbacks;
-    private core: ArtilleryCore;
-    private agent: ArtilleryAgent;
+    private core!: ArtilleryCore;
+    private agent!: ArtilleryAgent;
+    /** 目前關卡，從 1 開始 */
+    private stage = 1;
 
     private phase: Phase = 'aiming';
     private aim = { angle: 45, power: 60 };
@@ -76,9 +78,6 @@ export class ArtilleryGame {
     private inputLocked = true;
     /** 拖曳以「按下的那一點」為錨點，不是砲台本身 —— 否則畫面上隨便點一下都會開火 */
     private drag: { start: Vec2; pointer: Vec2; aimBefore: { angle: number; power: number } } | null = null;
-    private charging = false;
-    private chargeElapsed = 0;
-    private powerBeforeCharge = 60;
 
     private rafId = 0;
     private lastTime = 0;
@@ -88,32 +87,49 @@ export class ArtilleryGame {
     private readonly onPointerMove = (event: PointerEvent) => this.handlePointerMove(event);
     private readonly onPointerUp = () => this.handlePointerUp();
     private readonly onKeyDown = (event: KeyboardEvent) => this.handleKeyDown(event);
-    private readonly onKeyUp = (event: KeyboardEvent) => this.handleKeyUp(event);
     private readonly onResize = () => this.handleResize();
 
     constructor(canvas: HTMLCanvasElement, callbacks: ArtilleryGameCallbacks = {}) {
         this.canvas = canvas;
         this.callbacks = callbacks;
         this.renderer = new ArtilleryRenderer(canvas);
-        this.core = new ArtilleryCore({ width: FIELD.width, height: FIELD.height });
-        this.agent = new ArtilleryAgent({ core: this.core });
 
         this.renderer.resize();
-        this.startMatch();
+        this.startRun();
         this.bindEvents();
         this.lastTime = performance.now();
         this.rafId = requestAnimationFrame((time) => this.loop(time));
     }
 
-    /** 開新的一局：換地形、回滿血、玩家先手 */
-    startMatch(): void {
-        this.core.setSeed(Math.floor(Math.random() * 0xffffffff));
-        this.core.reset();
+    /** 從第一關重新開始一趟 */
+    startRun(): void {
+        this.stage = 1;
+        this.startStage();
+    }
+
+    /** 過關，前往下一關 */
+    nextStage(): void {
+        this.stage += 1;
+        this.startStage();
+    }
+
+    /**
+     * 開始目前這一關：換地形、雙方回滿血、玩家先手。
+     * 敵方血量與 AI 誤差都跟著關卡走，所以每關重建 Core 與 Agent。
+     */
+    private startStage(): void {
+        this.core = new ArtilleryCore({
+            width: FIELD.width,
+            height: FIELD.height,
+            enemyMaxHp: enemyHpForStage(this.stage),
+        });
+        this.agent = new ArtilleryAgent({ core: this.core, ...aiSigmaForStage(this.stage) });
 
         this.phase = 'aiming';
         this.aim = { angle: 45, power: 60 };
         this.barrel = { player: 45, enemy: 45 };
-        this.displayHp = { player: COMBAT.maxHp, enemy: COMBAT.maxHp };
+        const turrets = this.core.getState().turrets;
+        this.displayHp = { player: turrets.player.hp, enemy: turrets.enemy.hp };
         this.displayRound = 1;
         this.particles = [];
         this.explosions = [];
@@ -125,7 +141,6 @@ export class ArtilleryGame {
         this.previewKey = '';
         this.enemyPlan = null;
         this.drag = null;
-        this.charging = false;
         this.hitReaction = {};
 
         this.renderer.buildBackground(this.core.getState());
@@ -176,7 +191,6 @@ export class ArtilleryGame {
         window.removeEventListener('pointerup', this.onPointerUp);
         window.removeEventListener('pointercancel', this.onPointerUp);
         window.removeEventListener('keydown', this.onKeyDown);
-        window.removeEventListener('keyup', this.onKeyUp);
         window.removeEventListener('resize', this.onResize);
     }
 
@@ -249,7 +263,11 @@ export class ArtilleryGame {
 
         if (state.over) {
             this.setPhase('over');
-            this.callbacks.onGameOver?.(state.winner);
+            this.callbacks.onStageEnd?.({
+                winner: state.winner,
+                cleared: state.winner === 'player',
+                stage: this.stage,
+            });
             return;
         }
 
@@ -284,7 +302,7 @@ export class ArtilleryGame {
     }
 
     private emitState(): void {
-        this.callbacks.onStateChange?.(this.viewState(), { ...this.displayHp });
+        this.callbacks.onStateChange?.(this.viewState(), { hp: { ...this.displayHp }, stage: this.stage });
     }
 
     /** 給畫面看的狀態：回合數用顯示值，避免砲彈還在飛就先跳號 */
@@ -305,7 +323,6 @@ export class ArtilleryGame {
     }
 
     private update(dt: number): void {
-        this.updateCharge(dt);
         this.updateFlight(dt);
         this.updateEnemyAim(dt);
         this.updateEffects(dt);
@@ -315,12 +332,6 @@ export class ArtilleryGame {
             this.impactTimer -= dt;
             if (this.impactTimer <= 0) this.afterImpact();
         }
-    }
-
-    private updateCharge(dt: number): void {
-        if (!this.charging) return;
-        this.chargeElapsed = Math.min(this.chargeElapsed + dt, CHARGE_DURATION);
-        this.setPower((this.chargeElapsed / CHARGE_DURATION) * AIM.maxPower);
     }
 
     private updateFlight(dt: number): void {
@@ -460,6 +471,7 @@ export class ArtilleryGame {
                 player: this.poseOf('player', state),
                 enemy: this.poseOf('enemy', state),
             },
+            stage: this.stage,
             displayHp: this.displayHp,
             barrel: this.barrel,
             power: this.aim.power,
@@ -519,7 +531,6 @@ export class ArtilleryGame {
         window.addEventListener('pointerup', this.onPointerUp);
         window.addEventListener('pointercancel', this.onPointerUp);
         window.addEventListener('keydown', this.onKeyDown);
-        window.addEventListener('keyup', this.onKeyUp);
         window.addEventListener('resize', this.onResize);
     }
 
@@ -535,7 +546,6 @@ export class ArtilleryGame {
         if (!this.canAdjustAim()) return;
         event.preventDefault();
         const start = this.toLogical(event);
-        this.charging = false;
         this.drag = { start, pointer: start, aimBefore: { ...this.aim } };
     }
 
@@ -589,7 +599,7 @@ export class ArtilleryGame {
         if (!this.canAdjustAim()) return;
 
         // 滑桿被點過之後會保有焦點。方向鍵讓給滑桿自己處理（否則會同時動到兩個值），
-        // 但空白鍵滑桿不吃，蓄力必須照常可用
+        // 但空白鍵滑桿不吃，發射必須照常可用
         const onSlider = target instanceof HTMLInputElement;
         const stepSize = event.shiftKey ? 5 : 1;
 
@@ -616,33 +626,13 @@ export class ArtilleryGame {
                 break;
             case ' ':
                 event.preventDefault();
-                if (!this.charging) {
-                    this.charging = true;
-                    this.chargeElapsed = 0;
-                    this.powerBeforeCharge = this.aim.power;
-                    // 按下當下就歸零，蓄力條才會從 0 開始長，
-                    // 也才不會有「按太快、力道還沒歸零就發射」的不一致行為
-                    this.setPower(0);
-                }
+                if (!event.repeat) this.fire();
                 break;
             case 'Enter':
                 event.preventDefault();
                 this.fire();
                 break;
         }
-    }
-
-    private handleKeyUp(event: KeyboardEvent): void {
-        if (event.key !== ' ' || !this.charging) return;
-        event.preventDefault();
-        this.charging = false;
-
-        // 輕輕點一下空白鍵不該把調好的力道歸零，還原成蓄力前的值
-        if (this.aim.power < 3) {
-            this.setPower(this.powerBeforeCharge);
-            return;
-        }
-        this.fire();
     }
 
     private handleResize(): void {
