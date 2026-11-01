@@ -12,7 +12,7 @@ interface ParkingMapProps {
     lng: number;
 }
 
-const TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=cb1_4zfv_1_3166aab0ba8647e03e1fe104';
 const TILE_ATTRIBUTION =
     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
