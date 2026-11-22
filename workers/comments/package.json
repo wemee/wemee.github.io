@@ -11,7 +11,7 @@
     "schema:local": "wrangler d1 execute wemee-comments --local --file=schema.sql"
   },
   "dependencies": {
-    "hono": "^4.13.5"
+    "hono": "^4.13.16"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260727.1",
@@ -21,6 +21,6 @@
   "overrides": {
     "esbuild": "^0.28.1",
     "ws": "^8.20.2",
-    "undici": "^7.29.0"
+    "undici": "^7.30.1"
   }
 }
